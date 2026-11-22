@@ -1,45 +1,45 @@
 # E2-7 · T11-0 — Plan ejecutable de QA integral y hardening
 
-**Fecha:** 11/11/2026. **Rama:** `feature/e2-7-t11-qa-integral-hardening`. **Base inmutable:** `main` tras merge squash del PR #43, `bc91c1ee3fac95753486fbad608ae9b6e9f534e6`.
+**Date:** 11/11/2026. **Rama:** `feature/e2-7-t11-qa-integral-hardening`. **Unchangeable base:** `main` tras merge squash del PR #43, `bc91c1ee3fac95753486fbad608ae9b6e9f534e6`.
 
-## 1. Objetivo y criterio de alcance
+## 1. Objective and scope approach
 
-Consolidar en **una misma ejecución reproducible** los módulos integrados de E2-7 T01–T10, del registro/login y aislamiento por tenant hasta catálogo, compras, recepción, stock, traslado, conteo y POS. La etapa es QA/hardening y documentación de evidencia, **no una fase de nueva funcionalidad comercial ni rediseño visual**.
+Consolidate into **the same reproducible execution** the integrated modules of E2-7 T01–T10, from registration/login and tenant insulation to catalog, purchases, reception, stock, transfer, counting and POS. The stage is QA/hardening and evidence documentation, **not a phase of new commercial functionality or visual redesign**.
 
-Fuente del orden: `E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md` (T11 = D: QA integral PostgreSQL/Playwright/CI, multiempresa y errores de red); `E2-7_PLAN_RECTOR_INTEGRACION_Y_CIERRE.md` (puerta D); `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md`.
+Source of order: `E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md` (T11 = D: QA integral PostgreSQL/Playwright/CI, multiempresa y errores de red); `E2-7_PLAN_RECTOR_INTEGRACION_Y_CIERRE.md` (door D); `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md`.
 
-**Prohibiciones:** no probar escrituras contra `TEST Empresa A`, no tocar estado persistente del usuario, no usar identidades/datos DEMO como REALES, no habilitar `VITE_PYME_ENABLE_REAL_SALES` fuera de la instancia descartable CI, no fusionar sin aprobación del responsable. No extender acreditación MP/QR, caja y gastos al modo REAL bajo T11.
+**Prohibitions:** not prove scriptures against `TEST Empresa A`, do not touch persistent user status, do not use DEMO identities/data as REAL, do not enable `VITE_PYME_ENABLE_REAL_SALES` outside the IC discardable instance, do not merge without approval from the responsible. Do not extend MP/QR accreditation, cash and expenses to REAL mode under T11.
 
-## 2. Inventario de las evidencias ya disponibles
+## 2. Inventory of evidence already available
 
-- T10-F y PR #43: acta con pruebas de uso no destructivas del usuario, 53 Node tests locales y QA visual con botón bloqueado. GitHub Actions del HEAD documental `2307b1b2` verde: frontend `42982898647`, backend `42982898826` y full-stack `42982898458`.
-- T10-E incluye pruebas navegador de venta de servicio, precio/descuento/pagos mixtos, venta física con saldo/ledger, stock insuficiente, pérdida de respuesta 201 tras COMMIT, GET 404 y replay explícito misma clave/cuerpo.
-- Los casos anteriores no prueban por sí solos el **recorrido completo entre todos los módulos** en una misma sesión/empresa ni la regresión responsiva de **modo REAL en móvil**. T11 debe aumentar cobertura con el mínimo de fixtures y evitar duplicar tests probados.
+- T10-F and PR #43: Report with non-destructive user use tests, 53 Node local tests and QA visual with locked button. GitHub Actions of HEAD documentary `2307b1b2` green: frontend `42982898647`, backend `42982898826` y full-stack `42982898458`.
+- T10-E includes browser tests for service sale, price/discount/mixed payments, physical sales with balance/ledger, insufficient stock, 201 response loss after COMMIT, GET 404 and explicit replay same key/body.
+- The previous cases do not prove for themselves the **complete travel between all modules** in the same session/company and the regression of **REAL mode on mobile**T11 should increase coverage with minimum fixtures and avoid duplicating tested tests.
 
-## 3. Incrementos T11
+## 3. T11 increments
 
-| Bloque | Objetivo | Salida y puerta |
+| Block | Objective | Exit and door |
 |---|---|---|
-| **T11-0** | Congelar SHA base, matriz y guardas de entorno | Este plan y PR DRAFT, sin migraciones ni POST local |
-| **T11-A** | Inventariar y enlazar pruebas E27-AUTH/TEN/PERM/LOC/CAT/SUP/PUR/REC/INV/SAL/PRES/MODE/RESP a archivos y runs reales | Matriz `CUBIERTO/PARCIAL/FALTANTE/DIFERIDO` con evidencia; no suponer cobertura por nombres |
-| **T11-B** | E2E transversal end-to-end en un tenant QA: registro → empresa → sede → catálogo → proveedor → compra → recepción → saldos → POS/venta → comprobante → recarga y ledger | Consistencia total de cantidades/centavos y unicidad idempotente, DB disposable |
-| **T11-C** | Seguridad de navegación: empresa A/B, actor distinto, membresía/asignación, logout/F5, 401/403/404/409/422, errores de red y respuestas tardías | No fugas entre tenants, no respuesta de éxito falsa, no POST automático |
-| **T11-D** | Matriz de navegador REAL desktop/móvil, teclado y regresión DEMO; accesibilidad y render en fallas | CI aislada y capturas/logs sanitizados, no transformar maquetas en fuente de negocio |
-| **T11-E** | Hardening únicamente de defectos demostrados; validación SQL/CI final, QA manual no destructiva, informe de riesgos y cierre | Tres workflows verdes sobre mismo HEAD, aprobación humana explícita antes de merge |
+| **T11-0** | Freeze SHA base, matrix and environment saves | Este plan y PR DRAFT, sin migraciones ni POST local |
+| **T11-A** | Invent and link E27-AUTH/TEN/PERM/LOC/CAT/SUP/PUR/REC/INV/SAL/PRES/MODE/RESP tests to real files and runs | Matrix `CUBIERTO/PARCIAL/FALTANTE/DIFERIDO` with evidence; not to suppose name coverage |
+| **T11-B** | E2E cross-sectional end-to-end in a tennis QA: registration → company → headquarters → catalog → supplier → purchase → receipt → balances → POS/sale → voucher → reload and leader | Total quantity/centavo consistency and idempotent uniqueity, available DB |
+| **T11-C** | Navigational security: company A/B, different actor, membership/assignment, logout/F5, 401/403/404/409/422, network errors and late replies | No leaks between tenants, no false success response, no automatic POST |
+| **T11-D** | Real desktop/mobile browser matrix, keyboard and DEMO regression; accessibility and rendering in faults | IC isolated and Sanitized captures/logs, not transforming models into a business source |
+| **T11-E** | Hardening only of proven defects; SQL/CI final validation, non-destructive manual QA, risk report and closure | Three green workflows on same HEAD, explicit human approval before merge |
 
-## 4. Invariantes de prueba y riesgos
+## 4. Test and risk invariants
 
-1. **Un solo tenant REAL** por escenario positivo, con empresa B separada para probar aislamiento; los IDs son UUID válidos generados por la API y los tokens no se loguean.
-2. **Alta de compra no aumenta saldo**; recepción idempotente produce entradas exactas, comprueba `quantity_milli` y `version` desde servidor y no crea entradas duplicadas tras replay.
-3. **Venta física** descuenta el inventario una vez y registra `VENTA_SALIDA`; servicio no altera stock; pago declarado no acredita dinero.
-4. **Traslado** produce dos movimientos de signos opuestos entre sedes; **conteo** usa saldo final y `expected_version` bajo bloqueo; 409 obliga a nueva revisión y no reintenta solo.
-5. **Errores HTTP** 401/403/404/409/422 y red incierta: no exponer recursos ajenos, conservar solicitud inmutable, GET de recuperación y consentimiento para cualquier replay.
-6. **Paginación de catálogo**: distinguir cargado/parcial/completo; no tratar filtro de páginas cargadas como búsqueda global.
-7. **Entorno**: PostgreSQL efímero migrado desde cero, Playwright con guard `PYME_DISPOSABLE_QA=1`, proxy apuntando a servicio efímero controlado, y `VITE_PYME_ENABLE_REAL_SALES` solo en runner. Prohibir uso de DB local del usuario con tests de escritura.
-8. **Regresión**: validar modo DEMO por separado (sin datos reales), desktop y móvil; registrar commit exacto, URLs de jobs, número de pruebas y cualquier skip.
+1. **One real tenant** by positive scenario, with separate B company to test isolation; valid UUID IDs generated by API and tokens are not logged.
+2. **High purchase does not increase balance**; Idepotent reception produces exact entries, checks `quantity_milli` y `version` from server and does not create duplicate entries after replay.
+3. **Physical sale** uncount inventory once and register `VENTA_SALIDA`; non-altering service stock; declared payment does not credit money.
+4. **Transfer** produces two movements of opposite signs between headquarters; **count** Use final balance and `expected_version` under lock; 409 forces further revision and does not retry alone.
+5. **HTTP Errors** 401/403/404/409/422 and uncertain network: do not expose other people's resources, keep immutable request, GET recovery and consent for any replay.
+6. **Catalogue Pagination**: distinguish loaded/partial/complete; do not treat filter pages loaded as global search.
+7. **Environment**: PostgreSQL ephemeral migrated from scratch, Playwright with guard `PYME_DISPOSABLE_QA=1`, proxy aiming for controlled ephemeral service, and `VITE_PYME_ENABLE_REAL_SALES` only in runner. Prohibit use of local user DB with write tests.
+8. **Regression**: validate DEMO mode separately (without real data), desktop and mobile; record exact commit, job URLs, number of tests and any skip.
 
-## 5. Primer trabajo concreto y verificable
+## 5. First concrete and verifiable work
 
-**T11-A**: contrastar la tabla de escenarios `E27-*` de `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md` con tests actuales; entregar matriz trazable de cobertura y lista corta de faltantes de máxima prioridad. Luego implementar primero el flujo **compra → recepción → stock → venta** en una base temporal. No programar componentes nuevos sin que la matriz demuestre la brecha.
+**T11-A**: contrast the scenario table `E27-*` de `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md` with current tests; deliver traceable matrix coverage and short list of missing top priority. Then implement the flow first **purchase → reception → stock → sale** on a time base. Do not program new components without the matrix showing the gap.
 
-**Puerta de salida T11:** flujo transversal comprobado desde navegador a PostgreSQL, seguridad multiempresa y regresión REAL/DEMO y móvil verificadas, CI backend/frontend/full-stack verde en el mismo SHA de PR, riesgos explícitos y aceptación del responsable. **T12** será la etapa de cierre académico (documentos 01–05, UML, README, CHANGELOG, matriz RF/CU y guía reproducible).
+**T11 exit door:** Transverse flow checked from browser to PostgreSQL, multi-company security and verified REAL/DEMO and mobile regression, CI backend/frontend/full-stack green in the same PR SHA, explicit risks and acceptance of the responsible. **T12** will be the academic closing stage (documents 01–05, UML, README, CHANGELOG, RF/CU matrix and reproducible guide).

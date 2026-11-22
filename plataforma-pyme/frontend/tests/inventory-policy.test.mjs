@@ -52,7 +52,7 @@ test('traslado genera salida y entrada de igual cantidad y conserva total', () =
 
 test('la salida rechaza existencia insuficiente y fracciones de cajas', () => {
   assert.doesNotThrow(() => requireTransferStock(5000, 5000, 'UNIDAD'))
-  assert.throws(() => requireTransferStock(4000, 5000, 'UNIDAD'), /insuficiente/)
+  assert.throws(() => requireTransferStock(4000, 5000, 'UNIDAD'), /insufficient/i)
   assert.throws(() => requireTransferStock(0, 1000, 'UNIDAD'))
   assert.throws(() => requireTransferStock(5000, 500, 'CAJA'))
   assert.equal(parseQuantityMilli('0,250', 'KILOGRAMO'), 250)
@@ -62,7 +62,7 @@ test('conteo desde cero crea entrada y conteo a cero crea salida, sin saldo nega
   assert.equal(parseCountedMilli('0', 'UNIDAD'), 0)
   assert.equal(countDifference(0, 5000, 'UNIDAD'), 5000)
   assert.equal(countDifference(5000, 0, 'UNIDAD'), -5000)
-  assert.throws(() => countDifference(5000, 5000, 'UNIDAD'), /coincide/)
+  assert.throws(() => countDifference(5000, 5000, 'UNIDAD'), /matches/i)
   assert.throws(() => countDifference(2000, 100, 'UNIDAD'))
   assert.throws(() => parseCountedMilli('-1', 'UNIDAD'))
   const events = inventoryOperationMovements({
@@ -194,7 +194,7 @@ test('una sesión sin diferencias queda en historial sin generar movimiento fals
 test('conteo confirmado falla si el saldo cambió después de revisar', () => {
   assert.equal(checkedCountDifference(5000, 5000, 2000, 'UNIDAD'), -3000)
   assert.equal(checkedCountDifference(5000, 5000, 5000, 'UNIDAD'), 0)
-  assert.throws(() => checkedCountDifference(5000, 6000, 2000, 'UNIDAD'), /cambió/)
-  assert.throws(() => checkedCountDifference(0, 1000, 0, 'UNIDAD'), /cambió/)
-  assert.throws(() => checkedCountDifference(5000, 5000, 500, 'CAJA'), /unidad de control/)
+  assert.throws(() => checkedCountDifference(5000, 6000, 2000, 'UNIDAD'), /changed/i)
+  assert.throws(() => checkedCountDifference(0, 1000, 0, 'UNIDAD'), /changed/i)
+  assert.throws(() => checkedCountDifference(5000, 5000, 500, 'CAJA'), /control unit/i)
 })

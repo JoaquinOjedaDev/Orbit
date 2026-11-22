@@ -10,7 +10,7 @@ test.beforeAll(() => {
 
 async function seedSales(request: APIRequestContext) {
   const email = `t09-${randomUUID()}@example.com`
-  const password = 'Contraseña larga de QA descartable 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const reg = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'T09 Owner QA' },
   })
@@ -43,10 +43,10 @@ async function seedSales(request: APIRequestContext) {
 }
 
 async function loginInUI(page: Page, f: Awaited<ReturnType<typeof seedSales>>) {
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(f.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(f.password)
+  await page.getByLabel('Email', { exact: true }).fill(f.email)
+  await page.getByLabel('Password', { exact: true }).fill(f.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Historial de ventas' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sales history' })).toBeVisible()
 }
 
 test('T09-D: historial REAL, comprobante por ID y recuperación request_id tras F5, solo GET', async ({ page, request }) => {
@@ -60,14 +60,14 @@ test('T09-D: historial REAL, comprobante por ID y recuperación request_id tras 
   await loginInUI(page, f)
   await expect(page.locator('.real-sales-row')).toHaveCount(2)
   await expect(page.getByText('Listado parcial')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Ver comprobante' }).first().click()
-  const details = page.getByRole('region', { name: 'Comprobante de venta REAL' })
-  await expect(details.getByRole('heading', { name: 'Venta confirmada' })).toBeVisible()
-  await expect(details).toContainText('Pagos declarados')
+  await page.getByRole('button', { name: 'See voucher' }).first().click()
+  const details = page.getByRole('region', { name: 'REAL sales check' })
+  await expect(details.getByRole('heading', { name: 'Confirmed sale' })).toBeVisible()
+  await expect(details).toContainText('Declared payments')
   await expect(details).toContainText('Asesoría QA')
   // El comprobante ahora ocupa una vista exclusiva: volver permite consultar otra solicitud.
   await expect(page.locator('.real-sales-row')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Volver al historial' }).click()
+  await page.getByRole('button', { name: 'Back to History' }).click()
   await expect(page.locator('.real-sales-row')).toHaveCount(2)
 
   await page.getByLabel('Clave original de solicitud (UUID4)').fill(f.first.request_id)

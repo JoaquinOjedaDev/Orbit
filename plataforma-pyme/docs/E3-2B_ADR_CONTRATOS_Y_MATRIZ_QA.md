@@ -1,62 +1,62 @@
-# E3-2B — ADR, propuesta de contratos y matriz de aceptación
+# E3-2B — ADR, proposed contracts and acceptance matrix
 
-**Tipo:** propuesta inicial revisable, derivada del estado de `main` y los HTML proporcionados. No afirma endpoints implementados.
+**Type:** revised initial proposal, derived from the status of `main` and the HTML provided. It does not state implemented endpoints.
 
-## ADR-01 — Separar intención de cobro y venta
+## ADR-01 — Separate collection and sale intention
 
-**Contexto:** `Sale.status` solo admite `CONFIRMADA` y `SaleService` registra venta, líneas, pagos, stock y movimientos de inventario en un único commit. Crear la venta al generar QR descontaría stock sin pago.  
-**Decisión:** intención QR como recurso separado; se crea sin `Sale` y sin mover stock. Se registra venta única después de autorización del backend. Si la confirmación posterior falla por stock, entra en `REQUIERE_REVISION` para compensación, jamás se descuenta stock ficticiamente. Evaluar reserva temporal con ledger transaccional en B4.  
-**Prueba:** GET de ventas y ledger vacío después del QR; un solo movimiento al finalizar.
+**Context:** `Sale.status` only admits `CONFIRMADA` y `SaleService` records sales, lines, payments, stock and inventory movements in a single commit. Create the sale by generating QR would deduct stock without payment.  
+**Decision:** QR intention as a separate resource; created without `Sale` and without moving stock. It is registered single sale after authorization of the backend. If the subsequent confirmation fails by stock, it enters `REQUIERE_REVISION` For compensation, never be counted stock fictitiously. Evaluate temporary reserve with transactional ledger in B4.  
+**Test:** Get sales and ledger empty after QR; one move at the end.
 
-## ADR-02 — Vinculación ficticia ≠ OAuth
+## ADR-02 — Fictifical linkage
 
-**Contexto:** la conexión de cuentas de terceros en producción requiere consentimiento OAuth, tokens cifrados y renovación.  
-**Decisión:** B1 usa un proveedor MOCK, guarda `business_id` y metadatos DEMO, no claves, tokens, contraseñas ni CVU ficticio validado como real. Mostrar siempre marca DEMO en cuentas y cobranzas. Adapter backend sustituible para B6.  
-**Prueba:** dos empresas no comparten vínculo; operador sin permiso no lo modifica; no hay secretos de MP en logs/front.
+**Context:** connecting third party accounts in production requires OAuth consent, encrypted tokens and renewal.  
+**Decision:** B1 uses a MOCK provider, save `business_id` and DEMO metadata, non-keys, tokens, passwords or fake CVU validated as real. Always display DEMO brand in accounts and collections. Adapter backend replaceable for B6.  
+**Test:** two companies do not share a link; operator without permission does not modify it; there are no MP secrets in log/front.
 
-## ADR-03 — QR y detalle comercial
+## ADR-03 — QR and commercial detail
 
-**Decisión:** en B2 el QR muestra al lado una tabla de snapshot para usuario y cliente: foto/nombre, cantidad, unitario, subtotal, descuento y total. El mock QR **no** es procesable por Mercado Pago. En B6 enviar `items[]` y `description` a la Orders API cuando se admitan; no depender de que la billetera renderice cada producto.  
-**Prueba:** cambios posteriores en catálogo/precios no alteran el importe ni las líneas de la intención; F5 conserva el detalle.
+**Decision:** in B2 the QR shows next to a snapshot table for user and client: photo/name, quantity, unit, subtotal, discount and total. **no** is processable by Market Payment. In B6 send `items[]` y `description` to the Orders API when they are admitted; not depend on the wallet rendering each product.  
+**Test:** Subsequent changes in catalogue/prices do not alter the amount or lines of intent; F5 retains the detail.
 
-## ADR-04 — Origen y estados de pago
+## ADR-04 — Origin and payment statements
 
-**Decisión:** origen `MOCK_QA` vs `MP_API` y estado separado del estado de venta. `APROBADA_DEMO` no equivale a saldo acreditado. Conservar historial de eventos inmutable y claves únicas por intento. El servidor determina transiciones válidas y autorización del actor.  
-**Prueba:** 2 aprobaciones → 1 evento efectivo y 1 venta; expiración y pago tardío no acreditan ni descuentan stock automáticamente.
+**Decision:** origin `MOCK_QA` vs `MP_API` and state separated from the status of sale. `APROBADA_DEMO` does not amount to credited balance. Keep history of unchangeable events and unique keys by attempt. The server determines valid transitions and actor authorization.  
+**Test:** 2 approvals → 1 effective event and 1 sale; expiration and late payment do not credit or deduct stock automatically.
 
-## ADR-05 — Seguridad por capas y entornos
+## ADR-05 — Layer and Environment Safety
 
-**Decisión:** política backend para conectar/desconectar (titular/admin con permiso), cobro (rol con permiso SELL y sede habilitada), simulación (exclusivamente rol QA/administrador con flag QA y base QA explícita). Fail closed, sesión activa, empresa activa, sin token en URLs, no confiar en `role` o `status` enviados por cliente. Mantener la compuerta de ventas REAL existente para otros métodos hasta su propia autorización.
-**Prueba:** 401/403/404/409 según causa, no se filtra QR ni monto de otro negocio, cuenta suspendida no crea intentos, sin feature flag mock no puede aprobar.
+**Decision:** backend policy to connect/disconnect (title/admin with permission), collect (rol with SELL permission and enabled headquarters), simulation (exclusively QA/manager role with QA flag and explicit QA base). Fail closed, active session, active company, no token in URLs, no trust `role` o `status` Keep the existing REAL sales gate for other methods until your own authorization.
+**Test:** 401/403/404/409 according to cause, QR is not filtered or amount of another business, account suspended does not create attempts, without feature flag mock cannot approve.
 
-## ADR-06 — Compatibilidad, evolución y alcance
+## ADR-06 — Compatibility, evolution and scope
 
-**Decisión:** no tocar `Sale` ni `SalePayment` con estados `PENDIENTE` que rompan su CHECK vigente. Mantener ventas declaradas por ruta actual; agregar integración QR como orquestador autorizado que produce eventualmente un `SaleCommand` normalizado. No confundir QR de artículo con QR de cobro. No implementar todavía libro contable general.
+**Decision:** not touching `Sale` ni `SalePayment` with states `PENDIENTE` to break your existing CHECK. Keep sales declared by current route; add QR integration as an authorized orchestrator that eventually produces a `SaleCommand` Standardized. Do not confuse QR from article with QR from collection. Do not yet implement general accounting book.
 
-## Matriz QA por bloque
+## QA matrix per block
 
-| Escenario | Bloque | Comprobación mínima |
+| Scenario | Block | Minimum check |
 |---|---|---|
-| Conectar cuenta DEMO A, recargar, desconectar, reconectar | B1 | Estado persistente, idempotencia, sin credenciales externas |
-| Trabajador/encargado solo consulta | B1 | Ocultamiento visual + 403 backend para mutación |
-| Cuenta de empresa A no visible en B | B1–B5 | Rutas y bytes aislados por tenant |
-| Intento sin cuenta / empresa suspendida / sede sin SELL | B2 | Error, cero intentos |
-| Dos clics en Generar QR | B2 | Una sola intención para la misma clave |
-| QR muestra 2 productos + 1 servicio, descuento, foto, ARS | B2 | Totales del servidor; detalle completo a 390 px y escritorio |
-| Cambio posterior de precio o foto del catálogo | B2 | El snapshot e importe del cobro no cambian; foto actual es solo decorativa |
-| F5, logout/login, navegar y retomar intento | B2–B4 | GET recupera el intento sin reemitir QR ni cobrar |
-| Aprobado/rechazado/expirado/cancelado | B3 | Transiciones autorizadas y eventos auditables |
-| Pérdida de respuesta y reintentos, orden de llegada invertido | B3–B4 | Estado recuperable, sin nueva venta ni nuevo débito |
-| Stock cambiado entre QR y pago | B4 | No saldo negativo; revisión/compensación documentada |
-| Servicio vendido por QR | B4 | Venta sin consumo de inventario |
-| Bien físico vendido por QR | B4 | Una venta y un único ledger de stock |
-| Pago aprobado y error DB al registrar venta | B4 | REQUIERE_REVISION, no fingir comprobante final |
-| QR DEMO nunca aparece como acreditación bancaria | B1–B5 | Marca DEMO en estado, comprobante e historial |
-| Teclado, pantalla móvil, conexión caída, accesibilidad | B5 | Navegación y estados legibles |
-| Pytest, Alembic check, OpenAPI, Playwright REAL/DEMO y CI | B1–B5 | Todos verdes en SHA de cada entrega; PR sin merge automático |
+| Connect DEMO A account, recharge, disconnect, reconnect | B1 | Persistent state, idempotency, no external credentials |
+| Worker/seller only query | B1 | Visual occultation + 403 backend for mutation |
+| Company account A not visible in B | B1–B5 | Routes and bytes isolated by tenant |
+| Attempted without account/company suspended/headquarters without SELL | B2 | Error, zero attempts |
+| Two clicks on Generate QR | B2 | One single intention for the same key |
+| QR shows 2 products + 1 service, discount, photo, ARS | B2 | Server totals; complete detail at 390 px and desktop |
+| Later change of price or photo from the catalogue | B2 | Snapshot and collection amount do not change; current photo is only decorative |
+| F5, logout/login, navigate and retake try | B2–B4 | GET recovers the attempt without reissued QR or charging |
+| Approved/rejected/expired/cancelled | B3 | Authorized transitions and auditable events |
+| Loss of response and retry, order of arrival reversed | B3–B4 | Recoverable state, no new sale or debit |
+| Stock changed between QR and payment | B4 | No negative balance; revision/documented compensation |
+| Service sold by QR | B4 | Inventory-free sales |
+| Physical property sold by QR | B4 | A sale and a single stock leader |
+| Approved payment and DB error when registering sale | B4 | REQUIRE_REVISION, Don't Pretend Final Proof |
+| QR DEMO never appears as bank accreditation | B1–B5 | DEMO mark in status, proof and history |
+| Keyboard, mobile screen, drop connection, accessibility | B5 | Navigation and readable statuses |
+| Pytest, Alembic check, OpenAPI, Playwright REAL/DEMO y CI | B1–B5 | All green in SHA of each delivery; PR without automatic merge |
 
-## Guía de ejecución incremental
+## Incremental execution guide
 
-Cada bloque se implementa en commits coherentes con tests y documentación. Antes de pasar a otro bloque: validar los tres workflows existentes, explicar controles manuales en Windows/PowerShell y mantener `main` aislado. El PR permanece DRAFT hasta aprobación integral. No usar secretos reales ni ejecutar pagos con dinero real.
+Each block is implemented in commits consistent with tests and documentation. Before moving on to another block: validate the three existing workflows, explain manual controls in Windows/PowerShell and maintain `main` The PR remains DRAFT until comprehensive approval. Do not use real secrets or execute payments with real money.
 
-**Propuesta de primera prueba humana (B1):** abrir empresa A → vincular Mercado Pago DEMO → F5 → ver cuenta; cambiar a B → no ver A; entrar como trabajador → consultar, no modificar; volver como titular → desconectar/reconectar. Ninguna compra, venta o saldo se crea en B1.
+**Proposal for first human test (B1):** Open company A → link Market Payment DEMO → F5 → view account; switch to B → do not see A; enter as a worker → consult, do not modify; return as holder → disconnect/reconnect. No purchase, sale or balance is created in B1.

@@ -1,91 +1,91 @@
-# E2-5 A — Modelo de operaciones de inventario y ampliación compatible del ledger
+# E2-5 A — Compatible ledger inventory and expansion operations model
 
-**Fecha:** 09/11/2026 · **Estado:** implementación validada en CI; pendiente de merge y validación local Windows.
-**Base exacta:** `main` `1a188f9a596f4674ca121806ecb92e6a96abf294` (cierre documental E2-4).
-**Ámbito:** RF-06, CU-09 (traslados), CU-11 (ajustes), soporte de CU-07/08 (recepción/lectura). Desarrollo backend solamente, **sin nuevos endpoints HTTP en este corte**.
+**Date:** 09/11/2026 · **Status:** implementation validated in IC; pending to merit and local Windows validation.
+**Base exacta:** `main` `1a188f9a596f4674ca121806ecb92e6a96abf294` (close documentary E2-4).
+**Scope:** RF-06, CU-09 (transfers), CU-11 (adjustments), support of CU-07/08 (reception/reading). **sin nuevos endpoints HTTP en este corte**.
 
 ## 1. Problema que resuelve
 
-En E2-4 E, `stock_movements` registraba únicamente entradas positivas `COMPRA_RECEPCION`, con `receipt_id` y `purchase_line_id` obligatorios. Esa estructura no podía representar una salida, un traslado ni un ajuste sin violar las restricciones SQL. Se conserva la recepción 1:1 **sin rediseñarla**, y se prepara otro origen para futuros movimientos manuales.
+En E2-4 E, `stock_movements` I only had positive entries. `COMPRA_RECEPCION`, con `receipt_id` y `purchase_line_id` This structure could not represent an exit, a transfer or an adjustment without violating SQL restrictions. Reception 1:1 is retained **without redesigning it**and another source is prepared for future manual movements.
 
-E2-5 A crea `inventory_operations` y amplía el ledger de forma aditiva. No traslada, no crea stock inicial real, no corrige existencias y no publica nuevos comandos. La futura actualización de saldos deberá ocurrir **en la misma transacción** que los movimientos; no se deben realizar INSERT directos para operar comercialmente.
+E2-5 A crea `inventory_operations` and expands the ledger in an additive way. Do not move, do not create real initial stock, do not edit stocks and do not publish new commands. Future balances update should occur **in the same transaction** that movements; INSERT must not be made direct to operate commercially.
 
-## 2. Entidades y restricciones implementadas
+## 2. Entities and restrictions implemented
 
-### `inventory_operations` — cabecera de una operación manual
+### `inventory_operations` — header of a manual operation
 
-| Campo | Regla |
+| Field | Rule |
 |---|---|
-| `id` / `business_id` | UUID de operación y empresa, FK restrictiva |
+| `id` / `business_id` | UUID of operation and company, FK restrictive |
 | `kind` | `TRASLADO`, `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL` |
-| `catalog_item_id` / `unit_snapshot` | Bien físico del mismo tenant y unidad histórica de la operación |
-| `quantity_milli` | 1..999999999 milésimas; unidades discretas con múltiplos de 1000 |
-| `source_location_id` / `destination_location_id` | Ubicaciones FK por tenant; direcciones obligatorias y coherentes con `kind` |
-| `reason` | Motivo obligatorio de 3..500 caracteres no vacíos |
-| `request_id` / `request_sha256` | Clave por empresa única y huella de 64 caracteres (idempotencia de futuros comandos) |
-| `actor_id` / `created_at` | Membresía empresarial y fecha histórica |
+| `catalog_item_id` / `unit_snapshot` | Physical property of the same tenant and historical unity of the operation |
+| `quantity_milli` | 1.999999999 thousandths; discrete units with multiples of 1000 |
+| `source_location_id` / `destination_location_id` | FK locations per tenant; mandatory addresses and consistent with `kind` |
+| `reason` | Required reason for 3,500 characters not empty |
+| `request_id` / `request_sha256` | Single Company Key and 64 Character Footprint (Power of future commands) |
+| `actor_id` / `created_at` | Business Membership and Historical Date |
 
-Para `TRASLADO` se exigen dos ubicaciones **diferentes**. Para `AJUSTE_SALIDA`, solo origen. Para `AJUSTE_ENTRADA` y `STOCK_INICIAL`, solo destino. Se modela **un artículo por operación básica**; lotes, conteos múltiples y múltiples artículos por comando son futuras ampliaciones.
+Stop `TRASLADO` two locations required **different**. Stop `AJUSTE_SALIDA`- Just origin. `AJUSTE_ENTRADA` y `STOCK_INICIAL`It's modeled. **one item per basic operation**; lots, multiple counts and multiple items per command are future extensions.
 
-Se incluye UNIQUE `(business_id,request_id)` y `(business_id,id,kind)`. La última soporta FK de tres columnas desde el movimiento: impide asociar un evento a una cabecera de otra clase o tenant. **El valor enviado al ORM no es por sí solo una prueba de autenticación**: los futuros servicios deberán autenticar, validar permisos, empresa y ubicación, y calcular la huella.
+Includes UNIQUE `(business_id,request_id)` y `(business_id,id,kind)`. The last supports three-column FK from the movement: it prevents associating an event to a header of another class or tenant. **The value sent to ORM is not in itself an authentication test**: future services must authenticate, validate permissions, company and location, and calculate the footprint.
 
-### `stock_movements` — ledger histórico ampliado
+### `stock_movements` — expanded historical ledger
 
-Continúa incluyendo `receipt_id` y `purchase_line_id`, ahora **opcionales** para permitir orígenes nuevos. Se agregan `inventory_operation_id` y `operation_kind`, ambos NULL en las entradas ya existentes por recepción, con FK compuesta a `inventory_operations`.
+Continue to include `receipt_id` y `purchase_line_id`Now. **optional** to allow new origins. Added `inventory_operation_id` y `operation_kind`, both NULL in the already existing entrances by reception, with FK composed of `inventory_operations`.
 
-Restricción `ck_stock_movements_origin_and_sign`:
+Restriction `ck_stock_movements_origin_and_sign`:
 
-- `COMPRA_RECEPCION`: `receipt_id` y `purchase_line_id` presentes, operación manual ausente, `delta_milli > 0`.
-- `TRASLADO_SALIDA`: solo operación `TRASLADO`, delta negativo.
-- `TRASLADO_ENTRADA`: solo operación `TRASLADO`, delta positivo.
-- `AJUSTE_SALIDA`: solo operación `AJUSTE_SALIDA`, delta negativo.
-- `AJUSTE_ENTRADA`: solo operación `AJUSTE_ENTRADA`, delta positivo.
-- `STOCK_INICIAL`: solo operación `STOCK_INICIAL`, delta positivo.
+- `COMPRA_RECEPCION`: `receipt_id` y `purchase_line_id` present, manual operation absent, `delta_milli > 0`.
+- `TRASLADO_SALIDA`: only operation `TRASLADO`- No, no.
+- `TRASLADO_ENTRADA`: only operation `TRASLADO`- Yeah, it's a positive delta.
+- `AJUSTE_SALIDA`: only operation `AJUSTE_SALIDA`- No, no.
+- `AJUSTE_ENTRADA`: only operation `AJUSTE_ENTRADA`- Yeah, it's a positive delta.
+- `STOCK_INICIAL`: only operation `STOCK_INICIAL`- Yeah, it's a positive delta.
 
-Los movimientos deben satisfacer **exactamente uno de los dos orígenes implementados** (recepción o operación manual), con la línea comercial únicamente si es recepción. Se usa `operation_kind IS NOT NULL` para evitar que un `CHECK` SQL acepte `UNKNOWN` por semántica NULL. UNIQUE `(business_id,inventory_operation_id,event_type)` impide duplicar el lado de un traslado simple. El **tercer origen, Venta**, sigue TO-BE; no se crea tabla ficticia.
+Movements must satisfy **exactly one of the two sources implemented** (reception or manual operation), with the commercial line only if it is received. `operation_kind IS NOT NULL` to prevent a `CHECK` SQL acepte `UNKNOWN` by semantics NULL. UNIQUE `(business_id,inventory_operation_id,event_type)` prevents duplicating the side of a simple transfer. **third origin, Sale**, follows TO-BE; no fictional table is created.
 
-**Invariantes que requieren los servicios E2-5 B/C:** ambos movimientos de traslado deben existir o ninguno; ubicación, artículo, signo y cantidad del movimiento deben corresponder a su cabecera; no decrementar saldos inexistentes; asegurar orden estable de bloqueos y un único commit; conservar historial ante errores. Las FK y CHECK de este corte son defensas parciales, **no sustituyen los casos de uso transaccionales**.
+**Invariants requiring E2-5 B/C services:** both move movements must exist or none; location, article, sign and amount of movement must correspond to their header; not decrease non-existent balances; ensure stable order of locks and a single commit; keep track of errors. FK and CHECK of this cut are partial defenses, **do not replace transactional use cases**.
 
 ### `stock_balances` y `purchase_receipts`
 
-**No se modifican**. Se conserva `stock_balances` (cantidad no negativa, versión y clave triple). Las recepciones históricas y sus movimientos no se reescriben. Las claves de idempotencia y los snapshots de E2-4 siguen válidos.
+**Not amended**. It is preserved `stock_balances` (non-negative quantity, triple version and key) Historical receptions and their movements are not rewritten. The keys of idempotence and the snapshots of E2-4 remain valid.
 
-## 3. Migración aditiva y compatibilidad
+## 3. Additive migration and compatibility
 
-Archivo: `backend/alembic/versions/20261109_0016_inventory_operations.py`
+File: `backend/alembic/versions/20261109_0016_inventory_operations.py`
 
-- Nuevo head: **`e25a_inventory_ops`**, descendiente de `e24e_receipt_stock`.
-- `CREATE TABLE inventory_operations`, FK compuestas, UNIQUE y CHECK.
+- New head: **`e25a_inventory_ops`**, descendant of `e24e_receipt_stock`.
+- `CREATE TABLE inventory_operations`, FK composites, UNIQUE and CHECK.
 - `ADD COLUMN stock_movements.inventory_operation_id NULL` y `operation_kind NULL`.
-- `receipt_id`/`purchase_line_id` pasan a permitir NULL, sin actualizar los valores existentes.
-- Dos CHECK legados para entradas de recepción se reemplazan por un CHECK general de origen, clase y signo. Se preserva UNIQUE `uq_stock_movements_receipt_line`.
-- Se agrega FK hacia cabecera y UNIQUE por evento.
-- La reversión se bloquea **si ya hay alguna operación manual**, para no borrar su origen; nunca usar `downgrade` en la base de trabajo.
+- `receipt_id`/`purchase_line_id` they go on to allow NULL, without updating the existing values.
+- Two legacy CHECKs for reception tickets are replaced by a general CHECK of origin, class and sign. UNIQUE is preserved `uq_stock_movements_receipt_line`.
+- FK is added to header and UNIQUE by event.
+- Reversal is blocked **if there is already any manual operation**, not to erase its origin; never use `downgrade` at the work base.
 
-No se modifican migrations anteriores, vistas React, endpoints, ventas ni cuentas financieras.
+Previous migrations, React views, endpoints, sales and financial accounts are not modified.
 
-**Compatibilidad de API:** mientras no existan comandos E2-5 B/C, el GET de movimientos continúa devolviendo únicamente recepciones y su DTO E2-4, que exige `receipt_id`. **Antes** de permitir nuevos eventos por HTTP, E2-5 B debe extender la respuesta de lectura sin romper los datos históricos; no insertar operaciones manuales mediante SQL externo para intentar simular el uso final.
+**API Compatibility:** as long as there are no E2-5 B/C commands, the Motions GET continues to return only receptions and its E2-4 DTO, which requires `receipt_id`. **Before** to allow new events by HTTP, E2-5 B should extend the read response without breaking historical data; do not insert manual operations using external SQL to try to simulate end-use.
 
-## 4. Pruebas previstas
+## 4. Planned testing
 
-- Contrato de metadatos SQLAlchemy: tabla, columnas, FK por tenant, unicidad y CHECK.
-- SQL real PostgreSQL 16: rechazo de dirección inválida, origen=destino, cantidad discreta fraccionaria, tenant ajeno, request repetido, signo incorrecto, evento de tipo incompatible y operación sin `operation_kind`.
-- Retrocompatibilidad: registrar y recibir una compra mediante endpoints E2-4, consultar comprobante, movimiento y saldo sin cambio de forma ni cantidad.
-- CI con PostgreSQL 16 y Alembic `e25a_inventory_ops` sin deriva, Python 3.12/3.14 y Docker.
-- Pruebas locales: ejecutarlas **sin borrar los registros QA**. La prueba con transacción externa revierte los datos que ella misma crea. No hay QA manual de movimientos E2-5 A: todavía no existen endpoints.
+- SQLAlchemy metadata contract: table, columns, FK per tenant, uniqueness and CHECK.
+- Real SQL PostgreSQL 16: Invalid address rejection, origin=destination, discrete fractional quantity, alien tenant, repeated request, incorrect sign, incompatible type event and operation without `operation_kind`.
+- Retrocompatibility: Record and receive a purchase using E2-4 endpoints, check voucher, movement and balance without change of form or quantity.
+- IC with PostgreSQL 16 and Alembic `e25a_inventory_ops` sin deriva, Python 3.12/3.14 y Docker.
+- Local tests: execute them **without deleting QA records**. The external transaction test reverses the data it creates itself. There is no manual motion QA E2-5 A: there are no endpoints yet.
 
-## 5. Orden de los siguientes cortes
+## 5. Order of the following courts
 
-1. **E2-5 B — Traslados**: endpoint protegido, validación SELL/STORE según política acordada (traslados requieren capacidad STORE en ambos depósitos), permisos por ubicación, descuento condicional sin negativos, entrada concurrente, dos movimientos en una transacción, doble reintento idempotente, HTTP y pruebas de carrera.
-2. **E2-5 C — Ajustes y stock inicial**: ajuste justificado positivo/negativo; stock inicial una sola vez por ubicación/artículo bajo regla validada; conteos absolutos con versión observada cuando correspondan.
-3. **E2-5 D — Lecturas, reconciliación y robustez**: extender GET de movimientos para orígenes manuales, auditoría por operación, filtros, permisos, hardening de controles SQL y pruebas de consistencia.
-4. **E2-5 E — Cierre**: evidencias Swagger, CI, documentación y pruebas locales completas.
+1. **E2-5 B — Transfers**: protected endpoint, SELL/STORE validation according to agreed policy (transfers require STORY capacity in both deposits), location permits, conditional discount without negatives, concurrent entry, two movements in one transaction, double idempotent retry, HTTP and race tests.
+2. **E2-5 C — Ajustes y stock inicial**: justified positive/negative adjustment; initial stock only once per location/article under validated rule; absolute counts with version observed when applicable.
+3. **E2-5 D — Reading, reconciliation and robustness**: extend GET movements for manual origins, audit per operation, filters, permissions, SQL control commanding and consistency testing.
+4. **E2-5 E — Closure**: Swagger evidence, IC, documentation and complete local evidence.
 
-**Deuda transversal reconocida:** los tests de integración locales aún utilizan PostgreSQL de desarrollo con rollback por fixture y filtros por tenant; la CI sí usa un contenedor efímero. Aislar una base `pyme_test_db` dedicada (y los tests de concurrencia que actualmente crean tenants comprometidos temporalmente) requiere modificar el entorno/configuración y se abordará como trabajo controlado en E2-5, no con un borrado de datos ni una migración comercial destructiva.
+**Recognized cross-sectional debt:** Local integration tests still use PostgreSQL development with rollback for fixture and filters per tenant; the IC does use an ephemeral container. Isolate a base `pyme_test_db` Dedicated (and the competition tests that currently create temporarily compromised tenants) requires changing the environment/configuration and will be addressed as controlled work in E2-5, not with data deletion or destructive commercial migration.
 
-## 6. Reproducción Windows tras integrar
+## 6. Windows playback after integration
 
-Desde `plataforma-pyme/`, con DB de desarrollo preservada:
+From `plataforma-pyme/`, with preserved development DB:
 
 ```powershell
 git switch main
@@ -104,4 +104,4 @@ try {
 cd ..
 ```
 
-**Esperado:** `e25a_inventory_ops (head)`, sin deriva de migración y suite sin fallos. CI confirmó 816 pruebas aprobadas; la ejecución Windows debe documentarse por separado, sin atribuir a la máquina local resultados aún no ejecutados.
+**Waited:** `e25a_inventory_ops (head)`, without migration drift and suite without faults. CI confirmed 816 approved tests; Windows execution should be documented separately, without attributing to the local machine results not yet executed.

@@ -9,7 +9,7 @@ export function validateGoogleMapsLink(value: string): string {
   const text = value.trim()
   if (!text) return ''
   if (text.length > MAX_URL_LENGTH) {
-    throw new Error('El enlace de Google Maps no puede superar los 2048 caracteres.')
+    throw new Error('The Google Maps link cannot exceed 2048 characters.')
   }
 
   let url: URL
@@ -27,7 +27,7 @@ export function validateGoogleMapsLink(value: string): string {
     (host === 'goo.gl' && url.pathname.startsWith('/maps/'))
 
   if (url.protocol !== 'https:' || url.username || url.password || url.port || !allowed) {
-    throw new Error('Se admiten solamente enlaces HTTPS propios de Google Maps.')
+    throw new Error('Only Google Maps own HTTPS links are supported.')
   }
 
   return url.href
@@ -65,7 +65,7 @@ export function locationShareText(
   if (!maps) return null
 
   const lines = [businessName + ' · ' + location.name]
-  if (location.address.trim()) lines.push('Dirección/referencia: ' + location.address.trim())
-  lines.push(maps.source === 'shared' ? 'Ubicación en Google Maps: ' + maps.url : 'Búsqueda de dirección en Google Maps (sin verificar): ' + maps.url)
+  if (location.address.trim()) lines.push('Address/reference: ' + location.address.trim())
+  lines.push(maps.source === 'shared' ? 'Location on Google Maps: ' + maps.url : 'Google Maps address search (unverified): ' + maps.url)
   return lines.join('\n')
 }

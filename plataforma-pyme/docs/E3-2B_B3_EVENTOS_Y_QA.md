@@ -1,55 +1,55 @@
-# E3-2B · B3 — Laboratorio de eventos y recuperación segura de QR
+# E3-2B · B3 — Event laboratory and safe recovery of QR
 
-**Rama exclusiva:** `feature/e3-2b-mercadopago-qr-demo`.  
-**Estado:** implementación B3 incorporada y sometida a CI; B4–B6 pendientes.  
-**Entrega:** única auditoría y QA manual tras integrar B1–B6; no hacer merge parcial a `main`.
+**Exclusive branch:** `feature/e3-2b-mercadopago-qr-demo`.  
+**Status:** implementation B3 incorporated and submitted to IC; pending B4–B6.  
+**Delivery:** single audit and manual QA after integrating B1–B6; do not make partial merge to `main`.
 
-## Qué se integró
+## What was integrated
 
-1. Migración `e32b_qr_events` (revisión posterior a `e32b_qr_intents`) crea la bitácora `qr_payment_events`, con `business_id`, `intent_id`, `event_key`, secuencia, acción, antes/después, usuario y fecha. Unicidad por intento/clave de evento y por intento/secuencia.
-2. `CREAR` se registra en el mismo commit que la intención B2; `CANCELAR` en el mismo commit que la cancelación B2. Las escrituras bloquean la fila de intento antes de cambiar estado, evitando transiciones concurrentes divergentes.
-3. `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/events` devuelve histórico del intento visible, ordenado, sin tokens.
-4. `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/simulate` acepta `{"action":"APROBAR|RECHAZAR|EXPIRAR|INDETERMINAR"}` y header `Idempotency-Key: UUID4`. Repetición idéntica devuelve 200 y no inserta otro evento; primer evento devuelve 201. Mismo UUID para acción/usuario distintos es 409.
-5. UI `/real/empresas/{business_id}/qr-cobros/{intent_id}`: historial auditable más laboratorio de aprobación, rechazo, vencimiento o resultado incierto, con consulta/recuperación. Se distingue visualmente de un pago REAL.
-6. POS: el intento QR se persiste en IndexedDB **antes del POST** y se relee para comprobar integridad. Tras F5 y nuevo login, el POS debe recuperar por GET la misma clave/cuerpo, sin crear otra intención hasta resolverla; un GET 404 no borra el intento y requiere reenvío explícito con la misma clave.
+1. Migration `e32b_qr_events` (post-review `e32b_qr_intents`) creates the logbook `qr_payment_events`, con `business_id`, `intent_id`, `event_key`, sequence, action, before/after user and date. Uniqueness by intent/event key and by attempt/sequence.
+2. `CREAR` is recorded in the same commit as intention B2; `CANCELAR` in the same commit as cancellation B2. Writings block the intent row before changing status, avoiding divergent concurrent transitions.
+3. `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/events` returns historical of the visible attempt, ordered, without tokens.
+4. `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/simulate` accepts `{"action":"APROBAR|RECHAZAR|EXPIRAR|INDETERMINAR"}` y header `Idempotency-Key: UUID4`. Identical repeat returns 200 and does not insert another event; first event returns 201. Same UUID for different action/user is 409.
+5. UI `/real/empresas/{business_id}/qr-cobros/{intent_id}`: more auditable history laboratory approval, rejection, expiration or uncertain result, with consultation/recovery. It is visually distinguished from a REAL payment.
+6. POS: QR attempt persists in IndexedDB **before POST** and is reread to check integrity. After F5 and new login, the POS must recover the same key/body by GET without creating any other intention until it is resolved; a GET 404 does not erase the attempt and requires explicit forwarding with the same key.
 
-## Protección de laboratorio
+## Laboratory protection
 
-**Deshabilitado por defecto.** La API simuladora responde 403 excepto si el servidor tiene:
+**Default disabled.** The simulator API responds 403 except if the server has:
 
 ```bash
 PYME_ENABLE_QR_DEMO_LAB=1
 ```
 
-Y solo en instalaciones QA descartables, nunca con cobros reales. La UI habilita los botones exclusivamente si se configuró `VITE_PYME_ENABLE_QR_DEMO_LAB=1` en el proceso de Vite. **Ambas variables** deben estar explícitamente configuradas y el actor debe ser `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` en la empresa activa.
+And only in disposable QA installations, never with actual charges. The UI enables buttons exclusively if configured `VITE_PYME_ENABLE_QR_DEMO_LAB=1` in the Vite process. **Both variables** must be explicitly configured and the actor must be `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` in the active company.
 
-La consulta del QR y su historial funcionan sin activar el laboratorio, según permisos del negocio. Usuarios operativos no pueden emitir eventos ficticios desde la API aunque manipulen el frontend. Un usuario no puede leer el intento de otro usuario operativo ni de otro negocio.
+The QR query and its history work without activating the laboratory, according to business permissions. Operating users cannot broadcast fictitious events from the API even if they manipulate the frontend. A user cannot read another operating user's or other business attempt.
 
-## Máquina de estados
+## State Machine
 
-| Desde | Acción DEMO | Hacia |
+| From | DEMO Action | Towards |
 |---|---|---|
 | `ESPERANDO_PAGO` | `APROBAR` | `APROBADA_DEMO` |
 | `ESPERANDO_PAGO` | `RECHAZAR` | `RECHAZADA` |
 | `ESPERANDO_PAGO` | `EXPIRAR` | `EXPIRADA` |
 | `ESPERANDO_PAGO` | `INDETERMINAR` | `INDETERMINADA` |
-| `INDETERMINADA` | `APROBAR` / `RECHAZAR` / `EXPIRAR` | destino solicitado |
-| Finales `APROBADA_DEMO`, `RECHAZADA`, `EXPIRADA`, `CANCELADA` | cualquier nuevo evento | 409 |
+| `INDETERMINADA` | `APROBAR` / `RECHAZAR` / `EXPIRAR` | destination requested |
+| Ends `APROBADA_DEMO`, `RECHAZADA`, `EXPIRADA`, `CANCELADA` | any new event | 409 |
 
-Intento con fecha ya vencida no puede aprobarse/rechazarse: solo pasar explícitamente a `EXPIRADA`. El GET sigue calculando `EXPIRADA` para un `ESPERANDO_PAGO` vencido, aunque no haya un evento escrito todavía. La materialización automática periódica de vencimientos no está implementada; la transición con bitácora se registra mediante la acción explícita de laboratorio. Nunca inferir acreditación de un cambio de estado ficticio.
+Attempt with expired date cannot be approved/rejected: only explicitly pass to `EXPIRADA`. The GET continues to calculate `EXPIRADA` for a `ESPERANDO_PAGO` expired, even if there is not yet a written event. Periodic automatic materialization of maturities is not implemented; the transition with logbook is recorded by explicit laboratory action. Never infer accreditation of a fictitious state change.
 
-## Límites de esta etapa
+## Limits of this stage
 
-- **No existe transferencia de dinero**, consulta a Mercado Pago ni comprobante de cobro externo.
-- `APROBADA_DEMO` es un estado de simulación y **no genera Sale**, pago declarado, stock, caja ni movimientos.
-- La vinculación sigue siendo DEMO; OAuth y Orders API quedan para B6.
-- En B4 se definirá la confirmación transaccional con control de stock y política de compensación/revisión. La aprobación ficticia nunca debe convertirse en acreditación real.
-- El diario local guarda el cuerpo comercial en claro dentro de IndexedDB y **no guarda credenciales**: evitar dispositivos compartidos y no borrar manualmente los datos ante respuestas inciertas.
+- **No money transfer**, consult Market Payment or external proof of payment.
+- `APROBADA_DEMO` is a state of simulation and **does not generate Sale**, declared payment, stock, cash or movements.
+- The link remains DEMO; OAuth and Orders API are left for B6.
+- In B4 transactional confirmation with stock control and clearing/revision policy will be defined. Fictific approval should never become real accreditation.
+- The local journal keeps the commercial body clear within IndexedDB and **does not save credentials**: Avoid shared devices and do not manually delete data in the event of uncertain responses.
 
-## Pruebas automáticas
+## Automatic testing
 
-- Python/FastAPI: control de sesión, rol, tenant, laboratorio deshabilitado, aprobación, rechazo, cancelación, vencimiento, indeterminación, resolución, idempotencia, auditoría, bloqueo de transiciones contradictorias y ausencia de cambios en `Sale` o `StockMovement`.
-- Node: cliente de eventos, envío de headers, rechazo de datos de otro tenant, resultado de red incierto, diario durable y verificación exhaustiva para limpieza tras GET o POST.
-- CI: `Plataforma PyME · Backend FastAPI`, `Frontend`, `Inventario REAL full-stack`. Exigir todos verdes para el SHA final de B3; registrar cualquier falla y corrección.
+- Python/FastAPI: session control, role, tenant, laboratory disabled, approval, rejection, cancellation, expiration, indetermination, resolution, idempotency, audit, blocking of contradictory transitions and absence of changes in `Sale` o `StockMovement`.
+- Node: Event client, sending heads, data rejection from another tenant, uncertain network result, durable daily and comprehensive verification for cleaning after GET or POST.
+- CI: `Plataforma PyME · Backend FastAPI`, `Frontend`, `Inventario REAL full-stack`. Require all green for the final SHA of B3; record any fault and correction.
 
-**Siguiente bloque:** B4 — venta REAL en PostgreSQL QA posterior a aprobación simulada, idempotencia y control transaccional de stock, sin acreditar dinero.
+**Next block:** B4 — REAL sale in PostgreSQL QA after simulated approval, idempotency and transactional control of stock, without crediting money.

@@ -22,7 +22,7 @@ export class ApiHttpError extends Error {
   readonly status: number
   readonly detail: unknown
   constructor(status: number, detail: unknown) {
-    super(`La API devolvió HTTP ${status}`)
+    super(`API returned HTTP ${status}`)
     this.status = status
     this.detail = detail
   }
@@ -35,10 +35,10 @@ export class ApiTransportError extends Error {
   readonly reason: TransportFailure
   readonly outcomeUnknown: boolean
   constructor(reason: TransportFailure, outcomeUnknown: boolean) {
-    super(reason === 'timeout' ? 'Se agotó el tiempo de espera de la API'
-      : reason === 'aborted' ? 'La solicitud fue cancelada'
-      : reason === 'invalid-response' ? 'La API devolvió una respuesta no válida'
-      : 'No se pudo contactar con la API')
+    super(reason === 'timeout' ? 'API waiting time is up'
+      : reason === 'aborted' ? 'The application was cancelled.'
+      : reason === 'invalid-response' ? 'API returned invalid response'
+      : 'Could not contact API')
     this.reason = reason
     this.outcomeUnknown = outcomeUnknown
   }
@@ -46,7 +46,7 @@ export class ApiTransportError extends Error {
 
 function safePath(path: string): void {
   if (!path.startsWith('/') || path.startsWith('//') || path.includes('#') || /(^|\/)\.\.?($|\/)/.test(path)) {
-    throw new TypeError('La ruta API debe ser relativa y no contener segmentos especiales')
+    throw new TypeError('API path must be relative and not contain special segments')
   }
 }
 
@@ -62,7 +62,7 @@ function isMutation(method: ApiMethod): boolean {
 export function createApiClient(config: ApiClientOptions = {}) {
   const basePath = config.basePath ?? '/api/v1'
   if (!/^\/[a-zA-Z0-9/_-]+$/.test(basePath) || basePath.endsWith('/')) {
-    throw new TypeError('La base de la API debe ser una ruta local sin barra final')
+    throw new TypeError('The API base must be a local path without final bar')
   }
   const transport = config.fetchImpl ?? fetch
   const defaultTimeoutMs = config.timeoutMs ?? 30_000
@@ -75,7 +75,7 @@ export function createApiClient(config: ApiClientOptions = {}) {
       throw new RangeError('timeoutMs debe ser un entero positivo')
     }
     if (method === 'GET' && options.body !== undefined) {
-      throw new TypeError('GET no admite cuerpo')
+      throw new TypeError('GET does not support body')
     }
     const headers = new Headers(options.headers)
     headers.set('Accept', 'application/json')

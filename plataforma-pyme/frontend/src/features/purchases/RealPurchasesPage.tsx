@@ -19,7 +19,7 @@ import type { SupplyPending } from './supplyPendingJournal.ts'
 type Props={token:string;userId:string;userDisplayName:string;businessId:string;onNavigate:(path:string)=>void;onUnauthorized:()=>void}
 type DraftLine={catalogId:string;description:string;quantity:string;unitCost:string;totalDraft:string|null}
 type Draft={date:string;supplierId:string;reference:string;notes:string;lines:DraftLine[]}
-const emptyLine=():DraftLine=>({catalogId:'concept',description:'Concepto de compra',quantity:'1',unitCost:'0',totalDraft:null})
+const emptyLine=():DraftLine=>({catalogId:'concept',description:'Purchase concept',quantity:'1',unitCost:'0',totalDraft:null})
 function todayLocal():string{
  const date=new Date()
  return [date.getFullYear(),String(date.getMonth()+1).padStart(2,'0'),String(date.getDate()).padStart(2,'0')].join('-')
@@ -87,7 +87,7 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
            quantity:milliToDecimal(line.quantity_milli),unitCost:centsToPesos(line.unit_cost_cents),totalDraft:null,
          })),
        })
-       setNotice('Compra pendiente recuperada. Revisá el listado antes de reintentar. No se enviará automáticamente.')
+       setNotice('Purchase recovered pending. Check the list before retrying. It will not be sent automatically.')
      }
      setJournalReady(true)
    }).catch(err=>{
@@ -153,7 +153,7 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
    const savedIntent=pendingReceipt!==null
    setShownReceipt(null);setReceiptFor(null);setPendingReceipt(null);setLocationId('')
    setError('')
-   if(savedIntent)setNotice('La recepción pendiente sigue guardada en este navegador con su clave original. Para verificarla, volvé a abrir la misma compra y consultá el comprobante antes de reintentar.')
+   if(savedIntent)setNotice('The pending reception is still stored in this browser with its original key. To verify it, re-open the same purchase and consult the voucher before retrying.')
  }
  function closeCurrentView(){
    if(view==='form')closePurchaseForm()
@@ -184,27 +184,27 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      if(which==='purchases'){
        const newRows=await api.purchases(purchases.length)
        if(!alive.current)return
-       if(newRows.some(x=>purchases.some(y=>y.id===x.id))){setHasMore(false);setError('El historial cambió. Actualizá desde la primera página.');return}
+       if(newRows.some(x=>purchases.some(y=>y.id===x.id))){setHasMore(false);setError('The history changed. Update from the front page.');return}
        setPurchases(old=>[...old,...newRows]);setHasMore(newRows.length===100)
      }else if(which==='suppliers'){
        const newRows=await api.suppliers(suppliers.length)
        if(!alive.current)return
-       if(newRows.some(x=>suppliers.some(y=>y.id===x.id))){setSuppliersMore(false);setError('Proveedores modificados durante paginación. Actualizá.');return}
+       if(newRows.some(x=>suppliers.some(y=>y.id===x.id))){setSuppliersMore(false);setError('Suppliers modified during pagination. Update.');return}
        setSuppliers(old=>[...old,...newRows]);setSuppliersMore(newRows.length===100)
      }else{
        const newRows=await catalogApi.page(catalog.length)
        if(!alive.current)return
-       if(newRows.some(x=>catalog.some(y=>y.id===x.id))){setCatalogMore(false);setError('Catálogo modificado durante paginación. Actualizá.');return}
+       if(newRows.some(x=>catalog.some(y=>y.id===x.id))){setCatalogMore(false);setError('Catalog modified during pagination. Update.');return}
        setCatalog(old=>[...old,...newRows]);setCatalogMore(newRows.length===100)
      }
    }catch(err){failed(err)}finally{if(alive.current)setLoading(false)}
  }
  function buildPurchase():NewPurchase{
-   if(draft.lines.some(x=>x.totalDraft!==null))throw new RangeError('Primero aplicá o cancelá la edición del costo total de cada renglón.')
+   if(draft.lines.some(x=>x.totalDraft!==null))throw new RangeError('First apply or cancel the total cost of each line.')
    const lines:PurchaseLineInput[]=draft.lines.map(x=>{
      const article=catalog.find(item=>item.id===x.catalogId)
      if(x.catalogId!=='concept'&&(!article||article.status!=='ACTIVO'))
-       throw new RangeError('Seleccioná un artículo activo del catálogo REAL.')
+       throw new RangeError('Select an active item from the REAL catalogue.')
      return {catalog_item_id:article?.id??null,
        description:article?.name??x.description.trim(),
        unit:article?.unit??'CONCEPTO',
@@ -214,13 +214,13 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      reference:draft.reference.trim(),notes:draft.notes.trim(),lines}
    validatePurchase(body)
    if(body.supplier_id&&!activeSuppliers.some(x=>x.id===body.supplier_id))
-     throw new RangeError('Elegí un proveedor activo de esta empresa.')
+     throw new RangeError('I chose an active supplier of this company.')
    return body
  }
  async function savePurchase(e:FormEvent<HTMLFormElement>){
    e.preventDefault()
    if(!canWrite||busy||loading||!journalReady)return
-   if(!consent){setError('Debés autorizar guardar la intención comercial en IndexedDB.');return}
+   if(!consent){setError('You should authorize to keep the commercial intent in IndexedDB.');return}
    let body:NewPurchase
    try{body=pending?.body??buildPurchase()}catch(err){failed(err);return}
    const intent:Extract<SupplyPending,{kind:'purchase.create'}>=pending??newPurchaseIntent(userId,businessId,body)
@@ -234,14 +234,14 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      await supplyJournal.discard(intent.scope,intent.key)
      if(!alive.current)return
      setPending(null);setConsent(false);setForm(false);setDraft(emptyDraft())
-     setNotice('Compra '+result.id+' confirmada. La compra NO agregó stock: para eso tenés que confirmar su recepción.')
+     setNotice('Purchase '+result.id+' The purchase did NOT add stock: for that you have to confirm its receipt.')
      const rows=await api.purchases()
      if(alive.current){setPurchases(rows);setHasMore(rows.length===100)}
    }catch(err){
      if(!alive.current)return
      if(err instanceof ApiHttpError&&err.status===401){onUnauthorized();return}
      setError(err instanceof PendingStorageError||err instanceof PendingConflictError?err.message:
-       'No confirmamos la creación. Revisá el historial y, si corresponde, reintentá solo con la MISMA clave/cuerpo. '+supplyErrorMessage(err))
+       'We do not confirm the creation. Check the history and, if applicable, retry only with the SAME key/body. '+supplyErrorMessage(err))
    }finally{if(alive.current)setBusy(false)}
  }
  async function beginReceipt(purchaseId:string){
@@ -256,7 +256,7 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      if(restored){
        if(restored.kind!=='purchase.receive')throw new PendingConflictError()
        setPendingReceipt(restored);setLocationId(restored.body.location_id)
-       setNotice('Recepción pendiente recuperada: comprobá primero si existe un comprobante.')
+       setNotice('Recuperation pending: Check first if a voucher exists.')
      }
    }catch(err){failed(err)}
    finally{receiptLookup.current=false;if(alive.current)setBusy(false)}
@@ -264,12 +264,12 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
  async function sendReceipt(){
    if(!receiptFor||!canReceive||busy||loading||receiptLookup.current)return
    if(pendingReceipt&&pendingReceipt.purchaseId!==receiptFor){
-     setError('La recepción recuperada corresponde a otra compra. Cerrá la selección y volvé a abrirla.');return
+     setError('The received receipt is for another purchase. Close the selection and I opened it again.');return
    }
-   if(!window.confirm('Confirmar recepción COMPLETA de la compra en la ubicación elegida. Esta acción incrementa stock real en PostgreSQL y no admite recepción parcial. ¿Continuar?'))return
+   if(!window.confirm('Confirm COMPLETE receipt of purchase at the chosen location. This action increases actual stock in PostgreSQL and does not support partial reception. Continue?'))return
    const intent:Extract<SupplyPending,{kind:'purchase.receive'}>=pendingReceipt??newReceiptIntent(userId,businessId,receiptFor,locationId)
    if(!activeSites.some(x=>x.id===intent.body.location_id)){
-     setError('La sede elegida está pausada, fuera del tenant o no permite stock.');return
+     setError('The chosen venue is paused, outside the tenant or does not allow stock.');return
    }
    setBusy(true);setError('');setNotice('')
    try{
@@ -281,14 +281,14 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      await supplyJournal.discard(intent.scope,intent.key)
      if(!alive.current)return
      setPendingReceipt(null);setReceiptFor(null);setShownReceipt(result)
-     setNotice('Recepción confirmada; el detalle muestra los movimientos de stock REAL. No repetir.')
+     setNotice('Confirmed reception; detail shows REAL stock movements. Do not repeat.')
      const rows=await api.purchases()
      if(alive.current){setPurchases(rows);setHasMore(rows.length===100)}
    }catch(err){
      if(!alive.current)return
      if(err instanceof ApiHttpError&&err.status===401){onUnauthorized();return}
      setError(err instanceof PendingStorageError||err instanceof PendingConflictError?err.message:
-       'Resultado incierto o rechazado. Consultá primero el comprobante, luego reintentá solo la MISMA clave. '+supplyErrorMessage(err))
+       'Uncertain or rejected result. Check the voucher first, then try the key SAME only. '+supplyErrorMessage(err))
    }finally{if(alive.current)setBusy(false)}
  }
  async function checkReceipt(purchaseId?:string){
@@ -313,7 +313,7 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
        await supplyJournal.discard(fromDisk.scope,fromDisk.key)
        if(!alive.current)return
        setPendingReceipt(null);setReceiptFor(null)
-       setNotice('Recepción ya confirmada con la misma clave; pendiente limpiado sin duplicar stock.')
+       setNotice('Reception already confirmed with the same key; slope cleaned without doubling stock.')
      }else{
        setNotice('')
      }
@@ -324,9 +324,9 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
  }
  async function discardPurchase(){
    if(!pending||busy)return
-   if(!window.confirm('Solo descartá si verificaste el historial. Si la compra ya existe, otra clave puede duplicarla. ¿Eliminar pendiente local?'))return
+   if(!window.confirm('Only discard if you checked the history. If the purchase already exists, another key can double it. Delete local pending?'))return
    setBusy(true)
-   try{await supplyJournal.discard(pending.scope,pending.key);if(alive.current){setPending(null);setDraft(emptyDraft());setConsent(false);setNotice('Pendiente local descartado; no borramos documentos en FastAPI.')}}
+   try{await supplyJournal.discard(pending.scope,pending.key);if(alive.current){setPending(null);setDraft(emptyDraft());setConsent(false);setNotice('Local pending discarded; we do not delete documents in FastAPI.')}}
    catch(err){failed(err)}finally{if(alive.current)setBusy(false)}
  }
  function changeLine(index:number,patch:Partial<DraftLine>){
@@ -340,132 +340,132 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      changeLine(index,{unitCost:calculatedUnit,totalDraft:null})
      setError('')
    } catch(err) {
-     setError(err instanceof Error?err.message:'El importe total del renglón no es válido.')
+     setError(err instanceof Error?err.message:'The total amount of the line is invalid.')
    }
  }
  return <section className="real-auth-card real-business-panel e3-purchases-page">
    {view!=='list'&&<div className="e3-purchases-backbar">
      <button ref={backRef} type="button" className="e3-purchases-back"
        disabled={busy||loading||(view==='form'&&!!pending)} onClick={closeCurrentView}>
-       <Icon name="arrow-left" size={18}/>Volver a compras
+       <Icon name="arrow-left" size={18}/>Back to shopping
      </button>
-     {view==='form'&&pending&&<span className="e3-purchases-pending-label">Intención pendiente: conservar clave</span>}
-     {view!=='form'&&pendingReceipt&&<span className="e3-purchases-pending-label">Recepción con clave original guardada</span>}
+     {view==='form'&&pending&&<span className="e3-purchases-pending-label">Intention pending: keep key</span>}
+     {view!=='form'&&pendingReceipt&&<span className="e3-purchases-pending-label">Original key saved reception</span>}
    </div>}
    {view==='list'&&<>
-   <nav className="real-business-nav" aria-label="Operaciones REAL">
-     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Empresa</button>
-     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/proveedores')}>Proveedores</button>
-     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/catalogo')}>Catálogo</button>
-     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/ubicaciones')}>Ubicaciones</button>
+   <nav className="real-business-nav" aria-label="REAL operations">
+     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Company</button>
+     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/proveedores')}>Suppliers</button>
+     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/catalogo')}>Catalog</button>
+     <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/ubicaciones')}>Locations</button>
    </nav>
    <header className="e3-purchases-heading">
      <span className="e3-purchases-heading-icon"><Icon name="shopping" size={27}/></span>
      <div className="e3-purchases-heading-copy">
-       <span className="e3-purchases-kicker">{business?.name??'Empresa'} · Comercial</span>
-       <h1 ref={listTitleRef} tabIndex={-1}>Compras y recepción</h1>
-       <p>Registrá compras, consultá comprobantes y recibí mercadería en ubicaciones autorizadas.</p>
+       <span className="e3-purchases-kicker">{business?.name??'Company'} · Comercial</span>
+       <h1 ref={listTitleRef} tabIndex={-1}>Purchases and reception</h1>
+       <p>Register purchases, check vouchers and receive merchandise in authorized locations.</p>
      </div>
      {canWrite&&<button type="button" className="real-auth-primary e3-purchases-heading-action"
        disabled={busy||loading||!journalReady} onClick={startPurchaseForm}>
-       <Icon name="plus" size={17}/>Registrar compra REAL
+       <Icon name="plus" size={17}/>Register Real Purchase
      </button>}
    </header>
-   <p className="e3-purchases-safety-note">Registrar una compra no aumenta el inventario. Solo una recepción confirmada agrega stock real.</p>
-   {!loading&&<div className="e3-purchases-summary" aria-label="Resumen de compras cargadas">
-     <div><span>Compras cargadas</span><strong>{purchases.length}</strong></div>
-     <div><span>Pendientes de recepción</span><strong>{registeredCount}</strong></div>
+   <p className="e3-purchases-safety-note">Registering a purchase does not increase inventory. Only a confirmed receipt adds real stock.</p>
+   {!loading&&<div className="e3-purchases-summary" aria-label="Summary of purchases charged">
+     <div><span>Loaded purchases</span><strong>{purchases.length}</strong></div>
+     <div><span>Pending receipt</span><strong>{registeredCount}</strong></div>
      <div><span>Recibidas</span><strong>{receivedCount}</strong></div>
    </div>}
    {!loading&&purchases.length>0&&<div className="e3-purchases-filterbar">
      <label className="e3-purchases-search"><Icon name="search" size={17}/>
-       <input type="search" aria-label="Buscar compras cargadas" placeholder="Buscar por referencia o proveedor"
+       <input type="search" aria-label="Search for loaded purchases" placeholder="Search by reference or provider"
          value={search} onChange={e=>setSearch(e.target.value)}/>
      </label>
-     <label className="e3-purchases-state-filter">Estado
-       <select aria-label="Filtrar compras por estado" value={stateFilter}
+     <label className="e3-purchases-state-filter">Status
+       <select aria-label="Filter purchases by state" value={stateFilter}
          onChange={e=>setStateFilter(e.target.value as typeof stateFilter)}>
-         <option value="TODAS">Todas</option><option value="REGISTRADA">Pendientes</option>
+         <option value="TODAS">All</option><option value="REGISTRADA">Pendientes</option>
          <option value="RECIBIDA">Recibidas</option><option value="CANCELADA">Canceladas</option>
        </select>
      </label>
    </div>}
-   <div className="real-ops-toolbar"><strong>{purchases.length} compras cargadas{hasMore?' (no es todo el historial)':''}</strong>
-     <button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void refresh()}>Actualizar datos</button>
+   <div className="real-ops-toolbar"><strong>{purchases.length} loaded purchases{hasMore?' (not the whole history)':''}</strong>
+     <button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void refresh()}>Update Data</button>
    </div>
-   {loading&&<p role="status">Consultando proveedores, catálogo, compras y ubicaciones…</p>}
-   {!loading&&purchases.length===0&&<div className="real-business-empty">Todavía no hay compras reales en esta empresa.</div>}
-   {!loading&&purchases.length>0&&visiblePurchases.length===0&&<div className="real-business-empty">No encontramos compras con esos filtros en las páginas cargadas.</div>}
+   {loading&&<p role="status">Checking suppliers, catalogs, purchases and locations...</p>}
+   {!loading&&purchases.length===0&&<div className="real-business-empty">There are still no real purchases in this company.</div>}
+   {!loading&&purchases.length>0&&visiblePurchases.length===0&&<div className="real-business-empty">We didn't find any purchases with those filters on the loaded pages.</div>}
    <div className="real-supply-list e3-purchases-card-list">
      {visiblePurchases.map(p=>{const visualState=purchaseStatusPresentation(p.status);return <article key={p.id} className="real-supply-card">
-       <div className="real-catalog-tile-header"><strong>{p.reference||'Compra '+p.id.slice(0,8)}</strong><span className={"real-catalog-status "+(visualState.tone==="pending"?"real-supply-pending-status":visualState.tone==="confirmed"?"real-catalog-active":"real-supply-neutral-status")}>{visualState.label}</span></div>
-       <small>{p.purchased_on} · Proveedor: {p.supplier_name_snapshot||'Sin proveedor'} · {p.lines.length} {p.lines.length === 1 ? 'renglón' : 'renglones'}</small>
+       <div className="real-catalog-tile-header"><strong>{p.reference||'Purchase '+p.id.slice(0,8)}</strong><span className={"real-catalog-status "+(visualState.tone==="pending"?"real-supply-pending-status":visualState.tone==="confirmed"?"real-catalog-active":"real-supply-neutral-status")}>{visualState.label}</span></div>
+       <small>{p.purchased_on} · Proveedor: {p.supplier_name_snapshot||'No supplier'} · {p.lines.length} {p.lines.length === 1 ? 'renglón' : 'renglones'}</small>
        <strong className="real-supply-total">{money(p.total_cents)}</strong>
        <ul>{p.lines.map(l=><li key={l.id} className="e3-purchase-line-with-photo">
          {l.catalog_item_id&&<RealPhotoPreview token={token}
            owner={{kind:'CATALOG',businessId,resourceId:l.catalog_item_id}}
-           alt={'Portada actual de '+l.description_snapshot} className="e3-purchase-line-photo"/>}
+           alt={'Current cover of '+l.description_snapshot} className="e3-purchase-line-photo"/>}
          <span>{l.description_snapshot} — {milliToDecimal(l.quantity_milli)} {l.unit_snapshot} × {money(l.unit_cost_cents)} = {money(l.line_total_cents)}</span>
        </li>)}</ul>
-       <small className="e3-photo-reference-note">Imágenes actuales del catálogo; los importes y descripciones de la compra son históricos.</small>
-       {p.status==='REGISTRADA'&&canReceive&&<button className="real-auth-secondary real-supply-pending-action" type="button" disabled={busy||loading} onClick={()=>void beginReceipt(p.id)}>Pendiente · Confirmar recepción en ubicación</button>}
-       {p.status==='RECIBIDA'&&<button className="real-auth-secondary" type="button" disabled={busy||loading} onClick={()=>void checkReceipt(p.id)}>Consultar comprobante</button>}
+       <small className="e3-photo-reference-note">Current images of the catalogue; amounts and descriptions of purchase are historical.</small>
+       {p.status==='REGISTRADA'&&canReceive&&<button className="real-auth-secondary real-supply-pending-action" type="button" disabled={busy||loading} onClick={()=>void beginReceipt(p.id)}>Pending · Confirm reception at location</button>}
+       {p.status==='RECIBIDA'&&<button className="real-auth-secondary" type="button" disabled={busy||loading} onClick={()=>void checkReceipt(p.id)}>Check voucher</button>}
 
      </article>})}
    </div>
-   {hasMore&&<button type="button" className="real-auth-secondary" disabled={loading||busy} onClick={()=>void more('purchases')}>Cargar 100 compras más</button>}
+   {hasMore&&<button type="button" className="real-auth-secondary" disabled={loading||busy} onClick={()=>void more('purchases')}>Load 100 more purchases</button>}
    </>}
-   {view==='receive'&&<section className="e3-purchases-receive-view" aria-label="Pantalla de recepción">
+   {view==='receive'&&<section className="e3-purchases-receive-view" aria-label="Reception screen">
      <header className="e3-purchases-heading e3-purchases-form-heading">
        <span className="e3-purchases-heading-icon"><Icon name="boxes" size={27}/></span>
        <div className="e3-purchases-heading-copy">
-         <span className="e3-purchases-kicker">{business?.name??'Empresa'} · Inventario</span>
-         <h1>Recepción de compra</h1>
-         <p>{selected?.reference||'Compra seleccionada'} · Una única ubicación autorizada.</p>
+         <span className="e3-purchases-kicker">{business?.name??'Company'} · Inventario</span>
+         <h1>Purchase reception</h1>
+         <p>{selected?.reference||'Selected Purchase'} · A single authorized location.</p>
        </div>
      </header>
      {selected?<section className="real-ops-subpanel e3-purchases-receive-surface">
        <div className="e3-purchases-form-section-head">
-         <h2>Recepción completa de compra {selected.reference||selected.id.slice(0,8)}</h2>
-         <p>La recepción se confirma de una sola vez, en una única sede. No se pueden modificar cantidades aquí.</p>
+         <h2>Full purchase reception {selected.reference||selected.id.slice(0,8)}</h2>
+         <p>The reception is confirmed at one time, in a single office. No change of quantities can be made here.</p>
        </div>
-       <div className="e3-purchases-receive-summary" aria-label="Resumen de compra a recibir">
-         <div><span>Proveedor</span><strong>{selected.supplier_name_snapshot||'Sin proveedor'}</strong></div>
-         <div><span>Fecha de compra</span><strong>{selected.purchased_on}</strong></div>
-         <div><span>Importe registrado</span><strong>{money(selected.total_cents)}</strong></div>
+       <div className="e3-purchases-receive-summary" aria-label="Summary of purchase to receive">
+         <div><span>Supplier</span><strong>{selected.supplier_name_snapshot||'No supplier'}</strong></div>
+         <div><span>Date of purchase</span><strong>{selected.purchased_on}</strong></div>
+         <div><span>Recorded amount</span><strong>{money(selected.total_cents)}</strong></div>
          <div><span>Renglones</span><strong>{selected.lines.length}</strong></div>
        </div>
-       <h3>Artículos documentados</h3>
+       <h3>Documented articles</h3>
        <ul className="e3-purchases-receive-lines">{selected.lines.map(line=><li key={line.id}>
          <span>{line.description_snapshot}</span>
          <strong>{milliToDecimal(line.quantity_milli)} {line.unit_snapshot}</strong>
-         {line.catalog_item_id===null&&<small>Concepto: no genera stock físico</small>}
+         {line.catalog_item_id===null&&<small>Concept: does not generate physical stock</small>}
        </li>)}</ul>
-       <p className="e3-purchases-safety-note">Confirmar esta recepción puede incrementar saldos de inventario. La operación se envía una única vez por clave y requiere confirmación explícita.</p>
-       <label className="real-supply-label">Destino con almacenamiento activo
+       <p className="e3-purchases-safety-note">Confirming this receipt can increase inventory balances. The operation is sent once per key and requires explicit confirmation.</p>
+       <label className="real-supply-label">Destination with active storage
          <select disabled={busy||!!pendingReceipt} value={locationId} onChange={e=>setLocationId(e.target.value)}>
-           <option value="">Seleccionar sede</option>
+           <option value="">Select Headquarters</option>
            {activeSites.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
          </select>
        </label>
-       {activeSites.length===0&&<p className="real-ops-warning">No hay sedes activas habilitadas para inventario. Revisá Ubicaciones antes de confirmar.</p>}
-       {pendingReceipt&&<p className="real-ops-warning">Recepción pendiente recuperada con su clave original. Consultá primero si se confirmó antes de repetir. Volver al listado no elimina esa clave de IndexedDB.</p>}
+       {activeSites.length===0&&<p className="real-ops-warning">No active locations enabled for inventory. Check Locations before confirming.</p>}
+       {pendingReceipt&&<p className="real-ops-warning">Recuperated pending reception with your original key. Check first if it was confirmed before repeating. Back to list does not remove that IndexedDB key.</p>}
        <div className="real-auth-actions e3-purchases-receive-actions">
          <button className="real-auth-primary real-supply-confirm-action" type="button"
            disabled={busy||!canReceive||!locationId} onClick={()=>void sendReceipt()}>
-           {busy?'Procesando…':pendingReceipt?'Reintentar MISMA recepción':'Confirmar recepción REAL'}</button>
-         <button className="real-auth-secondary" type="button" disabled={busy} onClick={()=>void checkReceipt()}>Consultar comprobante</button>
-         <button className="real-auth-secondary" type="button" disabled={busy||loading} onClick={closeReceiptSubview}>Volver a compras</button>
+           {busy?'Procesando…':pendingReceipt?'Retry Same Reception':'Confirm Real Reception'}</button>
+         <button className="real-auth-secondary" type="button" disabled={busy} onClick={()=>void checkReceipt()}>Check voucher</button>
+         <button className="real-auth-secondary" type="button" disabled={busy||loading} onClick={closeReceiptSubview}>Back to shopping</button>
        </div>
-     </section>:<div className="real-business-empty">La compra no está disponible en las páginas cargadas. Volvé al listado y actualizá el historial.</div>}
+     </section>:<div className="real-business-empty">Purchase is not available on the loaded pages. Return to list and update history.</div>}
    </section>}
-   {view==='detail'&&shownReceipt&&<section className="e3-purchases-receipt-view" aria-label="Pantalla de comprobante">
+   {view==='detail'&&shownReceipt&&<section className="e3-purchases-receipt-view" aria-label="Proof screen">
      <header className="e3-purchases-heading e3-purchases-form-heading">
        <span className="e3-purchases-heading-icon"><Icon name="receipt" size={27}/></span>
        <div className="e3-purchases-heading-copy">
-         <span className="e3-purchases-kicker">{business?.name??'Empresa'} · Recepciones</span>
-         <h1>Comprobante de recepción</h1>
-         <p>{detailPurchase?.reference||'Compra '+shownReceipt.purchase_id.slice(0,8)} · Registro interno confirmado.</p>
+         <span className="e3-purchases-kicker">{business?.name??'Company'} · Recepciones</span>
+         <h1>Receipt check</h1>
+         <p>{detailPurchase?.reference||'Purchase '+shownReceipt.purchase_id.slice(0,8)} · Internal registration confirmed.</p>
        </div>
      </header>
      <div className="e3-purchases-receipt-surface">
@@ -479,85 +479,85 @@ export function RealPurchasesPage({token,userId,userDisplayName,businessId,onNav
      <header className="e3-purchases-heading e3-purchases-form-heading">
        <span className="e3-purchases-heading-icon"><Icon name="shopping" size={27}/></span>
        <div className="e3-purchases-heading-copy">
-         <span className="e3-purchases-kicker">{business?.name??'Empresa'} · Compras</span>
-         <h1>{pending?'Compra pendiente recuperada':'Nueva compra'}</h1>
-         <p>Seleccioná proveedor, fecha y renglones. El stock se registra únicamente al confirmar la recepción.</p>
+         <span className="e3-purchases-kicker">{business?.name??'Company'} · Compras</span>
+         <h1>{pending?'Recovery of outstanding procurement':'New purchase'}</h1>
+         <p>Select supplier, date and lines. Stock is only recorded upon confirmation of receipt.</p>
        </div>
      </header>
      <form className="real-auth-form real-ops-form e3-purchases-editor" onSubmit={e=>void savePurchase(e)}>
      <div className="e3-purchases-form-section-head">
-       <h2>Datos de la compra</h2>
-       <p>La identidad de cada compra y sus renglones se guarda en IndexedDB antes del POST. No guarda tokens; los datos comerciales no están cifrados. Evitá dispositivos compartidos.</p>
+       <h2>Purchase details</h2>
+       <p>The identity of each purchase and its lines is stored in IndexedDB before POST. It does not save tokens; commercial data are not encrypted. Avoid shared devices.</p>
      </div>
      <fieldset className="real-intent-fields" disabled={busy||!!pending||!journalReady}>
-       <label>Fecha de compra<input type="date" required value={draft.date} onChange={e=>setDraft(old=>({...old,date:e.target.value}))}/></label>
-       <label>Proveedor (opcional)
+       <label>Date of purchase<input type="date" required value={draft.date} onChange={e=>setDraft(old=>({...old,date:e.target.value}))}/></label>
+       <label>Provider (optional)
          <select value={draft.supplierId} onChange={e=>setDraft(old=>({...old,supplierId:e.target.value}))}>
-           <option value="">Sin proveedor</option>{activeSuppliers.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
+           <option value="">No supplier</option>{activeSuppliers.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
          </select>
        </label>
-       {suppliersMore&&<p>Hay proveedores aún no cargados. Cargá más páginas antes de elegir uno.</p>}
+       {suppliersMore&&<p>There are still unladen suppliers. Load more pages before choosing one.</p>}
        <label>Referencia<input maxLength={70} value={draft.reference} onChange={e=>setDraft(old=>({...old,reference:e.target.value}))}/></label>
-       <label>Notas<textarea rows={2} maxLength={500} value={draft.notes} onChange={e=>setDraft(old=>({...old,notes:e.target.value}))}/></label>
+       <label>Notes<textarea rows={2} maxLength={500} value={draft.notes} onChange={e=>setDraft(old=>({...old,notes:e.target.value}))}/></label>
        {draft.lines.map((line,i)=>{const selectedArticle=activeItems.find(x=>x.id===line.catalogId);const calculatedLineTotal=previewLineTotalCents(line.quantity,line.unitCost);return <div className="real-supply-line" key={i}>
-         <strong>Renglón {i+1}</strong>
-         <label>Artículo del catálogo o concepto libre
+         <strong>Line {i+1}</strong>
+         <label>Catalogue article or free concept
            <select value={line.catalogId} onChange={e=>{const selected=activeItems.find(x=>x.id===e.target.value);changeLine(i,{catalogId:e.target.value,unitCost:suggestedUnitCost(selected),totalDraft:null})}}>
-             <option value="concept">Concepto libre (no genera stock)</option>
+             <option value="concept">Free concept (no stock generated)</option>
              {activeItems.map(x=><option key={x.id} value={x.id}>{x.name} · {x.unit}</option>)}
            </select>
          </label>
-         {line.catalogId==='concept'&&<label>Descripción<input required minLength={2} maxLength={140} value={line.description} onChange={e=>changeLine(i,{description:e.target.value})}/></label>}
+         {line.catalogId==='concept'&&<label>Description<input required minLength={2} maxLength={140} value={line.description} onChange={e=>changeLine(i,{description:e.target.value})}/></label>}
          <div className="real-supply-amounts">
-           <label>Cantidad (hasta 3 decimales)
+           <label>Amount (up to 3 decimal places)
              <input required inputMode="decimal" value={line.quantity} disabled={line.totalDraft!==null}
                onChange={e=>changeLine(i,{quantity:e.target.value})}/>
            </label>
-           <label>Costo unitario ($)
+           <label>Unit cost ($)
              <input required inputMode="decimal" value={line.unitCost} disabled={line.totalDraft!==null}
                onChange={e=>changeLine(i,{unitCost:e.target.value})}/>
            </label>
            <div className="real-supply-total-field">
-             <label htmlFor={'real-line-total-'+i}>Costo total ($)</label>
+             <label htmlFor={'real-line-total-'+i}>Total cost ($)</label>
              <div className="real-supply-total-control">
-               <input id={'real-line-total-'+i} inputMode="decimal" aria-label={'Costo total del renglón '+(i+1)}
+               <input id={'real-line-total-'+i} inputMode="decimal" aria-label={'Total cost of line '+(i+1)}
                  value={line.totalDraft??(calculatedLineTotal===null?'':centsToPesos(calculatedLineTotal))}
                  readOnly={line.totalDraft===null} aria-readonly={line.totalDraft===null}
                  onChange={e=>changeLine(i,{totalDraft:e.target.value})}
-                 placeholder={calculatedLineTotal===null?'Completá cantidad y costo':'0,00'}/>
+                 placeholder={calculatedLineTotal===null?'Complete quantity and cost':'0,00'}/>
                {line.totalDraft===null&&<button type="button" className="real-supply-total-edit"
                  disabled={busy||!journalReady||calculatedLineTotal===null}
-                 aria-label={'Editar costo total del renglón '+(i+1)}
-                 title="Editar costo total" onClick={()=>changeLine(i,{totalDraft:centsToPesos(calculatedLineTotal)})}>Editar</button>}
+                 aria-label={'Edit total line cost '+(i+1)}
+                 title="Edit Total Cost" onClick={()=>changeLine(i,{totalDraft:centsToPesos(calculatedLineTotal)})}>Edit</button>}
              </div>
            </div>
          </div>
          {line.totalDraft!==null&&<div className="real-supply-total-actions">
-           <span>Para modificar el total se recalculará el costo unitario solo si los centavos coinciden exactamente.</span>
-           <button type="button" className="real-auth-secondary" onClick={()=>applyLineTotal(i)}>Aplicar total</button>
-           <button type="button" className="real-auth-secondary" onClick={()=>changeLine(i,{totalDraft:null})}>Cancelar</button>
+           <span>To modify the total, the unit cost will be recalculated only if the cents exactly match.</span>
+           <button type="button" className="real-auth-secondary" onClick={()=>applyLineTotal(i)}>Apply Total</button>
+           <button type="button" className="real-auth-secondary" onClick={()=>changeLine(i,{totalDraft:null})}>Cancel</button>
          </div>}
-         {selectedArticle&&<p className="real-supply-cost-hint">Costo de referencia en catálogo: <strong>{selectedArticle.reference_cost_cents===null?'sin informar':money(selectedArticle.reference_cost_cents)}</strong>. Se propone al seleccionar el artículo, pero podés editarlo según el comprobante del proveedor. No se modifica el costo de referencia del catálogo.</p>}
-         {selectedArticle&&costExceedsSalePrice(line.unitCost,selectedArticle)&&<p className="real-supply-cost-warning" role="status">Atención: el costo unitario de compra supera el precio de venta actual del catálogo ({selectedArticle.price_cents===null?'no informado':money(selectedArticle.price_cents)}). Revisá el margen; podés continuar con la compra.</p>}
-         {draft.lines.length>1&&<button type="button" className="real-auth-secondary" onClick={()=>setDraft(old=>({...old,lines:old.lines.filter((_,j)=>j!==i)}))}>Quitar renglón</button>}
+         {selectedArticle&&<p className="real-supply-cost-hint">Catalogue reference cost: <strong>{selectedArticle.reference_cost_cents===null?'unreported':money(selectedArticle.reference_cost_cents)}</strong>. Se propone al seleccionar el artículo, pero podés editarlo según el comprobante del proveedor. No se modifica el costo de referencia del catálogo.</p>}
+         {selectedArticle&&costExceedsSalePrice(line.unitCost,selectedArticle)&&<p className="real-supply-cost-warning" role="status">Attention: the unit cost of purchase exceeds the current sales price of the catalogue ({selectedArticle.price_cents===null?'no informado':money(selectedArticle.price_cents)}). Check the margin; you can continue with the purchase.</p>}
+         {draft.lines.length>1&&<button type="button" className="real-auth-secondary" onClick={()=>setDraft(old=>({...old,lines:old.lines.filter((_,j)=>j!==i)}))}>Remove Line</button>}
        </div>})}
-       <button type="button" className="real-auth-secondary" disabled={draft.lines.length>=30} onClick={()=>setDraft(old=>({...old,lines:[...old.lines,emptyLine()]}))}>Agregar renglón</button>
+       <button type="button" className="real-auth-secondary" disabled={draft.lines.length>=30} onClick={()=>setDraft(old=>({...old,lines:[...old.lines,emptyLine()]}))}>Add Line</button>
        <div className="real-supply-grand-total" aria-live="polite">
-         <span>Total de la compra</span>
-         <strong>{totalPreview===null?'Completá importes válidos':money(totalPreview)}</strong>
+         <span>Total purchase</span>
+         <strong>{totalPreview===null?'Completes valid amounts':money(totalPreview)}</strong>
        </div>
      </fieldset>
-     {pending&&<p className="real-ops-warning">El cuerpo original quedó bloqueado. Primero comprobá el historial y luego reintentá con la misma clave. F5 no envía nada automáticamente.</p>}
-     {!pending&&<label className="real-ops-check"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> Acepto guardar temporalmente los datos de esta compra en este navegador.</label>}
-     <p className="e3-purchases-register-explainer">Al registrar la compra, quedará pendiente de recepción. Para incorporar mercadería al inventario, después confirmá la recepción en una sede habilitada. Este paso no modifica el stock.</p>
+     {pending&&<p className="real-ops-warning">The original body was locked. First check the history and then try again with the same key. F5 does not send anything automatically.</p>}
+     {!pending&&<label className="real-ops-check"><input type="checkbox" checked={consent} onChange={e=>setConsent(e.target.checked)}/> I agree to temporarily save the data of this purchase in this browser.</label>}
+     <p className="e3-purchases-register-explainer">When registering the purchase, it will be pending receipt. To incorporate goods into the inventory, then confirm the receipt at an enabled headquarters. This step does not modify the stock.</p>
      <div className="real-auth-actions">
-       <button type="submit" className="real-auth-primary" disabled={busy||!journalReady||draft.lines.some(x=>x.totalDraft!==null)||(!pending&&!consent)}>{busy?'Procesando…':pending?'Reintentar MISMA compra':'Registrar compra'}</button>
-       {pending&&<button type="button" className="real-auth-secondary" disabled={busy} onClick={()=>void discardPurchase()}>Descartar tras verificar</button>}
-       <button type="button" className="real-auth-secondary" disabled={busy||!!pending} onClick={closePurchaseForm}>Cancelar</button>
+       <button type="submit" className="real-auth-primary" disabled={busy||!journalReady||draft.lines.some(x=>x.totalDraft!==null)||(!pending&&!consent)}>{busy?'Procesando…':pending?'Retrying Same Purchase':'Register purchase'}</button>
+       {pending&&<button type="button" className="real-auth-secondary" disabled={busy} onClick={()=>void discardPurchase()}>Discard after verification</button>}
+       <button type="button" className="real-auth-secondary" disabled={busy||!!pending} onClick={closePurchaseForm}>Cancel</button>
      </div>
    </form></section>}
-   {view==='form'&&catalogMore&&<button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void more('catalog')}>Cargar 100 artículos más para compras</button>}
-   {view==='form'&&suppliersMore&&<button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void more('suppliers')}>Cargar 100 proveedores más</button>}
+   {view==='form'&&catalogMore&&<button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void more('catalog')}>Load 100 more items for purchase</button>}
+   {view==='form'&&suppliersMore&&<button type="button" className="real-auth-secondary" disabled={busy||loading} onClick={()=>void more('suppliers')}>Load 100 more suppliers</button>}
    {notice&&<p className="real-auth-message" role="status">{notice}</p>}
    {error&&<p className="real-auth-message real-auth-error" role="alert">{error}</p>}
  </section>

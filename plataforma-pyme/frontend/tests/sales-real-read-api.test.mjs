@@ -189,10 +189,10 @@ test('T09-A fallo de red o respuesta corrupta en GET no crea venta ni resultado 
 })
 
 test('T09-A mensajes 401/403/404/timeout conservan semántica de consulta', () => {
-  assert.match(salesReadErrorMessage(new ApiHttpError(401, 'expired')), /sesión/i)
-  assert.match(salesReadErrorMessage(new ApiHttpError(403, 'denied')), /permiso/i)
-  assert.match(salesReadErrorMessage(new ApiHttpError(404, 'missing')), /no existe/i)
-  assert.match(salesReadErrorMessage(new ApiTransportError('timeout', false)), /tiempo/i)
+  assert.match(salesReadErrorMessage(new ApiHttpError(401, 'expired')), /session/i)
+  assert.match(salesReadErrorMessage(new ApiHttpError(403, 'denied')), /permission/i)
+  assert.match(salesReadErrorMessage(new ApiHttpError(404, 'missing')), /no accessible sale/i)
+  assert.match(salesReadErrorMessage(new ApiTransportError('timeout', false)), /timed out/i)
 })
 
 

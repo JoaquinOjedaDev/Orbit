@@ -14,7 +14,7 @@ test.beforeAll(() => {
 
 test('E27-SAL-05: precio excepcional, descuento y pagos desbalanceados bloqueados por UI y API', async ({ page, request }) => {
   const email = 'qa-sal05-' + randomUUID() + '@example.com'
-  const password = 'Clave QA pagos desbalanceados 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registration = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'QA SAL05' },
   })
@@ -48,26 +48,26 @@ test('E27-SAL-05: precio excepcional, descuento y pagos desbalanceados bloqueado
     if (req.method() === 'POST' && new URL(req.url()).pathname === '/api/v1' + root + '/sales') salePosts++
   })
   await page.goto('/real/empresas/' + businessId + '/pos')
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(password)
+  await page.getByLabel('Email', { exact: true }).fill(email)
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Punto de venta' })).toBeVisible()
-  await page.getByLabel('Sede del punto de venta').selectOption(locationId)
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible()
+  await page.getByLabel('Place of sale').selectOption(locationId)
   await page.getByRole('button', { name: 'Agregar una unidad de Servicio de pago QA al detalle de venta' }).click()
-  await page.getByRole('region',{name:'Carrito de venta'}).locator('.real-pos-cart-row')
-    .filter({hasText:'Servicio de pago QA'}).getByRole('button',{name:'Editar cantidad'}).click()
-  await page.getByRole('button', { name: 'Modificar precio excepcionalmente' }).click()
-  await page.getByLabel('Precio unitario de la venta').fill('1800')
-  await page.getByRole('button', { name: 'Guardar cambios en detalle' }).click()
-  await page.getByLabel('Descuento de la venta').fill('300')
-  await expect(page.getByLabel('Desglose del total de compra')).toContainText('1.500,00')
+  await page.getByRole('region',{name:'Sale Cart'}).locator('.real-pos-cart-row')
+    .filter({hasText:'Servicio de pago QA'}).getByRole('button',{name:'Edit Quantity'}).click()
+  await page.getByRole('button', { name: 'Change price exceptionally' }).click()
+  await page.getByLabel('Unit selling price').fill('1800')
+  await page.getByRole('button', { name: 'Save changes in detail' }).click()
+  await page.getByLabel('Sale discount').fill('300')
+  await expect(page.getByLabel('Breakdown of total purchase')).toContainText('1.500,00')
   await expect(page.getByLabel('Importe declarado 1')).toHaveValue('1500,00')
 
   // Pago declarado $1400 contra total $1500: revisión no da éxito ni envía POST.
   await page.getByLabel('Importe declarado 1').fill('1400')
-  await page.getByRole('button', { name: 'Finalizar venta' }).click()
-  await expect(page.getByRole('alert')).toContainText('Los pagos declarados deben sumar exactamente el total.')
-  await expect(page.getByLabel('Revisión final de la venta')).toHaveCount(0)
+  await page.getByRole('button', { name: 'End sale' }).click()
+  await expect(page.getByRole('alert')).toContainText('The payments declared must add up to exactly the total.')
+  await expect(page.getByLabel('Final review of the sale')).toHaveCount(0)
   expect(salePosts).toBe(0)
 
   const rejected = await request.post(api + root + '/sales', {
@@ -87,7 +87,7 @@ test('E27-SAL-05: precio excepcional, descuento y pagos desbalanceados bloqueado
 
   // Al corregir el importe, la misma revisión de UI sí es válida.
   await page.getByLabel('Importe declarado 1').fill('1500')
-  await page.getByRole('button', { name: 'Finalizar venta' }).click()
-  await expect(page.getByLabel('Revisión final de la venta')).toContainText('1.500,00')
+  await page.getByRole('button', { name: 'End sale' }).click()
+  await expect(page.getByLabel('Final review of the sale')).toContainText('1.500,00')
   expect(salePosts).toBe(0) // Review still never writes; explicit consent remains required.
 })

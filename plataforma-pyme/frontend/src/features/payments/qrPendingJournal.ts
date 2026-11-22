@@ -18,20 +18,20 @@ export type QrPendingPort = {
   remove(scope: string, key: string): Promise<void>
 }
 export class QrPendingConflict extends Error {
-  constructor(){super('Existe un QR pendiente diferente: no se generó otro intento.')}
+  constructor(){super('There is a different QR pending: no other attempt was made.')}
 }
 export class QrPendingUnavailable extends Error {
-  constructor(){super('IndexedDB no está disponible: no se generó otro intento QR.')}
+  constructor(){super('IndexedDB is not available: no other QR attempt was generated.')}
 }
 const same=(a: unknown,b:unknown)=>JSON.stringify(a)===JSON.stringify(b)
 const keys=(row:Record<string,unknown>,fields:string[])=>
   Object.keys(row).sort().join('|')===fields.slice().sort().join('|')
 export function qrPendingScope(actorId:string,businessId:string):string{
-  if(!UUID_PATTERN.test(actorId)||!UUID_PATTERN.test(businessId))throw new TypeError('Actor o negocio inválidos')
+  if(!UUID_PATTERN.test(actorId)||!UUID_PATTERN.test(businessId))throw new TypeError('Invalid Actor or Business')
   return actorId+':'+businessId+':qr.create'
 }
 export function newQrPending(actorId:string,businessId:string,body:QrIntentCommand,key=crypto.randomUUID()):QrPending{
-  if(!UUID_V4_PATTERN.test(key))throw new TypeError('Clave de intento inválida')
+  if(!UUID_V4_PATTERN.test(key))throw new TypeError('Invalid attempt key')
   const validated=makeQrIntentCommand(body.location_id,body.lines,body.discount_cents,body.notes)
   return {scope:qrPendingScope(actorId,businessId),actorId,businessId,kind:'qr.create',
     key,body:validated,createdAt:new Date().toISOString()}
@@ -100,7 +100,7 @@ export function createQrPendingJournal(port:QrPendingPort){
     },
   }
 }
-const DATABASE='asistente-pyme-real-qr-v1'
+const DATABASE='assistant-pyme-real-qr-v1'
 const STORE='pending'
 function open():Promise<IDBDatabase>{
   if(typeof indexedDB==='undefined')return Promise.reject(new QrPendingUnavailable())

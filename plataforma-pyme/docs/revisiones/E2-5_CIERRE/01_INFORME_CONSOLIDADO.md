@@ -1,67 +1,67 @@
-# E2-5 — Informe consolidado de implementación y validación
+# E2-5 — Consolidated Implementation and Validation Report
 
-**Estado:** funcionalidad implementada en `main`, CI verde y pruebas manuales principales aprobadas; **cierre documental propuesto sujeto a revisión**. Fecha: 09/11/2026.  
-**Referencia congelada:** `748e69319d8d04900c009d5184168a264a9deeac`.
+**Status:** functionality implemented in `main`green IC and approved primary manual tests; **Proposed closure subject to review**Date: 09/11/2026.  
+**Frozen reference:** `748e69319d8d04900c009d5184168a264a9deeac`.
 
-## 1. Objetivo
+## 1. Objective
 
-Implementar el núcleo físico de RF-06/CU-08, CU-09 y CU-11: representar operaciones de inventario con origen y signo verificables, consultar saldos/movimientos por empresa/ubicación/artículo, transferir stock sin crearlo ni destruirlo y registrar stock inicial y ajustes justificados sin admitir saldos negativos o reintentos duplicados.
+Implement the physical core of RF-06/CU-08, CU-09 and CU-11: represent verifiable inventory operations with origin and sign, consult balances/movements per company/location/article, transfer stock without creating or destroying it and record initial stock and justified adjustments without admitting negative balances or duplicate retryings.
 
-La plataforma es **generalista, multirrubro y multiempresa**. Los artículos de ejemplo pertenecen a un negocio de QA; el sistema no se limita al rubro de mascotas.
+The platform is **generalist, multi-rub and multi-enterprise**. Example items belong to a QA business; the system is not limited to pet items.
 
-## 2. Evolución incremental
+## 2. Incremental developments
 
-| Corte | Qué entregó | Qué **no** entregó en ese instante | PR / merge SHA |
+| Cut | What he gave | Qué **no** delivered in that instant | PR/merge SHA |
 |---|---|---|---|
-| **E2-5 A** | `InventoryOperation`, ampliación firmada de `StockMovement`, FK/CHECK/UNIQUE por tenant, migración `e25a_inventory_ops`, retrocompatibilidad de recepción | Todavía no había comandos de traslado o ajuste | #21 · `4268846abc524ebd827b4da930ef58d8d9789ac7` |
-| **E2-5 B** | POST/GET de traslados atómicos, doble movimiento, idempotencia, control de stock y permisos STORE; lectura general del ledger extendida | Todavía no había ajustes/stock inicial | #22 · `4f992b3beb8dda732e4cd752f828b375f240e13d` |
-| **E2-5 C** | POST/GET de ajuste `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`, versión optimista, motivo, roles reforzados y trazabilidad | No integró ventas/React ni conteo absoluto | #23 · `748e69319d8d04900c009d5184168a264a9deeac` |
+| **E2-5 A** | `InventoryOperation`, signed extension of `StockMovement`, FK/CHECK/UNIQUE per tenant, migration `e25a_inventory_ops`, retrocompatibility of reception | There were no transfer or adjustment commands yet | #21 · `4268846abc524ebd827b4da930ef58d8d9789ac7` |
+| **E2-5 B** | POST/GET for atomic transfer, dual movement, idempotency, stock control and STORE permissions; general reading of extended ledger | No initial adjustments/stock yet | #22 · `4f992b3beb8dda732e4cd752f828b375f240e13d` |
+| **E2-5 C** | POST/GET de ajuste `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`, optimistic version, motif, reinforced roles and traceability | No sales/React integrated or absolute counting | #23 · `748e69319d8d04900c009d5184168a264a9deeac` |
 
-Los tres PR están **fusionados**, y el código vigente de `main` coincide con el SHA de E2-5 C. Los cortes B y C no introdujeron nuevas migraciones; reutilizan `e25a_inventory_ops` de A.
+All three PRs are **merged**and the current code of `main` coincides with the E2-5 C SHA. Courts B and C did not introduce new migrations; they reuse `e25a_inventory_ops` de A.
 
-## 3. Criterios de aceptación y evidencia
+## 3. Acceptance and evidence criteria
 
-1. **Invariantes de unidades:** cantidad física en milésimas enteras; artículos discretos con cantidades enteras; productos físicos ACTIVO; servicios sin saldo. Respaldado por esquemas, restricciones y pruebas automatizadas.
-2. **Integridad por empresa:** FK y consultas con `business_id`; permisos de membresía y ubicación; revalidación en servidor. Respaldado por código y tests negativos entre tenants. El QA manual se ejecutó en **una** empresa de prueba, no probó inter-tenant de forma independiente.
-3. **Traslados:** 4 unidades se retiraron de Depósito QA y entraron en Casa. Los dos movimientos comparten operación y suman cero. Resultado manual: **201**; balances confirmados **6 + 4 = 10**, GET **200**.
-4. **Reintento de traslado:** mismo resultado e IDs mediante POST repetido, **200**; sin segundo movimiento registrado en el ledger consultado.
-5. **Stock insuficiente en traslado:** solicitud superior al saldo → **409**; posterior balance/historial sin cambios.
-6. **Stock inicial:** primer ingreso de 5 unidades para otro artículo en Casa → **201**; replay **200** con mismo comprobante; una segunda carga nueva → **409**.
-7. **Ajustes:** entrada de 2 unidades → **201**; salida de 1 → **201**; el saldo final del artículo de prueba es **6 unidades, versión 3**, confirmado por GET **200**.
-8. **Protecciones de ajuste:** salida superior al disponible → **409**; versión desactualizada → **409**; GET posterior muestra saldo y movimientos intactos.
-9. **CI y regresión:** 816 → 826 → 840 tests por versión de Python (suite total de cada corte), 3/3 jobs por run, con PostgreSQL 16, Docker y `alembic check` sin deriva.
-10. **Windows de E2-5 C:** `840 passed in 110.89s`, `e25a_inventory_ops (head)`, `No new upgrade operations detected.`, Docker DB/API `healthy`, `/ready = ready/ok` (salida aportada por desarrollador).
+1. **Unit invariants:** physical quantity in thousands of wholes; discrete items with entire quantities; physical products ASSISTANCE; services without balance. Supported by automated schemes, restrictions and tests.
+2. **Integrity by company:** FK and consultations with `business_id`; membership and location permissions; server revalidation. Coded back up and negative tests between tenants. The manual QA was executed in **una** test company, did not try inter-tenant independently.
+3. **Transfers:** 4 units were removed from QA tank and entered the house. The two movements share operation and add up to zero. Manual result: **201**; confirmed balance sheets **6 + 4 = 10**, GET **200**.
+4. **Retry of transfer:** same result and IDs using repeated POST, **200**; no second movement recorded in the consulted leader.
+5. **Insufficient stock in transfer:** request above balance → **409**; later balance/history unchanged.
+6. **Initial stock:** first entry of 5 units for another article in Casa → **201**; replay **200** with the same voucher; a second new charge → **409**.
+7. **Ajustes:** 2 units input → **201**; 1 → output **201**; the final balance of the test item is **6 units, version 3**confirmed by GET **200**.
+8. **Adjustment protections:** higher output than available → **409**; outdated version → **409**; Later GET shows balance and intact movements.
+9. **CI and regression:** 816 → 826 → 840 tests per Python version (total suite of each cut), 3/3 jobs per run, with PostgreSQL 16, Docker and `alembic check` sin deriva.
+10. **Windows of E2-5 C:** `840 passed in 110.89s`, `e25a_inventory_ops (head)`, `No new upgrade operations detected.`, Docker DB/API `healthy`, `/ready = ready/ok` (exit provided by developer).
 
-## 4. Resultado funcional consolidado
+## 4. Consolidated functional result
 
-| Escenario | Estado final reportado | Justificación |
+| Scenario | Final state reported | Justification |
 |---|---|---|
-| **Artículo A** — alimento balanceado | Depósito QA: **6 unidades, versión 2**; Casa: **4 unidades, versión 1** | Recepción de 10, traslado de 4, replay sin efecto y rechazo por insuficiencia |
-| **Artículo B** — galletitas QA | Casa: **6 unidades, versión 3** | Inicial 5, entrada 2, salida 1, dos rechazos sin mutaciones |
-| **Historial artículo A** | 3 movimientos: `COMPRA_RECEPCION +10`, `TRASLADO_SALIDA -4`, `TRASLADO_ENTRADA +4` | GET general por catálogo, 200 |
-| **Historial artículo B** | 3 movimientos: `STOCK_INICIAL +5`, `AJUSTE_ENTRADA +2`, `AJUSTE_SALIDA -1` | GET general por catálogo, 200 |
+| **Article A** — balanced food | QA deposit: **6 units, version 2**; House: **4 units, version 1** | 10 reception, transfer of 4, replay without effect and rejection due to insufficiency |
+| **Article B** — QA biscuits | Home: **6 units, version 3** | Initial 5, input 2, output 1, two rejections without mutations |
+| **Article A** | 3 moves: `COMPRA_RECEPCION +10`, `TRASLADO_SALIDA -4`, `TRASLADO_ENTRADA +4` | General GET by catalogue, 200 |
+| **Article B** | 3 moves: `STOCK_INICIAL +5`, `AJUSTE_ENTRADA +2`, `AJUSTE_SALIDA -1` | General GET by catalogue, 200 |
 
-Los dos artículos son independientes: la prueba C no reutilizó ni modificó el artículo A. La bitácora solo confirma los saldos que fueron efectivamente consultados y aportados; no demuestra ausencia de escrituras externas futuras.
+The two articles are independent: Exhibit C did not reuse or modify Article A. The logbook only confirms the balances that were actually consulted and contributed; it does not show any absence of future external deeds.
 
-## 5. Compatibilidad y delimitación
+## 5. Compatibility and delimitation
 
-La **compra** y la **recepción** son procesos distintos. Registrar la compra no genera stock; recibir físicamente sí. El esquema E2-5 A hace compatibles los registros de recepción previos con nuevos movimientos de operación manual sin alterar las recepciones existentes. Los servicios trabajan con `StockBalance` como proyección actual y `StockMovement` como rastro histórico firmado.
+La **purchase** y la **reception** The E2-5 A scheme supports previous reception records with new manual operation movements without altering existing receptions. Services work with the following services: `StockBalance` as current projection and `StockMovement` as a signed historical trail.
 
-**No implementado ni certificado en E2-5:** consumo automático de inventario por una venta backend, ventas/pagos reales, reversos o devoluciones, lotes, conteo físico absoluto derivado automáticamente, modificaciones masivas, informes de conciliación periódica, UI React conectada a estas API, congelamiento del ledger ante acceso SQL privilegiado o despliegue productivo. La existencia de pantallas DEMO no equivale a backend.
+**Not implemented or certified in E2-5:** automatic inventory consumption by a backend sale, real sales/payments, reverse or returns, lots, automatically derived absolute physical count, massive modifications, periodic reconciliation reports, UI React connected to these APIs, freezing of the ledger against privileged SQL access or productive deployment. The existence of DEMO screens does not amount to backend.
 
-## 6. Dictamen de esta entrega
+## 6. Opinion of this submission
 
-**Apto para revisión de cierre funcional del alcance E2-5 A–C.** Las evidencias disponibles son consistentes: código integrado, CI aprobado y flujos manuales con resultados esperados. **No es dictamen de auditoría independiente ni aprobación para producción.** Antes de publicar el cierre deben revisarse exactitud, lenguaje de alcance, política de seguridad, trazabilidad académica y pendientes de la sección 09. El documento de asignación al auditor **se preparó en una etapa posterior a este cierre preliminar**, a pedido del equipo: [hoja formal](../E2-5_ENTREGA_PARA_REVISION.md) y [paquete de auditoría](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md). **No se ejecutó la auditoría**.
+**Suitable for functional closure review of E2-5 A-C range.** The evidence available is consistent: integrated code, approved IC and manual flows with expected results. **It is not an independent audit opinion or production approval.** The audit assignment document should be reviewed before the closure is published. **prepared at a post-preliminary stage**, upon request of the team: [Form sheet](../E2-5_ENTREGA_PARA_REVISION.md) y [audit package](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md). **Audit not performed**.
 
-## Evaluación crítica posterior al primer paquete (v1.1)
+## Critical evaluation after the first package (v1.1)
 
-Se contrastó una revisión asistida por IA que propuso cambiar concurrencia, reinicializar saldos cero, introducir reversión y aprobaciones, endurecer la base, tipificar motivos y extender operaciones comerciales. **No se identificó, en el material recibido, una reproducción de corrupción o pérdida de stock en E2-5**: los rechazos 409 tras cambios concurrentes son coherentes con el contrato del ajuste y las operaciones sobre una misma ubicación se serializan mediante locks. Tampoco corresponde equiparar saldo registrado cero con par artículo-ubicación sin historial.
+An AI-assisted review was contrasted, which proposed changing competition, rebooting zero balances, introducing reversals and approvals, tightening the base, typifying motives and extending trade operations. **No reproduction of corruption or loss of stock was identified in the material received at E2-5**: 409 rejections after concurrent changes are consistent with the adjustment contract and transactions on the same location are serialized by locks. Nor is it appropriate to equate zero recorded balance with no history of article-location pairing.
 
-Se consideran **deudas reales**, sujetas a diseño y validación separada: control de alteración directa del ledger SQL, conciliación balances/ledger, reversos compensatorios vinculados, políticas de ajustes negativos, categorías de motivo y ergonomía de conflictos de versión. Reservas, recepción parcial, moneda y cambios de redondeo pertenecen a otros bloques y requieren decisión de producto; no justifican reescribir E2-5 o migraciones ya aplicadas en este cierre. [Dictamen y evidencias](13_EVALUACION_OBSERVACIONES_IA.md) · [Backlog priorizado](09_RIESGOS_DEUDAS_Y_DECISIONES.md).
+Se consideran **real debts**, subject to separate design and validation: control of direct alteration of the ledger SQL, balance/ledger reconciliation, linked compensatory reverses, negative adjustment policies, motive categories and ergonomics of version conflicts. Reservations, partial reception, currency and rounding changes belong to other blocks and require product decision; they do not justify rewriting E2-5 or migrations already applied in this closure. [Opinion and evidence](13_EVALUACION_OBSERVACIONES_IA.md) · [Priority backlog](09_RIESGOS_DEUDAS_Y_DECISIONES.md).
 
-El **cierre funcional A–C** se mantiene respaldado por los resultados reportados y CI, pero **la auditoría independiente, el hardening previo a producción y la publicación definitiva** siguen pendientes de aprobación explícita. No se ejecutaron nuevos tests de backend por la edición documental.
+El **A–C functional closure** is supported by reported results and IQ, but **independent audit, pre-production hardening and final publication** No new backend tests were run for the documentary edition.
 
 
-## 7. Estado de publicación (adenda de cierre)
+## 7. Publication status (closing addendum)
 
-El cierre documental y su encargo de auditoría fueron **aprobados y publicados** en `main` mediante PR #24, SHA original `c66df2f8ddaa8179ca12e342bd3099348bc6b155`. Este documento conserva resultados y decisiones obtenidos en etapas anteriores, pero cualquier indicación antigua de «borrador sin merge» quedó superada por esa publicación. **La auditoría independiente todavía debe ejecutarse**; la aprobación documental no equivale a aprobación de producción.
+The documentary closure and his audit commission were **approved and published** en `main` by PR #24, Original SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`This document retains results and decisions obtained in previous stages, but any old indication of "free-merging" was overtaken by this publication. **Independent audit still to be implemented**; documentary approval does not amount to production approval.

@@ -1,22 +1,22 @@
-# E3-1C2 — Datos de la empresa: diseño visual y criterios de QA
+# E3-1C2 — Company data: visual design and QA criteria
 
-**Base:** `main d3fe26b1de695253ae2aca920d89b941f7087f14`. Referencia: `Boton_Editar_Perfil_Empresa(2).html`.
+**Base:** `main d3fe26b1de695253ae2aca920d89b941f7087f14`Reference: `Boton_Editar_Perfil_Empresa(2).html`.
 
-## Alcance
-Ficha visual y edición contextual de nombre/rubro/actividad, con estado y membresía provenientes de FastAPI. Datos técnicos plegados; accesos organizados por Administración/Operaciones. No hay logo persistente ni imágenes REAL.
+## Scope
+Visual and contextual editing of name/rub/activity, with status and membership from FastAPI. Technical data folded; accesses organized by Administration/Operations. No persistent logo or REAL images.
 
-## Garantías
-- Mismos `GET /businesses/{id}` y `PATCH /businesses/{id}`, misma validación y manejo de errores; no hay endpoints nuevos.
-- Editar solo si `canEditBusiness` es verdadero; autorización real en FastAPI.
-- Sin operaciones ficticias, `demoStore`, cambios de permisos, persistencia de token ni escritura automática.
-- React remonta por tenant; no comparte formularios entre empresas.
-- Las ocho tarjetas navegan exclusivamente a las rutas comerciales ya disponibles.
+## Guarantees
+- Same `GET /businesses/{id}` y `PATCH /businesses/{id}`, same validation and error management; no new endpoints.
+- Edit Only if `canEditBusiness` is true; real authorization at FastAPI.
+- No fictitious operations, `demoStore`, permission changes, token persistence or automatic writing.
+- React goes back by tenant; it does not share forms between companies.
+- All eight cards navigate exclusively to the commercial routes already available.
 
-## QA antes de merge
-1. Ver empresa y membresía correctas y desplegar información técnica.
-2. Probar editar/cancelar sin PATCH y guardar/persistir con PATCH autorizado y F5.
-3. Trabajador o empresa suspendida: no hay edición; backend mantiene 403/404.
-4. Escritorio y móvil 390px, zoom/teclado y sin scroll horizontal.
-5. CI frontend/full-stack con DB efímera, revisión manual, y autorización previa de merge.
+## QA before merge
+1. See correct company and membership and display technical information.
+2. Try editing/cancelling without PATCH and save/persist with authorized PATCH and F5.
+3. Worker or company suspended: no edition; backend maintains 403/404.
+4. Desktop and mobile 390px, zoom/keyboard and without horizontal scroll.
+5. CI frontend/full-stack with ephemeral DB, manual revision, and prior merge authorization.
 
-**Pendiente siguiente:** E3-1C3 (Ubicaciones y Equipo).
+**Next pending:** E3-1C3 (Locations and Equipment).

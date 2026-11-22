@@ -54,7 +54,7 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
   void transferJournal.load(scope).then(found=>{
    if(!active)return
    setPending(found)
-   if(found)setNotice('Se recuperó un traslado pendiente de este usuario y empresa. No se envió ninguna operación automáticamente.')
+   if(found)setNotice('A pending transfer from this user and company was recovered. No operation was sent automatically.')
   }).catch((err:unknown)=>{if(active)setError(transferErrorMessage(err))})
    .finally(()=>{if(active)setLoading(false)})
   return ()=>{active=false}
@@ -68,7 +68,7 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
   void balanceGateway.balances(0,2,{locationId:source,catalogItemId:article},controller.signal)
    .then(rows=>{
      if(controller.signal.aborted)return
-     if(rows.length>1)throw new Error('La API devolvió más de un saldo para artículo y sede.')
+     if(rows.length>1)throw new Error('The API returned more than one balance for article and headquarters.')
      setBalance(rows.length===0?0:rows[0].quantity_milli)
      setBalanceError('')
    }).catch((err:unknown)=>{
@@ -87,7 +87,7 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
  }
  function command():TransferCommand{
   if(!selectedItem||!selectedSource||!selectedDestination)
-   throw new RangeError('Elegí artículo físico y ambas ubicaciones con almacenamiento activo.')
+   throw new RangeError('I chose physical article and both locations with active storage.')
   return {
    catalog_item_id:selectedItem.id,source_location_id:selectedSource.id,
    destination_location_id:selectedDestination.id,
@@ -104,16 +104,16 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
    try{
     const checked=await gateway.get(result.id)
     setConfirmed(checked)
-    setNotice('Transferencia confirmada. Se verificó la operación por su ID. Saldos e historial se están consultando desde FastAPI.')
+    setNotice('Confirmed transfer. Operation verified by ID. Balances and history are being consulted from FastAPI.')
    }catch{
-    setNotice('Transferencia confirmada por POST; el GET de detalle no pudo verificarse. No repitas la operación.')
+    setNotice('Transfer confirmed by POST; the Detail GET could not be verified. Do not repeat the operation.')
    }
    onConfirmed()
    try{
     await transferJournal.discard(row.scope,row.key)
     setPending(null)
    }catch{
-    setNotice('Transferencia confirmada, pero no se pudo limpiar el registro del navegador. No crees otra clave ni repitas la operación; verificá su ID.')
+    setNotice('Transfer confirmed, but could not clean the browser log. Do not create another key or repeat the operation; check your ID.')
    }
   }catch(err){
    if(err instanceof ApiHttpError&&err.status===401){onUnauthorized();return}
@@ -125,13 +125,13 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
   if(busy||loading||pending||confirmed||!consent||balance===null||balanceLoading)return
   try{
    const cmd=command()
-   if(cmd.quantity_milli>balance){setError('El saldo consultado es insuficiente. Actualizá antes de continuar.');return}
-   const label=selectedItem?.name??'Artículo'
+   if(cmd.quantity_milli>balance){setError('The balance consulted is insufficient. Update before continuing.');return}
+   const label=selectedItem?.name??'Item'
    const sourceName=selectedSource?.name??'Origen'
    const destName=selectedDestination?.name??'Destino'
    if(!window.confirm(
-     'Confirmar traslado REAL de '+formatMilli(cmd.quantity_milli)+' '+(selectedItem?.unit??'')+
-     ' de '+label+' desde '+sourceName+' hacia '+destName+'?\n\nEl backend descontará stock en origen y lo sumará en destino en una única operación.'
+     'Confirm Real transfer of '+formatMilli(cmd.quantity_milli)+' '+(selectedItem?.unit??'')+
+     ' de '+label+' desde '+sourceName+' hacia '+destName+'? The backend will deduct stock in origin and add it to destination in a single operation.'
    ))return
    setBusy(true) // Block a second click while IndexedDB reserves identity before POST.
    const row=newTransferIntent(actorId,business.id,cmd)
@@ -139,18 +139,18 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
    setPending(saved)
    await sendIntent(saved)
   }catch(err){
-   setError(err instanceof Error?err.message:'No se pudo preparar la operación. No se envió POST.')
+   setError(err instanceof Error?err.message:'Could not prepare the operation. POST was not sent.')
   }finally{setBusy(false)}
  }
  async function discard(){
   if(!pending||busy||!checkedBeforeDiscard)return
-  if(!window.confirm('Confirmá que YA verificaste los saldos e historial y que querés descartar la identidad de este traslado. Si estaba confirmado, una nueva clave podría duplicar el traslado. ¿Descartar?'))return
+  if(!window.confirm('Confirms that YA checked the balances and history and you want to rule out the identity of this transfer. If confirmed, a new key could double the move.'))return
   setBusy(true);setError('')
   try{
    await transferJournal.discard(scope,pending.key)
    setPending(null);setCheckedBeforeDiscard(false)
-   setNotice('Intento descartado por decisión explícita. No se envió una transferencia.')
-  }catch(err){setError(err instanceof Error?err.message:'No se pudo descartar.')}
+   setNotice('I\'m trying to rule out explicit decision.')
+  }catch(err){setError(err instanceof Error?err.message:'Could not be ruled out.')}
   finally{setBusy(false)}
  }
  const active=business.status==='ACTIVA'&&business.membership.status==='ACTIVA'
@@ -158,98 +158,98 @@ export function RealTransferPanel({token,actorId,business,locations,assignedLoca
   &&!confirmed&&consent&&!!selectedItem&&!!selectedSource&&!!selectedDestination
   &&source!==destination&&balance!==null&&!balanceLoading&&balance>0
 
- return <section className="real-transfer-panel" aria-label="Transferencia real entre sedes">
+ return <section className="real-transfer-panel" aria-label="Actual transfer between headquarters">
   <div className="real-transfer-top">
    <div>
-    <h2>Trasladar stock entre ubicaciones</h2>
-    <p>Una transferencia REAL genera una salida y una entrada atómicas en PostgreSQL. No crea compras, ventas ni movimientos de dinero.</p>
+    <h2>Transfer stock between locations</h2>
+    <p>A REAL transfer generates an atomic output and input in PostgreSQL. It does not create purchases, sales or money movements.</p>
    </div>
-   <button type="button" className="real-auth-secondary" onClick={onClose} disabled={busy}>Volver a inventario</button>
+   <button type="button" className="real-auth-secondary" onClick={onClose} disabled={busy}>Back to inventory</button>
   </div>
-  <p className="real-auth-note">El servidor exige permiso <strong>STORE en ambas ubicaciones</strong>. Si sos Encargado o Trabajador, necesitás asignación activa a origen y destino. La interfaz no sustituye esa autorización.</p>
-  <p className="real-auth-note">La identidad de la solicitud (UUID4, artículo, sedes, cantidad, motivo y fecha) se conserva sin cifrar en IndexedDB hasta confirmar o resolverla. No se guardan tokens ni contraseñas. Evitá dispositivos compartidos.</p>
-  {loading&&<p role="status">Revisando si existe una transferencia pendiente en este navegador…</p>}
+  <p className="real-auth-note">Server requires permission <strong>STORE in both locations</strong>. Si sos Encargado o Trabajador, necesitás asignación activa a origen y destino. La interfaz no sustituye esa autorización.</p>
+  <p className="real-auth-note">The identity of the application (UUID4, article, locations, quantity, reason and date) is preserved without encrypting in IndexedDB until confirmed or resolved. No tokens or passwords are saved. Avoid shared devices.</p>
+  {loading&&<p role="status">Checking for pending transfer in this browser...</p>}
   {error&&<p role="alert" className="real-auth-error">{error}</p>}
   {notice&&<p role="status" className="real-auth-success">{notice}</p>}
 
   {!loading&&confirmed&&<div className="real-transfer-confirmed">
-   <h3>Traslado confirmado</h3>
-   <p><strong>{formatMilli(confirmed.quantity_milli)} {confirmed.unit_snapshot}</strong> · {catalog.find(x=>x.id===confirmed.catalog_item_id)?.name??'Artículo '+confirmed.catalog_item_id}</p>
+   <h3>Confirmed transfer</h3>
+   <p><strong>{formatMilli(confirmed.quantity_milli)} {confirmed.unit_snapshot}</strong> · {catalog.find(x=>x.id===confirmed.catalog_item_id)?.name??'Item '+confirmed.catalog_item_id}</p>
    <p>{locations.find(x=>x.id===confirmed.source_location_id)?.name??confirmed.source_location_id} → {locations.find(x=>x.id===confirmed.destination_location_id)?.name??confirmed.destination_location_id}</p>
-   <p>Responsable ID: <code>{confirmed.actor_id}</code> · {when(confirmed.created_at)}</p>
+   <p>Responsible ID: <code>{confirmed.actor_id}</code> · {when(confirmed.created_at)}</p>
    <div className="real-transfer-movements">{confirmed.movements.map(m=><div key={m.id}>
-    <span>{m.event_type==='TRASLADO_SALIDA'?'Salida en origen':'Entrada en destino'}</span>
+    <span>{m.event_type==='TRASLADO_SALIDA'?'Output at source':'Entry into destination'}</span>
     <strong className={m.delta_milli<0?'real-inventory-negative':'real-inventory-positive'}>{formatDelta(m.delta_milli)} {confirmed.unit_snapshot}</strong>
    </div>)}</div>
-   <details><summary>Ver identificadores del traslado</summary>
-    <p>ID operación: <code>{confirmed.id}</code></p>
+   <details><summary>See transfer identifiers</summary>
+    <p>Operation ID: <code>{confirmed.id}</code></p>
     {confirmed.movements.map(x=><p key={x.id}>{x.event_type}: <code>{x.id}</code></p>)}
    </details>
-   <button type="button" className="real-auth-primary" onClick={onReview}>Revisar saldos e historial actualizados</button>
+   <button type="button" className="real-auth-primary" onClick={onReview}>Review updated balances and history</button>
   </div>}
 
   {!loading&&!confirmed&&pending&&<div className="real-transfer-pending">
-   <h3>Existe un intento de traslado guardado</h3>
-   <p><strong>{pendingItem?.name??pending.body.catalog_item_id}</strong> · {formatMilli(pending.body.quantity_milli)} {pendingItem?.unit??'unidades según catálogo'}</p>
+   <h3>There is a saved transfer attempt</h3>
+   <p><strong>{pendingItem?.name??pending.body.catalog_item_id}</strong> · {formatMilli(pending.body.quantity_milli)} {pendingItem?.unit??'units according to catalogue'}</p>
    <p>{pendingSource?.name??pending.body.source_location_id} → {pendingDest?.name??pending.body.destination_location_id}</p>
    <p>Motivo: {pending.body.reason}</p>
    <p>Creado: {when(pending.createdAt)}. Misma clave y mismo cuerpo guardados para recuperar después de F5.</p>
-   <p className="real-auth-note">Primero consultá el historial y los saldos. Si no encontrás el traslado, podés repetir exclusivamente esta misma intención. Repetir con una clave nueva puede duplicar la operación.</p>
+   <p className="real-auth-note">First check the history and balances. If you can't find the transfer, you can repeat this intention exclusively. Repeating with a new key can double the operation.</p>
    <div className="real-transfer-actions">
-    <button type="button" className="real-auth-secondary" disabled={busy} onClick={onReview}>Consultar saldos e historial</button>
+    <button type="button" className="real-auth-secondary" disabled={busy} onClick={onReview}>Checking for balances and history</button>
     <button type="button" className="real-auth-primary" disabled={busy} onClick={()=>{
-     if(window.confirm('¿Reenviar exactamente el MISMO traslado con la MISMA clave idempotente? Se verificó antes el estado del inventario.'))void sendIntent(pending)
-    }}>{busy?'Procesando…':'Reintentar MISMO traslado'}</button>
+     if(window.confirm('To forward the same transfer with the same key idempotent? The inventory status was verified before.'))void sendIntent(pending)
+    }}>{busy?'Procesando…':'Retry Same Transfer'}</button>
    </div>
    <label className="real-transfer-accept"><input type="checkbox" checked={checkedBeforeDiscard}
     disabled={busy} onChange={e=>setCheckedBeforeDiscard(e.target.checked)}/>
-    Ya verifiqué el historial y los saldos; asumo la decisión de descartar este intento.</label>
+    I've already checked the history and balances; I take the decision to rule out this attempt.</label>
    <button type="button" className="real-auth-secondary" disabled={busy||!checkedBeforeDiscard}
-    onClick={()=>void discard()}>Descartar tras verificar</button>
+    onClick={()=>void discard()}>Discard after verification</button>
   </div>}
 
   {!loading&&!confirmed&&!pending&&<div className="real-transfer-form">
-   {(!active||eligibleSites.length<2||eligibleItems.length===0)&&<p className="real-auth-note">Para trasladar necesitás una empresa activa, dos sedes activas con almacenamiento autorizadas para tu rol y al menos un artículo físico activo en el catálogo cargado.</p>}
+   {(!active||eligibleSites.length<2||eligibleItems.length===0)&&<p className="real-auth-note">To move you need an active company, two active sites with authorized storage for your role and at least one physical item active in the loaded catalog.</p>}
    <div className="real-transfer-grid">
-    <label>Artículo físico activo
+    <label>Active physical article
      <select value={article} disabled={busy||!active} onChange={e=>changeArticle(e.target.value)}>
-      <option value="">Seleccionar artículo</option>
+      <option value="">Select article</option>
       {eligibleItems.map(x=><option key={x.id} value={x.id}>{x.name} · {x.unit}</option>)}
      </select>
     </label>
-    <label>Ubicación de origen
+    <label>Origin location
      <select value={source} disabled={busy||!active} onChange={e=>changeSource(e.target.value)}>
-      <option value="">Seleccionar origen</option>
+      <option value="">Select Source</option>
       {eligibleSites.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select>
     </label>
-    <label>Ubicación de destino
+    <label>Destination location
      <select value={destination} disabled={busy||!active} onChange={e=>{setDestination(e.target.value);setNotice('')}}>
-      <option value="">Seleccionar destino</option>
+      <option value="">Select Destination</option>
       {eligibleSites.filter(x=>x.id!==source).map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select>
     </label>
-    <label>Cantidad de traslado
+    <label>Number of transfers
      <input inputMode="decimal" value={quantity} maxLength={18} disabled={busy||!active}
-      onChange={e=>setQuantity(e.target.value)} placeholder="1 (unidad) o 0,500 (fraccionable)"/>
+      onChange={e=>setQuantity(e.target.value)} placeholder="1 (unit) or 0.500 (fractionable)"/>
     </label>
    </div>
    <div className="real-transfer-balance">
-    <div><strong>Saldo consultado del origen</strong><p>Es una lectura de FastAPI, no una reserva de stock.</p></div>
-    <div>{balanceLoading?'Consultando…':balance===null?'Seleccioná artículo y origen':<strong>{formatMilli(balance)} {selectedItem?.unit}</strong>}</div>
+    <div><strong>Balance consulted from origin</strong><p>It's a FastAPI reading, not a stock reservation.</p></div>
+    <div>{balanceLoading?'Consultando…':balance===null?'Select article and origin':<strong>{formatMilli(balance)} {selectedItem?.unit}</strong>}</div>
     <button type="button" className="real-auth-secondary" disabled={busy||!article||!source}
-      onClick={refreshBalance}>Actualizar saldo</button>
+      onClick={refreshBalance}>Update balance</button>
    </div>
    {balanceError&&<p className="real-auth-error" role="alert">{balanceError}</p>}
-   <label className="real-transfer-reason">Motivo del traslado
+   <label className="real-transfer-reason">Reason for relocation
     <textarea value={reason} maxLength={500} rows={3} disabled={busy||!active}
-     onChange={e=>setReason(e.target.value)} placeholder="Ej.: Reposición de mercadería en otra sede"/>
+     onChange={e=>setReason(e.target.value)} placeholder="E.g.: Replenishment of goods at another headquarters"/>
    </label>
    <label className="real-transfer-accept"><input type="checkbox" checked={consent} disabled={busy}
     onChange={e=>setConsent(e.target.checked)}/>
-    Acepto conservar este intento en este navegador para recuperarlo ante cortes de conexión o F5.</label>
+    I agree to keep this attempt in this browser to recover it from connection cuts or F5.</label>
    <button type="button" className="real-auth-primary" disabled={!canSubmit}
-     onClick={()=>void create()}>{busy?'Confirmando…':'Confirmar transferencia REAL'}</button>
+     onClick={()=>void create()}>{busy?'Confirmando…':'Confirm Real Transfer'}</button>
   </div>}
  </section>
 }

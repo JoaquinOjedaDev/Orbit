@@ -25,21 +25,21 @@ router = APIRouter(prefix="/businesses/{business_id}/inventory/transfers", tags=
 def _http_error(error: Exception) -> HTTPException:
     if isinstance(error, (PurchaseBusinessUnavailable, TransferNotFound,
                           TransferInvalidLocation, TransferInvalidItem)):
-        return HTTPException(404, detail="Empresa, articulo, ubicacion o traslado no disponible")
+        return HTTPException(404, detail="Company, item, location or transfer not available")
     if isinstance(error, (PurchasePermissionDenied, TransferPermissionDenied)):
-        return HTTPException(403, detail="Sin permiso STORE en ambas ubicaciones")
+        return HTTPException(403, detail="No permission STORE in both locations")
     if isinstance(error, TransferCompanySuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, TransferLocationIncompatible):
-        return HTTPException(409, detail="Ubicacion inactiva o no apta para almacenar")
+        return HTTPException(409, detail="Inactive or unfit to store location")
     if isinstance(error, TransferInsufficientStock):
-        return HTTPException(409, detail="Stock insuficiente en la ubicacion de origen")
+        return HTTPException(409, detail="Insufficient stock in the source location")
     if isinstance(error, TransferBalanceOverflow):
-        return HTTPException(409, detail="El saldo destino supera el limite permitido")
+        return HTTPException(409, detail="The target balance exceeds the allowed limit")
     if isinstance(error, TransferIdempotencyConflict):
-        return HTTPException(409, detail="Clave idempotente reutilizada con otro contenido o actor")
+        return HTTPException(409, detail="Idepotent key reused with other content or actor")
     if isinstance(error, TransferInvalidQuantity):
-        return HTTPException(422, detail="Cantidad fraccionaria para articulo discreto")
+        return HTTPException(422, detail="Fractional quantity for discrete item")
     raise TypeError("Error de traslado sin mapeo HTTP")
 
 
@@ -54,7 +54,7 @@ def _http_error(error: Exception) -> HTTPException:
         409: {"description": "Stock insuficiente, ubicacion inhabilitada o conflicto"},
         422: {"description": "Cantidad, campos, UUID o cuerpo invalidos"},
     },
-    summary="Trasladar un articulo entre dos depositos atomicamente sin stock negativo",
+    summary="Move an item between two atomically unstocked deposits",
 )
 def create_transfer(
     business_id: UUID, command: TransferStockRequest, response: Response,
@@ -85,7 +85,7 @@ def create_transfer(
     response_model_exclude_none=True,
     responses={401: {"description": "Sesion invalida"}, 403: {"description": "Sin lectura"},
                404: {"description": "No existe en el tenant"}},
-    summary="Consultar un traslado y sus dos movimientos historicos",
+    summary="Consult a transfer and its two historic movements",
 )
 def get_transfer(
     business_id: UUID, transfer_id: UUID,

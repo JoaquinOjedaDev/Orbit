@@ -1,187 +1,187 @@
-# 03C — Guía de casos de uso de la API REAL
+# 03C — Real API Use Case Guide
 
-**Proyecto:** Orbit — plataforma generalista de gestión multiempresa y multirrubro.  
-**Materia:** Programación 2 — UNSAM, segundo cuatrimestre de 2026.  
-**Versión:** **2.1 / E2-7 T12-C4**, aprobada y publicada en rama documental.  
-**Estado de representación:** **AS-IMPLEMENTED T11** del núcleo RF-01 a RF-07.  
-**Corte funcional:** rama `main`, commit `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45).  
-**Rama documental:** `docs/e2-7-t12-cierre-academico` (PR #46, **DRAFT**); **los tres archivos 03C fueron aprobados y publicados**.  
-**Documentos de referencia:** [01 — Requerimientos](../01_ANALISIS_DE_REQUERIMIENTOS.md), [02 — Casos de uso](../02_CASOS_DE_USO.md), [03 — Modelo de dominio v2.1](../03_MODELO_DE_DOMINIO_Y_UML.md) y [05 — Matriz API y trazabilidad](../05_MATRIZ_API_Y_TRAZABILIDAD.md).
+**Project:** Orbit — a generalist multi-company and multi-rub platform.  
+**Materia:** Programming 2 — UNSAM, second quarter of 2026.  
+**Version:** **2.1 / E2-7 T12-C4**approved and published in documentary branch.  
+**State of representation:** **AS-IMPLEMENTED T11** from the RF-01 to RF-07 core.  
+**Functional cut:** rama `main`, commit `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45).  
+**Rama documental:** `docs/e2-7-t12-cierre-academico` (PR #46, **DRAFT**); **the three 03C files were approved and published**.  
+**Reference documents:** [01 — Requirements](../01_ANALISIS_DE_REQUERIMIENTOS.md), [02 — Cases of use](../02_CASOS_DE_USO.md), [03 — Domain model v2.1](../03_MODELO_DE_DOMINIO_Y_UML.md) y [05 — API matrix and traceability](../05_MATRIZ_API_Y_TRAZABILIDAD.md).
 
-![03C — Casos de uso de la API REAL](03C_CASOS_DE_USO_REDISENADO.svg)
+![03C — Cases of use of the REAL API](03C_CASOS_DE_USO_REDISENADO.svg)
 
-[Ver lámina SVG vectorial](03C_CASOS_DE_USO_REDISENADO.svg) · [Ver PlantUML editable](03C_CASOS_DE_USO.puml) · [03A — Clases de identidad y catálogo](03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md) · [03B — Comercio e inventario](03B_EXPLICACION_COMPRAS_INVENTARIO_VENTAS.md).
+[See vector SVG sheet](03C_CASOS_DE_USO_REDISENADO.svg) · [Ver PlantUML editable](03C_CASOS_DE_USO.puml) · [03A — Identity classes and catalogue](03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md) · [03B — Trade and inventory](03B_EXPLICACION_COMPRAS_INVENTARIO_VENTAS.md).
 
-> **Cómo leer el diagrama:** la lámina presenta los **objetivos de los actores** de la API real, no las tablas de PostgreSQL ni el recorrido obligatorio de cada petición. Los perfiles operativos dibujados son *funciones contextuales*; las únicas denominaciones de rol persistidas en `Membership.role` son `TITULAR_ADMINISTRATIVO`, `ADMINISTRADOR`, `ENCARGADO` y `TRABAJADOR`. La autorización efectiva se comprueba en el backend según usuario, sesión, membresía, empresa y, cuando corresponda, sede. El estado REAL no significa que las capacidades diferidas ya estén desarrolladas.
+> **How to read the diagram:** the foil presents the **objectives of the actors** of the real API, not PostgreSQL tables or mandatory path of each request. The operational profiles drawn are *contextual functions*; the only role names persist in `Membership.role` son `TITULAR_ADMINISTRATIVO`, `ADMINISTRADOR`, `ENCARGADO` y `TRABAJADOR`. Effective authorization is checked on the backend by user, session, membership, company and, where appropriate, headquarters. REAL state does not mean that the deferred capabilities are already developed.
 
-## 1. Finalidad, alcance y correcciones frente a la versión anterior
+## 1. Purpose, scope and corrections compared to the previous version
 
-El diagrama contesta tres preguntas: **quién interactúa con Orbit**, **qué objetivos del MVP REAL puede alcanzar** y **qué controles de negocio separan esos objetivos**. Su frontera se rotula `Orbit / API RESTful`; la API es **parte del sistema**, nunca un actor externo.
+The diagram answers three questions: **who interacts with Orbit**, **what objectives the REAL MVP can achieve** y **which business controls separate those objectives**. Its border is labeled `Orbit / API RESTful`; API is **part of the system**Never an outside actor.
 
-Esta versión reemplaza documentalmente el estado histórico `03C v0.3 / TO-BE` (diseño previo a la integración del backend) por una representación de los CU **efectivamente implementados** en FastAPI, SQLAlchemy/PostgreSQL y las pantallas React REAL al corte T11. El documento 03 rector v2.1 y los diagramas 03A y 03B constituyen su contexto arquitectónico; sus clases no se duplican como actores del diagrama de casos de uso.
+This version replaces the historical state in documentary form `03C v0.3 / TO-BE` (design prior to the integration of backend) by a representation of the CUs **effectively implemented** in FastAPI, SQLAlchemy/PostgreSQL and the React REAL screens at cut T11. Document 03 rector v2.1 and diagrams 03A and 03B constitute their architectural context; their classes are not duplicated as actors of the case-use diagram.
 
-La lámina editorial organiza los casos por áreas para facilitar la defensa oral. Los cuadros coloreados son **agrupaciones temáticas** y los óvalos son **casos de uso UML**. Las líneas de asociación indican una función actora que participa en el objetivo; **no** reemplazan el análisis de permisos. La franja inferior de flujo comercial representa una **secuencia ilustrativa**, no una relación UML «include», «extend», herencia ni obligación de completar todos los casos de uso.
+The editorial sheet organizes the cases by areas to facilitate oral defense. Colored pictures are **thematic clusters** And the ovals are **cases of use UML**. The partnership lines indicate an actuating function that participates in the objective; **no** the lower strip of commercial flow represents a **illustrative sequence**, not an "include", "extend" or "inheritance" UML relationship or obligation to complete all cases of use.
 
-### 1.1 Relación entre doce CU escritos y trece óvalos
+### 1.1 Ratio of 12 CUs written to 13 ovals
 
-El Documento 02 define **CU-01 a CU-12** (doce especificaciones). La lámina separa **CU-12a Invitar** y **CU-12b Aceptar** porque son objetivos iniciados por personas diferentes; por eso hay **trece óvalos**, sin inventar un CU-13. Otras ampliaciones ya implementadas (administrar ubicaciones, colaboradores, consultar comprobantes y estado de catálogo) son operaciones de los CU existentes y no requieren numeraciones artificiales.
+El Documento 02 define **CU-01 a CU-12** (twelve specifications). **CU-12a Invite** y **CU-12b Accept** because they are objectives initiated by different people; that is why there are **13 ovals**, without inventing a CU-13. Other extensions already implemented (manage locations, collaborators, check vouchers and catalog status) are operations of existing CUs and do not require artificial numerations.
 
-## 2. Actores y su equivalencia con roles reales
+## 2. Actors and their equivalence with real roles
 
-| Actor funcional en 03C | Qué representa | Correspondencia comprobable en la implementación |
+| Functional Actor in 03C | What it represents | Checkable matching in implementation |
 |---|---|---|
-| **Visitante** | Persona sin sesión que desea registrarse o autenticarse | No necesita membresía empresarial; CU-01 y CU-02 |
-| **Usuario autenticado** | Cuenta global activa que crea su primer negocio u otro adicional | `User` + `AuthSession`; CU-03 crea `Business` y la membresía titular inicial |
-| **Administración** | Persona que gestiona configuración, catálogo e invitaciones dentro de una empresa | `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`; membresía activa y empresa habilitada para escribir |
-| **Compras** | Responsable que registra adquisiciones y sus renglones | **Solo** titular/administrador para crear compras; CU-06 **no** exige ubicación al registrar |
-| **Operador STORE** | Función autorizada para recibir mercadería o trasladar bienes entre sedes | Titular/admin sin asignación individual; encargado/trabajador con `LocationAssignment` ACTIVA y sede apta para STORE |
-| **Miembro activo** | Usuario que consulta saldos y movimientos del negocio | Los cuatro roles de membresía activos pueden consultar el inventario del mismo tenant (CU-08); la lectura no concede derecho de operar en otra sede |
-| **Ajustes** | Responsable que realiza ajustes justificados o carga de stock inicial | Ajustes: titular/admin/**encargado**; **stock inicial exclusivamente titular/admin**; trabajador excluido de ambos |
-| **Operador POS** | Persona autorizada para registrar ventas en su empresa | Titular/admin o encargado/trabajador con las condiciones de sede y política de precios correspondientes |
-| **Destinatario** | Usuario autenticado cuyo correo coincide con la invitación dirigida | Acepta invitación válida y crea/reactiva su membresía una sola vez; no obtiene acceso solo por recibir el enlace |
+| **Visitor** | Person without session wishing to register or authenticate | No business membership required; CU-01 and CU-02 |
+| **Authenticated user** | Active global account creating your first business or other additional | `User` + `AuthSession`; CU-03 crea `Business` and initial membership |
+| **Administration** | Person managing configuration, catalog and invitations within a company | `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`; active membership and company enabled to write |
+| **Purchases** | Responsible for recording procurement and its lines | **Alone** holder/manager to create purchases; CU-06 **no** location required when registering |
+| **Operator STORE** | Authorized function for receiving goods or moving goods between headquarters | Holder/admin without individual assignment; maintainer/worker with `LocationAssignment` ACTIVA and STORE-fitting headquarters |
+| **Active member** | User who consults balances and business movements | The four active membership roles can consult the same tenant inventory (CU-08); reading does not grant right to operate at another venue |
+| **Adjustments** | Responsible for making justified adjustments or initial stock loading | Adjustments: holder/admin/**Maintainer**; **original stock exclusively holder/admin**; worker excluded from both |
+| **Operator POS** | Person authorised to register sales in your company | Holder/admin or manager/worker with the relevant headquarters and pricing policy conditions |
+| **Addressee** | Authenticated user whose mail matches the directed invitation | Accepts valid invitation and creates/reactivates your membership only once; you do not get access just by receiving the link |
 
-**Importante:** un mismo usuario puede ser titular en una empresa y encargado en otra; no existen clases persistentes «OperadorCompras», «Vendedor» ni roles SQL con esos nombres. En la lámina el actor «Compras» es una *etiqueta de la función*, no la declaración de un quinto rol. **Proveedor** y **cliente comprador** tampoco son actores autenticados por el mero hecho de figurar como datos comerciales.
+**Important:** The same user can be a holder in one company and a manager in another; there are no persistent "OperatorBuyers", "Seller" classes or SQL roles with those names. In the film, the actor "Buys" is a *function label*, not the declaration of a fifth role. **Supplier** y **buyer customer** Nor are they authenticated by the mere fact that they appear as commercial data.
 
-### 2.1 Matices de permisos que no deben perderse
+### 2.1 Killings of permissions that should not be missed
 
-- **Rol TITULAR_ADMINISTRATIVO:** autorización empresarial amplia; el sistema protege la titularidad frente a edición/revocación ordinaria. No debe confundirse fundador histórico con rol activo actual.
-- **Rol ADMINISTRADOR:** gestiona empresa/configuración, catálogo, compras e invitaciones; **no equivale a titular** para toda gestión de membresías protegidas.
-- **Rol ENCARGADO:** puede operar sedes asignadas para SELL o STORE y realizar ajustes justificados, pero no stock inicial ni override de precio de venta o descuento.
-- **Rol TRABAJADOR:** puede operar sedes asignadas para SELL o STORE y ejecutar recepciones/traslados/ventas permitidas; **no puede registrar ajustes ni stock inicial**, ni modificar precio o descuento del POS.
-- **Estado:** escritura exige empresa/membresía activas y, para operación por sede, ubicación ACTIVA. Titular y administrador **no requieren asignación personal**, aunque sí las capacidades requeridas de la sede. Encargado/trabajador requieren asignación ACTIVA a cada sede involucrada.
+- **PORTOPERATORY_ACMINISTRATIVE:** broad business authorization; the system protects ownership against ordinary editing/revocation. It should not be confused historical founder with current active role.
+- **Role Administrator:** manages company/configuration, catalogue, purchases and invitations; **does not equal holder** for all management of protected memberships.
+- **Role in charge:** may operate locations assigned to SELL or STORE and make justified adjustments, but no initial stock or override of sale price or discount.
+- **Rol WORKER:** may operate locations assigned to SELL or STORE and execute permitted receptions/transfers/sales; **cannot record adjustments or initial stock**, nor modify price or discount of the POS.
+- **Status:** writing requires active company/membership and, for operation by headquarters, active location. **no personal assignment required**, although the required headquarters capabilities. Manager/worker require active assignment to each headquarters involved.
 
-## 3. Matriz de casos de uso, roles y política por ubicación
+## 3. Matrix of use, roles and policy cases by location
 
-| CU | Objetivo REAL | RF | Quién puede iniciarlo | Condición de autorización relevante |
+| CU | REAL Objective | RF | Who can start it? | Relevant authorisation condition |
 |---|---|---|---|---|
-| **CU-01** | Registrarse | RF-01 | Visitante | Correo único normalizado; no crea empresa ni membresía automáticamente |
-| **CU-02** | Iniciar/cerrar sesión, consultar identidad | RF-01 | Visitante para login; titular de sesión para `/me` y logout | Autenticación Bearer opaca; token en memoria del frontend REAL |
-| **CU-03** | Crear y gestionar empresa | RF-02 | Usuario global autenticado para crear; miembros autorizados para gestión posterior | Alta atómica Empresa + Membresía titular; idempotencia propia de alta empresarial |
-| **CU-04** | Crear/editar/pausar sede y gestionar asignaciones | RF-03 | Titular o administrador para altas/ediciones | Aislamiento por empresa; indicadores `can_sell`, `can_store`; una principal activa como máximo |
-| **CU-05** | Crear/editar/desactivar artículo o servicio | RF-04 | Titular o administrador para escritura | Ficha de catálogo por empresa; SKU/nombre controlados; **no crea stock** |
-| **CU-06** | Registrar compra | RF-05 | **Titular o administrador** | No requiere sede al alta; snapshots; el alta no modifica existencias |
-| **CU-07** | Confirmar recepción completa | RF-05, RF-06 | Titular, administrador, encargado o trabajador | **STORE** en sede destino; para encargado/trabajador, asignación ACTIVA; una recepción completa por compra |
-| **CU-08** | Consultar saldos y movimientos | RF-06 | Los cuatro roles con membresía activa | Lectura del tenant; puede incluir saldos de varias sedes aun cuando el miembro no pueda operarlas |
-| **CU-09** | Trasladar existencias | RF-06 | Titular, administrador, encargado o trabajador | **STORE en origen y destino**, sede(s) activa(s); asignación activa de operador a ambas; un débito y un crédito atómicos |
-| **CU-10** | Registrar venta POS | RF-07 | Titular, administrador, encargado o trabajador | Para bienes físicos: misma sede **SELL + STORE**, stock suficiente y asignación si corresponde. Para encargado/trabajador: precio del catálogo obligatorio, sin cambio de precio ni descuento |
-| **CU-11** | Registrar ajuste / stock inicial | RF-06 | Ajustes: titular/admin/**encargado**. Inicial: **solo titular/admin** | STORE en la sede; si rol operativo, asignación ACTIVA; ajuste con `expected_version`, motivo y control de saldo; inicial solo sin historial previo pertinente |
-| **CU-12a** | Emitir invitación de colaboración | RF-02 | Titular o administrador | Invitación nominativa a correo normalizado; rol propuesto ENCARGADO o TRABAJADOR; sin conceder acceso todavía |
-| **CU-12b** | Aceptar invitación | RF-02 | Destinatario autenticado | Correo de sesión coincidente, invitación vigente/pendiente, aceptación atómica y sin duplicar membresía |
+| **CU-01** | Sign up | RF-01 | Visitor | Standardised single mail; does not create business or membership automatically |
+| **CU-02** | Start/Close Session, Consult Identity | RF-01 | Visitor for login; session holder for `/me` y logout | Authentication Opaque Bearer; token in memory of the REAL frontend |
+| **CU-03** | Create and manage a company | RF-02 | Authenticated global user to create; members authorized for later management | High atomic enterprise + titular membership; own high-level business power |
+| **CU-04** | Create/Edit/pause headquarters and manage assignments | RF-03 | Holder or administrator for high/editions | Insulation by company; indicators `can_sell`, `can_store`; a maximum active principal |
+| **CU-05** | Create/Edit/disable article or service | RF-04 | Write holder or administrator | Catalogue file by company; SKU/name checked; **no crea stock** |
+| **CU-06** | Register purchase | RF-05 | **Holder or administrator** | No home address required; snapshots; no inventory change |
+| **CU-07** | Confirm full reception | RF-05, RF-06 | Holder, administrator, manager or worker | **STORE** at destination headquarters; for manager/worker, active assignment; a full receipt by purchase |
+| **CU-08** | Check balances and movements | RF-06 | The four roles with active membership | Tenant reading; may include balances from multiple locations even if the member is unable to operate them |
+| **CU-09** | Move stocks | RF-06 | Holder, administrator, manager or worker | **STORY at origin and destination**, active site(s); active operator assignment to both; a debit and an atomic credit |
+| **CU-10** | Register sale POS | RF-07 | Holder, administrator, manager or worker | For physical property: same headquarters **SELL + STORE**, sufficient stock and allocation if applicable. For manager/worker: price of the compulsory catalogue, without change of price or discount |
+| **CU-11** | Register adjustment / initial stock | RF-06 | Adjustments: holder/admin/**Maintainer**Initial: **holder/admin only** | STORY at headquarters; if operational role, active assignment; adjustment with `expected_version`, reason and balance control; initial only without relevant previous history |
+| **CU-12a** | Issue invitation for collaboration | RF-02 | Holder or administrator | Nominative invitation to standard mail; proposed role ENTRY or WORKER; not yet granted access |
+| **CU-12b** | Accept invitation | RF-02 | Authenticated consignee | Matching session mail, current/pending invitation, atomic acceptance and without duplicate membership |
 
-**Caso especial CU-10:** una venta de **solo servicios** puede no tener ubicación, pero en el backend esa modalidad sin sede está restringida a **titular/administrador**. Un encargado o trabajador requiere una sede habilitada para vender incluso si no descuenta stock físico. Una venta de bienes físicos exige además capacidad STORE en esa misma sede. Declarar `MERCADO_PAGO_DECLARADO` es únicamente registrar lo informado por el operador; **no valida una acreditación externa**.
+**Special case CU-10:** a sale of **services only** may not have a location, but in the backend that mode without headquarters is restricted to **holder/manager**. A manager or worker requires a registered office to sell even if he does not take off physical stock. A sale of physical property also requires STORE capacity at that same headquarters. `MERCADO_PAGO_DECLARADO` is only to record the information provided by the operator; **does not validate external accreditation**.
 
-**Alcance de CU-11:** `expected_version` pertenece al comando/DTO de control optimista, **no** a una columna de `inventory_operations`; el saldo persistido usa `stock_balances.version`. Un ajuste con versión obsoleta devuelve conflicto controlado, sin crear movimiento. La interfaz no debe tratar una respuesta de conflicto como éxito.
+**Scope of CU-11:** `expected_version` belongs to the optimistic control command/DTO, **no** to a column of `inventory_operations`; the persistent balance uses `stock_balances.version`. An outdated version setting returns controlled conflict, without creating movement. The interface should not treat a conflict response as success.
 
-## 4. Casos de uso y contratos representativos
+## 4. Cases of use and representative contracts
 
-Todas las rutas siguientes se entienden bajo `/api/v1`; para endpoints por negocio se usa `B = /api/v1/businesses/{business_id}` y en el frontend REAL `E = /real/empresas/{business_id}`. Los contratos completos y cualquier actualización de método/estado HTTP corresponden al **Documento 05 y al código fuente**, no a esta lámina.
+All the following routes are understood as low `/api/v1`; for endpoints per business is used `B = /api/v1/businesses/{business_id}` and the REAL frontend `E = /real/empresas/{business_id}`. Full contracts and any HTTP method/state update correspond to the **Document 05 and source code**Not this foil.
 
-| CU | API REAL representativa | UI REAL principal | Resultado observable |
+| CU | REAL API representative | Main REAL IU | Observable result |
 |---|---|---|---|
-| CU-01 | `POST /auth/register` | `/real/registro` | Usuario global creado |
-| CU-02 | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout` | `/real/login`, `/real/perfil` | Sesión activa/revocada |
-| CU-03 | `POST/GET /businesses`, `GET/PATCH B` | `/real/empresas`, `/real/empresas/nueva` | Empresa y titular persistidos |
-| CU-04 | `POST/GET B/locations`, `PATCH .../status`, `PUT .../primary`, `GET/PUT .../assignments` | `E/ubicaciones` | Sede/aptitudes/asignaciones persistidas |
-| CU-05 | `POST/GET B/catalog`, `GET/PATCH B/catalog/{item_id}`, `PATCH .../status` | `E/catalogo` | Alta/edición/estado del catálogo |
-| CU-06 | `POST/GET B/purchases`, `GET .../{purchase_id}` | `E/compras` | Compra histórica, stock intacto |
-| CU-07 | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt` | `E/compras` | Entrada física completa y única |
-| CU-08 | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario` | Saldo versionado e historial firmado |
-| CU-09 | `POST B/inventory/transfers`, `GET .../transfers/{transfer_id}` | `E/inventario` | Dos movimientos de traslado atómico |
-| CU-10 | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}` | `E/pos`, `E/ventas` | Venta confirmada, pagos declarados, stock coherente |
-| CU-11 | `POST B/inventory/adjustments`, `GET .../adjustments/{adjustment_id}` | `E/inventario` | Ajuste/stock inicial auditable y controlado |
-| CU-12 | `POST B/invitations`, `POST /invitations/accept`, endpoints de membresías y asignaciones | `E/equipo`, `/real/invitaciones/aceptar` | Invitación emitida/aceptada, membresía única |
+| CU-01 | `POST /auth/register` | `/real/registro` | Global user created |
+| CU-02 | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout` | `/real/login`, `/real/perfil` | Active/revocated session |
+| CU-03 | `POST/GET /businesses`, `GET/PATCH B` | `/real/empresas`, `/real/empresas/nueva` | Persisting company and holder |
+| CU-04 | `POST/GET B/locations`, `PATCH .../status`, `PUT .../primary`, `GET/PUT .../assignments` | `E/ubicaciones` | Headquarters/aptitudes/allocations persist |
+| CU-05 | `POST/GET B/catalog`, `GET/PATCH B/catalog/{item_id}`, `PATCH .../status` | `E/catalogo` | High/editing/status of catalogue |
+| CU-06 | `POST/GET B/purchases`, `GET .../{purchase_id}` | `E/compras` | Historical purchase, stock intact |
+| CU-07 | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt` | `E/compras` | Complete and unique physical entry |
+| CU-08 | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario` | Versed balance and signed history |
+| CU-09 | `POST B/inventory/transfers`, `GET .../transfers/{transfer_id}` | `E/inventario` | Two atomic transfer movements |
+| CU-10 | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}` | `E/pos`, `E/ventas` | Confirmed sale, declared payments, consistent stock |
+| CU-11 | `POST B/inventory/adjustments`, `GET .../adjustments/{adjustment_id}` | `E/inventario` | Auditable and controlled initial stock/adjustment |
+| CU-12 | `POST B/invitations`, `POST /invitations/accept`, membership and assignment endpoints | `E/equipo`, `/real/invitaciones/aceptar` | Invitation issued/accepted, single membership |
 
-**Complementos reales que no se duplican como óvalos:** Proveedores (`suppliers`) con alta/edición/estado dentro de RF-05; consulta y gestión de membresías dentro de CU-12; gestión de ubicación principal y asignaciones dentro de CU-04; y recuperación de venta por `request_id` dentro de CU-10. Esta es una **vista de objetivos** con la nomenclatura original de la cátedra, no una lista exhaustiva de las 46 rutas documentadas en T12-B.
+**Real add-ons that do not duplicate as ovals:** Suppliers (`suppliers`) with high/editing/state within RF-05; consultation and membership management within CU-12; main location management and assignments within CU-04; and sales recovery by `request_id` This is a **objective view** with the original nomenclature of the chair, not an exhaustive list of the 46 routes documented in T12-B.
 
-## 5. Lectura gráfica y semántica UML
+## 5. Graphical and semantic reading UML
 
-1. **Actores fuera de la frontera:** representan funciones o sujetos externos al sistema; la API no es un actor.
-2. **Óvalos dentro de la frontera:** representan un objetivo del usuario. El total es 13 óvalos para CU-01…CU-12, por la bifurcación CU-12a/b.
-3. **Líneas continuas actor–CU:** indican asociación, no flujo de datos, llamada HTTP, FK ni herencia de roles.
-4. **Paneles coloreados:** son una distribución editorial por dominio, sin imponer una arquitectura de despliegue.
-5. **No se utilizan `<<include>>` ni `<<extend>>`:** registrar compra, confirmar recepción, emitir invitación y aceptar invitación pueden ocurrir en distintos momentos y con actores distintos. Dibujarlos como dependencia UML obligatoria induciría conclusiones incorrectas.
-6. **Franja inferior «flujo típico»:** muestra una historia de negocio en tres pasos (compra → recepción → venta), **fuera de la semántica de relaciones UML**.
-7. **Guía como fuente de detalle:** los permisos exactos y condiciones se describen aquí, evitando cargar cada óvalo de hashes, UUID o reglas extensas.
+1. **Actors outside the border:** represent functions or external subjects to the system; API is not an actor.
+2. **Ovals within the border:** The total is 13 ovals for CU-01...CU-12, by the bifurcation CU-12a/b.
+3. **Continuous actor-CU lines:** indicate association, not data flow, called HTTP, FK or role inheritance.
+4. **Coloured panels:** are an editorial distribution by domain, without imposing a deployment architecture.
+5. **Not used `<<include>>` ni `<<extend>>`:** Recording purchase, confirming receipt, issuing invitation and accepting invitation can occur at different times and with different actors. Drawing them as a mandatory UML dependency would induce incorrect conclusions.
+6. **Typical flow lower strip:** shows a business story in three steps (buy → reception → sale), **outside the semantics of UML relations**.
+7. **Guide as a source of detail:** the exact permissions and conditions are described here, avoiding loading each hashes oval, UUID or extensive rules.
 
-En el archivo `.puml`, PlantUML puede ordenar los paquetes de forma diferente al SVG. El **SVG es una composición editorial vectorial reproducible**, no una exportación exacta del motor de PlantUML. Ambos deben preservar identificadores CU, asociaciones funcionales y alcance.
+In the file `.puml`PlantUML can sort the packages differently from SVG. **SVG is a reproducible vector editorial composition**, not an exact export of PlantUML engine. Both must preserve UC identifiers, functional associations and scope.
 
-## 6. Recorridos principales (sin confundirlos con dependencias UML)
+## 6. Main routes (without confusing them with UML dependencies)
 
-### 6.1 Empresa nueva con mercadería (CU-01/02/03/04/05/06/07/08/10)
+### 6.1 New company with goods (CU-01/02/03/04/05/06/07/08/10)
 
-El visitante se registra o inicia sesión; la cuenta global crea una empresa cuyo titular inicial queda asociado en la misma transacción. El titular/administrador configura una sede que almacene y venda, y un artículo físico en catálogo. **Registrar una compra no incrementa el saldo**. Al confirmarse una **recepción completa en una sede STORE**, se crean movimientos de entrada y cambia el saldo. Una venta de bienes posterior valida SELL + STORE, la disponibilidad por artículo, precio y pagos declarados; descuenta existencias y confirma comprobante, renglones y ledger juntos. El flujo no obliga a toda empresa a comprar antes de vender; el stock inicial y ajustes válidos también pueden generar existencias.
+The visitor registers or enters into session; the global account creates a company whose initial owner is associated with the same transaction. The holder/manager sets up a headquarters that stores and sells, and a physical item in catalogue. **Registering a Purchase does not increase the balance**. When a **full reception at a STORE headquarters**, input moves are created and the balance changes. A sale of goods later validates SELL + STORE, availability per item, price and payments declared; accounts stocks and confirms vouchers, lines and ledger together. The flow does not require every company to buy before selling; the initial stock and valid adjustments can also generate stocks.
 
-### 6.2 Empresa solo de servicios (CU-03/05/10)
+### 6.2 Service-only company (CU-03/05/10)
 
-Una empresa puede comenzar sin ubicación y ofrecer servicios en catálogo. La venta de servicios no genera movimiento de stock físico ni consumo automático de insumos. **Sin sede**, el backend reserva la operación a titular/administrador; un rol operativo necesitará una ubicación con SELL y asignación ACTIVA. No existe agenda/reserva con cobro QR REAL en este corte.
+A company can start without location and offer services in catalog. The sale of services does not generate movement of physical stock or automatic consumption of inputs. **Sin sede**, the backend reserves the operation to holder/manager; an operating role will need a location with SELL and Active Assignment. There is no agenda/reserve with Real QR collection in this court.
 
-### 6.3 Trabajo con colaboradores (CU-12a/12b, CU-04, CU-07/09/10/11)
+### 6.3 Work with partners (CU-12a/12b, CU-04, CU-07/09/10/11)
 
-Titular/admin emite una invitación para ENCARGADO o TRABAJADOR; la invitación pendiente no crea permisos. El invitado se autentica con el correo apropiado y la acepta; la API crea/reactiva la membresía dentro de una transacción. Se habilitan asignaciones activas por sede. Luego el trabajador puede vender/recepcionar/trasladar según SELL/STORE, pero **no ajustar ni crear stock inicial**; el encargado sí puede ajustar, pero no generar stock inicial. Ninguno altera precios ni otorga descuentos en POS.
+Owner/admin issues an invitation to SHIPPING or WORKER; pending invitation does not create permissions. The guest authenticates with the appropriate mail and accepts it; the API creates/reactivates membership within a transaction. Active assignments are enabled by headquarters. Then the worker can sell/receive/transfer according to SELL/STORE, but **no ajustar ni crear stock inicial**; the manager can adjust, but not generate initial stock. None alter prices or grant discounts on POS.
 
-## 7. Reglas transversales y controles de integridad
+## 7. Cross-cutting rules and integrity controls
 
-| Control | Qué se espera del backend REAL |
+| Ctrl | What is expected from the REAL backend |
 |---|---|
-| Multi-tenant | Todas las operaciones empresariales comprueban el tenant de la membresía y referencias; conocer el UUID de otra empresa no concede permisos |
-| Autenticación | Sesión vigente y usuario activo; los comandos transaccionales revalidan autorizaciones en el servicio |
-| Sedes | SELL y/o STORE según operación; activo en la sede y asignación del rol operativo cuando corresponda |
-| Compras | Compra con líneas, snapshots e idempotencia; sin cambios de inventario al darla de alta |
-| Recepciones | A lo sumo una recepción completa por compra; sin ingreso duplicado por reintento |
-| Inventario | Saldos no negativos, traslados de dos movimientos, ajustes con versión y motivo, historial de eventos firmados |
-| Ventas | Suma de pagos declarados igual al total, redondeo `HALF_UP` por renglón, limitación de override de precios, operación atómica para bienes físicos |
-| Reintentos | UUID de comando y hash por agregado; no existe una tabla genérica `SolicitudIdempotente` para todos los casos |
-| Invitaciones | Token guardado mediante hash; aceptación ligada a la identidad/correo y membresía sin duplicados |
+| Multi-tenant | All business operations check membership tenant and references; knowing another company's UUID does not grant permissions |
+| Authentication | Current session and active user; transactional commands validate authorizations in service |
+| Sedes | SELL and/or STORE according to operation; active at headquarters and allocation of operational role where applicable |
+| Purchases | Purchase with lines, snapshots and idempotency; no inventory changes when you register |
+| Receptions | At most a full receipt by purchase; no duplicate income for retry |
+| Inventory | Non-negative balances, two-movement moves, version and motif adjustments, signed event history |
+| Sales | Amount of payments declared equal to total, rounding `HALF_UP` by line, price override limitation, atomic operation for physical goods |
+| Reintendants | Command UUID and hash per aggregate; no generic table exists `SolicitudIdempotente` for all cases |
+| Invitations | Token saved by hash; identity/mail and membership-related acceptance without duplicates |
 
-La descripción de pruebas y rutas vigentes se encuentra en los Documentos 02 y 05, y su evidencia fue obtenida durante los bloques de integración previos a T12. **Preparar esta documentación no ejecuta nuevamente Pytest, Playwright, Docker o Alembic.**
+The description of current tests and routes is found in Documents 02 and 05, and their evidence was obtained during the integration blocks prior to T12. **Preparing this documentation does not run again Pytest, Playwright, Docker or Alembic.**
 
-## 8. Requerimientos incluidos y capacidades diferidas
+## 8. Requirements included and deferred capacities
 
-| Requisito | Situación en este documento | Casos de uso asociados |
+| Requirement | Status in this document | Associated use cases |
 |---|---|---|
-| RF-01 Identidad | REAL | CU-01/02 |
-| RF-02 Empresa y equipo | REAL | CU-03/12a/12b |
-| RF-03 Ubicaciones | REAL | CU-04 |
-| RF-04 Catálogo | REAL | CU-05 |
-| RF-05 Proveedores, compras y recepción | REAL | CU-06/07 |
-| RF-06 Inventario | REAL | CU-07/08/09/11 |
-| RF-07 Ventas y pagos declarados | REAL | CU-10 |
-| **RF-08 Gastos y caja** | **DEMO / DIFERIDO del backend REAL** | No se dibuja como API REAL |
-| **RF-09 Cuentas financieras** | **DEMO / DIFERIDO** | No se dibuja como API REAL |
-| **RF-10 Mercado Pago QR de cobro** | **DEMO / DIFERIDO** | No se dibuja como cobro confirmado en backend REAL |
+| RF-01 Identity | REAL | CU-01/02 |
+| RF-02 Company and equipment | REAL | CU-03/12a/12b |
+| RF-03 Locations | REAL | CU-04 |
+| RF-04 Catalogue | REAL | CU-05 |
+| RF-05 Suppliers, purchases and reception | REAL | CU-06/07 |
+| RF-06 Inventory | REAL | CU-07/08/09/11 |
+| RF-07 Sales and payments declared | REAL | CU-10 |
+| **RF-08 Expenses and cash** | **DEMO / DIFFERENT REAL backend** | Not drawn as REAL API |
+| **RF-09 Financial accounts** | **DEMO / DIFFERED** | Not drawn as REAL API |
+| **RF-10 Market QR payment collection** | **DEMO / DIFFERED** | Not drawn as confirmed collection in REAL backend |
 
-### 8.1 Evolución después de T12 (no incorporada al alcance realizado)
+### 8.1 Evolution after T12 (not incorporated into the scope performed)
 
-El proyecto prevé, en incrementos separados y validados, **(1)** converger la experiencia de uso REAL hacia las pantallas DEMO manteniendo su estética y funcionalidades pertinentes sin mezclar persistencias, **(2)** visualizar el esquema físico de PostgreSQL mediante un DER generado desde la BD (por ejemplo DBeaver, sin necesidad de migrar a Supabase), **(3)** preparar una demostración navegable y adaptable a web/móvil, y **(4)** incorporar Mercado Pago QR REAL: credenciales/conexión propia por empresa, separación entre QR de artículo y QR de cobro, órdenes de pago e idempotencia de notificaciones, reconciliación de eventos confiables y estados autenticados. **`MERCADO_PAGO_DECLARADO` sigue siendo un medio informado manualmente, no una aprobación externa.**
+The project envisages, in separate and validated increments, **(1)** converge the REAL experience of use towards DEMO screens while maintaining their aesthetics and relevant functionalities without mixing persistences, **(2)** visualise the physical schema of PostgreSQL by means of an DER generated from the DB (e.g. DBeaver, without having to migrate to Supabase), **(3)** prepare a web/mobile-adaptable and navigable demonstration; and **(4)** incorporate Market Payment QR REAL: credentials/own connection by company, separation between QR of article and QR of collection, payment orders and idempotency of notifications, reconciliation of reliable events and authenticated states. **`MERCADO_PAGO_DECLARADO` remains a manually informed medium, not an external approval.**
 
-No forman parte del recorte actual: reservas con seña confirmada por MP, pagos bancarios acreditados, cierre de caja, recepción parcial/multidestino, fabricación con consumo automático o transferencia de titularidad sin flujo implementado.
+They are not part of the current cut: reserves with MP confirmed sign, accredited bank payments, cash closing, partial/multi-destiny reception, automatic consumption manufacturing or transfer of ownership without implemented flow.
 
-## 9. Relación del 03C con 03A, 03B y el modelo rector
+## 9. Relationship of 03C to 03A, 03B and the governing model
 
-- **03A — Identidad, empresa, sedes y catálogo:** representa `User`, `Membership`, `Business`, `BusinessInvitation`, `Location`, `LocationAssignment`, `CatalogItem` y `Supplier`, que fundamentan los permisos y recursos manipulados por los CU.
-- **03B — Compras, recepción, inventario y ventas:** describe las nueve entidades persistentes comerciales, los estados, snapshots, saldos y ledger utilizados por CU-06 a CU-11.
-- **03B — Flujo explicativo complementario:** [SVG adicional](03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) publicado en la rama documental sin reemplazar el diagrama 03B original; es un dibujo de exposición, no un segundo esquema físico.
-- **03C — Casos de uso:** muestra la intención del actor y la frontera del sistema, no todas las claves foráneas ni la secuencia de consultas de backend.
-- **Documento 03 v2.1:** define el inventario de modelos persistentes, restricciones vigentes, transacciones y criterios de conciliación.
+- **03A — Identity, company, headquarters and catalogue:** represents `User`, `Membership`, `Business`, `BusinessInvitation`, `Location`, `LocationAssignment`, `CatalogItem` y `Supplier`, which base the permits and resources manipulated by the CUs.
+- **03B — Purchases, receipts, inventory and sales:** describes the nine persistent commercial entities, states, snapshots, balances and leadger used by CU-06 to CU-11.
+- **03B — Supplementary explanatory flow:** [Additional SVG](03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) published in the documentary branch without replacing the original 03B diagram; it is an exhibition drawing, not a second physical scheme.
+- **03C — Cases of use:** shows the actor's intention and system boundary, not all foreign keys or backend query sequence.
+- **Document 03 v2.1:** defines the inventory of persistent models, existing restrictions, transactions and reconciliation criteria.
 
-## 10. Decisiones de diseño y justificación para defensa oral
+## 10. Design and justification decisions for oral defence
 
-**¿Por qué el actor «Compras» no se llama TRABAJADOR?** Porque el alta de una compra está restringida en el servicio a titular/admin. En cambio, una recepción física en una sede apta sí puede ser realizada por encargado/trabajador asignado. El dibujo separa responsabilidades que el antiguo modelo agrupaba erróneamente.
+**Why isn't the actor "Buying" called WORKER?** Because the discharge of a purchase is restricted in service to holder/admin. Instead, a physical reception at a suitable venue can be done by assigned manager/worker. The drawing separates responsibilities that the old model incorrectly grouped.
 
-**¿Por qué «Ajustes» no equivale a todos los operarios?** Porque el código admite al encargado en ajustes y al titular/admin en stock inicial, mientras que no habilita al trabajador a realizarlos. Las dos reglas se explicitan en la matriz.
+**Why does "fits" not equal all operators?** Because the code supports the manager in settings and the holder/admin in initial stock, while it does not enable the worker to make them. Both rules are explained in the matrix.
 
-**¿Por qué CU-08 puede leer saldos de otra sede que no puede operar?** Porque la lectura del inventario se filtra por empresa y la autorización a modificar por sede es una capa adicional. Esta es la decisión actual del MVP, no una recomendación universal de producción.
+**Why can CU-08 read balances from another headquarters that cannot operate?** Because the inventory reading is filtered by company and the authorization to modify by headquarters is an additional layer. This is the current decision of MVP, not a universal recommendation for production.
 
-**¿Por qué CU-12a no incluye a CU-12b?** Porque invitar no implica aceptación; puede vencer, cancelarse o ser rechazado. El receptor autenticado inicia una acción distinta y el backend no asocia un usuario a una invitación pendiente por adelantado.
+**Why does CU-12a not include CU-12b?** Because inviting does not imply acceptance; it can be overcome, cancelled or rejected. The authenticated receiver initiates a different action and the backend does not associate a user to an open invitation in advance.
 
-**¿Por qué Mercado Pago no aparece como actor externo?** Porque el MVP REAL registra pagos *declarados* y no procesa webhooks ni cobros QR confirmados. Cuando se implemente RF-10, habrá que actualizar casos, actores y contratos, pero no presentarlos como ya existentes.
+**Why does Mercado Pago not appear as an external actor?** Because the REAL MVP records *declared* payments and does not process confirmed webhooks or QR collections. When RF-10 is implemented, cases, actors and contracts will need to be updated, but not presented as already existing.
 
-**¿Qué evidencia representa “REAL”?** Los endpoints y flujos conectados antes de T12, respaldados por el código y las suites identificadas en la matriz T12-B, no una suposición fundada en imágenes DEMO.
+**What evidence does “REAL” represent?** The endpoints and streams connected before T12, backed by code and suites identified in the T12-B matrix, not an assumption based on DEMO images.
 
-## 11. Validación documental y límites de la publicación
+## 11. Document validation and publication limits
 
-Para cerrar T12-C4 se comprobaron documentalmente: nombres CU-01 a CU-12 (con CU-12a/b), roles y permisos concordantes con los servicios, ausencia de falsos `include/extend`, SVG legible con texto de color explícito, un `.puml` sintácticamente consistente, rutas y enlaces relativos correctos, y límites RF-08/RF-09/RF-10 claros.
+To close T12-C4 we checked documentaryly: names CU-01 to CU-12 (with CU-12a/b), roles and permissions in line with the services, absence of false `include/extend`, SVG readable with explicit color text, a `.puml` syntactically consistent, correct relative routes and links, and clear RF-08/RF-09/RF-10 boundaries.
 
-**Controles de esta entrega:** reconciliación por lectura de Documento 02 T12-B, Documento 03 v2.1 y servicios de permisos, compras, recepciones, inventario y ventas; cotejo de los 13 óvalos con las 13 declaraciones PlantUML; XML del SVG validado y vista previa generada. **La compilación con PlantUML en un motor real permanece pendiente si no está disponible**: validar el texto y generar el SVG editorial no son equivalentes a ejecutar `plantuml.jar`.
+**Controls of this delivery:** reconciliation by reading Document 02 T12-B, Document 03 v2.1 and permissions services, purchases, receptions, inventory and sales; matching the 13 ovals with the 13 PlantUML declarations; XML of the validated SVG and preview generated. **The compilation with PlantUML on a real engine remains pending if it is not available**: validate the text and generate editorial SVG are not equivalent to run `plantuml.jar`.
 
-**Estado:** **T12-C4 APROBADO Y PUBLICADO EN LA RAMA DOCUMENTAL**. Por aprobación expresa se reemplazaron exclusivamente los tres archivos canónicos `03C_CASOS_DE_USO.puml`, `03C_CASOS_DE_USO_REDISENADO.svg` y `03C_EXPLICACION_CASOS_DE_USO.md` en `docs/e2-7-t12-cierre-academico` (PR #46). El PR continúa **DRAFT**; esta publicación no autoriza ni ejecuta un merge a `main`, y no modifica frontend, backend ni PostgreSQL. La compilación con PlantUML continúa pendiente, por no haberse ejecutado el motor.
+**Status:** **T12-C4 ADOPTED AND PUBLISHED IN THE DOCUMENTARY RAM**. By express approval the three canonical files were replaced exclusively `03C_CASOS_DE_USO.puml`, `03C_CASOS_DE_USO_REDISENADO.svg` y `03C_EXPLICACION_CASOS_DE_USO.md` en `docs/e2-7-t12-cierre-academico` (PR #46). The PR continues **DRAFT**; this publication does not authorize or execute a merge a `main`, and does not modify frontend, backend or PostgreSQL. The compilation with PlantUML is still pending, due to the failure of the engine.

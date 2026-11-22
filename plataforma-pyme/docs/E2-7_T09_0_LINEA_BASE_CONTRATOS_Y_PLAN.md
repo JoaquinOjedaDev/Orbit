@@ -1,40 +1,40 @@
-# E2-7 · T09-0 — Línea base y contratos propuestos para consulta y recuperación de ventas REALES
+# E2-7 · T09-0 — Proposed baseline and contracts for consultation and recovery of REAL sales
 
-Fecha de apertura: 10/11/2026. **Rama de trabajo:** `feature/e2-7-t09-consulta-recuperacion-ventas`, creada desde `main` tras merge PR #41 (T08), commit `5f83541049b6332e5a991810cbfd105515db10ce`.
+Opening date: 10/11/2026. **Workforce:** `feature/e2-7-t09-consulta-recuperacion-ventas`created from `main` tras merge PR #41 (T08), commit `5f83541049b6332e5a991810cbfd105515db10ce`.
 
-**Estado T09:** T09-A aprobado (CI + Windows); **T09-B — política P02 confirmada por el responsable el 10/11/2026 y contrato técnico P03 definido para implementación**. Las alternativas de la sección 2 se conservan como propuestas históricas; prevalece la decisión explícita al final de este archivo. No equivale a T09/T10 terminados.
+**State T09:** T09-A approved (CI + Windows); **T09-B — policy P02 confirmed by the responsible on 10/11/2026 and technical contract P03 defined for implementation**. The alternatives in section 2 are preserved as historical proposals; the explicit decision at the end of this file prevails. It does not amount to T09/T10 finished.
 
-## 1. Línea base de código y contratos existentes
+## 1. Existing code baseline and contracts
 
-Revisado directamente en `backend/app/modules/sales/`:
+Reviewed directly in `backend/app/modules/sales/`:
 
-| Recurso actual | Qué garantiza | Límite |
+| Current remedy | What guarantees | Limit |
 |---|---|---|
-| `POST /api/v1/businesses/{business_id}/sales` | `Idempotency-Key` UUID4; `201` creación, `200` replay idéntico; comprobante completo; una transacción con renglones, pagos **declarados**, stock y ledger | Replay vuelve a validar permisos de venta, sede/SELL y STORE, antes de verificar la clave: cambios de asignación pueden impedir recuperar el comprobante por POST |
-| `GET /api/v1/businesses/{business_id}/sales/{sale_id}` | Comprobante histórico completo por UUID, autenticado y aislado por empresa; no modifica stock | Requiere conocer `sale_id`; valida sesión y membresía activa, pero actualmente **no** aplica filtro por ubicación o autor de la venta en una membresía válida |
-| `SaleView` | id, business_id, location_id opcional, request_id, estado CONFIRMADA, subtotales/descuento/total en centavos, notes, created_by_id, created_at, balances_after, lines y payments con snapshots | No es un índice paginado ni interfaz de ventas REAL |
-| `Sale` | Clave única por empresa `(business_id, request_id)`, índices empresa/fecha, snapshots `balances_after`; FK negocio/sede y negocio/creador | No hay `GET /sales` ni `GET .../by-request/{request_id}` |
+| `POST /api/v1/businesses/{business_id}/sales` | `Idempotency-Key` UUID4; `201` creation, `200` identical replay; full voucher; one transaction with lines, payments **declared**, stock y ledger | Replay revalidates sales permissions, headquarters/SELL and STORE before checking the key: assignment changes may prevent recovery of the POST voucher |
+| `GET /api/v1/businesses/{business_id}/sales/{sale_id}` | UUID full historical check, authenticated and isolated by company; no stock change | It requires knowing `sale_id`; valid session and active membership, but currently **no** filter by location or author of the sale on a valid membership |
+| `SaleView` | id, business_id, location_id opcional, request_id, estado CONFIRMADA, subtotales/descuento/total en centavos, notes, created_by_id, created_at, balances_after, lines y payments con snapshots | Not a paged index or REAL sales interface |
+| `Sale` | Single key per company `(business_id, request_id)`, company/date indexes, snapshots `balances_after`; FK business/headquarters and business/creator | There's no `GET /sales` ni `GET .../by-request/{request_id}` |
 
-**Hechos importantes:** el pago `MERCADO_PAGO_DECLARADO` es una **declaración manual**, no acreditación confirmada de Mercado Pago, transferencia bancaria, caja o cuenta de dinero. El frontend DEMO de ventas no es una venta REAL. Los servicios de backend de E2-6 no se modificarán por una propuesta de política sin decisión explícita.
+**Important facts:** payment `MERCADO_PAGO_DECLARADO` is a **manual declaration**, not confirmed accreditation of Market Payment, bank transfer, cash or money account. The DEMO sales frontend is not a REAL sale. E2-6 backend services will not be modified by a policy proposal without explicit decision.
 
-La base incluye las suites `test_sales_api_integration.py`, `test_sales_permissions_integration.py`, `test_sales_atomicity_integration.py`, `test_sales_concurrency_integration.py` y `test_sales_inventory_interop_integration.py`; la aceptación global T08 fue 879/879 backend sobre PostgreSQL temporal. Esto **no acredita aún** los endpoints propuestos de T09.
+Base includes suites `test_sales_api_integration.py`, `test_sales_permissions_integration.py`, `test_sales_atomicity_integration.py`, `test_sales_concurrency_integration.py` y `test_sales_inventory_interop_integration.py`; global acceptance T08 was 879/879 backend on temporary PostgreSQL. **not yet accredited** los endpoints propuestos de T09.
 
-## 2. Decisiones que T00 exige resolver primero
+## 2. Decisions that T00 requires to be resolved first
 
-### P02 — Consulta histórica y replay ante cambios de permisos (PENDIENTE)
+### P02 — Historical and replay consultation for changes in permissions (PENDENT)
 
-Situaciones que requieren una política clara: sede `SUSPENDIDA` después de una venta; rol o asignación `SELL/STORE` retirados; usuario con membresía revocada; sesión cerrada; cambio de empresa; intento confirmado pero respuesta HTTP perdida.
+Situations requiring clear policy: Headquarters `SUSPENDIDA` after a sale; role or assignment `SELL/STORE` retired; user with revoked membership; closed session; change of company; confirmed attempt but lost HTTP response.
 
-**Alternativas a evaluar (NO implementadas):**
-- **A. Mantener el contrato actual sin cambios:** replay POST requiere permisos actuales; GET histórico por `sale_id` permite cualquier integrante activo de la empresa (independientemente de asignación). Es el comportamiento observable actual, pero la exposición horizontal entre empleados puede no ser deseable.
-- **B. Separar autorización de lectura de autorización de venta (propuesta preferida para discusión):** la **venta nueva** siempre requiere permisos actuales; la **lectura de una venta propia ya confirmada** se permite a su autor mientras siga siendo integrante activo, incluso si la sede se pausó o perdió STORE; titular/admin pueden ver todo el tenant; otros empleados no pueden ver ventas de compañeros fuera de su alcance autorizado. La membresía o sesión revocada sigue denegada. La repetición POST no debe crear venta nueva si los permisos cambiaron, y su política de replay se define aparte con pruebas explícitas.
-- **C. Lectura solo con permisos vigentes de la sede:** también restringe al autor cuando pierde la asignación; disminuye exposición pero puede impedir resolver un intento propio después de F5.
+**Alternatives to evaluate (NOT implemented):**
+- **A. Keeping the current contract unchanged:** replay POST requires current permissions; Get historical by `sale_id` allows any active member of the company (regardless of assignment). It is current observable behavior, but horizontal exposure between employees may not be desirable.
+- **B. Separate authorization to read sales authorisation (preferred proposal for discussion):** la **new sale** always requires current permits; **reading of a confirmed sale of its own** its author is allowed as long as it remains active, even if the headquarters are pausated or lost STORE; holder/admin can see all the tenant; other employees cannot see sales of peers beyond their authorized reach. Membership or session revoked remains denied. Post repetition should not create new sale if permissions changed, and its replay policy is defined separately with explicit evidence.
+- **C. Reading only with existing headquarters permits:** also restricts the author when he loses assignment; decreases exposure but may prevent him from resolving an attempt after F5.
 
-**No se modifica** `SaleService.create`, `get`, ni las reglas de autorización hasta aprobar una política y especificar precedencias de 401/403/404/409, sin filtrar información de otros tenants. El test existente confirma rechazo de replay de operador tras revocar STORE, y rechazo de sesión/membresía revocadas.
+**Not amended** `SaleService.create`, `get`, nor the rules of authorization until approving a policy and specifying precedence of 401/403/404/409, without filtering information from other tenants. The existing test confirms rejection of operator replay after revoke STORE, and rejection of session/membership revoked.
 
-### P03 — Diseño de listado y búsqueda por request ID (PENDIENTE)
+### P03 — Listing and search design by request ID (PENDENT)
 
-**Propuesta de contrato, sujeta a aprobación:**
+**Proposal for a contract subject to approval:**
 
 ```text
 GET /api/v1/businesses/{business_id}/sales?offset=0&limit=100&location_id=<UUID-opcional>
@@ -42,75 +42,75 @@ GET /api/v1/businesses/{business_id}/sales/by-request/{request_id}
 GET /api/v1/businesses/{business_id}/sales/{sale_id}  (EXISTENTE, preservar)
 ```
 
-- Para `GET /sales`: DTO de **resumen**, sin pagos con referencia ni renglones completos: `id, business_id, location_id, request_id, status, total_cents, created_by_id, created_at`; solo lectura, orden determinista `created_at DESC, id DESC`, paginación validada `0 <= offset`, `1 <= limit <= 100` (o límite acordado), resultados limitados al tenant/roles/ubicaciones autorizadas. Explicitar que `offset` puede desplazarse ante ventas nuevas; no anunciar «listado completo» hasta agotar las páginas.
-- Para `GET .../by-request/{request_id}`: **mismo SaleView** histórico existente, sin mutar stock ni crear intento nuevo; semántica de no encontrado sin revelar si pertenece a otro negocio. Mantener ruta estática `/by-request/...` separada de `/{sale_id}`.
-- El `request_id` es identificador de correlación; para usar la operación idempotente después de respuesta perdida se conserva la **misma Idempotency-Key y el mismo cuerpo**. Un 404 en consulta no demuestra que un POST anterior no haya sido procesado.
-- Auth: Bearer opaco en memoria, sesión activa, tenant estricto, sin fallback a DEMO; la visibilidad por rol requiere P02.
-- Opciones: evaluación alternativa de pantalla que solo consulte un comprobante conocido por `sale_id`, sin crear endpoints nuevos. Sin listado, el POS de T10 quedaría con recuperación limitada.
+- Stop `GET /sales`: DTO de **Summary**, without reference payments or full lines: `id, business_id, location_id, request_id, status, total_cents, created_by_id, created_at`; read only, deterministic order `created_at DESC, id DESC`, validated pagination `0 <= offset`, `1 <= limit <= 100` (or agreed limit), results limited to the authorized tenant/roles/locations. `offset` may move to new sales; do not advertise "full listing" until pages are exhausted.
+- Stop `GET .../by-request/{request_id}`: **Same SaleView** historical, without mutating stock or creating new attempt; semantics not found without revealing if it belongs to another business. `/by-request/...` separated from `/{sale_id}`.
+- El `request_id` is correlation identifier; to use the idempotent operation after lost response the **Idempotency-Key and the same body**. A 404 query does not show that a previous POST has not been processed.
+- Auth: Opaque Bearer in memory, active session, strict tenant, without failback to DEMO; role visibility requires P02.
+- Options: Alternative screen evaluation that only consults a voucher known to `sale_id`Without listing, the POS of T10 would be left with limited recovery.
 
-## 3. Primer incremento seguro — T09-A
+## 3. First safe increase — T09-A
 
-**Objetivo inmediato:** montar cimientos de lectura que **ya están autorizados por el contrato existente**: cliente TypeScript para `GET /sales/{sale_id}` con validación estricta de DTO, tenant/UUID, importes/snapshots y tests Node. No crear UI de ventas REAL todavía, no añadir POST ni modificar servidores o permisos; mantener DEMO completamente independiente.
+**Immediate objective:** to build a reading foundation that **are already authorised by the existing contract**: TypeScript client for `GET /sales/{sale_id}` with strict DTO validation, tenant/UID, amounts/snapshots and Node tests. Do not create REAL sales IU yet, do not add POST or modify servers or permissions; keep DEMO completely independent.
 
-**Criterios de aceptación:**
-1. Ruta `/api/v1` relativa, GET Bearer, sin body, `credentials: omit`, sin escritura y sin almacenamiento persistente del token.
-2. Parser acepta servicios sin sede ni inventario (`location_id=null`, `balances_after=[]`) y bienes con saldos históricos, sin recalcular precios desde catálogo actual.
-3. Rechaza recibos de otro tenant, UUID/cantidades/importes/medios incompatibles, renglones/pagos duplicados y falta de coherencia entre líneas, descuentos y pagos.
-4. Propaga 401/403/404/5xx y errores de red, sin generar otro POST ni inventar un comprobante.
-5. Frontend build/lint/tests verdes en GitHub; T09-A no requiere migración ni altera la base de datos.
+**Acceptance criteria:**
+1. Path `/api/v1` relativa, GET Bearer, sin body, `credentials: omit`, without writing and no persistent token storage.
+2. Parser accepts services without headquarters or inventory (`location_id=null`, `balances_after=[]`) and goods with historical balances, without recalculating prices from current catalogue.
+3. Reject receipts from another tenant, UUID/quantities/amounts/compatible means, duplicate lines/payments and lack of consistency between lines, discounts and payments.
+4. Propaga 401/403/404/5xx and network errors, without generating another POST or inventing a voucher.
+5. Frontend build/lint/green test in GitHub; T09-A does not require migration or alter the database.
 
-## 4. Implementación futura sugerida (condicionada a P02/P03)
+## 4. Suggested future implementation (subject to P02/P03)
 
-- **T09-B — Contrato aprobado:** fijar matriz rol/sede/actor histórico + DTO de resumen + paginación y reglas de errores. Documentar ADR si cambia la política de acceso; no modificar comportamiento de replay previo sin un test de regresión que reproduzca la política actual.
-- **T09-C — Backend:** endpoints propuestos y pruebas PostgreSQL, incluyendo 101+ ventas, dos empresas, dos operadores, negocio/sede suspendidos, cambio de asignación, sesión o membresía revocadas, request de otro tenant y orden estable.
-- **T09-D — Frontend:** historial REAL etiquetado inequívocamente, búsqueda por request ID solo si contrato aprobado, estado parcial/cargando/error/última página, comprobante con snapshots, sin pagos acreditados falsos.
-- **T09-E — Recuperación extremo a extremo:** POST confirmado con respuesta perdida; F5 y login del mismo actor; recuperar por request_id si existe; replay explícito de MISMA clave/cuerpo según política adoptada; 404 no implica «nunca enviada»; no duplicar venta ni stock; PostgreSQL temporal y Playwright.
-- **T09-F — QA:** validación manual acotada con datos TEST y sin repetir ventas; CI completa, auditoría y PR borrador. Mantener `main` intacta hasta autorización de integración.
+- **T09-B — Approved contract:** set role/headquarters matrix/historical actor + summary DTO + pagination and error rules. Document ADR if you change the access policy; do not modify previous replay behavior without a regression test that reproduces the current policy.
+- **T09-C — Backend:** Proposed endpoints and PostgreSQL tests, including 101+ sales, two companies, two operators, business/headquarters suspended, change of assignment, session or membership revoked, request of another tenant and stable order.
+- **T09-D — Frontend:** REAL history tagged unequivocally, search by request ID only if approved contract, partial/loading/error/last page, snapshot proof, no fake credited payments.
+- **T09-E — End to end recovery:** POST confirmed with lost response; F5 and login of the same actor; recover by request_id if it exists; explicit replay of MISMA key/body according to adopted policy; 404 does not imply "never sent"; do not duplicate sale or stock; PostgreSQL temporary and Playwright.
+- **T09-F — QA:** manual validation with TEST data and without repeat sales; complete IC, audit and draft PR. `main` intact until integration authorization.
 
 ## 5. Guardrails para T09/T10
 
-1. No habilitar POS REAL, caja, gastos, cuentas o QR por inferencia del DEMO.
-2. No crear una API `GET /sales` ficticia en frontend antes de su implementación verificada.
-3. No usar `localStorage` para Bearer ni crear pagos acreditados virtualmente.
-4. No alterar roles/asignaciones de cuentas reales para probar escenarios negativos; usar fixtures PostgreSQL aislados.
-5. No replicar ventas al reintentar una respuesta incierta; conservar identidad y cuerpo del mismo intento.
-6. PR de T09 abierto como borrador hasta QA y revisión de alcance.
+1. Do not enable REAL POS, cashier, expense, accounts or QR by inference from DEMO.
+2. Do not create an API `GET /sales` fictional frontend before its verified implementation.
+3. Do not use `localStorage` for Bearer or create virtually accredited payments.
+4. Do not alter roles/allocations of real accounts to test negative scenarios; use isolated PostgreSQL fixes.
+5. Do not replicate sales by retrying an uncertain response; preserve identity and body of the same attempt.
+6. T09 PR open as draft up to QA and scope review.
 
-**Hito T09-0:** línea base verificada, contrato propuesto y decisiones pendientes visibles; el hecho de documentarlas **no las aprueba automáticamente**.
-
-
-## 6. Validación local T09-A — 10/11/2026
-
-- **Entorno:** Windows PowerShell en `plataforma-pyme/frontend`; rama `feature/e2-7-t09-consulta-recuperacion-ventas`, commit funcional `09e0a88`.
-- **Comando ejecutado por el usuario:** `npm.cmd run test:sales-real-read`. Se utilizó `npm.cmd` porque PowerShell bloquea `npm.ps1` por su política de ejecución; **no se cambió ExecutionPolicy ni se requirió privilegio de administrador**.
-- **Resultado local observado:** `tests 10`, `pass 10`, `fail 0`, `cancelled 0`, `skipped 0`, `todo 0`, duración ~260 ms.
-- **Cobertura de esas diez pruebas:** GET por UUID con Bearer en memoria y sin POST, snapshots y pagos declarados de venta mixta, redondeo HALF_UP, rechazo de tenant ajeno y DTOs inválidos, importes/pagos inconsistente, duplicados, UUID inválidos, propagación 401/403/404/500, fallo de red en GET y mensajes de error.
-- **Evidencia CI de la misma entrega:** GitHub Actions #42901702416, **SUCCESS** en `09e0a88`, 879 backend, 266 frontend, 4 Playwright REAL de inventario y 6 Playwright DEMO.
-
-**Dictamen T09-A:** gateway de lectura + pruebas aprobados en CI y localmente. No hay pantalla de ventas REAL ni endpoint nuevo; P02/P03 quedan pendientes de aprobación antes de modificar permisos históricos o el backend.
+**Milestone T09-0:** verified baseline, proposed contract and pending decisions; documenting them **does not automatically approve them**.
 
 
-## 7. T09-B — Decisión formal sobre permisos históricos (aprobada 10/11/2026)
+## 6. Local validation T09-A — 10/11/2026
 
-**Aprobación del responsable:** «Encargado y Trabajador, donde está asignado específicamente. Titular y Administrador, puede consultar todo. Usuario ajeno a esos roles no puede consultar nada». Los **cuatro roles ya existen** en `BusinessRole` del backend. No crear roles nuevos ni relajar el criterio a «cualquier integrante ve todo».
+- **Environment:** Windows PowerShell en `plataforma-pyme/frontend`; rama `feature/e2-7-t09-consulta-recuperacion-ventas`, commit funcional `09e0a88`.
+- **Command executed by the user:** `npm.cmd run test:sales-real-read`. Used `npm.cmd` porque PowerShell bloquea `npm.ps1` for its implementation policy; **no change of ExecutionPolicy or administrator privilege required**.
+- **Observed local result:** `tests 10`, `pass 10`, `fail 0`, `cancelled 0`, `skipped 0`, `todo 0`, duration ~260 ms.
+- **Coverage of these 10 tests:** GET by UUID with Bearer in memory and without POST, snapshots and payments declared mixed sale, rounding HALF_UP, rejection of foreign tenant and invalid DTOs, inconsistent amounts/payments, duplicates, invalid UUID, propagation 401/403/404/500, network failure in GET and error messages.
+- **Evidence of the same delivery:** GitHub Actions #42901702416, **SUCCESS** en `09e0a88`, 879 backend, 266 frontend, 4 Playwright REAL de inventario y 6 Playwright DEMO.
 
-| Rol de la membresía ACTIVA | `GET /sales/{sale_id}`, `GET /sales/by-request/{request_id}`, `GET /sales` |
+**Opinion T09-A:** Read gateway + IC and locally approved tests. No REAL sales screen or new endpoint; P02/P03 are pending approval before modifying historical permissions or the backend.
+
+
+## 7. T09-B — Formal decision on historical permits (adopted 10/11/2026)
+
+**Approval of the responsible person:** "In charge and Worker, where it is specifically assigned. Owner and Administrator, you can consult everything. User outside those roles cannot consult anything." **Four roles already exist** en `BusinessRole` Do not create new roles or relax the criterion to "any member sees everything".
+
+| Role of Active Membership | `GET /sales/{sale_id}`, `GET /sales/by-request/{request_id}`, `GET /sales` |
 |---|---|
-| TITULAR_ADMINISTRATIVO | Todo comprobante de la empresa, con o sin sede |
-| ADMINISTRADOR | Todo comprobante de la empresa, con o sin sede |
-| ENCARGADO | Solo comprobantes de sedes donde tenga `LocationAssignment.status = ACTIVA` |
-| TRABAJADOR | Solo comprobantes de sedes donde tenga `LocationAssignment.status = ACTIVA` |
-| Rol inexistente, usuario de otro negocio, sin membresía ACTIVA o sesión inválida | Denegado. Ninguna lectura entre tenants |
+| ADMINISTRATIVE SERVICE | Any proof of the company, with or without headquarters |
+| ADMINISTRATOR | Any proof of the company, with or without headquarters |
+| MANAGER | Only proof of headquarters where you have `LocationAssignment.status = ACTIVA` |
+| STAFF MEMBER | Only proof of headquarters where you have `LocationAssignment.status = ACTIVA` |
+| Non-existent role, user of another business, no Active membership or invalid session | Denied. No readings among tenants |
 
-**Reglas concretas:**
-- El autor **no tiene privilegio especial**: si pierde asignación a la sede, no lee tampoco sus propios comprobantes de esa sede.
-- Una venta de servicios con `location_id = null` es visible únicamente para titular/admin, porque no hay sede a la cual asignar operarios.
-- Leer documentos históricos no es operar: si la sede se `PAUSA` después de una venta, una asignación que aún esté `ACTIVA` conserva **solo lectura histórica**. La nueva venta sigue exigiendo permisos y sede actualmente operativa.
-- Se revalidan en PostgreSQL sesión, membresía, empresa y asignaciones en cada solicitud; no basta esconder botones del frontend.
-- Por privacidad, comprobantes inexistentes, de otro tenant o **no visibles para ese miembro** devuelven `404` homogéneo. Usuario que no tiene permiso de lectura empresarial: `403`; sin sesión activa: `401`. Membresía ajena/inactiva usa `404`.
-- `GET` no modifica `Sale`, pagos, inventario ni ledger. `POST` de ventas y su política existente de replay **no cambian en T09-B/C**; si perdió asignación, no puede volver a realizar una escritura o replay POST. La recuperación será mediante un `GET` cuando el usuario todavía conserve permisos de lectura.
-- El `request_id` no es una credencial que saltee asignaciones. El endpoint de búsqueda tiene exactamente la misma política que la consulta por `sale_id`.
+**Specific rules:**
+- The author **has no special privilege**: If you lose assignment to the headquarters, you also do not read your own vouchers for that seat.
+- A sale of services with `location_id = null` is visible only for holder/admin, because there is no seat to assign operators.
+- Reading historical documents is not operating: if the headquarters is `PAUSA` after a sale, an allowance that is still `ACTIVA` preserve **Historical reading only**. The new sale continues to require permits and currently operational headquarters.
+- Revalidation is provided in PostgreSQL session, membership, company and assignments on each application; hiding frontend buttons is not enough.
+- For privacy, non-existent proofs, of another tenant or **not visible to that member** return `404` homogeneous. User who does not have business reading permission: `403`; no active session: `401`. Other/inactive membership uses `404`.
+- `GET` does not change `Sale`, payments, inventory or ledger. `POST` sales and its existing replay policy **do not change in T09-B/C**; if you lost assignment, you cannot rewrite or replay POST. Recovery will be by means of a `GET` when the user still retains read permissions.
+- El `request_id` is not a credit card that skips assignments. The search endpoint has exactly the same policy as the query for `sale_id`.
 
-**P03 — contrato técnico de consulta autorizado para avanzar:** `GET /sales` (resúmenes de ventas visibles, 0 ≤ offset, 1 ≤ limit ≤ 100, fecha e ID descendentes, filtro opcional de ubicación) y `GET /sales/by-request/{request_id}` (comprobante histórico completo). La paginación y filtro **se aplican en SQL luego de restringir por permisos**, jamás se devuelven ventas ajenas aunque estén en el mismo tenant. La consulta `GET /sales/{sale_id}` existente se endurece para cumplir la nueva política.
+**P03 — Technical consultation contract authorised to advance:** `GET /sales` (visible sales summaries, 0 ≤ offset, 1 ≤ limit ≤ 100, date and ID down, optional location filter) and `GET /sales/by-request/{request_id}` (complete historical proof) The pagination and filter **apply in SQL after restricting by permissions**, no sales are returned from others even if they are in the same tenant. `GET /sales/{sale_id}` existing one hardens to comply with the new policy.
 
-**Siguiente paso:** T09-C backend y tests de seguridad/visibilidad sobre PostgreSQL aislado, sin modificar cuentas locales, y después T09-D frontend con historial REAL.
+**Next step:** T09-C backend and security/visibility tests on isolated PostgreSQL, without changing local accounts, and then T09-D frontend with REAL history.

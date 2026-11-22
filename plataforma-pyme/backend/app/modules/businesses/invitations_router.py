@@ -23,7 +23,7 @@ router = APIRouter(prefix="/invitations", tags=["invitaciones"])
         409: {"description": "Invitación no aceptable o empresa suspendida"},
         422: {"description": "Formato de token inválido o campos extra"},
     },
-    summary="Aceptar invitación una sola vez con la cuenta destinataria",
+    summary="Accept one-time invitation with the recipient account",
 )
 def accept_business_invitation(
     command: AcceptBusinessInvitationRequest,
@@ -38,9 +38,9 @@ def accept_business_invitation(
         raise unauthorized() from None
     except InvitationUnavailable:
         raise HTTPException(
-            status_code=404, detail="Invitacion no disponible",
+            status_code=404, detail="Invitation not available",
         ) from None
     except (InvitationNotAcceptable, BusinessSuspended):
         raise HTTPException(
-            status_code=409, detail="Invitacion no aceptable",
+            status_code=409, detail="Invitation not acceptable",
         ) from None

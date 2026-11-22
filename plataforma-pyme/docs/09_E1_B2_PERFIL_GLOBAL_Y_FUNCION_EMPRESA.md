@@ -1,39 +1,39 @@
-# E1-B2 — Perfil global y función laboral por empresa
+# E1-B2 — Global profile and work function by company
 
-**Estado:** Implementado en main; build, lint y pruebas locales pendientes.
-**Referencia visual:** modal Mi Perfil Personal de Menu_Principal(1).html.
-**Alcance:** sigue siendo DEMO local, sin autenticación, autorizaciones, APIs ni usuarios reales.
+**Status:** Implemented in main; build, lint and pending local tests.
+**Visual reference:** modal My Profile Menu_Principal(1).html.
+**Scope:** remains local DEMO, without authentication, authorizations, APIs or real users.
 
-## Conceptos y reglas
+## Concepts and rules
 
-- Perfil personal ÚNICO y GLOBAL: nombre visible, correo DEMO opcional, avatar por iniciales opcionales y teléfono DEMO opcional.
-- Avatar: hasta cuatro letras; si se deja vacío, las iniciales derivan del nombre. Se muestra en el perfil y en la barra superior. No se cargan ni se enlazan fotografías externas.
-- Función laboral: texto descriptivo de la membresía de cada empresa, independiente del perfil global y del rol. No otorga permisos ni transforma a nadie en administrador.
-- Guardado separado: Guardar mi perfil actualiza datos globales; Guardar función DEMO actualiza la función únicamente en la empresa seleccionada.
-- No se copian las simulaciones de permisos ni los datos personales/telefónicos predefinidos en los HTML históricos.
+- Unique and GLOBAL personal profile: visible name, optional DEMO mail, optional initials avatar and optional DEMO phone.
+- Avatar: up to four letters; if left empty, initials are derived from the name. It is displayed in the profile and top bar. External photographs are not loaded or linked.
+- Work function: descriptive text of the membership of each company, independent of the global profile and role. It does not grant permissions or transform anyone into an administrator.
+- Separate Save: Save my profile updates global data; Save DEMO function updates the feature only in the selected company.
+- Permission simulations and predefined personal/telephone data in historical HTML are not copied.
 
-## Persistencia compatible
+## Compatible persistence
 
-Se conserva la misma clave local asistente-pyme.e1a2.demo.v1, esquema version 1.
+The same local key is conserved assistant-pyme.e1a2.demo.v1, schema version 1.
 
-Campos nuevos opcionales durante carga:
-- profile.avatarInitials: vacío si faltaba.
-- profile.contactPhone: vacío si faltaba.
-- memberJobs: mapa de businessId a función; si falta, cada membresía usa jobTitle vacío.
+Optional new fields during loading:
+- profile.avatarInitials: empty if missing.
+- profile.contactPhone: empty if missing.
+- memberJobs: businessId map to function; if missing, each membership uses empty jobTitle.
 
-No se borran profile.displayName, profile.email, createdBusinesses ni fixtureEdits al guardar. Las operaciones son locales a la DEMO; el backend tendrá otro esquema, con control de acceso real.
+No profile.displayName, profile.email, createdBusinesses or fixtureEdits are deleted when saving. Operations are local to DEMO; the backend will have another schema, with real access control.
 
-## Código
+## Code
 
-- frontend/src/data/demo/demoStore.ts: DTO global, membresía, almacenamiento compatible y comandos.
-- frontend/src/features/profile/ProfilePage.tsx: formularios de perfil y función.
+- frontend/src/data/demo/demoStore.ts: global DTO, membership, compatible storage and commands.
+- frontend/src/features/profile/ProfilePage.tsx: profile and function forms.
 - frontend/src/app/shell/TopBar.tsx: avatar global.
-- frontend/src/App.tsx: membresías enviadas a Mi perfil.
-- frontend/src/App.css: diseño y responsive.
+- frontend/src/App.tsx: memberships sent to My Profile.
+- frontend/src/App.css: design and responsive.
 
-## Verificación pendiente
+## Pending verification
 
-Desde plataforma-pyme/frontend:
+From platform-pyme/frontend:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -42,17 +42,17 @@ npm.cmd run lint
 npm.cmd run dev
 ~~~
 
-| Caso | Procedimiento | Esperado |
+| Case | Procedure | Expected |
 |---|---|---|
-| PERFIL-01 | Entrar a Mi perfil después de actualizar | Nombre y correo anteriores intactos |
-| PERFIL-02 | Guardar iniciales ficticias | Avatar del perfil y barra superior coinciden |
-| PERFIL-03 | Borrar iniciales | Aparecen letras derivadas del nombre |
-| PERFIL-04 | Ingresar cinco letras o números como iniciales | Validación impide guardar |
-| PERFIL-05 | Guardar teléfono ficticio y recargar F5 | Persistencia local |
-| PERFIL-06 | Definir funciones laborales distintas en WALOS y Comercio; F5 | Cada empresa conserva su función |
-| PERFIL-07 | Editar perfil global luego de puesto | No se borran las funciones |
-| PERFIL-08 | Visitar una empresa creada previamente | Empresa y cambios anteriores conservados |
-| PERFIL-09 | Ver formularios con 390 px | Sin desbordamiento horizontal |
-| PERFIL-10 | Build y lint | Cero errores y cero advertencias |
+| PROFIL-01 | Enter My Profile after updating | Previous name and mail intact |
+| PROFIL-02 | Save Fictice Initials | Profile Avatar and Top Bar Match |
+| PROFIL-03 | Delete initials | Letters derived from the name appear |
+| PROFIL-04 | Enter five letters or numbers as initials | Validation prevents saving |
+| PROFIL-05 | Save fictitious phone and reload F5 | Local persistence |
+| PROFIL-06 | Define different job roles in WALOS and Commerce; F5 | Each company retains its function |
+| PROFIL-07 | Edit Global Profile After Post | Functions are not deleted |
+| PROFIL-08 | Visit a company created previously | Company and previous changes retained |
+| PROFIL-09 | View forms with 390 px | No horizontal overflow |
+| PROFIL-10 | Build y lint | Zero errors and zero warnings |
 
-No usar nombres, correos o teléfonos reales en la DEMO; localStorage no ofrece seguridad ni sincronización.
+Do not use real names, emails or phones in DEMO; localStorage does not provide security or synchronization.

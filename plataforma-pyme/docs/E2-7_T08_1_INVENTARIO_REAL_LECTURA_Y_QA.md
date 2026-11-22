@@ -1,151 +1,151 @@
-# E2-7 · T08-1 — Lectura de Inventario REAL, saldos y movimientos
+# E2-7 · T08-1 — Real Inventory Reading, Balances and Movements
 
-**Estado:** lectura central T08-1 validada en navegador REAL y regresión DEMO confirmada; PR #41 aún en borrador. **No fusionar a main antes de revisión de cierre de T08 y autorización.**
+**Status:** T08-1 core reading validated in REAL browser and DEMO regression confirmed; PR #41 still in draft. **Do not merge to main before T08 closing review and authorisation.**
 
-## Objetivo y alcance
+## Objective and scope
 
-Integrar en React la **lectura real y exclusivamente de consulta** de existencias por artículo/ubicación y movimientos firmados, manteniendo FastAPI/PostgreSQL como fuente de verdad y los datos DEMO aislados.
+Integrate in React the **actual and exclusively reference reading** of stocks by article/location and signed movements, maintaining FastAPI/PostgreSQL as a source of truth and DEMO data isolated.
 
-### Contratos backend existentes, sin cambios
+### Existing backend contracts, unchanged
 
-| Vista | Método y URL relativa a /api/v1 | Filtros opcionales | Paginación |
+| View | Method and URL relating to /api/v1 | Optional filters | Pagina |
 |---|---|---|---|
-| Existencias | `GET /businesses/{business_id}/inventory/balances` | `location_id`, `catalog_item_id` | `offset=0&limit=100` |
-| Movimientos | `GET /businesses/{business_id}/inventory/movements` | mismos campos | `offset=0&limit=100` |
+| Stocks | `GET /businesses/{business_id}/inventory/balances` | `location_id`, `catalog_item_id` | `offset=0&limit=100` |
+| Stock movements | `GET /businesses/{business_id}/inventory/movements` | same fields | `offset=0&limit=100` |
 
-Ambos endpoints permiten `limit` de 1 a 500 y exigen una sesión Bearer opaca y membresía autorizada. El backend limita recursos a la empresa del usuario; el frontend valida además cada `business_id`, ID UUID y parámetros de filtro que regresa el servidor.
+Ambos endpoints permiten `limit` 1 to 500 and require an opaque Bearer session and authorized membership. Backend limits resources to the user's company; the frontend also validates each `business_id`, UUID ID and filter parameters that return the server.
 
-`StockBalanceView`: `business_id`, `location_id`, `catalog_item_id`, `quantity_milli` (entero >=0), `version` (>=1), `updated_at`.
+`StockBalanceView`: `business_id`, `location_id`, `catalog_item_id`, `quantity_milli` (integer >=0), `version` (>=1), `updated_at`.
 
-`InventoryMovementView`: ID, empresa/sede/artículo/actor, `event_type`, `delta_milli` **firmado**, `occurred_at`. El backend omite campos de origen `null` (recibo de compra, transferencia/ajuste, venta). Admitir campos de origen opcionales no significa inventar operaciones. Eventos: `COMPRA_RECEPCION`, `TRASLADO_ENTRADA`, `TRASLADO_SALIDA`, `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`, `VENTA_SALIDA`.
+`InventoryMovementView`: ID, company/headquarters/articulate/actor, `event_type`, `delta_milli` **signed**, `occurred_at`. El backend omite campos de origen `null` Admitting optional source fields does not mean inventing operations. Events: `COMPRA_RECEPCION`, `TRASLADO_ENTRADA`, `TRASLADO_SALIDA`, `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`, `VENTA_SALIDA`.
 
-**No se calcula stock desde las compras en el navegador.** Las recepciones, ventas, traslados y ajustes se acumulan en el backend y su resultado se consulta en el saldo autoritativo. Se usan conversiones exactas en milésimas **sin multiplicar floats**; las cantidades se muestran con signo cuando son movimientos.
+**No stock is calculated from purchases in the browser.** Receptions, sales, transfers and adjustments are accumulated in the backend and their result is consulted on the authoritative balance. Exact conversions in thousandths are used **sin multiplicar floats**; quantities are shown with sign when they are movements.
 
-## Cambios en frontend
+## Changes in frontend
 
-1. `src/features/inventory/realInventoryGateway.ts`: gateway HTTP con GET-only, filtros y paginación validados, DTOs seguros y mensajes de HTTP 401/403/404/422. Evita aceptar balances negativos, versiones inválidas, movimientos de signo contrario al evento, números fuera del rango entero seguro, respuestas de otro tenant y filas duplicadas.
-2. `src/features/inventory/RealInventoryPage.tsx`: sección visible en `/real/empresas/{uuid}/inventario`, muestra empresa autenticada, sedes reales, catálogo real cargado, filtros y tabs «Existencias» / «Historial de movimientos». Puede cargar páginas sucesivas de cada listado. Cuando una página trae exactamente 100 registros, el sistema avisa que **puede haber más**, nunca afirma que ya consultó todos.
-3. `src/features/auth/RealAuthApp.tsx`: ruta autenticada con validación de UUID. Reiniciar sesión después de F5 sigue siendo política T02; no se guarda Bearer en disco.
-4. `src/features/businesses/RealBusinessesPage.tsx`: botón «Inventario REAL» en panel empresarial, sin mezclar con `/inicio` DEMO.
-5. `src/features/auth/auth.css`: estados visuales de cantidades positivas, negativas y cero; responsivo en móvil.
-6. `tests/inventory-real-api.test.mjs`, `package.json`, workflow CI: batería automatizada independiente `npm.cmd run test:inventory-real`.
+1. `src/features/inventory/realInventoryGateway.ts`: HTTP gateway with GET-only, validated filters and pagination, secure DTOs and HTTP messages 401/403-404/42. Avoid accepting negative balances, invalid versions, anti-event sign movements, numbers outside the safe whole range, responses from another tenant and duplicate rows.
+2. `src/features/inventory/RealInventoryPage.tsx`: visible section in `/real/empresas/{uuid}/inventario`, displays authenticated company, real locations, actual catalog loaded, filters and tabs "Existences" / "History of movements". You can load successive pages from each listing. When a page brings exactly 100 records, the system warns that **There may be more**He never claims he's consulted everyone.
+3. `src/features/auth/RealAuthApp.tsx`: Authenticated path with UUID validation. Restarting session after F5 remains T02 policy; Bearer is not saved to disk.
+4. `src/features/businesses/RealBusinessesPage.tsx`: "Real Inventory" button in business panel, not mixed with `/inicio` DEMO.
+5. `src/features/auth/auth.css`: visual states of positive, negative and zero amounts; mobile responsive.
+6. `tests/inventory-real-api.test.mjs`, `package.json`, workflow CI: independent automated battery `npm.cmd run test:inventory-real`.
 
-### Datos históricos y filtros
+### Historical data and filters
 
-- Las ubicaciones se consultan únicamente desde la empresa seleccionada, y se muestran incluso si actualmente están pausadas, porque puede haber saldos y movimientos históricos.
-- Los nombres/unidades se enriquecen solo con fichas del **catálogo REAL de esa empresa**. El selector comienza con 100 fichas; se ofrece «Cargar más fichas» hasta alcanzar la última página. Mientras no se haya leído el catálogo completo, un artículo sin ficha cargada se presenta por ID corto, nunca por un nombre DEMO ni se oculta el movimiento.
-- El backend ordena balances por ubicación/artículo y movimientos por fecha descendente/ID; cada lista pagina con su propio offset. Si una página posterior repite un ID ya cargado, la pantalla detiene esa paginación e indica actualizar: **offset pagination no representa una instantánea** si el stock cambia mientras se consulta.
-- Solo se observan registros devueltos por la API. Si no hay saldos registrados se dice «No hay saldos registrados» y **no** se afirma que todos los artículos del catálogo tengan saldo cero.
-- Mostrar una unidad de catálogo actual no transforma el valor histórico del movimiento; en el ledger las cantidades se muestran tal como fueron registradas.
+- Locations are consulted only from the selected company, and are shown even if they are currently paused because there may be historical balances and movements.
+- Names/units are enriched only with tokens of the **REAL catalogue of that company**. The selector starts with 100 tiles; "Load more chips" is offered until reaching the last page. As long as the complete catalogue has not been read, an item without a loaded tab is presented by short ID, never by a DEMO name nor does it hide the movement.
+- The backend orders balances by location/article and movements by descending date/ID; each list pages with its own offset. If a later page repeats an already loaded ID, the screen stops that pageing and indicates updating: **offset pagation does not represent a snapshot** if the stock changes while you consult.
+- Only records returned by the API are observed. If no balances are recorded, it is said "No balances recorded" and **no** all items in the catalogue are said to have zero balance.
+- Displaying a current catalog unit does not transform the historical value of movement; in the ledger quantities are shown as they were recorded.
 
-## Casos de prueba automatizados previstos
+## Planned automated evidence cases
 
 - Ruta relativa y Bearer correcto, sin POST.
-- Paginación 100/100, offset real, filtros API exactos y controles 0..500.
-- UUID ajenos a la empresa, filtro de sede/artículo ignorado, datos malformados, duplicados, respuestas de más de 100 elementos.
-- Saldos 0, balances no negativos, versión >=1, fecha válida y enteros seguros.
-- Todos los tipos de movimiento, cantidades positivas/negativas y rechazo de signo incompatible o delta cero.
-- Campos de origen opcionales `null` u omitidos (FastAPI `response_model_exclude_none=True`).
-- HTTP 403/404 sin reemplazar por datos DEMO; red caída y abort sin mutaciones.
-- Build, lint, regresión de suites frontend ya integradas; Chromium existente continúa siendo una prueba **DEMO**, no un E2E REAL con Postgres.
+- Page 100/100, actual offset, exact API filters and 0.500 controls.
+- UUID outside the company, headquarters/article filter ignored, malformed data, duplicates, answers of more than 100 elements.
+- Balances 0, non-negative balances, version >=1, valid date and secure integers.
+- All types of movement, positive/negative quantities and rejection of incompatible sign or zero delta.
+- Optional source fields `null` or omitted (FastAPI `response_model_exclude_none=True`).
+- HTTP 403/404 not replaced by DEMO data; network down and abort without mutations.
+- Build, Lint, regression of already integrated frontend suites; existing Chromium remains a test **DEMO**, no un E2E REAL con Postgres.
 
-## QA manual solicitada: T08-1
+## QA manual requested: T08-1
 
-Realizar sin modificar existencias, compras ni datos DEMO.
+Make without modifying stocks, purchases or DEMO data.
 
-1. En VSCode, trabajar en `feature/e2-7-t08-inventario-real` y sincronizar con origin.
-2. `docker compose --profile api up -d --wait` desde `plataforma-pyme`. En `frontend`, ejecutar `$env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"` y `npm.cmd run dev`.
-3. Ir a `http://localhost:5173/real/login`. Ingresar con el titular de **TEST Empresa A** y abrir **Inventario REAL** desde la empresa.
-4. Filtrar **Sede A TEST** y **Producto A TEST**. Comprobar saldo. El último comprobante de T07 mostró **11 UNIDAD** de saldo posterior; si ningún movimiento ulterior ocurrió en la sede, la API debería devolver el mismo saldo. **No codificar 11 como fixture ni suponerlo permanente.**
-5. En «Historial de movimientos», corroborar una entrada por recepción de **+5 UNIDAD** de Producto A TEST y la fecha del movimiento. Si aparecen otras compras recibidas, también deben figurar sus entradas.
-6. Cambiar a **Sede A TEST 2** y observar que los saldos y movimientos corresponden solo a esa sede, sin mezclar la sede A TEST.
-7. Abrir **TEST Empresa B**: no deben aparecer saldos ni movimientos de TEST Empresa A; un listado vacío es legítimo.
-8. Ingresar como trabajador Miguel: si su membresía está activa, puede consultar los balances/historial del tenant sin ver botones de ajustes y transferencias (aún no implementados).
-9. Si una lista llega a 100 registros, «Cargar más» debe avanzar a offset 100, no repetir resultados. El selector de artículos también puede ampliar sus fichas por páginas.
-10. Abrir `/inicio`: comprobar que Inventario DEMO y Catálogo DEMO continúan separados de los saldos reales.
+1. In VSCode, work in `feature/e2-7-t08-inventario-real` and sync to origin.
+2. `docker compose --profile api up -d --wait` from `plataforma-pyme`. En `frontend`, ejecutar `$env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"` y `npm.cmd run dev`.
+3. Ir a `http://localhost:5173/real/login`. Log in with the holder of **TEST Company A** and open **REAL Inventory** from the company.
+4. Filter **Headquarters A TEST** y **Product A TEST**. Check balance. T07’s last proof showed **11 UNITY** after balance; if no further movement occurred at headquarters, the API should return the same balance. **Do not encode 11 as fixture or suppose it to be permanent.**
+5. In "History of movements", corroborate an entrance by reception of **+5 UNITY** Product A TEST and the date of movement. If other purchases are received, your tickets must also appear.
+6. Switch to **Headquarters A TEST 2** and note that the balances and movements correspond only to that headquarters, without mixing the A TEST headquarters.
+7. Open **TEST Company B**: no balances or movements of TEST Company A should appear; an empty list is legitimate.
+8. Enter as a worker Miguel: If your membership is active, you can check the tenant balance/history without seeing settings and transfers buttons (not yet implemented).
+9. If a list reaches 100 records, "Load more" must move to offset 100, not repeat results. The article selector can also expand your tabs per page.
+10. Open `/inicio`: check that DEMO Inventory and DEMO Catalog remain separate from actual balances.
 
-**No ejecutar transferencias ni ajustes en T08-1.** T08-3/T08-4 tendrán sus propios PR/validaciones. Cualquier error HTTP o inconsistencia de saldo se investiga antes de declarar aprobada la prueba.
+**Do not execute transfers or adjustments to T08-1.** T08-3/T08-4 will have their own PR/validations. Any HTTP error or balance inconsistency is investigated before declaring the test approved.
 
-## Transferencia
+## Transfer
 
-- **T08-2:** completar historial/UX y sus casos de aceptación con dataset de más de 100 movimientos.
-- **T08-3:** transferencias entre ubicaciones, consistencia de doble movimiento y recuperación idempotente.
-- **T08-4:** stock inicial y ajustes absolutos/relativos con `expected_version` y 409 de conflicto, recarga del saldo y nueva aprobación del usuario.
-- **T08-5:** QA de permisos, tenant, carreras, balance y regresión, antes del merge del incremento completo.
-- **T11:** Playwright full-stack con FastAPI/PostgreSQL en base efímera y casos de corte de red, concurrencia, paginación y trazabilidad end-to-end.
+- **T08-2:** complete history/UX and its acceptance cases with dataset of more than 100 movements.
+- **T08-3:** Transfers between locations, double movement consistency and idempotent recovery.
+- **T08-4:** stock and absolute/relative adjustments with `expected_version` and 409 conflict, reload the balance and re-approval of the user.
+- **T08-5:** QA permissions, tenant, races, balance and regression, before the full increase merge.
+- **T11:** Playwright full-stack with FastAPI/PostgreSQL on ephemeral basis and cases of network cutting, turnout, pagination and end-to-end traceability.
 
-**Limitación explícita:** esta entrega T08-1 es lectura de recursos ya existentes. No implica un ERP comercial terminado ni resuelve cuentas, caja, QR ni ventas POS de T10.
+**Explicit limitation:** This T08-1 delivery is a reading of existing resources. It does not involve a finished commercial ERP or resolve accounts, cashier, QR or POS sales from T10.
 
-## Resultado de la primera validación automatizada — 10/11/2026
+## Result of the first automated validation — 10/11/2026
 
 **GitHub Actions:** run #42818763338, **SUCCESS**.
 
-- `npm ci`: instalación aprobada.
-- `npm run build`: `tsc -b && vite build`, compilación correcta. La advertencia Vite por tamaño del chunk JS superior a 500 kB **sigue visible**: asunto de rendimiento a tratar con carga diferida, no se elevó el umbral ni se ocultó.
-- `npm run lint`: **0 warnings, 0 errors**. Las advertencias iniciales de React sobre estados síncronos en efectos y referencias `.current` en cleanup fueron **corregidas** mediante resets iniciados por eventos y limpieza de AbortController estable, no silenciadas.
-- `npm run test:inventory-real`: **16/16 aprobadas**, 0 fallos. Pruebas de GET, tenant, filtros, paginación, validación de DTO y unidades, signos, abort y HTTP.
-- Resto de las suites de frontend: **165/165 aprobadas** según los totales de los grupos; **181/181 en total** incluyendo las 16 de T08-1.
-- Job Chromium: aprobado. Sus recorridos son para la navegación DEMO (escritorio y móvil), no se debe afirmar que hay Playwright full-stack REAL.
-- **Limitación de evidencia:** GitHub CI no se conectó a PostgreSQL para verificar el saldo concreto del usuario; solo se revisaron contratos y mocks. La aceptación manual T08-1 requiere ejecutar el checklist anterior y comparar con los datos de las compras recibidas en TEST Empresa A.
+- `npm ci`: approved installation.
+- `npm run build`: `tsc -b && vite build`, compilation correct. The warning Vite by size of the chunk JS greater than 500 kB **remains visible**: issue of performance to be dealt with with with deferred cargo, the threshold was not raised or concealed.
+- `npm run lint`: **0 warnings, 0 errors**. React's initial warnings on synchronous states in effects and references `.current` in cleanup were **corrected** by resets initiated by events and stable AbortionController cleaning, not muted.
+- `npm run test:inventory-real`: **16/16 approved**, 0 bugs. Tests of GET, tenant, filters, pagination, validation of DTO and units, signs, abort and HTTP.
+- Resto de las suites de frontend: **165/165 approved** according to group totals; **181/181 in total** including the 16 of T08-1.
+- Job Chromium: approved. Your tours are for DEMO navigation (scritorio and mobile), it should not be said that there is Playwright full-stack REAL.
+- **Limitation of evidence:** GitHub CI did not connect to PostgreSQL to verify the specific user balance; only contracts and mocks were reviewed. Manual acceptance T08-1 requires running the previous checklist and comparing with data of purchases received at TEST Company A.
 
-**Decisión del incremento:** listo para revisión en navegador y estudio del código; PR #41 permanecerá borrador, sin merge. Las mutaciones de inventario de T08-3/T08-4 no forman parte de esta implementación.
+**Decision of increase:** ready for browser review and code study; PR #41 will remain draft, without merit. The T08-3/T08-4 inventory mutations are not part of this implementation.
 
-## Evidencia manual T08-1 — saldo y ledger coherentes (10/11/2026)
+## Manual evidence T08-1 — consistent balance and leader (10/11/2026)
 
-**Fuente de evidencia:** dos capturas del navegador compartidas por el usuario durante la prueba sobre TEST Empresa A, con API REAL. El resultado documenta lo observado en la UI; no se ejecutó en esta revisión una consulta SQL independiente.
+**Source of evidence:** two browser screenshots shared by the user during TEST Company A test, with REAL API. The result documents what was observed in the UI; no independent SQL query was executed in this review.
 
-| Verificación | Resultado observado | Estado |
+| Verification | Observed result | Status |
 |---|---|---|
-| Pantalla Existencias | 1 combinación artículo/sede: **Producto A TEST**, **Sede A TEST**, unidad **UNIDAD**, saldo **11** | Aprobado visualmente |
-| Versión de saldo | **3**, actualizado 10/11/2026 **8:23 a. m.** | Aprobado visualmente |
-| Pantalla Historial de movimientos | 3 movimientos `Recepción de compra` del mismo artículo y sede | Aprobado visualmente |
-| Entradas del historial | **+5**, **+4**, **+2** unidades, en orden de más reciente a más antiguo | Aprobado visualmente |
-| Aritmética y consistencia | 2 + 4 + 5 = **11**, coincidente con último saldo del comprobante T07 | Aprobado para datos mostrados |
-| Último movimiento T07 | Recepción **+5** de Producto A TEST, a las **8:23 a. m.**, coincide con comprobante visual previo del trabajador Miguel | Aprobado visualmente |
-| Paginación visible | 1 saldo, 3 movimientos, «Última página consultada» | Coherente para dataset pequeño |
+| Screen Stocks | 1 item/headquarter combination: **Product A TEST**, **Headquarters A TEST**unit **UNIT**, balance **11** | Visually Approved |
+| Balance version | **3**updated 11/10/2026 **8:23 a. m.** | Visually Approved |
+| Display History of movements | 3 moves `Recepción de compra` of the same article and seat | Visually Approved |
+| History entries | **+5**, **+4**, **+2** units, in order from latest to older | Visually Approved |
+| Arithmetic and consistency | 2 + 4 + 5 = **11**, coinciding with last balance of voucher T07 | Approved for displayed data |
+| Last T07 movement | Receipt **+5** of Product A TEST, to the **8:23 a. m.**, coincides with previous visual proof of the worker Miguel | Visually Approved |
+| Visible Pagination | 1 balance, 3 moves, «Last page consulted» | Matching for small dataset |
 
-**Conclusión parcial:** quedan validados los dos casos centrales de lectura de T08-1 (existencias e historial) en TEST Empresa A y la concordancia con el comprobante histórico T07. No se registró ninguna operación de inventario nueva para verificarlo.
+**Partial conclusion:** the two central cases of reading T08-1 (existing and history) in TEST Company A and the agreement with historical proof T07 are validated. No new inventory operation was recorded to verify this.
 
-**Actualización tras las siguientes capturas:** el aislamiento visual TEST Empresa B sin saldos y la consulta desde la cuenta del trabajador Miguel ya fueron verificados; ver sección posterior. **Aún no verificado:** filtro por Sede A TEST 2 y artículo, historial vacío en Empresa B, DEMO sin regresiones específicamente en esta rama y paginación con más de 100 entradas. El CI cubre los contratos de lectura, pero esas comprobaciones manuales siguen diferenciadas.
+**Update after the following catches:** visual isolation TEST Company B without balances and the consultation from the employee account Miguel were already verified; see later section. **Not yet verified:** filter by Headquarters A TEST 2 and article, empty history in Company B, DEMO without regressions specifically in this branch and pagination with more than 100 entries. The IC covers the reading contracts, but these manual checks remain differentiated.
 
-**Observación visual menor (no bloqueante):** con una única combinación el texto de la pantalla dice «1 combinaciones artículo/sede cargados»; considerar singularización de la leyenda en el pulido de T08-1, sin impacto en saldos.
+**Minor visual observation (not blocking):** with a single combination the text on the screen says "1 item/headquarters combinations loaded"; consider singularization of legend in polishing T08-1, without impact on balances.
 
-## Evidencia manual adicional: cuenta de Miguel y empresas A/B — 10/11/2026
+## Additional manual evidence: Miguel and A/B companies account — 10/11/2026
 
-**Fuente:** tres capturas de la UI de Inventario REAL y confirmación textual del usuario («Anda bien desde la Cuenta de Miguel»).
+**Source:** three catches of the REAL Inventory IU and textual confirmation of the user ("Walking well from the Miguel Account").
 
-| Observación | Resultado | Alcance |
+| Observation | Outcome | Scope |
 |---|---|---|
-| Empresa B → Existencias | `0 combinaciones artículo/sede cargados`; estado vacío: «No hay saldos registrados para los filtros seleccionados» | **Aprobado visualmente:** no muestra el saldo ni Producto A TEST de A; no se observó aquí el historial de B |
-| Empresa A → Existencias | `Producto A TEST`, `Sede A TEST`, **11 UNIDAD**, versión 3 | **Aprobado:** coincide con último comprobante T07 y captura anterior de T08-1 |
-| Cuenta de Miguel (TRABAJADOR en Empresa A) | El usuario afirma que puede abrir correctamente esta pantalla y consultar el saldo REAL | **Aprobado en UI** para lectura; la captura por sí sola no prueba una negativa HTTP para modificaciones, que no están disponibles todavía en T08-1 |
-| Acciones de cambio de stock | No hay controles de ajuste/traslado en la vista | **Diseño previsto:** módulo read-only para todos los roles hasta T08-3/T08-4; no equivale a demostrar denegación por rol |
+| Company B → Stocks | `0 combinaciones artículo/sede cargados`; empty status: ‘No balances recorded for selected filters’ | **Visually approved:** does not show the balance or Product A TEST of A; no history of B was observed here |
+| Company A → Stocks | `Producto A TEST`, `Sede A TEST`, **11 UNITY**version 3 | **Approved:** matches last T07 and previous capture of T08-1 |
+| Miguel Account (TRABAJADOR in Company A) | The user states that he can correctly open this screen and check the REAL balance | **Approved in IU** for reading; capture alone does not prove an HTTP negative for modifications, which are not yet available in T08-1 |
+| Stock exchange shares | No adjustment/transfer controls in view | **Design planned:** read-only module for all roles up to T08-3/T08-4; does not amount to demonstrating role denial |
 
-**Resultado parcial:** aislamiento de listados de saldos entre empresas y lectura como trabajador observados. Falta ejecutar la selección explícita de **Sede A TEST 2** (y preferiblemente comprobar la pestaña Historial con ese filtro), el filtro por artículo, el historial de Empresa B y la regresión DEMO para el cierre manual de este subincremento. No se modifica la base ni se fusiona PR #41 por estas capturas.
+**Partial result:** isolation of lists of balances between companies and reading as observed worker. Lack to execute the explicit selection of **Headquarters A TEST 2** (and preferably check the History tab with that filter), the filter per article, Company B history and DEMO regression for manual closure of this sub-increment. The base is not modified or fused PR #41 by these catches.
 
-## Evidencia manual — filtro Sede A TEST 2 (10/11/2026)
+## Manual evidence — filter Headquarters A TEST 2 (10/11/2026)
 
-**Fuente:** dos capturas del usuario con TEST Empresa A y filtro explícito **Sede A TEST 2 · ACTIVA**, una para cada pestaña.
+**Source:** two user catches with TEST Company A and explicit filter **Headquarters A TEST 2 · ACTIVA**One for each eyelash.
 
-| Vista | Evidencia visual | Resultado |
+| View | Visual evidence | Outcome |
 |---|---|---|
-| Existencias | 0 combinaciones artículo/sede; mensaje «No hay saldos registrados para los filtros seleccionados. Esto no significa que todo el catálogo tenga saldo cero» | **Aprobado** |
-| Historial de movimientos | 0 movimientos; mensaje «No hay movimientos registrados para los filtros seleccionados» | **Aprobado** |
-| Aislamiento por sede | No figuran Producto A TEST con saldo 11 ni las tres recepciones (+5, +4 y +2) de Sede A TEST | **Aprobado visualmente** |
+| Stocks | 0 item/headquarter combinations; message "No balances recorded for selected filters. This does not mean that the entire catalog has zero balance" | **Approved** |
+| History of movements | 0 moves; message "No recorded movements for selected filters" | **Approved** |
+| Isolation by headquarters | Product A TEST not included with balance 11 nor the three receptions (+5, +4 and +2) of Headquarters A TEST | **Visually Approved** |
 
-**Conclusión:** se verifica el funcionamiento del filtro server-side por sede en ambas vistas, sobre el conjunto de datos de esta prueba. Saldos y movimientos de Sede A TEST se mantienen separados de Sede A TEST 2. La respuesta vacía no prueba saldo cero explícito. Para el cierre completo de T08-1 quedan por revisar, según alcance deseado, el filtro por artículo, la regresión DEMO en esta rama y la paginación con volúmenes grandes; la cobertura de contrato ya fue ejecutada en CI. No se fusiona el PR por esta sola evidencia.
+**Conclusion:** the operation of the server-side filter is verified by headquarters in both views, on the data set of this test. Headquarters A TEST balances and movements are kept separate from Headquarters A TEST 2. The empty response does not prove explicit zero balance. For the complete closure of T08-1, the filter per article, the regression DEMO in this branch and the pagination with large volumes remain to be reviewed, as desired. The contract coverage has already been executed in IC. The PR is not merged for this only evidence.
 
-## Evidencia manual de regresión DEMO y aceptación principal — 10/11/2026
+## Manual evidence of regression DEMO and main acceptance — 10/11/2026
 
-**Fuente:** confirmación expresa del responsable de las pruebas: «Demo sigue mostrando sus datos particulares sin mezclar nada de pruebas reales». Se refiere a la continuidad del entorno DEMO después de integrar T08-1; no representa una ejecución independiente de pruebas e2e automatizadas sobre PostgreSQL.
+**Source:** express confirmation of the test manager: ‘Demo continues to show its particular data without mixing any real evidence’. It refers to the continuity of DEMO environment after integrating T08-1; it does not represent an independent execution of automated e2e tests on PostgreSQL.
 
-| Verificación | Resultado | Evidencia |
+| Verification | Outcome | Evidence |
 |---|---|---|
-| DEMO WALOS: datos propios y navegación existente | **Aprobada en alcance reportado** | Usuario confirma que los datos DEMO se mantienen particulares y sin mezcla de pruebas REAL |
-| Saldos REAL en TEST Empresa A | **Aprobado** | 11 UNIDAD de Producto A TEST en Sede A TEST, versión 3 |
-| Ledger de la sede A TEST | **Aprobado** | Tres recepciones reales: +2, +4 y +5; suma 11 |
-| Filtro Sede A TEST 2: saldos e historial | **Aprobado** | Ambas vistas vacías, sin arrastrar movimientos de Sede A TEST |
-| Empresas A vs. B en saldos | **Aprobado visualmente** | B devuelve 0 combinaciones, sin saldos de A |
-| Consulta con trabajador Miguel | **Aprobada en UI** | El usuario pudo acceder a los datos permitidos |
+| DEMO WALOS: own data and existing navigation | **Approved in reported scope** | User confirms that DEMO data are kept private and without mixing REAL tests |
+| REAL Balances in TEST Company A | **Approved** | 11 Product UNIT A TEST at Headquarters A TEST, version 3 |
+| Ledger de la sede A TEST | **Approved** | Three real receptions: +2, +4 and +5; sum 11 |
+| Filter Headquarters A TEST 2: balances and history | **Approved** | Both views empty, without dragging Headquarters A TEST movements |
+| Companies A vs. B in balances | **Visually Approved** | B returns 0 combinations, no A balances |
+| Consultation with worker Miguel | **Approved in IU** | The user was able to access the allowed data |
 
-**Decisión:** aceptación funcional principal de T08-1 completada para lectura de saldos y movimientos, aislamiento visual por sede/empresa, trabajador lector y no regresión DEMO observada. **No equivale a aprobación de T08 completo ni a QA integral de seguridad**. Pendientes explícitos: prueba manual de filtro por artículo; historial vacío de B bajo la cuenta pertinente; >100 filas y cambios concurrentes de página; pruebas negativas HTTP y Playwright full-stack contra PostgreSQL (T11). Un mensaje de pluralización «0/1 combinaciones» sigue siendo un detalle UX no bloqueante para el siguiente pulido. **PR #41 permanece abierto como borrador, sin merge**.
+**Decision:** main functional acceptance of T08-1 completed for reading balances and movements, visual isolation by headquarters/company, reader worker and non-regression DEMO observed. **Not equivalent to full T08 approval or comprehensive QA security**. Explicit Earrings: manual filter per article test; empty B history under the relevant account; >100 rows and concurrent page changes; HTTP negative tests and Playwright full-stack against PostgreSQL (T11). A pluralization message "0/1 combinations" remains a non-blocking UX detail for the next polishing. **PR #41 remains open as draft, without merit**.

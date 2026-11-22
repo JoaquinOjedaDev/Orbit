@@ -11,24 +11,24 @@ export function demoImageKey(scope: DemoImageScope, businessId?: string, entityI
       businessId.length > 120 || entityId.length > 140 ||
       !/^[a-zA-Z0-9_-]+$/.test(businessId) ||
       !/^[a-zA-Z0-9_-]+$/.test(entityId)) {
-    throw new Error('La imagen necesita una ficha existente dentro de una empresa válida.')
+    throw new Error('The image needs an existing file within a valid company.')
   }
   return JSON.stringify([scope, businessId, entityId])
 }
 
 export function validateDemoImageFile(file: Pick<File, 'type' | 'size'>): void {
   if (!allowedImageTypes.includes(file.type as typeof allowedImageTypes[number])) {
-    throw new Error('Elegí una imagen JPG, PNG o WebP. No se permiten SVG ni GIF.')
+    throw new Error('Choose a JPG, PNG or WebP image. SVG and GIF are not allowed.')
   }
   if (!Number.isFinite(file.size) || file.size <= 0 || file.size > MAX_IMAGE_FILE_BYTES) {
-    throw new Error('La imagen debe pesar menos de 8 MB antes de optimizarla.')
+    throw new Error('The image must weigh less than 8 MB before optimizing it.')
   }
 }
 
 export function scaledImageSize(width: number, height: number): { width: number; height: number } {
   if (!Number.isFinite(width) || !Number.isFinite(height) ||
       width <= 0 || height <= 0 || width > 30_000 || height > 30_000) {
-    throw new Error('La imagen tiene dimensiones inválidas o demasiado grandes.')
+    throw new Error('The image has invalid or too large dimensions.')
   }
   const factor = Math.min(1, MAX_IMAGE_SIDE / Math.max(width, height))
   return { width: Math.max(1, Math.round(width * factor)), height: Math.max(1, Math.round(height * factor)) }

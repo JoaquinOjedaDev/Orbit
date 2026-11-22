@@ -2,28 +2,28 @@ import { expect, test } from '@playwright/test'
 
 test('navegación personal, tenants, placeholder y URL de empresa ajena', async ({ page }) => {
   await page.goto('/inicio')
-  await expect(page.getByRole('heading', { name: 'Bienvenido a tu espacio de trabajo' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Welcome to your workspace' })).toBeVisible()
 
   await page.goto('/b/walos-demo/inicio')
   await expect(page.locator('.business-hero h2')).toHaveText('WALOS')
 
   await page.goto('/b/comercio-demo/inicio')
-  await expect(page.locator('.business-hero h2')).toHaveText('Comercio Ejemplo')
+  await expect(page.locator('.business-hero h2')).toHaveText('Sample Retail Business')
 
   await page.goto('/b/walos-demo/analisis')
-  await expect(page.getByRole('heading', { name: 'Estamos preparando esta sección' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'We\'re preparing this section.' })).toBeVisible()
 
   await page.goto('/b/no-existe/ventas')
-  await expect(page.getByRole('heading', { name: 'Empresa no disponible' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Company not available' })).toBeVisible()
 })
 
 test('drawer: Escape cierra y devuelve foco; páginas sin desborde horizontal', async ({ page }) => {
   await page.goto('/b/walos-demo/inicio')
-  const trigger = page.getByRole('button', { name: 'Abrir menú principal' })
+  const trigger = page.getByRole('button', { name: 'Open Main Menu' })
   await trigger.click()
-  await expect(page.getByRole('dialog', { name: 'Menú principal' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Main menu' })).toBeVisible()
   await page.keyboard.press('Escape')
-  await expect(page.getByRole('dialog', { name: 'Menú principal' })).toHaveCount(0)
+  await expect(page.getByRole('dialog', { name: 'Main menu' })).toHaveCount(0)
   await expect(trigger).toBeFocused()
 
   for (const path of ['/b/walos-demo/catalogo', '/b/walos-demo/ventas', '/b/walos-demo/inventario']) {
@@ -40,11 +40,11 @@ test('drawer: Escape cierra y devuelve foco; páginas sin desborde horizontal', 
 test('servicio por empresa y QR DEMO: pendiente, persistencia, cancelación y aprobación única', async ({ page }) => {
   const service = 'Servicio E2E de prueba'
   await page.goto('/b/walos-demo/catalogo')
-  await page.getByRole('button', { name: 'Agregar artículo o servicio' }).click()
-  await page.getByLabel('Nombre del artículo o servicio *').fill(service)
+  await page.getByRole('button', { name: 'Add article or service' }).click()
+  await page.getByLabel('Name of article or service *').fill(service)
   await page.getByLabel('Tipo *').selectOption('SERVICIO')
-  await page.getByLabel('Precio de lista (ARS, opcional)').fill('1500,00')
-  await page.getByRole('button', { name: 'Agregar a catálogo DEMO' }).click()
+  await page.getByLabel('List price (ARS, optional)').fill('1500,00')
+  await page.getByRole('button', { name: 'Add to DEMO Catalogue' }).click()
   await expect(page.getByText(service, { exact: true })).toBeVisible()
 
   await page.goto('/b/comercio-demo/catalogo')
@@ -52,33 +52,33 @@ test('servicio por empresa y QR DEMO: pendiente, persistencia, cancelación y ap
 
   async function createQr() {
     await page.goto('/b/walos-demo/ventas')
-    await page.getByRole('button', { name: 'Nueva venta' }).click()
+    await page.getByRole('button', { name: 'New sale' }).click()
     await page.getByLabel('Artículo o servicio 1').selectOption({ label: service + ' · Servicio' })
     await page.locator('.sales-payment-row').first().locator('select').first().selectOption('MERCADO_PAGO_DECLARADO')
-    await page.getByLabel('Importe aplicado ARS').fill('1500')
-    await page.getByRole('button', { name: 'Generar QR DEMO' }).click()
-    await expect(page.getByRole('region', { name: 'Intención de cobro QR de demostración' })).toContainText('Pendiente (sin cobro)')
+    await page.getByLabel('Amount applied ARS').fill('1500')
+    await page.getByRole('button', { name: 'Generate QR DEMO' }).click()
+    await expect(page.getByRole('region', { name: 'Demonstration QR collection intent' })).toContainText('Outstanding (no charge)')
   }
 
   await createQr()
-  await expect(page.getByRole('heading', { name: 'Comprobante de venta DEMO' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'DEMO sales check' })).toHaveCount(0)
 
   // El estado sobrevive F5. En otra empresa el QR no debe aparecer.
   await page.reload()
-  await page.getByRole('button', { name: 'Ver QR DEMO' }).click()
-  await expect(page.getByRole('region', { name: 'Intención de cobro QR de demostración' })).toContainText('Pendiente (sin cobro)')
+  await page.getByRole('button', { name: 'See QR DEMO' }).click()
+  await expect(page.getByRole('region', { name: 'Demonstration QR collection intent' })).toContainText('Outstanding (no charge)')
   await page.goto('/b/comercio-demo/ventas')
-  await expect(page.getByRole('heading', { name: 'Intenciones QR DEMO' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Intentions QR DEMO' })).toHaveCount(0)
 
   await page.goto('/b/walos-demo/ventas')
-  await page.getByRole('button', { name: 'Ver QR DEMO' }).click()
-  await page.getByRole('button', { name: 'Cancelar intención' }).click()
-  await expect(page.getByRole('region', { name: 'Intención de cobro QR de demostración' })).toContainText('Cancelado')
+  await page.getByRole('button', { name: 'See QR DEMO' }).click()
+  await page.getByRole('button', { name: 'Cancel Intent' }).click()
+  await expect(page.getByRole('region', { name: 'Demonstration QR collection intent' })).toContainText('Cancelado')
   await expect(page.locator('.sales-list-row')).toHaveCount(0)
 
   await createQr()
-  await page.getByRole('button', { name: 'Simular aprobación (sin cobro real)' }).click()
-  await expect(page.getByRole('heading', { name: 'Comprobante de venta DEMO' })).toBeVisible()
+  await page.getByRole('button', { name: 'Simulate approval (no actual charge)' }).click()
+  await expect(page.getByRole('heading', { name: 'DEMO sales check' })).toBeVisible()
   await expect(page.locator('.sales-list-row')).toHaveCount(1)
   await page.reload()
   await expect(page.locator('.sales-list-row')).toHaveCount(1)

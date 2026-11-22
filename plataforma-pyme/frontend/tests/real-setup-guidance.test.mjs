@@ -10,7 +10,7 @@ test('H3: ubicaciones solo sugieren cuando la lectura fue comprobada y no ofrece
   assert.equal(locationSetupSuggestion({verified:true,count:1,activeCount:1,canManage:true}),null)
   const empty=locationSetupSuggestion({verified:true,count:0,activeCount:0,canManage:false})
   assert.equal(empty?.id,'locations-empty')
-  assert.match(empty.detail,/no habilita/)
+  assert.match(empty.detail,/does not enable/i)
   assert.equal(empty?.route,'inicio')
   assert.equal(locationSetupSuggestion({verified:true,count:2,activeCount:0,canManage:true})?.id,'locations-paused')
 })
@@ -21,7 +21,7 @@ test('H3: equipo solo cuando el directorio es visible y el usuario está solo', 
   assert.equal(teamSetupSuggestion({verified:true,canRead:true,onlySelf:false,canInvite:true}),null)
   const solo=teamSetupSuggestion({verified:true,canRead:true,onlySelf:true,canInvite:false})
   assert.equal(solo?.id,'team-solo')
-  assert.match(solo.detail,/persona con permisos/)
+  assert.match(solo.detail,/person with administrative permissions/i)
 })
 
 test('H3: catálogo distingue error, vacío y acceso de solo lectura', () => {
@@ -29,7 +29,7 @@ test('H3: catálogo distingue error, vacío y acceso de solo lectura', () => {
   assert.equal(catalogSetupSuggestion({verified:true,count:1,canWrite:true}),null)
   const empty=catalogSetupSuggestion({verified:true,count:0,canWrite:false})
   assert.equal(empty?.id,'catalog-empty')
-  assert.match(empty.detail,/persona autorizada/)
+  assert.match(empty.detail,/authorized person/i)
 })
 
 const inventory={

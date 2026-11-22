@@ -1,128 +1,128 @@
-# E2-7 T00 — Decisiones operativas y orden de ejecución posterior a la revisión externa
+# E2-7 T00 — Operational decisions and order of execution after external review
 
-**Estado:** T00 documental; implementación NO iniciada. **Fecha:** 2026-11-09.  
-**Base verificada:** `main` `b72997be411d659ff7480f642543162445c951a0`.  
-**Rama:** `docs/e2-7-t00-decisiones` (solo documentos, sin cambios de aplicación).  
-**Alcance:** `plataforma-pyme/` únicamente; E2-7 = integración React/FastAPI/PostgreSQL + QA + cierre académico.  
-**Insumos:** `E2-7_PLAN_RECTOR_INTEGRACION_Y_CIERRE.md`, `E2-7_MATRIZ_FRONTEND_BACKEND_Y_CONTRATOS.md`, `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md`, informe externo `REVISION_GENERAL_PLATAFORMA_PYME_PRE_E2-7.md` v2 entregado por el responsable, más observaciones de otra IA. El informe externo no está incorporado aquí como archivo original; no atribuir ejecución de sus pruebas al equipo.
+**Status:** T00 documentary; implementation NOT initiated. **Date:** 2026-11-09.  
+**Verified base:** `main` `b72997be411d659ff7480f642543162445c951a0`.  
+**Rama:** `docs/e2-7-t00-decisiones` (only documents, no changes in application).  
+**Scope:** `plataforma-pyme/` only; E2-7 = React/FastAPI/PostgreSQL + QA + academic closure integration.  
+**Inputs:** `E2-7_PLAN_RECTOR_INTEGRACION_Y_CIERRE.md`, `E2-7_MATRIZ_FRONTEND_BACKEND_Y_CONTRATOS.md`, `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md`, external report `REVISION_GENERAL_PLATAFORMA_PYME_PRE_E2-7.md` v2 delivered by the responsible, plus observations from another AI. The external report is not incorporated here as original file; do not attribute execution of your tests to the computer.
 
-> **Propósito:** fijar un orden de construcción comprobable y preservar distinción entre: hecho del código, recomendación aceptada técnicamente para la planificación, decisión de negocio pendiente y mejora diferida. No es auditoría independiente ejecutada ni autorización de cambios de política de precios o seguridad.
+> **Purpose:** establish a verifiable construction order and preserve distinction between: fact of code, technically accepted recommendation for planning, pending business decision and delayed improvement. It is not independently audited executed nor authorized price or security policy changes.
 
-## 1. Corrección de línea base y hechos observados
+## 1. Baseline correction and observed facts
 
-- En `backend/app/modules/auth/tokens.py`, el token se crea mediante `secrets.token_urlsafe(32)` y su hash mediante SHA-256. Es **Bearer opaco** almacenado/verificado por sesión; **NO JWT**. Nunca decodificar claims desde él.
-- `frontend/src/App.tsx` y `src/data/demo/demoStore.ts` continúan usando DEMO y `localStorage`. El modo REAL necesita cliente HTTP, sesión y tenant explícitos; no usar objetos ni IDs `demo-...` como DTOs reales.
-- `GET /api/v1/businesses/{business_id}/catalog` admite `offset` y `limit`, con `limit=100` predeterminado y máximo 500. La búsqueda local en una sola página **no es búsqueda global**.
-- El contrato E2-6 tiene `POST /sales` y `GET /sales/{sale_id}`, sin `GET /sales` paginado ni consulta de comprobante por `request_id` en el corte inspeccionado.
-- `SalesService` valida ubicación operativa antes de ejecutar replay de POST. Su modificación requiere decisión explícita de política histórica y pruebas de rol/membresía/sede.
-- `SaleLineInput.unit_price_cents` y descuento provienen del cliente; el servidor no fuerza el precio vigente de catálogo. **Es decisión comercial pendiente** para roles con SELL, no falla demostrada universalmente.
-- Las operaciones de conteo del frontend representan cantidad final; `AdjustStockRequest` de backend representa **delta positivo con tipo** más `expected_version`.
-- El backend de compra/recepción registra una recepción completa y a una sola ubicación; recepción parcial/múltiple es fuera del MVP actual salvo aprobación específica.
-- Los informes previos de CI prueban los commits referenciados, no el código aún no integrado de E2-7.
+- En `backend/app/modules/auth/tokens.py`, the token is created by `secrets.token_urlsafe(32)` and its hash by SHA-256. **Opaque Bearer** stored/verified per session; **NO JWT**Never decode claims from him.
+- `frontend/src/App.tsx` y `src/data/demo/demoStore.ts` continue using DEMO and `localStorage`. REAL mode needs explicit HTTP client, session and tenant; do not use objects or IDs `demo-...` as real DTOs.
+- `GET /api/v1/businesses/{business_id}/catalog` admite `offset` y `limit`, con `limit=100` default and maximum 500. Local search on a single page **is not a global search**.
+- The E2-6 contract has `POST /sales` y `GET /sales/{sale_id}`, sin `GET /sales` pagination or proof of `request_id` at the inspected cut.
+- `SalesService` valid operational location before performing POST replay. Its modification requires explicit decision of historical policy and role/membership/headquarters testing.
+- `SaleLineInput.unit_price_cents` and discount come from the client; the server does not force the current price of catalog. **It's a pending commercial decision.** for roles with SELL, it does not fail universally.
+- Frontend counting operations represent final amount; `AdjustStockRequest` de backend representa **positive delta with type** más `expected_version`.
+- The purchase/reception backend records a full reception and at one location only; partial/multiple reception is outside the current MVP except for specific approval.
+- Previous IC reports test the referenced commit, not the code yet unintegrated E2-7.
 
-## 2. Decisiones adoptadas para el plan de integración
+## 2. Decisions adopted for the integration plan
 
-| ID | Política de trabajo para E2-7 | Justificación y condición |
+| ID | Working policy for E2-7 | Justification and condition |
 |---|---|---|
-| D01 | **Conservar** SPA React y diseño E1, adaptar datos y callbacks por flujo | Evitar reescritura de UI existente |
-| D02 | Separación explícita `REAL` y `DEMO`; jamás mezclar identidades, saldos, KPIs ni IDs | PostgreSQL es la autoridad del estado REAL |
-| D03 | Cliente HTTP central con DTOs API, manejo de 204, fallos, timeouts, 401/403/404/409/422 | Reducir discrepancias FastAPI/React |
-| D04 | Desarrollo con proxy Vite hacia FastAPI; sin hardcodear URL final | Evitar bloqueos CORS locales y mantener transporte reutilizable |
-| D05 | Token de acceso **opaco**, solo en memoria inicialmente; re-login claro tras F5 | Sin refresh endpoint hoy. No interpretar el token como JWT. Sesión persistente se reconsidera si UX lo requiere |
-| D06 | Estado remoto scoped por usuario + empresa + modo + generación de sesión; ignorar respuestas tardías | Evitar fugas por cambios A→B, logout/login |
-| D07 | Paginación/completitud explícita; no declarar total global ni stock cero por página parcial | Catálogo/listas y POS >100 artículos |
-| D08 | Comandos idempotentes: clave/cuerpo inmutables por intento; **sin reintento automático con nueva clave** | Timeout puede ocurrir después de commit |
-| D09 | Para comandos de resultado incierto se adopta diseño de **registro durable acotado** independiente del Bearer, sujeto a revisión de privacidad, limpieza y compatibilidad antes de activarlo | Debe sobrevivir F5; ninguna cola automática ni almacenamiento de tokens |
-| D10 | Ventas REAL requerirán listado/recovery **si se aprueban contratos específicos**; no fingir historial en cliente | Extensiones mínimas candidatas a GET /sales paginado y GET por request_id |
-| D11 | Ajuste de conteo traducido a delta/version con confirmación humana; lote multiartículo no atómico queda DEMO o diferido | No crear cambios erróneos por lectura desactualizada |
-| D12 | Caja, gastos, cuentas financieras, QR y fotos remotas quedan DEMO/diferidos en E2-7 | Mantener recorte académico RF-01..07 |
-| D13 | No refactorizar autorización común ni ampliar recepción parcial solo por oportunidad | Compatibilidad E2-1..E2-6; primero integrar y medir |
-| D14 | Cada incremento tiene tests focalizados, compilación, evidencia SHA, y PR delimitado; QA full-stack inicia en autenticación, no al final | Reducir regresiones y acumular evidencia |
+| D01 | **Store** SPA React and E1 design, adapting data and callbacks by flow | Avoid existing IU rewriting |
+| D02 | Explicit separation `REAL` y `DEMO`; never mix identities, balances, KPIs or IDs | PostgreSQL is the authority of REAL state |
+| D03 | Central HTTP client with DTOs API, 204 handling, faults, timeouts, 401/403/404/409/422 | Reduce discrepancies FastAPI/React |
+| D04 | Development with proxy Vite towards FastAPI; without hardcode final URL | Avoid local CORS blocks and maintain reusable transport |
+| D05 | Token de acceso **opaque**, only in memory initially; clear re-login after F5 | No refresh endpoint today. Do not interpret token as JWT. Persistent session is reconsidered if UX requires it |
+| D06 | Remote status scooter per user + company + mode + session generation; ignore late answers | Avoid leaks by changes A→B, logout/login |
+| D07 | Explicit Page/Completitude; not declare total global or zero stock per partial page | Catalogue/lists and POS >100 articles |
+| D08 | Idepotent commands: key/body immutable by attempt; **no automatic retry with new key** | Timeout may occur after commit |
+| D09 | For uncertain result commands, design of **long-term registration** independent of Bearer, subject to privacy review, cleaning and compatibility before activating | Must survive F5; no automatic queue or token storage |
+| D10 | REAL Sales will require listing/recovery **if specific contracts are approved**; not fake customer history | Minimum extensions to GET /sales pagado y GET por request_id |
+| D11 | Count adjustment translated to delta/version with human confirmation; non-atomic multi-item batch is DEMO or deferred | Do not create wrong changes by outdated reading |
+| D12 | Box, expenses, financial accounts, QR and remote photos are DEMO/differed in E2-7 | Keep academic cut RF-01..07 |
+| D13 | Do not refactor common authorisation or extend partial reception only by opportunity | E2-1..E2-6 compatibility; first integrate and measure |
+| D14 | Each increment has focused tests, compilation, SHA evidence, and delimited PR; QA full-stack starts in authentication, not at the end | Reduce regressions and accumulate evidence |
 
-Estas son reglas de *implementación/integración*, no decisiones nuevas de política comercial.
+These are rules of *implementation/integration*, not new trade policy decisions.
 
-## 3. Decisiones de negocio y contrato por cerrar **antes del flujo afectado**
+## 3. Business decisions and contract to be closed **before the affected flow**
 
-| ID | Tema | Recomendación inicial | Puerta |
+| ID | Item | Initial recommendation | Door |
 |---|---|---|---|
-| P01 | Política de precios/descuentos por rol | Conservación explícita del contrato actual mientras se decide; si se elige precio restringido, validar backend, nunca solo UX. No habilitar trabajadores con supuestos de restricción sin esa decisión | Antes de T10 |
-| P02 | Recuperación histórica/replay ante sede pausada, rol o asignación cambiados | Mantener autenticación, tenant, actor y digest. Definir derechos de lectura histórica frente al derecho de nueva venta. Testear escenarios antes de mover validaciones | Antes de T09 |
-| P03 | Diseño exacto de listado/consulta de ventas por request_id | DTO de resumen, paginación, orden, permisos, semántica de 404 y rutas sin colisión con `/{sale_id}` | T09 |
-| P04 | Registro local de intenciones comerciales | Decidir soporte (IndexedDB u otro), scope usuario/tenant, ciclo de vida, borrado manual, límite de retención, dispositivos compartidos y casos de pérdida/daño de almacenamiento. **No purgar silenciosamente un intento no resuelto** | T06 |
-| P05 | Persistencia de sesión tras recarga | Comenzar memoria y reautenticación MVP. Si se requiere sesión continua, evaluar alternativa de cookie HttpOnly/refresh server-side antes de pasar Bearer a `sessionStorage` | T02 / revisión de UX |
-| P06 | POS con más de 100 artículos | Primer enfoque: iterar páginas o paginar UI; buscar globalmente exige endpoint/filtros compatibles. No crear `q` ficticio en frontend | T05–T10 |
+| P01 | Price/discount policy by role | Explicit retention of the current contract while deciding; if you choose restricted price, validate backend, never only UX. Do not enable workers with restriction assumptions without that decision | Before T10 |
+| P02 | Historical/replay recovery from changed paused headquarters, role or assignment | Maintain authentication, tenant, actor and digest. Define historical reading rights against the right to resale. Test scenarios before moving validations | Before T09 |
+| P03 | Accurate Listing Design/Sales Consultancy by Request_id | DTO summary, pagination, order, permissions, semantics of 404 and routes without collision with `/{sale_id}` | T09 |
+| P04 | Local Register of Commercial Intentions | Decide support (IndexedDB or other), user/tenant scope, life cycle, manual deletion, retention limit, shared devices and cases of loss/damage of storage. **Do not quietly purge an unsolved attempt** | T06 |
+| P05 | Session persistence after reload | Start memory and re-authentication MVP. If continuous session is required, evaluate alternative cookie HttpOnly/refresh server-side before you move on Bearer to `sessionStorage` | T02 / UX revision |
+| P06 | POS with more than 100 articles | First approach: iterate pages or UI page; search globally requires compatible endpoint/filters. `q` fictional frontend | T05–T10 |
 
-**Importante:** P01 y P02 no deben implementarse automáticamente porque una IA haya propuesto una política; se documentará decisión del responsable.
+**Important:** P01 and P02 should not be automatically implemented because an AI has proposed a policy; decision of the responsible will be documented.
 
-## 4. Tratamiento de observaciones externas
+## 4. Treatment of external observations
 
-| Hallazgo | Tipo | Tratamiento |
+| Finding | Type | Treatment |
 |---|---|---|
-| REV-001 | Brecha | Aceptada para diseño: desacoplar estado DEMO de REAL por flujos |
-| REV-002 | Brecha | Aceptada: paginación/completitud en listado y POS |
-| REV-003 | Riesgo fundado | Aceptada dirección técnica: identidad durable de comandos, pendiente política de retención |
-| REV-004 | Riesgo fundado | Reservada para T09; no mover autorización sin pruebas |
-| REV-005 | Brecha | Aceptada: conteo final → delta + versión |
-| REV-006 | Error documental | Corregir referencias JWT en los documentos E2-7; backend no cambia |
-| REV-007 | Riesgo dependiente de negocio | Pendiente P01, no declarar bug confirmado |
-| REV-008 | Mejora opcional | Diferida tras integración y medición |
-| Re-login tras F5 | Tradeoff UX | Comportamiento MVP inicial explícito; sesión persistente requiere evaluación separada |
-| Recepción parcial / múltiples depósitos | Extensión de alcance | Diferida |
-| Endpoint de búsqueda remota `?q=` | Extensión de alcance | Condicionada a prueba de necesidad y contrato |
-| Límite cinco archivos/commit | Sugerencia de proceso | No adoptado literalmente: PR pequeño por objetivo y pruebas |
-| TTL de pendientes 24 h | Política propuesta | No adoptado automáticamente; exigir retención/borrado definido |
-| `GET /sales` y búsqueda por request ID | Extensión mínima candidata | Planificar contrato y aprobación en T09 |
+| REV-001 | Gap | Accepted for design: decouple DEMO status of REAL by flow |
+| REV-002 | Gap | Accepted: pagination/completion in list and POS |
+| REV-003 | Founded risk | Accepted technical address: durable command identity, pending retention policy |
+| REV-004 | Founded risk | Reserved for T09; do not move authorization without proof |
+| REV-005 | Gap | Accepted: final count → delta + version |
+| REV-006 | Document error | Correct JWT references in E2-7 documents; backend does not change |
+| REV-007 | Business-dependent risk | P01 pending, not declaring bug confirmed |
+| REV-008 | Optional improvement | Deferred after integration and measurement |
+| Re-login tras F5 | Tradeoff UX | Explicit initial MVP behavior; persistent session requires separate evaluation |
+| Partial reception / multiple deposits | Scope extension | Deferred |
+| Remote search endpoint `?q=` | Scope extension | Conditioned to proof of necessity and contract |
+| Limit five files/commit | Sugerencia de proceso | Not literally adopted: small PR by target and test |
+| TTL of earrings 24 h | Proposed policy | Not automatically adopted; require retention/delete defined |
+| `GET /sales` and search by request ID | Minimum candidate extension | Plan contract and approval in T09 |
 
-## 5. Orden de implementación — T00 a T12
+## 5. Implementation order — T00 to T12
 
-| Incremento | Entrega | Actividad | Dependencias/puerta |
+| Increase | Delivery | Activity | Dependencies/gate |
 |---|---|---|---|
-| **T00** | E2-7 A | Este documento, corrección JWT y referencias de planificación | Solo docs; sin cambios al código |
-| **T01** | B0 | Cliente HTTP, transporte/proxy, errores y tests de red | T00 y red definida |
-| **T02** | B1 | Registro/login/me/logout, guards, REAL/DEMO y sesión opaca | T01; probar API real desde navegador |
-| **T03** | B1 | Empresas y tenant, cambio seguro, dashboard inicial | T02 |
-| **T04** | B2 | Ubicaciones, equipo, invitaciones y asignaciones | T03 |
-| **T05** | B3 | Catálogo, paginación/completitud, tipos, precios null | T03; T04 si uso de sede |
-| **T06** | C preparación | Seguimiento de intentos de comandos, resultado incierto, scope y recuperación | T02/T03 y P04 |
-| **T07** | C1 | Proveedores, compras y recepción | T04/T05/T06 |
-| **T08** | C2 | Inventario, traslado, conteo individual versionado | T07 para flujo end-to-end |
-| **T09** | C3 soporte | Definir y, si se aprueba, implementar listado/recuperación ventas; replay histórico con política P02 | T06, P02/P03 |
-| **T10** | C3 | POS real, pagos declarados, comprobante, saldos | T08/T09 y política P01 |
-| **T11** | D | QA integral PostgreSQL/Playwright/CI, multiempresa, errores de red | E2-7 integrada |
-| **T12** | E | Documentos académicos 01–05, UML, README, CHANGELOG, cierre | QA validado |
+| **T00** | E2-7 A | This document, JWT correction and planning references | Only docs; no code changes |
+| **T01** | B0 | HTTP client, transport/proxy, network errors and tests | T00 and defined network |
+| **T02** | B1 | Registration/login/me/logout, guards, REAL/DEMO and opaque session | T01; test real API from browser |
+| **T03** | B1 | Business and tenant, safe change, initial dashboard | T02 |
+| **T04** | B2 | Locations, equipment, invitations and assignments | T03 |
+| **T05** | B3 | Catalogue, pagination/completion, types, prices null | T03; T04 if using headquarters |
+| **T06** | C preparation | Command attempt tracking, uncertain result, scope and recovery | T02/T03 y P04 |
+| **T07** | C1 | Suppliers, purchases and reception | T04/T05/T06 |
+| **T08** | C2 | Inventory, transfer, individual count versioned | T07 for end-to-end flow |
+| **T09** | C3 support | Define and, if approved, implement list/recover sales; historical replay with P02 policy | T06, P02/P03 |
+| **T10** | C3 | Actual POS, declared payments, vouchers, balances | T08/T09 and policy P01 |
+| **T11** | D | QA integral PostgreSQL/Playwright/CI, multiempresa, errores de red | Integrated E2-7 |
+| **T12** | E | Academic documents 01–05, UML, README, CHANGELOG, closing | Validated QA |
 
-**Regla:** un incremento puede subdividirse si abarca demasiadas responsabilidades; no fusionar cambios sin test del comportamiento nuevo. El SHA de `main` debe refrescarse al empezar cada incremento. Las ramas de implementación se crean desde el `main` actualizado, no desde una rama documental no fusionada.
+**Rule:** an increase can be subdivided if it covers too many responsibilities; not merge changes without testing new behavior. `main` should be refreshed at the beginning of each increment. `main` updated, not from an unfused documentary branch.
 
-## 6. Pruebas mínimas nuevas por riesgo
+## 6. New minimum risk tests
 
-- **T01/T02:** 204 sin JSON, 401 actual frente a sesión vieja, CORS/proxy, rutas seguras, F5 y re-login.
-- **T03:** respuesta tardía de A después de seleccionar B; usuario distinto en mismo navegador.
-- **T05:** 101 y 501 productos, segunda página fallida, selector POS no oculta un artículo por paginación; campos null.
-- **T06/T09:** 201 confirmado y respuesta perdida; F5; login mismo actor; recuperar comprobante, un solo efecto. 404 temporal no equivale a operación nunca enviada; reintentar mismo cuerpo/clave.
-- **T07:** alta compra sin stock; recepción una vez y replay; concepto/servicio sin movimientos físicos.
-- **T08:** conteo 10→7 delta -3, 10→0, 0 con historial, `expected_version` vieja y venta concurrente.
-- **T09/T10:** tenant, permisos y actor en listado/consulta por request, replay con sede pausada/membresía revocada; precio según política; stock no negativo y sin venta duplicada.
-- **T11:** navegador escritorio/móvil con FastAPI y PostgreSQL **en misma base efímera**, sin fallback DEMO; trazas y credenciales sanitizadas.
+- **T01/T02:** 204 without JSON, 401 current versus old session, CORS/proxy, secure routes, F5 and re-login.
+- **T03:** late response of A after selecting B; different user in same browser.
+- **T05:** 101 and 501 products, second page failed, selector POS does not hide an article per pagination; null fields.
+- **T06/T09:** 201 confirmed and response lost; F5; login same actor; recover proof, one effect only. 404 temporary does not amount to operation never sent; retry same body/key.
+- **T07:** High purchase without stock; once reception and replay; concept/service without physical movements.
+- **T08:** count 10→7 delta -3, 10→0, 0 with history, `expected_version` old and concurrent sale.
+- **T09/T10:** tenant, permissions and actor listed/consulted by request, replay with paused headquarters/revocated membership; price according to policy; non-negative stock without duplicate sale.
+- **T11:** desktop/mobile browser with FastAPI and PostgreSQL **on the same ephemeral basis**, without DEMO failback; traces and sanitized credentials.
 
-## 6.1. Precisiones de aceptación surgidas de una segunda revisión
+## 6.1. Acceptance requirements arising from a second review
 
-La segunda opinión recibida respalda el orden T00–T12 y destaca cuatro puntos operativos. No cambia las decisiones D01–D14 ni aprueba extensiones de backend por sí misma. Estas precisiones son **criterios de prueba futuros**, no pruebas ejecutadas:
+The second opinion received supports the T00–T12 order and highlights four operational points. It does not change D01–D14 decisions or approve backend extensions by itself. These clarifications are **future test criteria**, not tests performed:
 
-1. **F5 y sesión (T02):** ensayar login → navegación a empresa → F5. Con Bearer solo en memoria debe producirse una reautenticación clara, conservarse la ruta de retorno cuando sea segura y no mostrarse información de una sesión vencida. Evaluar la fricción UX con uso real antes de adoptar persistencia de tokens. `sessionStorage` no se aprueba automáticamente; cookies `HttpOnly` exigirían un cambio de contrato/autenticación con análisis de CSRF.
-2. **Completitud del catálogo/POS (T05 y T10):** probar al menos 101 y 501 artículos. Si se descargan páginas sucesivas, la UI debe distinguir `loading`, `partial`, `complete` y `error`. Un filtro local sobre una lista incompleta no puede prometer resultados globales; un error de página posterior no puede ocultarse bajo «sin resultados». La alternativa `GET /catalog?q=` sigue condicionada a un contrato/backend explícito.
-3. **Dependencia T06 → T09 → T10:** T06 define y prueba conservación de identidad de intento/cuerpo ante red incierta; T09 define recuperación autenticada de venta por `request_id` y listado si se aprueban; T10 **no habilita POS real con garantía de recuperación tras F5** hasta probar el camino completo ante pérdida de respuesta. Un GET con 404 no prueba que el POST original haya fallado; no crear clave nueva ni reenviar automáticamente.
-4. **Conflicto de versión de conteo (T08):** ante `409` por `expected_version` obsoleta, refrescar saldo/versión y mostrar claramente que el inventario cambió durante el conteo. Exigir nueva revisión y confirmación humana; no recalcular ni enviar automáticamente una diferencia contra la nueva versión. Distinguir ese conflicto de otros 409.
-5. **Pruebas desde T02:** cada primer flujo HTTP real debe probar navegador → FastAPI → PostgreSQL en base temporal explícita, además de los tests unitarios. T11 consolida los escenarios completos, pero no constituye la primera ejecución full-stack.
-6. **PR pequeño por objetivo:** mantener PR independiente por incremento y pruebas vinculadas; no imponer un número arbitrario de archivos por commit.
+1. **F5 and sitting (T02):** test login → navigation to company → F5. With Bearer only in memory, a clear re-attunation must occur, the return route should be kept when it is safe and no information of an expired session displayed. Evaluate UX friction with real use before adopting token persistence. `sessionStorage` does not automatically approve; cookies `HttpOnly` would require a change of contract/authentication with CSRF analysis.
+2. **Catalogue/POS completeness (T05 and T10):** test at least 101 and 501 articles. If successive pages are downloaded, the IU must distinguish `loading`, `partial`, `complete` y `error`. A local filter on an incomplete list cannot promise global results; a back-page error cannot be hidden under "no results". `GET /catalog?q=` is still subject to an explicit contract/backend.
+3. **Dependencia T06 → T09 → T10:** T06 defines and tests preservation of intent/body identity against uncertain network; T09 defines authenticated recovery from sale by `request_id` and listed if approved; T10 **does not enable POS with collateral after F5** until you test the complete path to loss of response. A GET with 404 does not prove that the original POST has failed; do not create new key or automatically forward.
+4. **Count version conflict (T08):** ante `409` por `expected_version` obsolete, refresh balance/version and show clearly that the inventory changed during counting. Require new human revision and confirmation; do not automatically recalculate or send a difference against the new version. Distinguish that conflict from another 409.
+5. **Tests from T02:** each first real HTTP stream must test browser → FastAPI → PostgreSQL on an explicit time base, in addition to unit tests. T11 consolidates the complete scenarios but does not constitute the first full-stack execution.
+6. **Small PR per target:** maintain independent PR for increase and related evidence; do not impose an arbitrary number of files per commit.
 
-**Salida:** estas condiciones deben trasladarse a los criterios de aceptación de los incrementos correspondientes cuando se implementen. No hacen necesaria una nueva fase previa a T01.
+**Output:** These conditions must be moved to the criteria for acceptance of corresponding increments when implemented. They do not require a new phase prior to T01.
 
-## 7. Condición de salida T00 y siguiente paso
+## 7. Output condition T00 and next step
 
-**T00 está completo como propuesta documental** cuando este documento se publique, las referencias JWT del plan rector se corrijan y se verifique que el diff frente a `main` contiene solo documentos. No afirmar que T01 o los casos E2E ya están implementados o aprobados.
+**T00 is complete as a documentary proposal** When this document is published, the JWT references of the master plan are corrected and the diff versus `main` contains only documents. Do not claim that T01 or E2E cases are already implemented or approved.
 
-**Siguiente incremento:** T01 cliente HTTP/transporte. Iniciar en una rama nueva basada en el SHA de `main` posterior al PR documental. No modificar GitHub Actions fuera de `plataforma-pyme/` sin autorización independiente.
+**Next increase:** T01 HTTP/transport client. Start on a new branch based on the SHA of `main` not modify GitHub Actions outside the `plataforma-pyme/` without independent authorization.
 
-### Nota sobre material externo
+### Note on external material
 
-El informe ampliado de revisión es evidencia proporcionada por el responsable; para una futura IA desarrolladora, anexarlo explícitamente o usar esta matriz resumida. No asumir que el archivo original se encuentra en GitHub si no ha sido publicado allí.
+The expanded review report is evidence provided by the responsible; for a future AI developer, explicitly annex it or use this summary matrix. Do not assume that the original file is in GitHub if it has not been published there.

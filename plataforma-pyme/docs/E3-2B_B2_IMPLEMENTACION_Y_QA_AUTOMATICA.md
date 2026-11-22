@@ -1,39 +1,39 @@
-# E3-2B · B2 — QR DEMO con detalle y recuperación
+# E3-2B · B2 — QR DEMO with detail and recovery
 
-**Estado:** código integrado en `feature/e3-2b-mercadopago-qr-demo`. B3–B6 pendientes; auditoría y recorrido de uso al finalizar B6. No integrar parcialmente a `main`.
+**Status:** code integrated into `feature/e3-2b-mercadopago-qr-demo`. B3–B6 pending; audit and use path at completion B6. Not partially integrate to `main`.
 
-## Contratos y arquitectura B2
+## Contracts and architecture B2
 
-El POS REAL ofrece **«Generar QR de cobro (DEMO)»** como alternativa, no como sinónimo de `MERCADO_PAGO_DECLARADO`. El botón se habilita tras consultar el estado de la conexión DEMO de la empresa. Se envía una nueva intención independiente de `Sale`, con `Idempotency-Key` UUID4. En pantalla se ve un QR auténtico como **formato gráfico** pero que codifica exclusivamente `PYME-DEMO-QR:<referencia>`; no se puede pagar con Mercado Pago. Esta distinción debe permanecer visible.
+The REAL POS offers **‘Generate QR collection (DEMO)’** as an alternative, not a synonym for `MERCADO_PAGO_DECLARADO`. The button is enabled after consulting the state of the company's DEMO connection. A new independent intention is sent from `Sale`, con `Idempotency-Key` UUID4. On screen you see an authentic QR as **graphic format** but which only encodes `PYME-DEMO-QR:<referencia>`; cannot be paid with Pay Market. This distinction must remain visible.
 
 **API:**
-- `POST /api/v1/businesses/{business_id}/qr-payment-intents` — `location_id`, `lines`, `discount_cents`, `notes`, clave idempotente; nunca pagos declarados, tokens ni credenciales en cuerpo.
-- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}` — estado, importes y snapshot del servidor, QR como imagen PNG embebida.
-- `GET /api/v1/businesses/{business_id}/qr-payment-intents/by-request/{request_id}` — recuperación de resultado incierto para el autor de la solicitud.
-- `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/cancel` — cancelación idempotente sin registro de venta.
-- `DELETE /api/v1/businesses/{business_id}/payment-connections/mercadopago/demo` pasa a bloquear desvinculación con QR vigente no cancelado.
+- `POST /api/v1/businesses/{business_id}/qr-payment-intents` — `location_id`, `lines`, `discount_cents`, `notes`, key idempotent; never declared payments, tokens or credentials in body.
+- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}` — status, amounts and snapshots of the server, QR as PNG image embedded.
+- `GET /api/v1/businesses/{business_id}/qr-payment-intents/by-request/{request_id}` — recovery of uncertain result for the applicant.
+- `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/cancel` — idepotent cancellation without registration of sale.
+- `DELETE /api/v1/businesses/{business_id}/payment-connections/mercadopago/demo` then block disconnection with QR not currently cancelled.
 
-**Tablas:** `qr_payment_intents` (tenant, sede, merchant, actor, UUID de solicitud, SHA-256 del comando, referencia, montos en centavos, estado, vencimiento), `qr_payment_intent_lines` (línea, item/sku/nombre/unidad/tipo snapshot, cantidad milésimas, unitario/subtotal). Migración aditiva `e32b_qr_intents` posterior a `e32b_payment_connection`. No se modifica `Sale`, `SalePayment`, `StockBalance`, `StockMovement`.
+**Tables:** `qr_payment_intents` (tenant, headquarters, merchant, actor, UUID application, command SHA-256, reference, amounts in cents, status, maturity), `qr_payment_intent_lines` (line, item/sku/name/unit/type snapshot, number thousandths, unit/subtotal). `e32b_qr_intents` posterior a `e32b_payment_connection`. Not amended `Sale`, `SalePayment`, `StockBalance`, `StockMovement`.
 
-**Seguridad:** sesión REAL revalidada bajo lock, membresía de tenant, política SELL y STORE por sede, política de precios/descuentos de roles, catálogo vendible activo, stock actual suficiente para bienes físicos (se consulta, **no se reserva**), cuenta DEMO activa. Si expira: estado de lectura `EXPIRADA`; futuras transiciones en B3.
+**Security:** REAL session revalidated under lock, tenant membership, SELL and STORY policy by headquarters, pricing/discounting policy, active sellable catalog, current stock sufficient for physical goods (refer to, **no booking**), DEMO account active. If expires: read status `EXPIRADA`; future transitions in B3.
 
-**Recuperación:** URL canónica `/real/empresas/{business_id}/qr-cobros/{intent_id}` hace GET tras F5 y nuevo login. El checkout conserva la misma clave y cuerpo para recuperación por GET y reintento explícito cuando la red devuelve un resultado incierto mientras sigue abierta la sesión. El resguardo duradero del intento antes del POST queda para endurecimiento adicional de B3/B5; no describirlo como si fuera IndexedDB.
+**Recovery:** canonical URL `/real/empresas/{business_id}/qr-cobros/{intent_id}` the checkout retains the same key and body for recovery by GET and explicitly retry when the network returns an uncertain result while the session is still open. The durable backup of the attempt before POST remains for additional hardening of B3/B5; not describe it as if it were IndexedDB.
 
-**Importe y detalle:** snapshot del servidor fijo, `ARS`, `quantity_milli` y `unit_price_cents` sin redondeos flotantes, descuento total, vencimiento de 15 minutos. Foto actual del catálogo es solo decorativa y puede cambiar, sin alterar datos congelados. El importe del QR no depende de datos ingresados manualmente luego de crearlo. Notas internas no se codifican en el QR.
+**Amount and detail:** snapshot of fixed server, `ARS`, `quantity_milli` y `unit_price_cents` No floating rounding, total discount, 15 minutes expiration. Current photo of the catalog is decorative only and can change without altering frozen data. The amount of QR does not depend on manually entered data after creating it. Internal notes are not encoded in the QR.
 
-## Base oficial y alcance B6
+## Official base and scope B6
 
-Mercado Pago publica Orders API para QR: `POST /v1/orders`, `type: qr`, `items[]`, `external_reference`, `config.qr.external_pos_id`, `config.qr.mode: dynamic`, `X-Idempotency-Key`; el `qr_data` real vendrá de una order emitida por MP. Documentación: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing. **No intentar pagar el QR B2**: no es `qr_data` del proveedor.
+Market Payment Public Orders API for QR: `POST /v1/orders`, `type: qr`, `items[]`, `external_reference`, `config.qr.external_pos_id`, `config.qr.mode: dynamic`, `X-Idempotency-Key`; el `qr_data` real will come from an order issued by MP. Documentation: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing. **Do not try to pay QR B2**: no es `qr_data` of the supplier.
 
-## QA automática incorporada
+## Automatic QA built-in
 
-- Pytest HTTP sin DB: autenticación obligatoria y existencia de contratos OpenAPI.
-- Pytest PostgreSQL aislado: cuenta sin vincular, creación, replay único con clave, conflicto con distinto cuerpo, snapshot de dos servicios, 1 intento + 2 líneas, 0 ventas, 0 stock; GET por ID y por solicitud; bloqueo de desvinculación, cancelación, aislamiento entre empresas, otro usuario, trabajador y expiración.
-- Node: composición de snapshot sin `payments`, centavos y validación, token Bearer, rutas API, clave idempotente, respuesta de tenant distinto inválida, total alterado inválido y QR externo rechazado.
-- Frontend: build, lint y tests existentes (`test:qr` incluye B2). Fullstack y backend CI deberán aprobarse en el SHA final de la etapa.
+- HTTP Python without DB: mandatory authentication and OpenAPI contracts.
+- Pytest PostgreSQL isolated: unbound account, creation, unique replay with key, conflict with different body, two-service snapshot, 1 attempt + 2 lines, 0 sales, 0 stock; GET by ID and per request; disconnection block, cancellation, isolation between companies, another user, worker and expiration.
+- Node: Snapshot composition without `payments`, pennies and validation, token Bearer, API routes, key idempotent, different tenant response invalid, total altered invalid and external QR rejected.
+- Frontend: build, lint y tests existentes (`test:qr` includes B2). Fullstack and backend CI must be approved at the end of the stage SHA.
 
-## Pendiente para próximos bloques
+## Pending for next blocks
 
-**B3:** laboratorio y eventos auditables, estados idempotentes y reintentos, journal duradero en el cliente para POST ambiguo. **B4:** política transaccional de reserva/stock o compensación ante pago aprobado, vínculo único con venta real QA y comprobante. **B5:** UX y accesibilidad end-to-end. **B6:** OAuth/Orders API, credenciales de prueba, caja/sucursal, webhooks y verificación del proveedor.
+**B3:** laboratory and auditable events, idepotent and retrying states, durable journal in the customer for ambiguous POST. **B4:** transactional policy of reservation/stock or compensation before payment approved, single link with real sale QA and voucher. **B5:** UX and accessibility end-to-end. **B6:** OAuth/Orders API, test credentials, box/spanner, webhooks and provider verification.
 
-No se solicita QA humana parcial. La aceptación manual y auditoría serán de B1–B6 integrados.
+No partial human QA is requested. Manual acceptance and audit will be from integrated B1–B6.

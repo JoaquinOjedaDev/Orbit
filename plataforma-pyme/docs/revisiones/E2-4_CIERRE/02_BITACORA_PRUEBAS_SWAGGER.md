@@ -1,43 +1,43 @@
-# Bitácora de pruebas manuales de uso — E2-4
+# Manual use test log — E2-4
 
-**Fecha:** 08/11/2026 · **Herramienta:** Swagger UI (FastAPI/OpenAPI) · **Host:** `http://127.0.0.1:18000` · **API base:** `/api/v1` · **Empresa QA:** `bd4d4e42-4ff6-403a-8633-59cbc001487d`.
+**Date:** 08/11/2026 · **Tool:** Swagger UI (FastAPI/OpenAPI) · **Host:** `http://127.0.0.1:18000` · **API base:** `/api/v1` · **QA Company:** `bd4d4e42-4ff6-403a-8633-59cbc001487d`.
 
-> **Criterio de evidencia:** todo código HTTP indicado como *observado* fue transcripto de las respuestas comunicadas por el desarrollador. Se omiten valores reales de `Idempotency-Key`, su reflejo en `request_id`, contraseñas, Bearer y material sensible. Se preservan cuerpos de negocio, costos y UUID de recursos para reproducir y revisar. **No ejecutar nuevamente los `POST` de alta con los datos reales de esta bitácora y claves nuevas** si no se desea crear duplicados o modificar existencias.
+> **Evidence criterion:** any HTTP code indicated as *observed* was transcribed from the responses communicated by the developer. Actual values of `Idempotency-Key`, his reflection on `request_id`, passwords, Bearer and sensitive material. Business bodies, costs and UUID resources are preserved to reproduce and review. **Do not re-run the `POST` with the actual data of this log and new keys** if duplicates or inventory changes are not desired.
 
-> **Cobertura:** esta bitácora contiene la secuencia de uso observada para compras y recepción, pero **no** afirma que el CRUD de proveedores haya sido ejecutado íntegramente de forma manual. La API de proveedores se verifica mediante tests PostgreSQL/HTTP y CI; ver `03_PRUEBAS_AUTOMATIZADAS_Y_CI.md` y `05_TRAZABILIDAD_Y_PENDIENTES.md`.
+> **Scope:** this log contains the sequence of use observed for purchases and reception, but **no** states that the supplier CRUD has been executed entirely manually. The Provider API is verified using PostgreSQL/HTTP and CI tests; see `03_PRUEBAS_AUTOMATIZADAS_Y_CI.md` y `05_TRAZABILIDAD_Y_PENDIENTES.md`.
 
-## A. Preparación de la sesión
+## A. Preparation for the meeting
 
-1. Se levantó FastAPI con Docker y se accedió a `http://127.0.0.1:18000/docs`.
-2. En `POST /api/v1/auth/login` se utilizó una cuenta QA preexistente y se obtuvo autorización. El valor del token y la contraseña **no están incluidos**.
-3. En la opción **Authorize** se instaló el token en Swagger. El cliente no debe incluir el prefijo `Bearer` dos veces.
-4. Al cerrar o reabrir Swagger, los campos de prueba y la autorización dejaron de estar visibles. Se realizó un nuevo login; no hubo que recrear empresa, proveedor, compras o artículo porque PostgreSQL persistió la información.
-5. Las pruebas protegidas posteriores devolvieron `201`/`200`/`409` según reglas de negocio; esto acredita que se operó con una sesión autorizada, pero **no se conserva una transcripción del HTTP de login** como evidencia independiente.
+1. FastAPI rose with Docker and agreed to `http://127.0.0.1:18000/docs`.
+2. En `POST /api/v1/auth/login` a pre-existing QA account was used and permission obtained. **not included**.
+3. In the option **Authorize** the token was installed in Swagger. The client should not include the prefix `Bearer` twice.
+4. When Swagger was closed or reopened, the test fields and authorization were no longer visible. A new login was made; no company, supplier, purchase or item had to be recreated because PostgreSQL persisted.
+5. Subsequent protected tests returned `201`/`200`/`409` according to business rules; this proves that it was operated with an authorized session, but **no HTTP transcription is preserved** as independent evidence.
 
-## B. Datos fijos de la sesión
+## B. Fixed meeting data
 
-| Recurso | Identificador / dato |
+| Recourse | Identifier / data |
 |---|---|
-| Empresa | `Comercio de Prueba QA` — `bd4d4e42-4ff6-403a-8633-59cbc001487d` |
-| Actor que figura en los registros | `0e0fc877-c3d4-45dd-9813-2501596baee0` |
-| Proveedor | `Distribuidora QA` — `4a9e7618-6388-4765-a8e7-0d7338becd6d` |
-| Artículo | `Alimento balanceado QA` — `881fdae2-18c5-46ae-8037-44a500ca96c0` |
-| Depósito | `Depósito QA` — `2d6761c4-efec-4b3e-925c-a24ceab8ce9c` |
-| Compra libre | `QA-COMPRA-001` — `b6646fcd-428f-4b9b-ab80-83e7ffb14827` |
-| Compra física | `QA-COMPRA-002` — `3e50aff2-c895-49d9-8fe5-d5843438f109` |
-| Recepción | `266bd03e-763b-4f29-8f12-c19c9bc59066` |
-| Movimiento | `9d72f578-c54f-4250-accb-995d712958d8` |
+| Company | `Comercio de Prueba QA` — `bd4d4e42-4ff6-403a-8633-59cbc001487d` |
+| Actor in the records | `0e0fc877-c3d4-45dd-9813-2501596baee0` |
+| Supplier | `Distribuidora QA` — `4a9e7618-6388-4765-a8e7-0d7338becd6d` |
+| Item | `Alimento balanceado QA` — `881fdae2-18c5-46ae-8037-44a500ca96c0` |
+| Deposit | `Depósito QA` — `2d6761c4-efec-4b3e-925c-a24ceab8ce9c` |
+| Free purchase | `QA-COMPRA-001` — `b6646fcd-428f-4b9b-ab80-83e7ffb14827` |
+| Physical purchase | `QA-COMPRA-002` — `3e50aff2-c895-49d9-8fe5-d5843438f109` |
+| Receipt | `266bd03e-763b-4f29-8f12-c19c9bc59066` |
+| Movement | `9d72f578-c54f-4250-accb-995d712958d8` |
 
-La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
+The tab with all non-secret attributes is in `06_FICHA_DATOS_QA.md`.
 
-## C. Caso U-01 — Alta de compra de concepto libre
+## C. Case U-01 — Free concept purchase fee
 
 **Endpoint:** `POST /api/v1/businesses/{business_id}/purchases`  
-**Objetivo:** comprobar que una compra administrativa sin proveedor/catálogo/ubicación no crea inventario físico.  
-**Precondición:** Bearer válido y miembro autorizado de empresa activa.  
-**Cabecera adicional:** `Idempotency-Key: [VALOR REAL OMITIDO]` (UUID4 generado para la operación).
+**Objective:** verify that an administrative purchase without a supplier/catalogue/location does not create physical inventory.  
+**Precondition:** Valid Bearer and authorised member of active company.  
+**Additional header:** `Idempotency-Key: [VALOR REAL OMITIDO]` (UID4 generated for the operation).
 
-**Cuerpo ingresado:**
+**Input:**
 
 ```json
 {
@@ -57,7 +57,7 @@ La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
 }
 ```
 
-**Resultado observado:** `201 Created`.
+**Observed result:** `201 Created`.
 
 ```json
 {
@@ -89,23 +89,23 @@ La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
 }
 ```
 
-*Respuesta presentada sin el campo idempotente `request_id`; el resto son valores observados.*
+*Answer submitted without the idempotent field `request_id`; the rest are observed values.*
 
-**Interpretación:** 1.000 milésimas = 1 concepto; costo 12.505 centavos = **$125,05**; sin bienes físicos, el estado `CERRADA_SIN_RECEPCION` corresponde al contrato.
+**Interpretation:** 1,000 thousandths = 1 concept; cost 12.505 cents = **$125,05**; without physical goods, the state `CERRADA_SIN_RECEPCION` corresponds to the contract.
 
-## D. Caso U-02 — Reintento idéntico de compra
+## D. Case U-02 — Identical re-purchase
 
-**Endpoint:** mismo `POST /purchases`.  
-**Entrada:** mismo cuerpo de U-01 y exactamente **la misma clave de idempotencia** utilizada en U-01 (no se publica).  
-**Resultado observado:** `200 OK`, `id` de la compra `b6646fcd-428f-4b9b-ab80-83e7ffb14827`, `created_at` `2026-11-08T21:36:06.917074Z` y línea `914048a7-3c08-4fc1-bc32-16f833906cf7`, sin modificaciones.
+**Endpoint:** same `POST /purchases`.  
+**Entry:** same body as U-01 and exactly **the same key of idempotency** used in U-01 (not published).  
+**Observed result:** `200 OK`, `id` of purchase `b6646fcd-428f-4b9b-ab80-83e7ffb14827`, `created_at` `2026-11-08T21:36:06.917074Z` and line `914048a7-3c08-4fc1-bc32-16f833906cf7`No change.
 
-**Dictamen:** respuesta de reintento, no una nueva compra. La misma fecha, compra y línea muestran que se recuperó el documento original.
+**Opinion:** Retry response, not a new purchase. Same date, buy and line show that the original document was recovered.
 
-## E. Caso U-03 — Colisión por cambiar el costo con la misma clave
+## E. Case U-03 — Collision for changing cost with the same key
 
-**Entrada:** mismo `POST` y misma clave que U-01, pero el único campo cambiado fue `lines[0].unit_cost_cents`: de `12505` a `20000`.
+**Entry:** same `POST` and the same key as U-01, but the only field changed was `lines[0].unit_cost_cents`: de `12505` a `20000`.
 
-**Resultado observado:** `409 Conflict`.
+**Observed result:** `409 Conflict`.
 
 ```json
 {
@@ -113,24 +113,24 @@ La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
 }
 ```
 
-**Dictamen:** el servidor rechaza una operación diferente con la clave anterior; no se modifica la compra original.
+**Opinion:** the server rejects a different operation with the previous key; the original purchase is not modified.
 
-## F. Caso U-04 — Listar compras
+## F. Case U-04 — List purchases
 
 **Endpoint:** `GET /api/v1/businesses/{business_id}/purchases?offset=0&limit=100`.  
-**Resultado observado:** `200 OK`, arreglo de **un único elemento** en ese momento, la compra `QA-COMPRA-001` con `total_cents=12505`, `status=CERRADA_SIN_RECEPCION` y la línea `CONCEPTO`. Los intentos U-02/U-03 no añadieron elementos.
+**Observed result:** `200 OK`, arrangement of **a single element** at that time, the purchase `QA-COMPRA-001` con `total_cents=12505`, `status=CERRADA_SIN_RECEPCION` and the line `CONCEPTO`. U-02/U-03 attempts did not add elements.
 
-## G. Caso U-05 — Consultar compra individual
+## G. Case U-05 — Consult individual purchase
 
 **Endpoint:** `GET /api/v1/businesses/{business_id}/purchases/b6646fcd-428f-4b9b-ab80-83e7ffb14827`.  
-**Resultado observado:** `200 OK`, mismo documento, línea, `created_at`, referencia, total y estado que U-01.  
-**Dictamen:** lectura histórica íntegra.
+**Observed result:** `200 OK`, same document, line, `created_at`, reference, total and status that U-01.  
+**Opinion:** full historical reading.
 
-## H. Caso U-06 — Alta del artículo físico de QA
+## H. Case U-06 — Discharge of physical article of QA
 
 **Endpoint:** `POST /api/v1/businesses/{business_id}/catalog`.
 
-**Cuerpo ingresado:**
+**Input:**
 
 ```json
 {
@@ -146,7 +146,7 @@ La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
 }
 ```
 
-**Resultado observado:** `201 Created`.
+**Observed result:** `201 Created`.
 
 ```json
 {
@@ -169,14 +169,14 @@ La ficha con todos los atributos no secretos está en `06_FICHA_DATOS_QA.md`.
 }
 ```
 
-Se utilizaron costos de referencia de **$1.000,00** y precio de venta de referencia de **$1.500,00**; esto no equivale a registrar una venta.
+Reference costs were used for **$1.000,00** and the reference selling price of **$1.500,00**; this does not amount to registering a sale.
 
-## I. Caso U-07 — Compra física a proveedor QA
+## I. Case U-07 — Physical purchase from QA supplier
 
 **Endpoint:** `POST /api/v1/businesses/{business_id}/purchases`.  
-**Cabecera:** `Idempotency-Key: [VALOR REAL OMITIDO]`, nuevo respecto de la compra administrativa.
+**Header:** `Idempotency-Key: [VALOR REAL OMITIDO]`new with regard to administrative purchase.
 
-**Cuerpo ingresado:**
+**Input:**
 
 ```json
 {
@@ -196,7 +196,7 @@ Se utilizaron costos de referencia de **$1.000,00** y precio de venta de referen
 }
 ```
 
-**Resultado observado:** `201 Created`.
+**Observed result:** `201 Created`.
 
 ```json
 {
@@ -228,21 +228,21 @@ Se utilizaron costos de referencia de **$1.000,00** y precio de venta de referen
 }
 ```
 
-*Se omite `request_id` del cuerpo original.*
+* Skipped `request_id` of the original body.*
 
-**Interpretación:** `10000 / 1000 = 10` unidades; costo por unidad `100000 / 100 = $1.000,00`; total `1000000 / 100 = $10.000,00`. La compra queda `REGISTRADA` y **todavía no crea stock**. La ausencia de stock en esta etapa se sostiene además en el contrato y los tests del backend; el POST por sí solo no devuelve saldos.
+**Interpretation:** `10000 / 1000 = 10` units; cost per unit `100000 / 100 = $1.000,00`; total `1000000 / 100 = $10.000,00`. The purchase remains `REGISTRADA` y **still don't create stock**. The absence of stock at this stage is also supported in the backend contract and tests; POST alone does not return balances.
 
-## J. Caso U-08 — Consultar ubicaciones sin depósitos
+## J. Case U-08 — Consult locations without deposits
 
 **Endpoint:** `GET /api/v1/businesses/{business_id}/locations`.  
-**Resultado observado:** `200 OK` con cuerpo `[]`.  
-**Dictamen:** la empresa QA no tenía ubicaciones registradas antes de crear el depósito.
+**Observed result:** `200 OK` with body `[]`.  
+**Opinion:** QA company did not have registered locations before creating the deposit.
 
-## K. Caso U-09 — Crear depósito real de QA
+## K. Case U-09 — Create actual QA deposit
 
 **Endpoint:** `POST /api/v1/businesses/{business_id}/locations`.
 
-**Cuerpo ingresado:**
+**Input:**
 
 ```json
 {
@@ -255,7 +255,7 @@ Se utilizaron costos de referencia de **$1.000,00** y precio de venta de referen
 }
 ```
 
-**Resultado observado:** `201 Created`.
+**Observed result:** `201 Created`.
 
 ```json
 {
@@ -274,19 +274,19 @@ Se utilizaron costos de referencia de **$1.000,00** y precio de venta de referen
 }
 ```
 
-## L. Casos U-10 y U-11 — Confirmación de ubicación y compra antes de recibir
+## L. Cases U-10 and U-11 — Confirmation of location and purchase before receipt
 
-- `GET /locations` → **200**, arreglo de **una ubicación** con `id=2d6761c4-efec-4b3e-925c-a24ceab8ce9c`, `status=ACTIVA`, `can_store=true`, `can_sell=false`, `is_primary=true`.
-- `GET /purchases/3e50aff2-c895-49d9-8fe5-d5843438f109` → **200**, compra QA-002 con proveedor `Distribuidora QA`, `status=REGISTRADA`, `quantity_milli=10000` y `total_cents=1000000`.
+- `GET /locations` → **200**, arrangement of **a location** con `id=2d6761c4-efec-4b3e-925c-a24ceab8ce9c`, `status=ACTIVA`, `can_store=true`, `can_sell=false`, `is_primary=true`.
+- `GET /purchases/3e50aff2-c895-49d9-8fe5-d5843438f109` → **200**, buy QA-002 with supplier `Distribuidora QA`, `status=REGISTRADA`, `quantity_milli=10000` y `total_cents=1000000`.
 
-Estas lecturas verifican las precondiciones del comando de recepción: documento pendiente y lugar habilitado.
+These readings verify the preconditions of the receiving command: pending document and place enabled.
 
-## M. Caso U-12 — Confirmar recepción física completa
+## M. Case U-12 — Confirm full physical reception
 
 **Endpoint:** `POST /api/v1/businesses/{business_id}/purchases/3e50aff2-c895-49d9-8fe5-d5843438f109/receive`.  
-**Cabecera:** `Idempotency-Key: [VALOR REAL OMITIDO]` (UUID4 nuevo para **esta recepción**, distinto del usado al crear la compra).
+**Header:** `Idempotency-Key: [VALOR REAL OMITIDO]` (UID4 new for **this reception**, different from the one used when creating the purchase).
 
-**Cuerpo ingresado:**
+**Input:**
 
 ```json
 {
@@ -294,7 +294,7 @@ Estas lecturas verifican las precondiciones del comando de recepción: documento
 }
 ```
 
-**Resultado observado:** `201 Created`. Se representa a continuación la respuesta real sin `request_id`.
+**Observed result:** `201 Created`. The actual response is represented below without `request_id`.
 
 ```json
 {
@@ -329,13 +329,13 @@ Estas lecturas verifican las precondiciones del comando de recepción: documento
 }
 ```
 
-**Dictamen:** una recepción para una compra, un movimiento por línea física y un saldo de **10 unidades** en una ubicación habilitada. La respuesta incluye la fecha efectiva `confirmed_at` y el actor.
+**Opinion:** a reception for a purchase, a physical line move and a balance of **10 units** in a location enabled. Response includes effective date `confirmed_at` And the actor.
 
-## N. Caso U-13 — Rechazar segunda recepción con otra clave
+## N. Case U-13 — Refuse second reception with another key
 
-**Entrada:** mismo POST `/receive`, misma compra y mismo `location_id`, pero con una **clave diferente** de la utilizada en U-12. Se llegó a utilizar accidentalmente como clave un UUID de recurso; no se reproduce ese valor para cumplir la política de exclusión de claves.
+**Entry:** POST itself `/receive`, same purchase and same `location_id`but with a **different key** A UUID resource was accidentally used as a key; that value is not reproduced to fulfill the key exclusion policy.
 
-**Resultado observado:** `409 Conflict`.
+**Observed result:** `409 Conflict`.
 
 ```json
 {
@@ -343,12 +343,12 @@ Estas lecturas verifican las precondiciones del comando de recepción: documento
 }
 ```
 
-**Dictamen:** comportamiento **correcto** de protección contra doble ingreso; la compra ya está `RECIBIDA`. No debe contarse como fallo del backend.
+**Opinion:** behaviour **Right.** double income protection; the purchase is now `RECIBIDA`. It should not be counted as backend failure.
 
-## O. Caso U-14 — Reintento de recepción idéntico
+## O. Case U-14 — Identical receipt
 
-**Entrada:** mismo POST `/receive`, misma compra, mismo actor y **exactamente la misma clave y cuerpo** que en U-12.  
-**Resultado observado:** `200 OK`; se recuperaron los valores:
+**Entry:** POST itself `/receive`same buy, same actor and **exactly the same key and body** That's U-12.  
+**Observed result:** `200 OK`; values were recovered:
 
 - `receipt.id`: `266bd03e-763b-4f29-8f12-c19c9bc59066`.
 - `confirmed_at`: `2026-11-08T22:51:29.200944Z`.
@@ -358,21 +358,21 @@ Estas lecturas verifican las precondiciones del comando de recepción: documento
 - `balances_after[0].quantity_milli`: `10000`.
 - `balances_after[0].version`: `1`.
 
-**Dictamen:** la respuesta representa el **mismo hecho**, no una segunda operación. La versión `1` y el historial de U-17 acreditan ausencia de duplicación.
+**Opinion:** the answer represents the **same fact**Not a second operation. `1` and U-17's record shows no duplication.
 
-## P. Caso U-15 — Consulta de saldo con ubicación de ejemplo incorrecta
-
-**Endpoint:** `GET /api/v1/businesses/{business_id}/inventory/balances`.  
-**Parámetros:** artículo correcto `881fdae2-18c5-46ae-8037-44a500ca96c0`; se dejó por error como `location_id` el UUID ficticio que Swagger propone en sus ejemplos en lugar del depósito creado; `offset=0`, `limit=100`.
-
-**Resultado observado:** `200 OK` y `[]`.
-
-**Diagnóstico:** la consulta filtraba una ubicación que no coincidía con la recepción. Es una respuesta vacía **válida**, no evidencia de que faltara el saldo.
-
-## Q. Caso U-16 — Consulta de saldo con filtros reales
+## P. Case U-15 — Balance query with wrong example location
 
 **Endpoint:** `GET /api/v1/businesses/{business_id}/inventory/balances`.  
-**Parámetros:**
+**Parameters:** correct article `881fdae2-18c5-46ae-8037-44a500ca96c0`; was mistakenly left as `location_id` the fictitious UUID Swagger proposes in its examples instead of the deposit created; `offset=0`, `limit=100`.
+
+**Observed result:** `200 OK` y `[]`.
+
+**Diagnosis:** the query filtered a location that did not match the reception. **valid**, no evidence of missing balance.
+
+## Q. Case U-16 — Balance query with actual filters
+
+**Endpoint:** `GET /api/v1/businesses/{business_id}/inventory/balances`.  
+**Parameters:**
 
 ```text
 business_id      = bd4d4e42-4ff6-403a-8633-59cbc001487d
@@ -382,7 +382,7 @@ offset           = 0
 limit            = 100
 ```
 
-**Resultado observado:** `200 OK`.
+**Observed result:** `200 OK`.
 
 ```json
 [
@@ -397,13 +397,13 @@ limit            = 100
 ]
 ```
 
-**Dictamen:** las 10 unidades constan en `stock_balances`. La versión sigue siendo `1` después del reintento, y los filtros coinciden con el depósito real.
+**Opinion:** the 10 units consist of `stock_balances`. The version remains `1` after the retry, and filters match the actual deposit.
 
-## R. Caso U-17 — Consulta del ledger de movimientos
+## R. Case U-17 — Consultation of the movement leader
 
-**Endpoint:** `GET /api/v1/businesses/{business_id}/inventory/movements` con exactamente los mismos filtros que U-16.
+**Endpoint:** `GET /api/v1/businesses/{business_id}/inventory/movements` with exactly the same filters as U-16.
 
-**Resultado observado:** `200 OK`; **un solo movimiento**:
+**Observed result:** `200 OK`; **one movement**:
 
 ```json
 [
@@ -422,34 +422,34 @@ limit            = 100
 ]
 ```
 
-**Dictamen:** la consulta confirma el **único hecho físico** de la compra QA-002 y su trazabilidad (actor, recibo y línea). En conjunto con la prueba U-14, confirma ausencia de duplicación en este escenario.
+**Opinion:** the consultation confirms the **only physical fact** QA-002 purchase and its traceability (actor, receipt and line). In conjunction with the U-14 test, it confirms no duplication in this scenario.
 
-## S. Resumen tabular de los casos manuales
+## S. Tabular summary of manual cases
 
-| ID | Operación | HTTP observado | Dictamen |
+| ID | Operation | Observed HTTP | Opinion |
 |---|---|---:|---|
-| U-01 | Alta compra concepto | 201 | Aprobado |
-| U-02 | Replay misma compra | 200 | Aprobado |
-| U-03 | Clave reutilizada con otro costo | 409 | Aprobado: conflicto esperado |
-| U-04 | Listar compras | 200 | Aprobado |
-| U-05 | Detalle compra | 200 | Aprobado |
-| U-06 | Crear artículo físico | 201 | Aprobado |
-| U-07 | Crear compra física | 201 | Aprobado |
-| U-08 | Ubicaciones antes del alta | 200, `[]` | Aprobado |
-| U-09 | Alta depósito | 201 | Aprobado |
-| U-10 | Ubicaciones luego del alta | 200 | Aprobado |
-| U-11 | Compra física antes de recibir | 200 | Aprobado |
-| U-12 | Recepción única | 201 | Aprobado |
-| U-13 | Intento de segunda recepción | 409 | Aprobado: conflicto esperado |
-| U-14 | Replay recepción original | 200 | Aprobado |
-| U-15 | Saldo filtrado por UUID no correspondiente | 200, `[]` | Diagnóstico de filtro incorrecto |
-| U-16 | Saldo con depósito correcto | 200 | Aprobado |
-| U-17 | Movimientos con filtros correctos | 200 | Aprobado |
+| U-01 | High purchase concept | 201 | Approved |
+| U-02 | Replay misma compra | 200 | Approved |
+| U-03 | Reused key at other cost | 409 | Approved: expected conflict |
+| U-04 | List Shopping | 200 | Approved |
+| U-05 | Detalle compra | 200 | Approved |
+| U-06 | Create physical article | 201 | Approved |
+| U-07 | Create physical purchase | 201 | Approved |
+| U-08 | Locations before discharge | 200, `[]` | Approved |
+| U-09 | High deposit | 201 | Approved |
+| U-10 | Locations after discharge | 200 | Approved |
+| U-11 | Physical purchase before receiving | 200 | Approved |
+| U-12 | Single reception | 201 | Approved |
+| U-13 | Attempted second reception | 409 | Approved: expected conflict |
+| U-14 | Replay original reception | 200 | Approved |
+| U-15 | Uncorresponding UUID filtered balance | 200, `[]` | Incorrect filter diagnosis |
+| U-16 | Balance with correct deposit | 200 | Approved |
+| U-17 | Movements with correct filters | 200 | Approved |
 
-La API de Proveedores (`POST/GET/PATCH/PATCH status`) está implementada y validada por CI. La evidencia permite identificar un proveedor QA utilizado por compra, pero **no contiene un recorrido manual completo con los cuerpos y HTTP de cada operación de Proveedores**; no se inventó ese conjunto de casos.
+The Provider API (`POST/GET/PATCH/PATCH status`) is implemented and validated by IC. Evidence allows identifying a QA supplier used for purchase, but **does not contain a complete manual path with bodies and HTTP of each Provider operation**; that set of cases was not invented.
 
-## T. Regla de reproceso y conservación de datos
+## T. Data reprocessing and retention rule
 
-Las altas U-01, U-06, U-07, U-09 y la recepción U-12 **ya sucedieron** en una base persistente. Si se desea revisar esta evidencia, utilizar las rutas **GET**. Para repetir exactamente U-14 en un contexto autorizado hay que reutilizar la clave original, que está excluida del informe: **sin ella no se puede realizar la misma prueba de replay de forma idéntica**. No sustituir esa clave por el ID de la compra y no generar otra para la misma recepción; eso produce correctamente `409`.
+High U-01, U-06, U-07, U-09 and reception U-12 **They happened.** on a persistent basis. If you want to review this evidence, use the routes **GET**. To repeat exactly U-14 in an authorized context, the original key, which is excluded from the report, must be reused: **without it you can not perform the same replay test in identical way**. Do not substitute that key for the purchase ID and do not generate another one for the same reception; that produces correctly `409`.
 
-Para una nueva práctica íntegra, usar otros datos de QA y nuevas claves guardadas **localmente y fuera del informe**, sin compartir cabeceras de autorización.
+For a new full practice, use other QA data and new saved keys **locally and outside the report**, without sharing authorization headers.

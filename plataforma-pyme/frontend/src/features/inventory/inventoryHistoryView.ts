@@ -53,27 +53,26 @@ export function loadedMovementCounts(records: readonly InventoryMovement[]): {
 export function loadedInventoryCountLabel(
   kind: 'balances' | 'movements', count: number, hasMore: boolean,
 ): string {
-  if (!Number.isSafeInteger(count) || count < 0) throw new RangeError('Recuento inválido')
+  if (!Number.isSafeInteger(count) || count < 0) throw new RangeError('Invalid count')
   const noun = kind === 'balances'
-    ? count === 1 ? 'combinación artículo/sede cargada' : 'combinaciones artículo/sede cargadas'
-    : count === 1 ? 'movimiento cargado' : 'movimientos cargados'
-  return `${count} ${noun} · ${hasMore ? 'Puede haber más páginas' : 'Última página consultada'}.`
+    ? count === 1 ? 'item/location balance loaded' : 'item/location balances loaded'
+    : count === 1 ? 'movement loaded' : 'movements loaded'
+  return `${count} ${noun} · ${hasMore ? 'More pages may be available' : 'Last page loaded'}.`
 }
 
-/** A human-readable count of loaded movements only, never tenant-wide totals. */
+/** Summarize the movements loaded in this view. */
 export function loadedHistorySummary(total:number, entries:number, exits:number):string {
   if (![total,entries,exits].every(n=>Number.isSafeInteger(n)&&n>=0)
-    || entries+exits>total)throw new RangeError('Recuento de movimientos inválido')
-  const countNoun=(n:number,singular:string,plural:string)=>n===1?singular:plural
-  const prefix=total===0?'No hay movimientos cargados:'
-    :total===1?'En el movimiento cargado:'
-    :`En los ${total} movimientos cargados:`
-  return `${prefix} ${entries} ${countNoun(entries,'entrada','entradas')} y ${exits} ${countNoun(exits,'salida','salidas')}.`
+    || entries+exits>total)throw new RangeError('Invalid movement count')
+  const movementCount = total === 1 ? '1 movement' : `${total} movements`
+  const entryCount = entries === 1 ? '1 entry' : `${entries} entries`
+  const exitCount = exits === 1 ? '1 exit' : `${exits} exits`
+  return `${movementCount} loaded: ${entryCount} and ${exitCount}.`
 }
 
 export function loadedMatchCountLabel(count:number):string {
-  if (!Number.isSafeInteger(count)||count<0)throw new RangeError('Recuento inválido')
-  return `Se ${count===1?'muestra':'muestran'} ${count} ${count===1?'coincidencia':'coincidencias'} del filtro local.`
+  if (!Number.isSafeInteger(count)||count<0)throw new RangeError('Invalid count')
+  return count === 1 ? 'Showing 1 local match.' : `Showing ${count} local matches.`
 }
 
 export type MovementActor = { user_id:string; display_name:string }
@@ -89,25 +88,25 @@ export function movementActorName(
   viewer:MovementViewer,
   actors:ReadonlyArray<MovementActor> = [],
 ):string {
-  if(actorId===viewer.id)return viewer.displayName.trim()||'Tu cuenta'
-  return actors.find(x=>x.user_id===actorId)?.display_name.trim()||'Nombre no disponible'
+  if(actorId===viewer.id)return viewer.displayName.trim()||'Your account'
+  return actors.find(x=>x.user_id===actorId)?.display_name.trim()||'Name not available'
 }
 
 /** Traceable identifiers from the REAL ledger (not invoices or arbitrary client links). */
 export function movementTraceFields(record: InventoryMovement): {label: string; value: string}[] {
   const fields = [
-    {label: 'ID del movimiento', value: record.id},
-    {label: 'Responsable (ID)', value: record.actor_id},
-    {label: 'Ubicación (ID)', value: record.location_id},
-    {label: 'Artículo (ID)', value: record.catalog_item_id},
+    {label: 'Movement ID', value: record.id},
+    {label: 'Responsible (ID)', value: record.actor_id},
+    {label: 'Location (ID)', value: record.location_id},
+    {label: 'Article (ID)', value: record.catalog_item_id},
   ]
   const optional: [string, string | null | undefined][] = [
-    ['Recepción interna (ID)', record.receipt_id],
-    ['Renglón de compra (ID)', record.purchase_line_id],
-    ['Operación de inventario (ID)', record.inventory_operation_id],
-    ['Tipo de operación del servidor', record.operation_kind],
-    ['Venta (ID)', record.sale_id],
-    ['Renglón de venta (ID)', record.sale_line_id],
+    ['Internal reception (ID)', record.receipt_id],
+    ['Purchase line (ID)', record.purchase_line_id],
+    ['Inventory operation (ID)', record.inventory_operation_id],
+    ['Server operation type', record.operation_kind],
+    ['Sale (ID)', record.sale_id],
+    ['Sales line (ID)', record.sale_line_id],
   ]
   for (const [label,value] of optional) {
     if (value !== null && value !== undefined && value !== '') fields.push({label,value})

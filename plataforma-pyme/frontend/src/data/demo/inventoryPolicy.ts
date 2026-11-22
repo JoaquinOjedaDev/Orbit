@@ -76,11 +76,11 @@ export type InventoryOperation =
   }
 
 export const inventoryMovementLabels: Record<InventoryMovementType, string> = {
-  RECEPCION_COMPRA: 'Recepción de compra',
+  RECEPCION_COMPRA: 'Purchase reception',
   TRASLADO_SALIDA: 'Traslado · salida',
   TRASLADO_ENTRADA: 'Traslado · entrada',
-  AJUSTE_CONTEO: 'Ajuste por conteo',
-  VENTA_SALIDA: 'Venta · salida de stock',
+  AJUSTE_CONTEO: 'Count adjustment',
+  VENTA_SALIDA: 'Sale · stock out',
 }
 
 export function stockKey(locationId: string, catalogItemId: string): string {
@@ -96,7 +96,7 @@ export function validateStockMilli(value: number, unit: CatalogUnit, canBeZero: 
   if (!Number.isSafeInteger(value) || value < 0 || value >= 1_000_000_000 ||
       (!canBeZero && value === 0) ||
       isDiscreteUnit(unit) && value % 1000 !== 0) {
-    throw new Error('Cantidad fuera de rango o incompatible con la unidad de control.')
+    throw new Error('Amount out of range or incompatible with the control unit.')
   }
 }
 
@@ -104,16 +104,16 @@ export function validateStockMilli(value: number, unit: CatalogUnit, canBeZero: 
 export function requireTransferStock(available: number, requested: number, unit: CatalogUnit): void {
   validateStockMilli(requested, unit, false)
   if (!Number.isSafeInteger(available) || available < 0 || available < requested) {
-    throw new Error('Stock insuficiente: no se permiten saldos negativos.')
+    throw new Error('Insufficient stock: no negative balances allowed.')
   }
 }
 
 /** Un conteo fija la existencia observada y genera sólo la diferencia. */
 export function countDifference(current: number, counted: number, unit: CatalogUnit): number {
   validateStockMilli(counted, unit, true)
-  if (!Number.isSafeInteger(current) || current < 0) throw new Error('Saldo actual inválido.')
+  if (!Number.isSafeInteger(current) || current < 0) throw new Error('Current balance is invalid.')
   const delta = counted - current
-  if (delta === 0) throw new Error('El conteo coincide con el saldo actual. No hay ajuste que registrar.')
+  if (delta === 0) throw new Error('The count matches the current balance. No adjustment to record.')
   return delta
 }
 
@@ -128,19 +128,19 @@ export function checkedCountDifference(
   validateStockMilli(currentMilli, unit, true)
   validateStockMilli(countedMilli, unit, true)
   if (currentMilli !== expectedMilli) {
-    throw new Error('El stock cambió mientras contabas. Volvé a revisar los saldos antes de confirmar.')
+    throw new Error('The stock changed while you were counting. Check the balances again before confirming.')
   }
   return countedMilli - currentMilli
 }
 
 export function normalizeStockReason(reason: string): string {
-  if (typeof reason !== 'string') throw new Error('Indicá un motivo para este movimiento.')
+  if (typeof reason !== 'string') throw new Error('Indicate a reason for this movement.')
   if ([...reason].some((char) => { const code = char.charCodeAt(0); return code <= 31 || code === 127 })) {
-    throw new Error('El motivo no admite caracteres de control.')
+    throw new Error('The motif does not support control characters.')
   }
   const text = reason.trim().replace(/\s+/g, ' ')
   if (text.length < 5 || text.length > 180) {
-    throw new Error('El motivo es obligatorio (entre 5 y 180 caracteres).')
+    throw new Error('The motif is mandatory (between 5 and 180 characters).')
   }
   return text
 }
@@ -149,10 +149,10 @@ export function normalizeStockReason(reason: string): string {
 export function stockBalances(movements: InventoryMovement[]): Map<string, number> {
   const result = new Map<string, number>()
   for (const movement of movements) {
-    if (!Number.isSafeInteger(movement.deltaMilli)) throw new Error('Movimiento de inventario no válido.')
+    if (!Number.isSafeInteger(movement.deltaMilli)) throw new Error('Invalid inventory movement.')
     const key = stockKey(movement.locationId, movement.catalogItemId)
     const next = (result.get(key) ?? 0) + movement.deltaMilli
-    if (!Number.isSafeInteger(next)) throw new Error('Saldo fuera del rango seguro.')
+    if (!Number.isSafeInteger(next)) throw new Error('Balance out of range.')
     result.set(key, next)
   }
   return result
@@ -173,13 +173,13 @@ export function inventoryOperationMovements(operation: InventoryOperation): Inve
       catalogItemId: line.catalogItemId, itemNameSnapshot: line.itemNameSnapshot,
       unit: line.unit, locationId: operation.locationId, deltaMilli: line.deltaMilli,
       type: 'AJUSTE_CONTEO' as const, createdAt: operation.createdAt,
-      reason: operation.reason, reference: 'Control de stock DEMO',
+      reason: operation.reason, reference: 'Stock Control DEMO',
     }))
   const common = {
     operationId: operation.id, businessId: operation.businessId,
     catalogItemId: operation.catalogItemId, itemNameSnapshot: operation.itemNameSnapshot,
     unit: operation.unit, createdAt: operation.createdAt, reason: operation.reason,
-    reference: operation.kind === 'TRANSFER' ? 'Traslado DEMO' : 'Conteo físico DEMO',
+    reference: operation.kind === 'TRANSFER' ? 'Traslado DEMO' : 'DEMO physical count',
   }
   if (operation.kind === 'TRANSFER') return [
     { ...common, id: operation.id + ':out', locationId: operation.sourceLocationId,

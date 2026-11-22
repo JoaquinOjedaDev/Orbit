@@ -1,81 +1,81 @@
-# E3-1A / E3-1B — Especificación visual, matriz HTML→REAL y criterios de aceptación
+# E3-1A / E3-1B — Visual specification, HTML→REAL matrix and acceptance criteria
 
-**Proyecto:** Orbit, plataforma generalista multiempresa y multirrubro. **WALOS es solo empresa de ejemplo.**  
-**Fecha:** 11/11/2026. **Base:** `main fd46c8d586c4a44a4dca06e853780d2aa9b9eee1`, E3-0 y T12 integrados.  
-**Origen:** 14 HTML proporcionados por el usuario, y `frontend/src` de React REAL y DEMO.  
-**Estado:** E3-1A aprobado conceptualmente, primer cambio de E3-1B en rama **DRAFT** para revisión antes de merge.
+**Project:** Orbit, multi-company and multi-rub platform. **WALOS is just an example company.**  
+**Date:** 11/11/2026. **Base:** `main fd46c8d586c4a44a4dca06e853780d2aa9b9eee1`, E3-0 and T12 integrated.  
+**Origin:** 14 HTML provided by the user; and `frontend/src` de React REAL y DEMO.  
+**Status:** E3-1A conceptually approved, first change of E3-1B in branch **DRAFT** For review before merge.
 
-> **Regla de precedencia:** React REAL y los contratos FastAPI son la fuente de comportamiento; los HTML son referencias estéticas/UX. La documentación original E3-1 (auditoría de 14 HTML) contiene la evaluación completa. Este archivo registra decisiones ejecutables y el alcance específico del primer incremento. No se importa JavaScript global, Tailwind CDN, mocks ni `demoStore`.
+> **Rule of precedence:** React REAL and FastAPI contracts are the source of behavior; HTMLs are aesthetic references/UX. Original documentation E3-1 (14 HTML audit) contains full evaluation. This file records executable decisions and the specific scope of the first increment. No global JavaScript, Tailwind CDN, mocks or `demoStore`.
 
-## 1. Matriz definitiva de referencias y destino
+## 1. Final matrix of references and destination
 
-| HTML aportado | Pantalla REAL / React actual | Qué reutilizar ahora o después | Decisión de alcance |
+| HTML provided | REAL / Current React display | What to reuse now or later | Scope decision |
 |---|---|---|---|
-| `Menu_Principal(3).html` | `RealAuthApp` + `RealBusinessesPage` | Navegación lateral, encabezado de negocio, jerarquía de accesos | **E3-1B: shell**; dashboard con KPI en **E3-1H** |
-| `Boton_Editar_Perfil_Empresa(2).html` | `RealBusinessesPage` | Bloques de datos, edición contextual, avatar placeholder | **E3-1C**; imagen REAL después en E3-2 |
-| `Lista de Empleados(2).html` | `RealTeamPage` | Directorio de empleados, filtros y permisos visibles | **E3-1C**; roles exclusivamente de backend |
-| `Ubicaciones(2).html` | `RealLocationsPage` | Fichas de sedes, indicadores SELL/STORE, principal/estado | **E3-1C**, sin borrado físico ni cambio de políticas |
-| `catalogo_modulo2(4).html` | `RealCatalogPage` | Tarjetas, filtros, precios, insumos/servicios, ficha detallada | **E3-1D**; fotos con placeholder, sin upload real |
-| `walos_proveedores(2).html` | `RealSuppliersPage` | Fichas de contacto, promociones, pagos aceptados si API los devuelve | **E3-1D** |
-| `walos_compras_y_gastos_separados.html` | `RealPurchasesPage` | Alta por renglones, proveedor, fechas y recepción identificable | Compras **E3-1E**; gastos fuera de alcance REAL |
-| `walos_m_dulo_2_inventario_y_control_de_stock(3)(3).html` | `RealInventoryPage` | Saldos por sede, movimientos, conteo, traslados | **E3-1F**, respetar ledger, versionado y operaciones atómicas |
-| `WALOS_M3_Cargar_Venta_POS_vNext(1).html` | `RealPosPage` + `RealPosCheckout` | Carrito, separación cantidad/precio unitario, pagos declarados | **E3-1G**, sin confirmación optimista ni QR acreditado |
-| `WALOS_Modulo_Ventas_UX_v4_0(3).html` | `RealSalesPage` | Listado, recibos, filtros, estados y navegación | **E3-1G**; pedidos/reservas después |
-| `walos_guias_apoyo(1).html` | No hay módulo REAL | Estilos, instructivos, organización de pasos | **Backlog E3-3**, no enlace operativo REAL |
-| `walos_m3_apertura_y_cierre_v3(2).html` | `CashSessionsPage` **solo DEMO** | Flujo de apertura y arqueo | **Backlog E3-4**; no hay caja REAL |
-| `walos_m3_apertura_y_cierre_v8(1).html` | `CashSessionsPage` **solo DEMO** | Variante móvil y confirmación de cierre | **Backlog E3-4**, comparar después con v3 |
-| `cuentas_bancarias_asociadas(1).html` | `FinancialAccountsPage` **solo DEMO** | Cuentas asociadas y visualización de medios | **Backlog E3-4**; sin backend financiero REAL |
+| `Menu_Principal(3).html` | `RealAuthApp` + `RealBusinessesPage` | Side navigation, business header, access hierarchy | **E3-1B: shell**; dashboard con KPI en **E3-1H** |
+| `Boton_Editar_Perfil_Empresa(2).html` | `RealBusinessesPage` | Data blocks, context editing, avatar placeholder | **E3-1C**; REAL image later on E3-2 |
+| `Lista de Empleados(2).html` | `RealTeamPage` | Employee directory, filters and visible permissions | **E3-1C**; roles exclusively of backend |
+| `Ubicaciones(2).html` | `RealLocationsPage` | Headquarters sheets, indicators SELL/STORE, principal/state | **E3-1C**without physical deletion or policy change |
+| `catalogo_modulo2(4).html` | `RealCatalogPage` | Cards, filters, prices, supplies/services, detailed sheet | **E3-1D**; fotos con placeholder, sin upload real |
+| `walos_proveedores(2).html` | `RealSuppliersPage` | Contact tabs, promotions, accepted payments if API returns them | **E3-1D** |
+| `walos_compras_y_gastos_separados.html` | `RealPurchasesPage` | High by line, supplier, dates and identifiable reception | Purchases **E3-1E**; out-of-scope expenditure |
+| `walos_m_dulo_2_inventario_y_control_de_stock(3)(3).html` | `RealInventoryPage` | Balance by headquarters, movement, counting, transfers | **E3-1F**, respect leadger, versioning and atomic operations |
+| `WALOS_M3_Cargar_Venta_POS_vNext(1).html` | `RealPosPage` + `RealPosCheckout` | Cart, separation amount/unit price, payments declared | **E3-1G**, no optimistic confirmation or QR accredited |
+| `WALOS_Modulo_Ventas_UX_v4_0(3).html` | `RealSalesPage` | Listing, receipts, filters, statuses and navigation | **E3-1G**; orders/reserves after |
+| `walos_guias_apoyo(1).html` | No REAL module | Styles, instructional, step organization | **Backlog E3-3**, not REAL operational link |
+| `walos_m3_apertura_y_cierre_v3(2).html` | `CashSessionsPage` **only DEMO** | Opening and arching flow | **Backlog E3-4**; no REAL box |
+| `walos_m3_apertura_y_cierre_v8(1).html` | `CashSessionsPage` **only DEMO** | Mobile variant and closure confirmation | **Backlog E3-4**, compare later with v3 |
+| `cuentas_bancarias_asociadas(1).html` | `FinancialAccountsPage` **only DEMO** | Associated Accounts and Media Viewing | **Backlog E3-4**; no REAL financial backend |
 
-**Pantallas sin prototipo HTML específico:** registro/login, perfil personal, aceptación de invitación, detalle de recepción, ajustes/traslados, Inicio REAL sin ventas, reportes/analítica, imágenes REAL. Se diseñarán a partir del sistema común, sin inventar endpoints.
+**Screens without specific HTML prototype:** registration/login, personal profile, acceptance of invitation, reception detail, adjustments/transfers, Real Home without sales, reports/analytical, REAL images. They will be designed from the common system, without inventing endpoints.
 
-## 2. Estilo aprobado: design tokens mínimos
+## 2. Approved Style: Design tokens minima
 
-- **Marca del producto:** Orbit, nunca `WALOS` fijo. Nombre comercial de empresa REAL proveniente de FastAPI.
-- **Paleta:** navegación `#162A47`, primario `#2563EB`, fondo `#F4F6FA`, superficie `#FFFFFF`, borde `#DCE5EF`, texto `#172943`, secundario `#64748B`.
-- **Tipografía:** Inter con alternativas de sistema; nunca dependencia obligatoria del CDN de Tailwind/Google.
-- **Radios:** base `14px`, tarjetas suaves y botones grandes, sin copiar 14 variantes de CSS global. Sombra suave `0 5px 22px rgba(23,41,67,.055)`.
-- **CSS:** nuevos tokens `--pyme-ui-*` y reglas prefijadas `rw-*`; conservar los CSS de DEMO y auth existentes. No incorporar Tailwind salvo una decisión futura justificada.
-- **Responsive:** escritorio con sidebar persistente; móvil `≤900px` con drawer y fondo; topbar compacto a `≤600px`; prueba de ancho 360, 390, 768, 1280 px.
-- **Accesibilidad:** botones semánticos, `aria-current`, foco visible, menú Escape/Tab y retorno del foco, etiquetas reales y mensajes de error. No usar color como única señal.
+- **Product name:** Orbit, never `WALOS` fixed. Real company business name from FastAPI.
+- **Palette:** navigation `#162A47`, primary `#2563EB`, background `#F4F6FA`, surface `#FFFFFF`, border `#DCE5EF`, text `#172943`, secondary `#64748B`.
+- **Typography:** Inter with system alternatives; never mandatory CDN dependence on Tailwind/Google.
+- **Radios:** base `14px`soft cards and large buttons, without copying 14 variants of global CSS. Soft Shadow `0 5px 22px rgba(23,41,67,.055)`.
+- **CSS:** new tokens `--pyme-ui-*` and prefixed rules `rw-*`; to retain existing DEMO and auth CSS. Do not incorporate Tailwind unless a justified future decision is made.
+- **Responsive:** persistent sidebar desktop; mobile `≤900px` with drawer and background; compact topbar to `≤600px`; 360, 390, 768, 1280 px wide test.
+- **Accessibility:** semantic buttons, `aria-current`, visible focus, Escape/Tab menu and focus return, real tags and error messages. Do not use color as the only signal.
 
-## 3. Navegación y aislamiento REAL de E3-1B
+## 3. REAL E3-1B Navigation and Isolation
 
-**Perfil / identidad:** Mis empresas, Mi perfil, Aceptar invitación y Crear empresa (vía pantallas existentes).  
-**Empresa:** Mi empresa, Ubicaciones, Equipo, Catálogo, Proveedores, Compras y recepciones, Inventario y movimientos, Punto de venta, Historial de ventas.  
-**Ocultos en REAL:** Gastos, Caja, Cuentas, Guías, Reportes, Pedidos/Reservas y QR de cobro. La DEMO puede conservarlos con etiqueta clara. **No mostrar «Próximamente» ocupando espacio del menú operativo.**
+**Profile/identity:** My companies, My profile, Accept invitation and Create company (via existing screens).  
+**Company:** My company, Locations, Equipment, Catalog, Suppliers, Purchases and Receptions, Inventory and Movements, Point of sale, Sales History.  
+**Hidden in REAL:** Expenses, Cashier, Accounts, Guides, Reports, Orders/Reserves and QR of collection. DEMO can keep them with clear label. **Do not show "Next" by occupying operating menu space.**
 
-**Cambio de empresa:**
+**Change of company:**
 
-1. El selector solo contiene membresías verificadas por `GET /api/v1/businesses` del actor autenticado. No se usan logos/nombres/saldos DEMO.
-2. La ruta incluye el UUID del tenant. `RealAuthApp` remonta la pantalla por ruta; el shell se remonta por `usuario + empresa activa` y aborta lecturas pendientes. **No conserva formularios, sede ni carritos del tenant anterior en memoria**; los registros de idempotencia ya existentes continúan segregados por tenant, usuario y operación.
-3. El frontend actualmente **no tiene TanStack Query ni RTK Query**; por tanto no corresponde introducir `queryClient.clear()` ni `resetApiState()` inexistentes. Si se instala una librería de caché en el futuro, toda clave de consulta debe incluir `businessId` y la transición de tenant deberá invalidarla expresamente.
-4. Si la empresa no aparece en la lista o la consulta falla, el shell no muestra enlaces de operaciones para ese tenant. Eso **no** sustituye autorizaciones de backend; la API continúa protegiendo cada GET/POST.
-5. No persistir token REAL en `localStorage`/`demoStore`. La sesión sigue exclusivamente en memoria, con reingreso después de F5.
+1. Selector only contains memberships verified by `GET /api/v1/businesses` authenticated actor. No DEMO logos/names/balances are used.
+2. The route includes the UUID of the tenant. `RealAuthApp` takes the screen by route; the shell goes back `usuario + empresa activa` and abort pending readings. **No forms, headquarters or carts of the previous tenant in memory**; existing idempotency records continue to be segregated by tenant, user and operation.
+3. The frontend currently **no tiene TanStack Query ni RTK Query**; therefore it is not appropriate to introduce `queryClient.clear()` ni `resetApiState()` If a cache library is installed in the future, any query key must include `businessId` and the tenant transition must expressly invalidate it.
+4. If the company does not appear in the list or query fails, the shell does not display operations links for that tenant. **no** replaces backend permissions; the API continues to protect each GET/POST.
+5. Do not persist token REAL in `localStorage`/`demoStore`The session is still exclusively in memory, with re-entry after F5.
 
-**Importante:** el shell **no** introduce un selector global de sede. Cada operación mantiene su selección y validación de sedes SELL/STORE; un cambio de sede no implica autorización.
+**Important:** el shell **no** introduces a global headquarters selector. Each operation maintains its selection and validation of SELL/STORE locations; a change of location does not imply authorization.
 
-## 4. Riesgos funcionales a prevenir en siguientes incrementos
+## 4. Functional risks to prevent in subsequent increments
 
-- **E3-1C:** rol visible según `Membership.role`; no simular Dueño/Trabajador, ni otorgar acceso por ocultamiento o mostrar una tarjeta.
-- **E3-1D:** costo/precio y tipo de artículo provienen del backend; la presencia visual de fotografía no implica funcionalidad de carga de medios REAL.
-- **E3-1E:** registrar compra no mueve stock; recepción completa y única requiere sede STORE e idempotencia. Preservar recuperación segura tras timeout.
-- **E3-1F:** no calcular saldos finales en UI ni emitir ajustes/traslados ignorando `version`, 409 o permisos de sede.
-- **E3-1G:** no usar **UI optimista** para confirmar ventas que alteran inventario. Mantener CTA de confirmación inactivo durante envío, revisión del intento original y mismo `Idempotency-Key` en recuperación; jamás generar clave nueva tras timeout incierto. Mostrar precio unitario de solo lectura/candado para roles operativos, cantidad editable y total por línea; descuentos solo a roles autorizados. `MERCADO_PAGO_DECLARADO` **no** procesa fondos.
-- **E3-1H:** **onboarding con estados vacíos reales**: (1) crear primera sede, (2) crear artículo, (3) iniciar stock en sede STORE, (4) proveedor/compra, (5) POS. Mostrar «sin datos» en lugar de KPI falsos o historiales WALOS de ejemplo. Al comenzar E3-1H revisar permisos: `STOCK_INICIAL` sólo titular/admin.
+- **E3-1C:** visible role as per `Membership.role`; do not simulate Owner/Worker, or grant access by concealment or display a card.
+- **E3-1D:** cost/price and type of article come from backend; the visual presence of photography does not imply real media loading functionality.
+- **E3-1E:** Register purchase does not move stock; full and unique reception requires STORE headquarters and idempotence. Preserve safe recovery after timeout.
+- **E3-1F:** not calculate end-of-sales balances in IU or issue adjustments/transfers ignoring `version`, 409 or headquarters permits.
+- **E3-1G:** do not use **Optimistic IU** to confirm sales that alter inventory. Keep CTA confirmation inactive during shipping, review of original attempt and same `Idempotency-Key` in recovery; never generate new key after uncertain timeout. Show single-read/candade unit price for operational roles, editable quantity and total per line; discounts only to authorized roles. `MERCADO_PAGO_DECLARADO` **no** process funds.
+- **E3-1H:** **onboarding with actual empty states**: (1) create first headquarters, (2) create article, (3) start stock at STORE headquarters, (4) supplier/buyer, (5) POS. Show "no data" instead of fake KPI or example WALOS records. When starting E3-1H check permissions: `STOCK_INICIAL` only holder/admin.
 
-## 5. Alcance exacto del primer PR E3-1B
+## 5. Exact scope of the first PR E3-1B
 
-**Sí incluye:** CSS tokens aislados, shell lateral REAL, encabezado, selector de empresa basado en API, navegación a rutas REAL que ya existen, estados de carga/error, drawer móvil con Escape/Tab, tests de rutas y límites de alcance. Puede contener este documento de definición sin modificar los documentos rector 01–05/T12.
+**It does include:** CSS tokens isolated, REAL side shell, header, API-based enterprise selector, navigation to existing REAL paths, loading/mistake states, mobile drawer with Escape/Tab, route tests and scope limits. You can contain this definition document without modifying the governing documents 01–05/T12.
 
-**NO incluye:** reescritura de formularios/negocio, migraciones, API, cambios de permisos, imágenes REAL, dashboard KPI, onboarding interactivo, cuentas/caja/QR productivos, modificación de `demoStore`, refactor global de `App.css`, rutas nuevas ni cambios en operaciones POS.
+**Does not include:** rewrite forms/business, migrations, APIs, permission changes, REAL images, KPI dashboard, interactive onboarding, productive accounts/box/QR, modification of `demoStore`, global refactor of `App.css`, new routes or changes in POS operations.
 
-### Criterios para revisar y aprobar E3-1B
+### Criteria for reviewing and approving E3-1B
 
-1. Inicio de sesión REAL → Mis empresas → seleccionar A → visualizar su menú; cambiar a B y confirmar ausencia de datos/carrito/formularios de A.
-2. Usuario con solo una empresa, usuario con varias empresas, empresa suspendida, empresa sin sedes y respuesta 401/403/404 de API.
-3. Desktop 1280 px y móvil 390 px: sidebar, topbar, drawer, Escape, Tab, botón cerrar y selección con teclado.
-4. Verificar navegación por URL y botón Atrás; no hay enlaces a Caja/Cuentas/Guías/QR falsamente REAL.
-5. CI: `npm run build`, `npm run lint`, tests Node frontend, tests Playwright REAL y DEMO; si solo se modifica el shell, backend debe permanecer sin cambios. Comparar capturas visuales antes de autorizar merge.
-6. Revisión humana de estética y navegación; **DRAFT hasta aprobación expresa de merge**.
+1. REAL Login → My companies → select A → view your menu; switch to B and confirm absence of data/cart/forms from A.
+2. User with only one company, user with several companies, suspended company, company without headquarters and API response 401/403/404.
+3. Desktop 1280 px and mobile 390 px: sidebar, topbar, drawer, Escape, Tab, button close and selection with keyboard.
+4. Verify URL navigation and Back button; there are no links to Box/Counts/Guides/QR falsely REAL.
+5. CI: `npm run build`, `npm run lint`, Node frontend tests, Playwright REAL and DEMO tests; if only the shell is modified, backend must remain unchanged. Compare visual captures before Merge is authorized.
+6. Human review of aesthetics and navigation; **DRAFT until express approval of merge**.
 
-**Resultado esperado:** la lógica REAL permanece intacta, pero el usuario ve una estructura integrada parecida al HTML de Menú Principal; el resto de los módulos se rediseñará gradualmente en E3-1C..H.
+**Expected result:** REAL logic remains intact, but the user sees an integrated structure similar to Main Menu HTML; the rest of the modules will gradually be redesigned in E3-1C..H.

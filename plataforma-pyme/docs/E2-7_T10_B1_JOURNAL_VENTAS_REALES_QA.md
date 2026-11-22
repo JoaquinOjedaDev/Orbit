@@ -1,36 +1,36 @@
-# E2-7 · T10-B1 — Journal persistente de ventas REALES (sin POST)
+# E2-7 · T10-B1 — Persistent Journal of Real Sales (without POST)
 
-**Fecha:** 10/11/2026 · **Rama:** `feature/e2-7-t10-pos-ventas-real` · **PR #43:** borrador, sin merge.
+**Date:** 10/11/2026 · **Rama:** `feature/e2-7-t10-pos-ventas-real` · **PR #43:** draft, no merit.
 
-## 1. Alcance implementado
+## 1. Scope implemented
 
-Se agregó `frontend/src/features/sales/salePendingJournal.ts`, módulo para **conservar localmente intentos confirmados por el usuario antes de enviar un POST**, todavía **sin integrarlo a un POS que escriba ventas**. Patrón compatible con los journals existentes de empresa y compras; usa base IndexedDB **separada** `asistente-pyme-real-sales-v1`, almacén `pending`, máximo 60 registros. No guarda token Bearer, contraseñas ni sesiones, pero guarda información comercial **sin cifrar**, por lo que se desaconsejan dispositivos compartidos.
+Added `frontend/src/features/sales/salePendingJournal.ts`, module for **keep user-confirmed attempts locally before sending a POST**Still. **without integrating it into a sales writing POS**. Pattern compatible with existing business and shopping journals; use IndexedDB base **separate** `asistente-pyme-real-sales-v1`, warehouse `pending`Not save token Bearer, passwords or sessions, but keep commercial information **unencrypted**therefore shared devices are discouraged.
 
-Cada intención preserva exactamente: `scope`, `actorId`, `businessId`, `kind: sale.create`, `key` UUID4, `body` completo normalizado/validado por T10-A y `createdAt`. `scope = actorId:businessId:sale.create` prohíbe que una empresa o actor vea la venta pendiente de otro. No se genera `key` durante el render de React.
+Each intention preserves exactly: `scope`, `actorId`, `businessId`, `kind: sale.create`, `key` UUID4, `body` complete standard/validated by T10-A and `createdAt`. `scope = actorId:businessId:sale.create` prohibits a company or actor from seeing another's pending sale. `key` during the React render.
 
-### Operaciones y garantías
+### Operations and guarantees
 
-- `newSalePending(actorId, businessId, body, key?)`: crea intención canónica; **no escribe** en disco ni en red.
-- `journal.reserve(intent)`: transacción IndexedDB; rechaza segunda clave/cuerpo incompatible, lee nuevamente la fila y exige igualdad exacta **antes de permitir que otro incremento utilice un POST**. Sin reserva y relectura exitosas, fallar cerrado.
-- `journal.load(scope)`: luego de F5 y nuevo login, restaura el mismo cuerpo/UUID4 o indica ausencia; si está corrupto/no canónico, **no** lo reemplaza automáticamente.
-- `journal.closeConfirmed(scope, key, receipt)`: exige comprobante REST `SaleView` válido, misma empresa/actor/clave/sede, subtotal/total/descuento/notas, cada línea y cada pago declarado con su orden e importe. Solo entonces puede eliminar la intención original.
-- No existe operación de borrado libre en la API pública del journal. Los intentos de más de 30 días solo reciben advertencia; no se purgan por TTL.
-- Los errores de IndexedDB bloquean la futura escritura de venta en vez de generar un nuevo UUID o degradarse silenciosamente a memoria.
-- `GET /sales/by-request/{request_id}` disponible desde T09 será el primer paso de recuperación en T10-B2/C. **404 no garantiza** que la venta no llegó; no cerrar ni generar solicitud nueva.
-- Aún **no se invoca `POST /sales` desde la UI** ni se registran nuevas ventas/stock. El mecanismo de recuperación/reintento controlado y los botones del POS son trabajo posterior.
+- `newSalePending(actorId, businessId, body, key?)`: creates canonical intent; **doesn't write.** en disco ni en red.
+- `journal.reserve(intent)`: IndexedDB transaction; rejects second key/body incompatible, reads the row again and demands exact equality **before allowing another increase to use a POST**. Without booking and rereading successful, fail closed.
+- `journal.load(scope)`: after F5 and new login, restores the same body/UID4 or indicates absence; if it is corrupt/non-canonical, **no** It automatically replaces it.
+- `journal.closeConfirmed(scope, key, receipt)`: requires REST proof `SaleView` valid, same company/actor/key/headquarters, subtotal/total/discount/notes, each line and every payment declared with your order and amount. Only then can you remove the original intention.
+- There is no free deletion operation in the public API of the journal. Attempts over 30 days are only given warning; they are not purged by TTL.
+- IndexedDB errors block future sales deed rather than generate a new UUID or quietly degrade by memory.
+- `GET /sales/by-request/{request_id}` available from T09 will be the first recovery step in T10-B2/C. **404 not guaranteed** that the sale did not arrive; do not close or generate new request.
+- Aún **not invoked `POST /sales` from IU** no new sales/stock are recorded. The controlled recovery/reintendence mechanism and the POS buttons are later work.
 
-## 2. QA automático
+## 2. Automatic QA
 
-`frontend/tests/sales-real-pending.test.mjs` agrega **12 tests** de: reserva y restauración F5; separación por actor/tenant; bloqueo de claves/cuerpos cambiados; datos corruptos/secretos; IndexedDB inaccesible; rechazo de comprobantes ajenos o incompatibles; cierre solo con comprobante válido; fallo de borrado sin pérdida; antigüedad sin purga; UUID4/NFKC y ausencia de efectos de red.
+`frontend/tests/sales-real-pending.test.mjs` Adds **12 tests** of: F5 reservation and restoration; separation by actor/tenant; key/changed body blocking; corrupt/secret data; IndexedDB inaccessible; rejection of other or incompatible vouchers; closure only with valid proof; lossless erasure failure; unpurified seniority; UUID4/NFKC and absence of network effects.
 
 Comando Windows: `npm.cmd run test:sales-real-pending`.
 
-**Evidencia inicial CI:** el workflow frontend del commit `34f755d0` completó **SUCCESS**, con **12/12** pruebas T10-B, TypeScript/Vite y lint sin errores. En conjunto T10-A tiene **11/11** pruebas. Se registrará el workflow definitivo del último commit T10-B1 una vez concluido; la suite full-stack está corriendo contra PostgreSQL descartable y no involucra datos del usuario.
+**Initial evidence IQ:** the workflow frontend of the commit `34f755d0` Completed **SUCCESS**, con **12/12** T10-B, TypeScript/Vite and lint tests without errors. **11/11** Tests. The final workflow of the last T10-B1 commit will be recorded once completed; the full-stack suite is running against PostgreSQL disposable and does not involve user data.
 
-## 3. Pendientes y puertas
+## 3. Earrings and doors
 
-**T10-B2:** gateway del POST de venta asociado exclusivamente a un intento previamente persistido, recuperación GET, manejo de `201`/`200`/`409`, 401/403 y resultado incierto. Exigir tests que prueben ausencia de POST si falla el journal, no reintentar automáticamente y nunca crear una nueva clave ante 404 o timeout.
+**T10-B2:** POST sales gateway associated exclusively with a previously persistent attempt, GET recovery, management of `201`/`200`/`409`, 401/403 and uncertain result. Require tests to prove a POST absence if the journal fails, do not automatically try again and never create a new key before 404 or timeout.
 
-**P01 sigue pendiente de aprobación humana:** permisos de precio y descuento por rol. Antes de habilitar T10-C/D (confirmación desde React) debe definirse y **aplicarse también en FastAPI**, nunca solo ocultando el formulario.
+**P01 remains pending human approval:** price and role discount permissions. Before enabling T10-C/D (confirmation from React) must be defined and **also in FastAPI**Never just hiding the form.
 
-No habilitar creación de ventas reales hasta completar el journal+gateway, contratos por rol, tests con backend y confirmación humana. Mantener PR #43 en borrador.
+Do not enable creation of real sales until completing the journal+gateway, role contracts, backend tests and human confirmation. Keep PR #43 in draft.

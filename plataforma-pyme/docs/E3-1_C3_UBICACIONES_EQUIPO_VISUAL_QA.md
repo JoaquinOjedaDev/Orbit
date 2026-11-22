@@ -1,75 +1,75 @@
-# E3-1C3 — Ubicaciones y Equipo: rediseño visual REAL y QA
+# E3-1C3 — Locations and Equipment: REAL visual redesign and QA
 
-**Base dependiente:** PR #50 E3-1C2, rama feature/e3-1c2-datos-empresa-visual; main permanece sin modificar.
-**Rama propia:** feature/e3-1c3-ubicaciones-equipo-visual.
-**Ámbito:** plataforma-pyme/frontend/ (pantallas REAL), una hoja CSS exclusiva y pruebas E2E con PostgreSQL efímero.
+**Dependent base:** PR #50 E3-1C2, feature branch/e3-1c2-data-company-visual; main remains unchanged.
+**Own branch:** feature/e3-1c3-locations-equipment-visual.
+**Scope:** platform-pyme/frontend/ (REAL screens), an exclusive CSS sheet and E2E tests with ephemeral PostgreSQL.
 
-## Alcance
+## Scope
 
-### Ubicaciones
-- Encabezado consistente con «Mi perfil», «Mis empresas» y «Datos de la empresa».
-- Resumen obtenido de la lista REAL: total, activas, pausadas y principal (sin KPI inventados).
-- Fichas de sede con nombre, tipo, estado, principal, dirección, SELL/STORE y enlace de Maps solo si existe.
-- Buscar por nombre/tipo/dirección y filtrar por estado **solo en memoria local**, sin nuevos endpoints ni escribir al servidor.
-- Formulario contextual de crear/editar: conserva validaciones, nombres de campos, capacidades y cancelación; controles para activar/pausar, hacer principal y asignar trabajadores mantienen operaciones existentes.
+### Locations
+- Heading consisting of "My Profile", "My Companies" and "Company Data".
+- Abstract obtained from the REAL list: total, active, paused and main (without invented KPI).
+- Headquarters tabs with name, type, status, main, address, SELL/STORE and Map link only if it exists.
+- Search by name/type/address and filter by status **solo en memoria local**, sin nuevos endpoints ni escribir al servidor.
+- Context form to create/edit: retain validations, field names, capabilities and cancellation; controls to activate/pause, make principal and assign workers maintain existing operations.
 
-### Equipo
-- Directorio REAL de integrantes con avatar de iniciales **no persistido**, rol, estado y función cuando está disponible.
-- Resumen de integrantes activos/inactivos, búsqueda y filtro **solo para roles con permiso de lectura**.
-- Tarjeta explicativa para quienes no tienen permiso de lectura, sin enumerar ni contar miembros.
-- Selectores de rol y activación/desactivación solamente para canManageTeam, sin permitir cambiar la propia cuenta ni titular.
-- Invitación con token mostrado una sola vez; no hay envío automático de email. Sin renovación ni reenvío implícito.
+### Equipment
+- REAL Directory of Members with Initials Avatar **not persisted**, role, status and function when available.
+- Summary of active/inactive members, search and filter **only for read-permitted roles**.
+- Explanatory card for those who do not have a reading permit, without listing or counting members.
+- Role and activation/disablement selectors only for canManageTeam, without allowing to change your own account or holder.
+- Invitation with token shown once; no automatic email submission. No renewal or implied forwarding.
 
-## Invitación frente a cambio de rol interno
+## Invitation to change internal roles
 
-Ambos controles tienen propósitos diferentes y sus opciones **no son idénticas por diseño**, aunque sus etiquetas visuales sean consistentes:
+Both controls have different purposes and their options **are not identical by design**even if their visual labels are consistent:
 
-- **Invitar a un nuevo colaborador:** la API acepta solamente `TRABAJADOR` o `ENCARGADO`. Esta operación genera un código de un solo uso; el destinatario debe aceptarlo para incorporar su membresía. El titular o un administrador con permiso de invitación puede iniciarla.
-- **Cambiar el rol de un integrante existente:** la API admite `TRABAJADOR`, `ENCARGADO` o `ADMINISTRADOR`. La operación es exclusivamente del `TITULAR_ADMINISTRATIVO` mediante el cambio de membresía, no un camino de invitación directa como Administrador.
-- **Titular administrativo:** no aparece como destino en ninguno de los controles. Ninguno permite transferir la titularidad.
-- **UX:** el directorio explica que la edición es un cambio interno (ascenso o reasignación), y el formulario de invitación explica por qué Administrador no está disponible. Ambos selectores muestran nombres de rol con la misma capitalización. El cambio de rol solicita confirmación explícita.
+- **Invite a new collaborator:** API accepts only `TRABAJADOR` o `ENCARGADO`. This operation generates a single-use code; the recipient must accept it to incorporate its membership. The owner or an administrator with invitation permission can initiate it.
+- **Changing the role of an existing member:** la API admite `TRABAJADOR`, `ENCARGADO` o `ADMINISTRADOR`. The operation is exclusively from `TITULAR_ADMINISTRATIVO` by changing membership, not a direct invitation path as Administrator.
+- **Administrative holder:** is not listed as a destination in any of the controls. None allows transfer of title.
+- **UX:** the directory explains that editing is an internal change (ascent or reassignment), and the invitation form explains why Administrator is not available. Both selectors show role names with the same capitalization. The role change requests explicit confirmation.
 
-No se modifican los contratos de API, el modelo de roles, la autorización del backend ni los datos históricos.
+API contracts, role model, backend authorization and historical data are not modified.
 
-## Navegación visual de Ubicaciones: vistas independientes (revisión UX 12/11)
+## Visual navigation of Locations: independent views (UX 12/11 revision)
 
-**Observación en QA manual:** los formularios y asignaciones aparecían debajo de las tarjetas, a veces simultáneamente, sin respuesta clara al pulsar un botón.
+**Manual QA observation:** forms and assignments appeared under cards, sometimes simultaneously, without a clear answer when pressing a button.
 
-**Decisión:** dentro de la misma ruta REAL de Ubicaciones, renderizar **una única vista por vez**:
+**Decision:** within the same REAL Locations route, render **one view at a time**:
 
-- **Listado**: resumen, búsqueda, filtros, tarjetas y acciones; sin formularios desplegados al final.
-- **Nueva ubicación / Editar ubicación**: pantalla exclusiva, encabezado con nombre de sede (si existe) y **«Volver a ubicaciones»** en la parte superior; formulario prellenado al editar.
-- **Asignaciones de sede**: pantalla exclusiva con título y personal asignable; regreso mediante el mismo botón superior.
-- Al presionar los botones se aplica feedback visual breve (`:hover`, `:active`, `:focus-visible`) y, al entrar a una vista dedicada, se mueve el foco al botón Volver para mejorar navegación por teclado.
-- **Cancelar / Volver** desecha únicamente el borrador sin escribir; **Guardar** conserva la operación API anterior y vuelve al listado cuando se confirma. Los resultados inciertos siguen exigiendo reconsulta explícita. Las alertas de guardado/error se muestran por encima del contenido, no al final de la lista.
-- El listado conserva las búsquedas/filtros mientras se cambia de vista dentro de la misma empresa; ningún formulario cruza de tenant. No se crean rutas, pestañas nuevas ni popups reales; es una navegación interna con apariencia de pantalla independiente.
-- Se mantienen los botones de pausar/reactivar y hacer principal en las tarjetas, con sus confirmaciones anteriores; estas acciones no abren editores.
+- **Listing**: summary, search, filters, cards and actions; no forms deployed at the end.
+- **New location / Edit location**: exclusive screen, header with headquarters name (if any) and **‘Back to locations’** at the top; prefilled form when editing.
+- **Headquarters allocations**: exclusive screen with title and assignable staff; return using the same top button.
+- Al presionar los botones se aplica feedback visual breve (`:hover`, `:active`, `:focus-visible`) and, when entering a dedicated view, the focus is moved to the Back button to improve keyboard navigation.
+- **Cancelar / Volver** discards only the unwritten draft; **Save** retains the previous API operation and returns to the list when confirmed. Uncertain results continue to require explicit re-check. Save/error alerts are displayed above content, not at the end of the list.
+- The list retains searches/filters while changing views within the same company; no form crosses tenant. No routes, new tabs or actual popups are created; it is an internal navigation with independent screen appearance.
+- The pause/reactivate and main buttons are maintained on the cards, with their previous confirmations; these actions do not open editors.
 
-**Pruebas ampliadas:** acceso a editar/asignaciones, ocultamiento del listado al entrar, foco en Volver, descarte sin PATCH, guardado real y persistencia, volver al listado y responsive a 390 px (exclusivamente en DB descartable).
+**Extended tests:** access to edit/assignments, concealment of the list when entering, focus on Back, discard without PATCH, save real and persistence, return to the list and respond to 390 px (exclusively in disposable DB).
 
-## Invariantes técnicos
+## Technical invariants
 
-1. **Sin cambios a backend, migraciones, API, realOperationsGateway, contratos, roles o reglas de permisos.**
-2. Los estados busy, uncertain, errores y confirmaciones se conservan: las operaciones inciertas no se reenvían automáticamente.
-3. Todo estado de lista se monta en la empresa activa; el cambio de tenant remonta la vista. Sin demoStore ni tokens persistidos.
-4. CSS de e3-ops-* aislado de la DEMO; diseño adaptable a 390 px.
-5. Los datos de equipo se piden al servidor solo si la empresa permite canReadTeam. El backend sigue siendo la autoridad para cada solicitud.
+1. **No changes to backend, migrations, APIs, realOperationsGateway, contracts, roles or permission rules.**
+2. The busy states, uncertainties, errors and confirmations are preserved: uncertain operations are not automatically forwarded.
+3. All list status is mounted in the active company; the change of tenant goes back to sight. No demoStore or tokens persisted.
+4. CSS of e3-ops-* isolated from DEMO; design adaptable to 390 px.
+5. Computer data is requested from the server only if the company allows canReadTeam. Backend remains the authority for each request.
 
-## Pruebas y revisión
+## Testing and review
 
-**Pruebas existentes obligatorias:** npm.cmd run build, npm.cmd run lint, npm.cmd run test:auth, npm.cmd run test:operations-real, suite E2E REAL completa y DEMO, y backend con PostgreSQL descartable en CI.
+**Existing mandatory tests:** npm.cmd run build, npm.cmd run lint, npm.cmd run test:auth, npm.cmd run test:operations-real, suite E2E REAL completa y DEMO, y backend con PostgreSQL descartable en CI.
 
-**E2E C3:** frontend/e2e/real/locations-team-visual.spec.ts: crea dos sedes, pausa una, incorpora un trabajador mediante token y confirma visualización, filtros, cancelación sin escritura, ausencia de desborde móvil 390 px y privacidad del equipo para Trabajador. Exige PYME_DISPOSABLE_QA=1.
+**E2E C3:** frontend/e2e/real/locations-team-visual.spec.ts: creates two locations, pause one, incorporates a worker by token and confirms visualization, filters, cancellation without writing, absence of mobile overflow 390 px and privacy of the team for Worker. Requires SME_DISPOSSABLE_QA=1.
 
-**QA manual de revisión (sin escrituras sobre datos importantes):**
-1. Revisar que el encabezado, cards y estadísticas coinciden con tu empresa REAL; búsqueda/filtro sin peticiones de escritura.
-2. Abrir creación y cancelar; abrir «Editar» y cancelar; verificar ausencia de cambios.
-3. Probar asignaciones en una empresa de prueba con miembros activos, no en empresas productivas.
-4. Revisar Equipo como titular/admin y como trabajador: el trabajador no debe ver el directorio privado ni las acciones de invitación.
-5. Verificar 390 px, 768 px y escritorio, menú lateral y focos por teclado.
+**QA revision manual (without writing on important data):**
+1. Check that the header, cards and statistics match your REAL company; search/filter without writing requests.
+2. Open creation and cancel; open edit and cancel; verify absence of changes.
+3. Test assignments in a test company with active members, not productive companies.
+4. Review Team as a holder/admin and worker: the worker should not see the private directory or invitation actions.
+5. Verify 390 px, 768 px and desktop, side menu and keyboard focus.
 
-**Dependencia pendiente:** el PR #50 no se fusiona automáticamente. Primero revisar/aceptar C2 y C3, resolver checks de CI y recién después solicitar autorización expresa para los merges **en orden**. Un PR apilado contra C2 evita introducir C2 en main sin permiso.
+**Pending unit:** PR #50 does not merge automatically. First check/accept C2 and C3, resolve IC checks and just then request express authorization for the merges **en orden**. A stacked PR against C2 avoids introducing C2 into main without permission.
 
-## Exclusiones
+## Exclusions
 
-No se agregan geolocalización, subida de imágenes, invitaciones por email, búsqueda en servidor, política de permisos, altas ficticias ni funcionalidades de caja/QR.
+No geolocation, image uploading, email invitations, server search, permission policy, high fictions or box/QR features are added.

@@ -1,63 +1,63 @@
-# E3-2A — Imágenes REAL: perfil, empresa, catálogo y proveedores
+# E3-2A — REAL Images: Profile, Company, Catalog and Suppliers
 
-**Estado:** incremento en PR #65 (DRAFT) sobre `main`. No habilitar en el PostgreSQL local sin aprobación y respaldo previo.  
-**Fecha:** 12/11/2026.  
-**Alcance:** fotos propias y privadas para identidad del usuario, tenant y catálogo; sin cambiar inventario, caja, ventas o pagos.
+**Status:** increase in PR #65 (DRAFT) over `main`. Do not enable in the local PostgreSQL without prior approval and backup.  
+**Date:** 12/11/2026.  
+**Scope:** Private and own photos for user identity, tenant and catalog; without changing inventory, box, sales or payments.
 
-## Reglas funcionales
+## Functional rules
 
-| Recurso | Cantidad | Quién puede cargar/quitar | Quién puede ver |
+| Recourse | Quantity | Who can load/take | Who can see |
 | --- | --- | --- | --- |
-| Perfil personal | 1 | El titular de la sesión autenticada | Solo el titular |
-| Empresa | 1 | Titular administrativo o Administrador en empresa ACTIVA | Miembros activos de la empresa |
-| Catálogo de bienes y servicios | Hasta 8 por ficha | Titular administrativo o Administrador en empresa ACTIVA | Miembros activos de la empresa |
-| Proveedor | 1 opcional | Titular administrativo o Administrador en empresa ACTIVA | Miembros activos de la empresa |
+| Personal profile | 1 | The holder of the authenticated session | Only the holder |
+| Company | 1 | Administrative holder or Administrator in an Active Company | Active members of the company |
+| Catalogue of goods and services | Up to 8 per tab | Administrative holder or Administrator in an Active Company | Active members of the company |
+| Supplier | 1 optional | Administrative holder or Administrator in an Active Company | Active members of the company |
 
-Los servicios admiten galería igual que los bienes, pero **nunca** requieren stock por tener fotos. Los proveedores y las otras entidades se deben crear primero y luego fotografiar desde su ficha. La primera foto del catálogo por `position` es la portada que se muestra en las tarjetas y POS. Cualquier usuario con permiso de consulta puede verla. El stock, precios y permisos comerciales no cambian.
+Services admit gallery as well as goods, but **Never** The first photo of the catalogue by the manufacturer is to be created first and then photographed from its file. `position` is the cover that is displayed on cards and POS. Any user with permission to consult can see it. Stock, prices and commercial permits do not change.
 
-## Persistencia y contrato
+## Persistence and contract
 
-Migración nueva: `e32a_photo_assets`, posterior a `e26a_sales_foundation`, aditiva. Tabla `photo_assets`: `id`, `owner_type`, `owner_id`, `business_id` (NULL únicamente para PROFILE), `position`, `width`, `height`, `byte_size`, `mime_type`, `content` (BYTEA), `created_at`.
+New migration: `e32a_photo_assets`, posterior a `e26a_sales_foundation`, aditiva. Tabla `photo_assets`: `id`, `owner_type`, `owner_id`, `business_id` (NULL for PROFILE only), `position`, `width`, `height`, `byte_size`, `mime_type`, `content` (BYTEA), `created_at`.
 
-Se usa PostgreSQL para que las fotos sobrevivan a reinicios de FastAPI, contenedores y máquinas sin un directorio local arbitrario. **Trade-off:** los respaldos de PostgreSQL incluirán las fotos y crecerán según el uso. Para producción con mucho volumen, migrar blobs a un almacén de objetos privado con control de acceso, conservando UUID y metadata. Las fotos no forman parte del bundle de React ni de la carpeta Git.
+PostgreSQL is used to allow photos to survive the restarts of FastAPI, containers and machines without an arbitrary local directory. **Trade-off:** PostgreSQL backups will include photos and grow as per use. For bulk production, migrate blobs to a private object store with access control, preserving UUID and metadata. The photos are not part of the React bundle or Git folder.
 
-API (siempre con Bearer):
+API (always with Bearer):
 - `GET /api/v1/photos/me`, `POST /api/v1/photos/me`.
 - `GET/POST /api/v1/photos/businesses/{business_id}`.
 - `GET/POST /api/v1/photos/businesses/{business_id}/catalog/{item_id}`.
 - `GET/POST /api/v1/photos/businesses/{business_id}/suppliers/{supplier_id}`.
 - `GET /api/v1/photos/{photo_id}/content`, `DELETE /api/v1/photos/{photo_id}`.
 
-POST utiliza `multipart/form-data` con un archivo `file`. Las colecciones GET retornan metadatos **sin bytes**, y los binarios se descargan por un GET autenticado, con `Cache-Control: private, no-store` y `nosniff`. Los bytes no son accesibles por URL pública ni se inyectan en `img src` con token; React hace `fetch` con Bearer solo en memoria, crea una `blob:` URL transitoria y la revoca al desmontar.
+POST uses `multipart/form-data` with a file `file`. Get collections return metadata **no bytes**and the binaries are downloaded by an authenticated GET, with `Cache-Control: private, no-store` y `nosniff`. Bytes are not accessible by public URL and are not injected into `img src` with token; React does `fetch` with Bearer only in memory, creates a `blob:` Transitional URL and revokes it when unmounting.
 
-## Seguridad y validación
+## Safety and validation
 
-- JPEG/PNG/WebP **estáticos** únicamente; no se aceptan SVG (XSS), GIF animado ni carga de enlaces externos.
-- Máximo 5 MiB de archivo recibido, 12 millones de píxeles de entrada, 1280 px de arista después de adaptar y 2 MiB almacenados.
-- El backend verifica que la imagen **realmente se puede decodificar**; ignora extensión, nombre y headers para confiar en el contenido. Normaliza a WebP estático para quitar metadatos EXIF y reducir peso; se reescala sin perder proporciones.
-- UUID de cada recurso se valida y verifica en PostgreSQL. La lectura requiere pertenencia activa a la empresa. Las escrituras exigen empresa ACTIVA + rol Titular/Administrador; no hay confianza en controles de UI.
-- Lecturas GET no escriben. Reemplazar foto única borra la anterior y crea la nueva en la **misma transacción**. El índice único protege los slots de la galería. No hay reintentos automáticos tras una respuesta incierta: la UI actualiza la lista antes de sugerir otro intento.
-- Se permite borrar una foto sin borrar ficha de artículo ni perder movimientos históricos.
+- JPEG/PNG/WebP **static** only; SVG (XSS) is not accepted, animated GIF or external link loading.
+- Maximum 5 MiB file received, 12 million pixels input, 1280 px edge after adapting and 2 MiB stored.
+- The backend verifies that the image **can actually decode**; ignore extension, name and heads to trust content. Normalize static WebP to remove EXIF metadata and reduce weight; re-escalate without losing proportions.
+- UUID of each resource is validated and verified in PostgreSQL. Reading requires active membership of the company. Deeds require an ACTIVA + role Owner/Manager; there is no confidence in UI controls.
+- GET readings do not write. Replace single photo deletes the previous one and creates new one in the **same transaction**. The single index protects gallery slots. There are no automatic retryings after an uncertain response: the IU updates the list before suggesting another attempt.
+- It is allowed to delete a photo without deleting an article sheet or losing historical movements.
 
-## Flujo UX
+## UX flow
 
-1. Iniciar sesión REAL.
-2. **Mi perfil** → Foto de perfil, seleccioná un JPG/PNG/WebP. Se previsualiza en la ficha y en el encabezado de perfil.
-3. **Mi empresa** → Foto o logo; se muestra en el listado de empresas y en Datos de la empresa.
-4. **Catálogo** → Crear artículo o servicio, abrir «Ver ficha» → Fotos, hasta 8. La primera foto aparece en la tarjeta y en el POS. En vista de lista las imágenes se consultan solo cuando sus tarjetas entran al viewport.
-5. **Proveedores** → Crear proveedor, abrir «Ver ficha» → Foto opcional. Aparece también en la tarjeta del listado.
-6. Para quitar, usar «Quitar foto» y confirmar. Los usuarios sin permiso solamente pueden visualizar las imágenes disponibles.
+1. Log in REAL.
+2. **My profile** → Profile photo, select a JPG/PNG/WebP. Previewed on the tab and in the profile header.
+3. **My company** → Photo or logo; shown in the list of companies and in Company Data.
+4. **Catalog** → Create article or service, open "View tab" → Photos, up to 8. The first photo appears on the card and POS. In list view images are consulted only when your cards enter the viewport.
+5. **Suppliers** → Create provider, open "View tab" → Optional photo. It also appears on the list card.
+6. To remove, use "Remove Photo" and confirm. Users without permission can only view the available images.
 
-La cámara del dispositivo puede usarse mediante el selector del navegador cuando devuelve JPG/PNG/WebP; HEIC/HEIF, recorte manual, orden arbitrario de la galería y fotos públicas de escaparate no forman parte de este primer incremento.
+The device camera can be used by browser selector when returning JPG/PNG/WebP; HEIC/HEIF, manual trimming, arbitrary gallery order and public showcase photos are not part of this first increment.
 
-## QA requerida antes de integrar
+## QA required before integration
 
-- `python -m alembic upgrade head` **exclusivamente en PostgreSQL descartable** en CI/QA y `python -m alembic check` sin diferencias.
-- Python 3.12 y 3.14: pytest completo, prueba de foto inválida/extra grande, migración HEAD, catálogo con ocho fotos, reemplazo, acceso entre usuarios/empresas, miembro con solo lectura, descarga binaria autenticada.
-- Frontend: `npm ci`, `npm run build`, `npm run lint`, `npm run test:auth` y regresión de toda la suite.
-- Playwright E2E REAL en `PYME_DISPOSABLE_QA=1`: perfil, foto empresa, múltiples fotos de servicio, proveedor y miniatura POS en base efímera.
-- QA manual: escritorio 1366 px y móvil 390 px; selección y reemplazo de foto, permiso de cuenta trabajador, acceso tras navegar, estado sin foto y visualización de fichas con 8 imágenes. No ejecutar POST en una base personal o productiva.
+- `python -m alembic upgrade head` **only in PostgreSQL disposable** en CI/QA y `python -m alembic check` No difference.
+- Python 3.12 and 3.14: complete pytest, invalid/extra large photo test, HEAD migration, catalog with eight photos, replacement, user/company access, member with read only, authenticated binary download.
+- Frontend: `npm ci`, `npm run build`, `npm run lint`, `npm run test:auth` and regression of the entire suite.
+- Playwright E2E REAL en `PYME_DISPOSABLE_QA=1`: profile, photo company, multiple service photos, supplier and miniature POS on ephemeral basis.
+- Manual QA: 1366 px desktop and 390 px mobile; photo selection and replacement, worker account permission, access after browsing, pictureless status and display of chips with 8 images. Do not run POST on a personal or productive base.
 
-## Dependencias y límites de la etapa
+## Phase-by-step units and boundaries
 
-Se incorporan `Pillow` y `python-multipart` al backend para verificar/normalizar imágenes. Los endpoints no alteran DTO de ventas, stock, pagos, catálogos ni proveedores; el nuevo recurso es aditivo y opcional. No se cambian archivos DEMO. La versión integrable requiere las suites verdes y aprobación visual de usuario. El PR queda DRAFT hasta ese momento.
+They're incorporated. `Pillow` y `python-multipart` The endpoints do not alter DTO sales, stock, payments, catalogs or suppliers; the new resource is additive and optional. DEMO files are not changed. The integrable version requires green suites and visual user approval. The PR remains DRAFT until that time.

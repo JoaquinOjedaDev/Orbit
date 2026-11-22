@@ -19,11 +19,11 @@ Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 
 async def clean_photo(upload: UploadFile) -> tuple[bytes, int, int]:
     if upload.content_type not in {"image/jpeg", "image/png", "image/webp"}:
-        raise HTTPException(415, detail="Formatos admitidos: JPEG, PNG o WebP")
+        raise HTTPException(415, detail="Supported formats: JPEG, PNG or WebP")
     raw = await upload.read(UPLOAD_LIMIT + 1)
     await upload.close()
     if not raw or len(raw) > UPLOAD_LIMIT:
-        raise HTTPException(413, detail="Cada fotografía debe pesar hasta 5 MB")
+        raise HTTPException(413, detail="Each photograph should weigh up to 5 MB")
     return await run_in_threadpool(_normalize_photo, raw)
 
 
@@ -32,9 +32,9 @@ def _normalize_photo(raw: bytes) -> tuple[bytes, int, int]:
     try:
         with Image.open(BytesIO(raw)) as first:
             if first.format not in ALLOWED_FORMATS or getattr(first, "n_frames", 1) != 1:
-                raise HTTPException(415, detail="Se requiere una fotografía estática JPEG, PNG o WebP")
+                raise HTTPException(415, detail="JPEG, PNG or WebP static photography required")
             if first.width * first.height > MAX_PIXELS:
-                raise HTTPException(413, detail="La resolución de la foto supera el máximo admitido")
+                raise HTTPException(413, detail="Photo resolution exceeds maximum allowed")
             first.verify()
         with Image.open(BytesIO(raw)) as original:
             normalized = ImageOps.exif_transpose(original)
@@ -51,9 +51,9 @@ def _normalize_photo(raw: bytes) -> tuple[bytes, int, int]:
                 normalized.save(output, format="WEBP", quality=65, method=4)
                 content = output.getvalue()
             if not content or len(content) > STORE_LIMIT:
-                raise HTTPException(413, detail="La fotografía procesada supera 2 MB")
+                raise HTTPException(413, detail="The processed photograph exceeds 2 MB")
             return content, width, height
     except HTTPException:
         raise
     except (UnidentifiedImageError, OSError, ValueError, SyntaxError, Image.DecompressionBombError) as exc:
-        raise HTTPException(422, detail="Archivo de imagen corrupto o incompatible") from exc
+        raise HTTPException(422, detail="Corrupt or incompatible image file") from exc

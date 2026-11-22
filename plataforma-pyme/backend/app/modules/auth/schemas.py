@@ -35,17 +35,17 @@ class RegisterRequest(BaseModel):
     def normalize_email(cls, value: EmailStr) -> str:
         email = str(value).lower()
         if not email.isascii() or len(email) > 254:
-            raise ValueError("Se requiere una direccion de correo ASCII valida")
+            raise ValueError("Valid ASCII email address required")
         return email
 
     @field_validator("display_name")
     @classmethod
     def strip_name(cls, value: str) -> str:
         if "\x00" in value:
-            raise ValueError("El nombre no puede contener caracteres nulos")
+            raise ValueError("Name cannot contain null characters")
         value = value.strip()
         if len(value) < 2:
-            raise ValueError("El nombre debe tener al menos dos caracteres")
+            raise ValueError("The name must have at least two characters")
         return value
 
     @field_validator("contact_phone")
@@ -57,7 +57,7 @@ class RegisterRequest(BaseModel):
         if not value:
             return None
         if not _PHONE.fullmatch(value):
-            raise ValueError("Formato de telefono invalido")
+            raise ValueError("Invalid Phone Format")
         return value
 
 
@@ -97,7 +97,7 @@ class LoginRequest(BaseModel):
     def normalize_email(cls, value: EmailStr) -> str:
         result = str(value).lower()
         if not result.isascii() or len(result) > 254:
-            raise ValueError("Se requiere un email ASCII valido")
+            raise ValueError("Valid ASCII email required")
         return result
 
 

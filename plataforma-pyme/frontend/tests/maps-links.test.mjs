@@ -47,6 +47,6 @@ test('prioriza link compartido; si falta usa búsqueda no verificada', () => {
 test('el texto de compartir indica si se trata de una búsqueda', () => {
   const message = locationShareText('Empresa DEMO', { name: 'Sucursal', address: 'Dirección simulada', mapUrl: '' })
   assert.match(message ?? '', /Empresa DEMO · Sucursal/)
-  assert.match(message ?? '', /sin verificar/)
+  assert.match(message ?? '', /unverified/i)
   assert.equal(locationShareText('Empresa DEMO', { name: 'Sin mapa', address: '', mapUrl: '' }), null)
 })

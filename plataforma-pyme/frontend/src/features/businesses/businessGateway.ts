@@ -70,7 +70,7 @@ export function parseRealBusinessList(value: unknown, userId: string): RealBusin
 
 /** One authenticated gateway per in-memory session. Never touches demoStore. */
 export function createBusinessGateway(token: string, userId: string, fetchImpl?: typeof fetch) {
-  if (!token || !userId) throw new TypeError('Se requiere sesión autenticada')
+  if (!token || !userId) throw new TypeError('Authenticated session required')
   const client = createApiClient({ getAccessToken: () => token, fetchImpl })
   return {
     async list(signal?: AbortSignal): Promise<RealBusiness[]> {
@@ -78,7 +78,7 @@ export function createBusinessGateway(token: string, userId: string, fetchImpl?:
         await client.request<unknown>('/businesses', { signal }), userId)
     },
     async get(businessId: string, signal?: AbortSignal): Promise<RealBusiness> {
-      if (!UUID_PATTERN.test(businessId)) throw new TypeError('ID de empresa inválido')
+      if (!UUID_PATTERN.test(businessId)) throw new TypeError('Invalid company ID')
       return parseRealBusiness(
         await client.request<unknown>('/businesses/' + businessId, { signal }), userId)
     },
@@ -89,7 +89,7 @@ export function createBusinessGateway(token: string, userId: string, fetchImpl?:
       }), userId)
     },
     async update(businessId: string, changes: BusinessChanges): Promise<RealBusiness> {
-      if (!UUID_PATTERN.test(businessId)) throw new TypeError('ID de empresa inválido')
+      if (!UUID_PATTERN.test(businessId)) throw new TypeError('Invalid company ID')
       return parseRealBusiness(await client.request<unknown>('/businesses/' + businessId, {
         method: 'PATCH', body: changes,
       }), userId)
@@ -99,20 +99,20 @@ export function createBusinessGateway(token: string, userId: string, fetchImpl?:
 
 export function businessErrorMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'La sesión ya no es válida. Volvé a iniciar sesión.'
-    if (error.status === 403) return 'No tenés permiso para realizar esta operación.'
-    if (error.status === 404) return 'La empresa no está disponible para tu cuenta.'
-    if (error.status === 409) return 'La operación entra en conflicto con el estado actual o con su clave de solicitud.'
-    if (error.status === 422) return 'Revisá los datos obligatorios y su formato.'
-    return 'FastAPI no pudo completar la solicitud.'
+    if (error.status === 401) return 'The session is no longer valid. I re-entered.'
+    if (error.status === 403) return 'You don\'t have permission to perform this operation.'
+    if (error.status === 404) return 'The company is not available for your account.'
+    if (error.status === 409) return 'The operation conflicts with the current state or your application key.'
+    if (error.status === 422) return 'Check the mandatory data and its format.'
+    return 'FastAPI could not complete the application.'
   }
   if (error instanceof ApiTransportError) {
     if (error.reason === 'aborted') return 'Solicitud cancelada.'
-    if (error.reason === 'timeout') return 'La API tardó demasiado en responder. El resultado del cambio podría ser incierto.'
-    if (error.reason === 'invalid-response') return 'La API devolvió datos incompatibles con el contrato.'
-    return 'No se pudo contactar a FastAPI. Comprobá la conexión.'
+    if (error.reason === 'timeout') return 'The API took too long to respond. The result of the change could be uncertain.'
+    if (error.reason === 'invalid-response') return 'The API returned data that was incompatible with the contract.'
+    return 'Could not contact FastAPI. Check the connection.'
   }
-  return 'No se pudo completar la operación.'
+  return 'Could not complete the operation.'
 }
 
 export function canEditBusiness(business: RealBusiness): boolean {

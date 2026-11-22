@@ -21,15 +21,15 @@ router = APIRouter(prefix="/businesses/{business_id}/purchases", tags=["compras"
 
 def _http(error: Exception) -> HTTPException:
     if isinstance(error, (PurchaseBusinessUnavailable, PurchaseNotFound)):
-        return HTTPException(404, detail="Recurso no disponible")
+        return HTTPException(404, detail="Not available")
     if isinstance(error, PurchasePermissionDenied):
-        return HTTPException(403, detail="Operacion no permitida")
+        return HTTPException(403, detail="Operation not permitted")
     if isinstance(error, PurchaseBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, PurchaseIdempotencyConflict):
-        return HTTPException(409, detail="Clave de compra reutilizada con contenido diferente")
+        return HTTPException(409, detail="Re-used purchase key with different content")
     if isinstance(error, PurchaseInvalidReference):
-        return HTTPException(422, detail="Proveedor, articulo o unidad no habilitados en esta empresa")
+        return HTTPException(422, detail="Supplier, article or unit not enabled in this company")
     raise TypeError("Excepcion sin mapeo HTTP")
 
 
@@ -43,7 +43,7 @@ def _http(error: Exception) -> HTTPException:
         409: {"description": "Empresa suspendida o clave idempotente reutilizada"},
         422: {"description": "Campos, proveedor o articulo invalidos"},
     },
-    summary="Registrar compra y renglones sin ubicacion, recepcion ni stock",
+    summary="Register purchase and lines without location, reception or stock",
 )
 def register_purchase(
     business_id: UUID, command: CreatePurchaseRequest, response: Response,
@@ -73,7 +73,7 @@ def register_purchase(
         404: {"description": "Empresa no disponible"},
         422: {"description": "Paginacion fuera de rango"},
     },
-    summary="Listar historial de compras de esta empresa, sin filtrar las pendientes",
+    summary="List purchase history of this company, without filtering earrings",
 )
 def list_purchases(
     business_id: UUID,
@@ -100,7 +100,7 @@ def list_purchases(
         403: {"description": "Sin acceso de lectura"},
         404: {"description": "Compra inexistente o de otra empresa"},
     },
-    summary="Consultar compra con snapshots inmutables de renglones",
+    summary="Check purchase with immutable line snapshots",
 )
 def get_purchase(
     business_id: UUID, purchase_id: UUID,

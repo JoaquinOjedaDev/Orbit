@@ -26,7 +26,7 @@ class ReadinessResponse(BaseModel):
     "/ready",
     response_model=ReadinessResponse,
     responses={503: {"description": "PostgreSQL no disponible"}},
-    summary="Disponibilidad de PostgreSQL",
+    summary="Availability of PostgreSQL",
 )
 def ready() -> ReadinessResponse:
     try:

@@ -46,13 +46,13 @@ def _authorize(db: Session, context: AuthContext, business_id: UUID, *, write: b
     else:
         pair = BusinessRepository(db).own_business(context.user.id, business_id)
     if pair is None:
-        raise HTTPException(404, detail="Empresa no disponible")
+        raise HTTPException(404, detail="Company not available")
     company, membership = pair
     if write:
         if company.status != "ACTIVA":
-            raise HTTPException(409, detail="Empresa suspendida")
+            raise HTTPException(409, detail="Company suspended")
         if membership.role not in ("TITULAR_ADMINISTRATIVO", "ADMINISTRADOR"):
-            raise HTTPException(403, detail="No tenés permiso para gestionar medios de cobro")
+            raise HTTPException(403, detail="You don't have permission to manage means of collection")
     return company
 
 
@@ -64,7 +64,7 @@ def _lookup(db: Session, business_id: UUID) -> MerchantPaymentConnection | None:
     ))
 
 
-@router.get("", response_model=PaymentConnectionView, summary="Estado de cuenta Mercado Pago ficticia del negocio")
+@router.get("", response_model=PaymentConnectionView, summary="Statement of account Market Fictificial payment of the business")
 def get_connection(
     business_id: UUID, context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
 ) -> PaymentConnectionView:
@@ -76,14 +76,14 @@ def get_connection(
     return _view(business_id, _lookup(db, business_id))
 
 
-@router.post("/demo", response_model=PaymentConnectionView, summary="Vincular o reactivar cuenta ficticia del negocio")
+@router.post("/demo", response_model=PaymentConnectionView, summary="Link or reactivate a fictitious business account")
 def connect_demo(
     business_id: UUID, context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
 ) -> PaymentConnectionView:
     try:
         company = _authorize(db, context, business_id, write=True)
         if shared_qa_enabled():
-            raise HTTPException(409, detail="La caja QA compartida se vincula automáticamente")
+            raise HTTPException(409, detail="The shared QA box is automatically linked")
         connection = _lookup(db, business_id)
         if connection is None:
             connection = MerchantPaymentConnection(
@@ -105,14 +105,14 @@ def connect_demo(
         raise
 
 
-@router.delete("/demo", response_model=PaymentConnectionView, summary="Desvincular cuenta ficticia sin borrar historial")
+@router.delete("/demo", response_model=PaymentConnectionView, summary="Unlink Fictiti account without deleting history")
 def disconnect_demo(
     business_id: UUID, context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
 ) -> PaymentConnectionView:
     try:
         _authorize(db, context, business_id, write=True)
         if shared_qa_enabled():
-            raise HTTPException(409, detail="No se desvincula la caja QA compartida")
+            raise HTTPException(409, detail="The shared QA box is not untied")
         connection = _lookup(db, business_id)
         if connection is not None and connection.status != "INACTIVA":
             pending = db.scalar(select(QrPaymentIntent.id).where(
@@ -122,7 +122,7 @@ def disconnect_demo(
                 QrPaymentIntent.expires_at > now_utc(),
             ).limit(1))
             if pending is not None:
-                raise HTTPException(409, detail="Cancelá el QR DEMO pendiente antes de desvincular la cuenta")
+                raise HTTPException(409, detail="Cancel the pending DEMO QR before unlinking the account")
             connection.status = "INACTIVA"
             connection.updated_by_user_id = context.user.id
         db.commit()

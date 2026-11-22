@@ -75,10 +75,10 @@ export function PurchaseForm({
   function makeInput(): PurchaseInput {
     const lines: PurchaseLineInput[] = draft.lines.map((line, i) => {
       const article = line.catalogId ? catalog.find((item) => item.id === line.catalogId) : undefined
-      if (line.catalogId && !article) throw new Error('Artículo no disponible en renglón ' + (i + 1) + '.')
+      if (line.catalogId && !article) throw new Error('Item not available in line ' + (i + 1) + '.')
       const unit: PurchaseUnit = article?.unit ?? 'CONCEPTO'
       const cents = parseMoneyCents(line.costText)
-      if (cents === null) throw new Error('Completá el costo unitario del renglón ' + (i + 1) + ' (cero si no tuvo costo).')
+      if (cents === null) throw new Error('Completing the unit cost of line ' + (i + 1) + ' (zero if cost-free).')
       return {
         catalogItemId: article?.id ?? null,
         description: article?.name ?? line.description,
@@ -104,7 +104,7 @@ export function PurchaseForm({
       const purchase = await demoGateway.registerPurchase(business.id, makeInput(), requestId)
       onSaved(purchase.id, containsPhysicalGoods)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo registrar la compra.')
+      setError(err instanceof Error ? err.message : 'The purchase could not be registered.')
     } finally {
       setSaving(false)
     }
@@ -115,7 +115,7 @@ export function PurchaseForm({
     const values = draft.lines.map((line) => {
       const item = line.catalogId ? catalog.find((entry) => entry.id === line.catalogId) : undefined
       const cents = parseMoneyCents(line.costText)
-      if (cents === null) throw new Error('Costo no informado.')
+      if (cents === null) throw new Error('Uninformed cost.')
       return { totalCents: lineTotalCents(parseQuantityMilli(line.quantityText, item?.unit ?? 'CONCEPTO'), cents) }
     })
     previewTotal = sumLineTotals(values)
@@ -126,31 +126,31 @@ export function PurchaseForm({
   return <section className="form-panel purchase-editor">
     <div className="form-panel-header">
       <span className="feature-icon blue"><Icon name="shopping" size={24}/></span>
-      <div><h2>Registrar compra</h2><p>Comprobante y conceptos de «{business.name}». No equivale a pagar ni a recibir mercadería.</p></div>
+      <div><h2>Register purchase</h2><p>Checker and concepts of "{business.name}". It does not amount to payment or receipt of goods.</p></div>
     </div>
-    <div className="purchase-flow-steps" aria-label="Etapas de registro y recepción">
+    <div className="purchase-flow-steps" aria-label="Registration and reception stages">
       <div className="purchase-flow-step current"><span className="purchase-flow-number">1</span>
-        <div><strong>Registrar la compra</strong><small>Elegí los artículos, cantidades y costos.</small></div>
+        <div><strong>Register purchase</strong><small>I chose items, quantities and costs.</small></div>
       </div>
       <div className="purchase-flow-step"><span className="purchase-flow-number">2</span>
-        <div><strong>Confirmar ubicación y recepción</strong><small>Después de guardar, sólo para mercadería física.</small></div>
+        <div><strong>Confirm location and reception</strong><small>After saving, only for physical goods.</small></div>
       </div>
     </div>
     <form className="demo-form" onSubmit={submit}>
       <section className="purchase-form-section">
-        <h3>1. Datos de la compra</h3>
+        <h3>1. Purchase data</h3>
         <div className="purchase-form-grid">
-          <label className="form-field"><span>Fecha de compra *</span>
+          <label className="form-field"><span>Date of purchase *</span>
             <input required type="date" min="2000-01-01" max="2100-12-31"
               value={draft.purchasedOn} onChange={(e) => setDraft((d) => ({ ...d, purchasedOn: e.target.value }))}/>
           </label>
-          <label className="form-field"><span>Proveedor (opcional)</span>
+          <label className="form-field"><span>Provider (optional)</span>
             <select value={draft.supplierId} onChange={(e) => setDraft((d) => ({ ...d, supplierId: e.target.value }))}>
-              <option value="">Sin proveedor asignado</option>
+              <option value="">No assigned provider</option>
               {activeSuppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
             </select>
           </label>
-          <label className="form-field"><span>Número de comprobante o referencia (opcional)</span>
+          <label className="form-field"><span>Number of vouchers or reference (optional)</span>
             <input maxLength={70} value={draft.reference} onChange={(e) => setDraft((d) => ({ ...d, reference: e.target.value }))} placeholder="Ej.: FACT-A-001 / ticket"/>
           </label>
           <label className="form-field"><span>Moneda</span><input readOnly value="ARS · Pesos argentinos (DEMO)"/></label>
@@ -159,10 +159,10 @@ export function PurchaseForm({
 
       <section className="purchase-form-section">
         <div className="purchase-section-title">
-          <div><h3>2. Productos, servicios y conceptos</h3><small>Hasta 30 renglones. Cada concepto libre es informativo y no generará existencias.</small></div>
+          <div><h3>2. Products, services and concepts</h3><small>Up to 30 lines. Each free concept is informative and will not generate stocks.</small></div>
           <button type="button" className="button button-secondary" disabled={draft.lines.length >= 30 || saving}
             onClick={() => setDraft((d) => ({ ...d, lines: [...d.lines, newLine()] }))}>
-            <Icon name="plus" size={16}/> Agregar renglón
+            <Icon name="plus" size={16}/> Add Line
           </button>
         </div>
         {draft.lines.map((line, index) => {
@@ -175,40 +175,40 @@ export function PurchaseForm({
           } catch { /* No mostrar un subtotal erróneo. */ }
           return <div key={line.id} className="purchase-line">
             <div className="purchase-line-heading">
-              <strong>Renglón {index + 1}</strong>
+              <strong>Line {index + 1}</strong>
               <button type="button" className="button button-secondary" disabled={saving || draft.lines.length === 1}
-                onClick={() => setDraft((d) => ({ ...d, lines: d.lines.filter((entry) => entry.id !== line.id) }))}>Quitar</button>
+                onClick={() => setDraft((d) => ({ ...d, lines: d.lines.filter((entry) => entry.id !== line.id) }))}>Remove</button>
             </div>
             <div className="purchase-line-grid">
-              <label className="form-field purchase-line-selector"><span>Origen del concepto *</span>
+              <label className="form-field purchase-line-selector"><span>Origin of the concept *</span>
                 <select value={line.catalogId} onChange={(e) => selectCatalog(line.id, e.target.value)}>
-                  <option value="">Concepto libre (sin stock)</option>
-                  {activeCatalog.map((entry) => <option key={entry.id} value={entry.id}>{entry.name} · {entry.kind === 'SERVICIO' ? 'Servicio' : 'Artículo físico'}</option>)}
+                  <option value="">Free concept (out of stock)</option>
+                  {activeCatalog.map((entry) => <option key={entry.id} value={entry.id}>{entry.name} · {entry.kind === 'SERVICIO' ? 'Service' : 'Physical article'}</option>)}
                 </select>
               </label>
-              <label className="form-field purchase-line-description"><span>Descripción *</span>
+              <label className="form-field purchase-line-description"><span>Description *</span>
                 <input value={item?.name ?? line.description} readOnly={!!item} required minLength={2} maxLength={140}
                   onChange={(e) => updateLine(line.id, { description: e.target.value })}
-                  placeholder="Ej.: Material de embalaje, reparación de equipo…"/>
+                  placeholder="E.g.: Packaging material, repair of equipment..."/>
               </label>
               <label className="form-field"><span>Cantidad *</span>
                 <input required inputMode="decimal" maxLength={13} value={line.quantityText}
                   onChange={(e) => updateLine(line.id, { quantityText: e.target.value })} placeholder="1 o 0,500"/>
               </label>
-              <label className="form-field"><span>Unidad</span>
+              <label className="form-field"><span>Unit</span>
                 <input readOnly value={unit === 'CONCEPTO' ? 'Concepto' : unit}/>
               </label>
-              <label className="form-field"><span>Costo unitario (ARS) *</span>
+              <label className="form-field"><span>Unit cost (ARS) *</span>
                 <input required inputMode="decimal" value={line.costText} maxLength={14}
                   onChange={(e) => updateLine(line.id, { costText: e.target.value })} placeholder="Ej.: 1250,50"/>
               </label>
-              <div className="purchase-line-subtotal"><span>Subtotal</span><strong>{lineValue === null ? 'Pendiente' : moneyDisplay(lineValue)}</strong></div>
+              <div className="purchase-line-subtotal"><span>Subtotal</span><strong>{lineValue === null ? 'Pending' : moneyDisplay(lineValue)}</strong></div>
             </div>
             <p className="purchase-line-footnote">
-              {item?.kind === 'SERVICIO' ? 'Servicio: no genera stock físico.' :
-                item ? 'Bien del Catálogo: podrá recibirse en una ubicación con almacenamiento. Se mantiene su unidad original, sin convertir paquetes ni cajas.' :
-                'Concepto libre: sirve para documentar un gasto o compra sin ingresar existencias.'}
-              {item && <> · {quantityText(1000, unit)} = 1 unidad de control.</>}
+              {item?.kind === 'SERVICIO' ? 'Service: does not generate physical stock.' :
+                item ? 'Catalogue Good: can be received in a storage location. Your original drive is maintained, without converting packages or boxes.' :
+                'Free concept: it serves to document an expense or purchase without entering stock.'}
+              {item && <> · {quantityText(1000, unit)} = 1 control unit.</>}
             </p>
           </div>
         })}
@@ -216,28 +216,28 @@ export function PurchaseForm({
 
       <section className="purchase-form-section">
         <h3>3. Observaciones</h3>
-        <label className="form-field"><span>Notas internas (opcional)</span>
+        <label className="form-field"><span>Internal notes (optional)</span>
           <textarea maxLength={500} rows={3} value={draft.notes}
             onChange={(e) => setDraft((d) => ({ ...d, notes: e.target.value }))}
-            placeholder="Ej.: Entrega acordada para la próxima semana…"/>
+            placeholder="E.g.: Delivery agreed for next week..."/>
         </label>
       </section>
 
       <div className="purchase-total-box">
-        <div><small>Total de la compra (ARS)</small><strong>{previewTotal === null ? 'Completar costos y cantidades' : moneyDisplay(previewTotal)}</strong></div>
+        <div><small>Total purchase (ARS)</small><strong>{previewTotal === null ? 'Complete costs and amounts' : moneyDisplay(previewTotal)}</strong></div>
         <p>{containsPhysicalGoods
-          ? 'Paso 1: guardás la compra. A continuación se abrirá el detalle, donde elegirás la ubicación y confirmarás la recepción. El stock no cambia hasta entonces.'
-          : 'Al guardar sólo se registra la compra. Si elegís bienes físicos, la recepción y su ubicación se confirman después. Este registro no representa un pago.'}</p>
+          ? 'Step 1: Save the purchase. Then the detail will open, where you will choose the location and confirm the receipt. The stock does not change until then.'
+          : 'When saving only the purchase is recorded. If you choose physical goods, the receipt and its location are confirmed later. This record does not represent a payment.'}</p>
       </div>
       {containsPhysicalGoods && <p className="purchase-location-pending" role="status">
         <Icon name="clock" size={17}/>
-        <span><strong>Falta confirmar la ubicación de recepción.</strong> Primero guardá estos artículos; luego elegí el destino en el detalle y confirmá el ingreso a Inventario.</span>
+        <span><strong>The reception location is still to be confirmed.</strong> First keep these items; then I chose the destination in detail and confirm entry to Inventory.</span>
       </p>}
       {error && <p className="form-message error" role="alert">{error}</p>}
       <div className="form-actions">
-        <button type="button" className="button button-secondary" disabled={saving} onClick={onCancel}>Cancelar</button>
+        <button type="button" className="button button-secondary" disabled={saving} onClick={onCancel}>Cancel</button>
         <button type="submit" className="button button-primary" disabled={saving}>
-          <Icon name="receipt" size={17}/> {saving ? 'Guardando…' : containsPhysicalGoods ? 'Guardar compra y elegir ubicación' : 'Registrar compra DEMO'}
+          <Icon name="receipt" size={17}/> {saving ? 'Guardando…' : containsPhysicalGoods ? 'Save purchase and choose location' : 'Register purchase DEMO'}
         </button>
       </div>
     </form>

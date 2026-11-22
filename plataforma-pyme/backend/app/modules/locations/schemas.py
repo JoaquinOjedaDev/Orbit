@@ -16,14 +16,14 @@ def validate_maps_link(value: str) -> str:
     if not normalized:
         return ""
     if len(normalized) > 2048 or any(c in normalized for c in "\r\n\t"):
-        raise ValueError("Enlace de Maps inválido o demasiado largo")
+        raise ValueError("Invalid or too long Maps link")
     try:
         parsed = urlsplit(normalized)
         host = (parsed.hostname or "").lower()
         if parsed.scheme.lower() != "https" or not parsed.netloc:
-            raise ValueError("Debe ser un enlace HTTPS")
+            raise ValueError("Must be an HTTPS link")
         if parsed.username is not None or parsed.password is not None or parsed.port is not None:
-            raise ValueError("No se admiten credenciales ni puertos")
+            raise ValueError("No credentials or ports allowed")
         permitted = (
             (host in ("google.com", "www.google.com")
              and (parsed.path == "/maps" or parsed.path.startswith("/maps/")))
@@ -33,9 +33,9 @@ def validate_maps_link(value: str) -> str:
             or (host == "goo.gl" and parsed.path.startswith("/maps/"))
         )
     except ValueError as error:
-        raise ValueError("Solo se admiten enlaces HTTPS propios de Google Maps") from error
+        raise ValueError("Only Google Maps own HTTPS links are supported") from error
     if not permitted:
-        raise ValueError("Solo se admiten enlaces HTTPS propios de Google Maps")
+        raise ValueError("Only Google Maps own HTTPS links are supported")
     return normalized
 
 
@@ -54,7 +54,7 @@ class CreateLocationRequest(BaseModel):
     def trim_name_and_address(cls, value: str, info) -> str:
         cleaned = value.strip()
         if info.field_name == "name" and len(cleaned) < 2:
-            raise ValueError("Nombre de ubicación demasiado corto")
+            raise ValueError("Location name too short")
         return cleaned
 
     @field_validator("map_url")
@@ -107,7 +107,7 @@ class UpdateLocationRequest(BaseModel):
             return value
         cleaned = value.strip()
         if info.field_name == "name" and len(cleaned) < 2:
-            raise ValueError("Nombre de ubicación demasiado corto")
+            raise ValueError("Location name too short")
         return cleaned
 
     @field_validator("map_url")
@@ -118,10 +118,10 @@ class UpdateLocationRequest(BaseModel):
     @model_validator(mode="after")
     def validate_nonempty_update(self):
         if not self.model_fields_set:
-            raise ValueError("Debe enviar al menos un campo editable")
+            raise ValueError("You must send at least one editable field")
         for name in self.model_fields_set:
             if getattr(self, name) is None:
-                raise ValueError("La edición no admite null")
+                raise ValueError("Edit does not support null")
         return self
 
 

@@ -1,10 +1,10 @@
-# E1-D2 — E2E de navegador
+# E1-D2 — Browser E2E
 
-Pruebas aisladas en Chromium de escritorio y móvil. Utilizan un contexto de navegador limpio por test; no leen ni sobrescriben los datos de `localStorage` / IndexedDB de tu equipo.
+Insulated tests in desktop and mobile Chromium. Use a clean browser context by test; do not read or overwrite data from `localStorage` / IndexedDB de tu equipo.
 
-Requisitos: Node.js 22 o superior, npm, conexión a Internet para instalar Playwright/Chromium la primera vez.
+Requirements: Node.js 22 or higher, npm, Internet connection to install Playwright/Chromium the first time.
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ```powershell
 npm.cmd ci
@@ -14,8 +14,8 @@ npx.cmd playwright install chromium
 npm.cmd test
 ```
 
-La configuración arranca Vite automáticamente si aún no está levantado. Para ejecutar solo escritorio: `npm.cmd test -- --project=desktop-chromium`. Para móvil: `npm.cmd test -- --project=mobile-chromium`.
+The Vite configuration automatically starts if it is not yet up. To run desktop only: `npm.cmd test -- --project=desktop-chromium`. For mobile: `npm.cmd test -- --project=mobile-chromium`.
 
-Los tests prueban navegación, URLs ajenas, placeholders, drawer/foco/ESC, ausencia de desborde horizontal, aislamiento del catálogo, creación de QR, persistencia, cancelación y aprobación simulada sin ventas duplicadas. **No reemplazan** la QA de caja/stock con productos físicos ni simulan seguridad backend.
+Tests test navigation, external URLs, placeholders, drawer/focus/ESC, no horizontal overflow, catalog isolation, QR creation, persistence, cancellation and simulated approval without duplicate sales. **They don't replace** QA box/stock with physical products and simulate backend security.
 
-La carpeta `e2e/` tiene sus dependencias separadas para no alterar el paquete principal del frontend ni su lockfile.
+The Folder `e2e/` has its separate dependencies to avoid altering the frontend main package or its lockfile.

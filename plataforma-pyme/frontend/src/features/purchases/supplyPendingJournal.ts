@@ -27,15 +27,15 @@ export type PendingPort = {
   remove(scope:string,key:string):Promise<void>
 }
 export class PendingStorageError extends Error {
-  constructor(){super('IndexedDB no disponible: no se envió ninguna escritura')}
+  constructor(){super('IndexedDB not available: no write was sent')}
 }
 export class PendingConflictError extends Error {
-  constructor(){super('Ya existe un intento pendiente incompatible; no se envió ningún POST')}
+  constructor(){super('There is already an incompatible pending attempt; no POST was sent')}
 }
 const uuid=(x:string)=>UUID_PATTERN.test(x)
 export function pendingScope(actorId:string,businessId:string,kind:'purchase.create'|'purchase.receive',purchaseId?:string):string {
   if(!uuid(actorId)||!uuid(businessId)||(kind==='purchase.receive'&&!purchaseId)
-     ||(purchaseId!==undefined&&!uuid(purchaseId)))throw new TypeError('Identificadores inválidos')
+     ||(purchaseId!==undefined&&!uuid(purchaseId)))throw new TypeError('Invalid identifiers')
   return [actorId,businessId,kind,purchaseId??'new'].join(':')
 }
 export function parsePending(row:unknown,scope:string):SupplyPending{
@@ -65,19 +65,19 @@ export function createPendingJournal(port:PendingPort){
       return found==null?null:parsePending(found,scope)
     },
     async reserve(row:SupplyPending):Promise<void>{
-      if(!UUID_V4_PATTERN.test(row.key))throw new TypeError('Clave UUID4 requerida')
+      if(!UUID_V4_PATTERN.test(row.key))throw new TypeError('UUID4 key required')
       parsePending(row,row.scope)
       await port.reserve(row)
       const read=await port.read(row.scope)
       if(JSON.stringify(parsePending(read,row.scope))!==JSON.stringify(row))throw new PendingConflictError()
     },
     async discard(scope:string,key:string):Promise<void>{
-      if(!UUID_V4_PATTERN.test(key))throw new TypeError('Clave inválida')
+      if(!UUID_V4_PATTERN.test(key))throw new TypeError('Invalid key')
       await port.remove(scope,key)
     },
   }
 }
-const DATABASE='asistente-pyme-real-purchases-v1', STORE='pending',MAX_ROWS=60
+const DATABASE='assistant-pyme-real-purchases-v1', STORE='pending',MAX_ROWS=60
 function open():Promise<IDBDatabase>{
   if(typeof indexedDB==='undefined')return Promise.reject(new PendingStorageError())
   return new Promise((resolve,reject)=>{

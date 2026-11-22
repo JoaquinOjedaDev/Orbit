@@ -1,30 +1,30 @@
-# E1-A1 — Primer shell React y navegación DEMO
+# E1-A1 — First shell React and DEMO navigation
 
-**Fecha:** 2026-11-06  
-**Estado:** Código **publicado en GitHub**; compilación y navegación en la computadora del equipo **PENDIENTES DE VERIFICACIÓN**.  
-**Repositorio/branch:** JoaquinOjedaDev/Orbit, main.  
-**Alcance:** primer incremento visual siguiendo E0-A/E0-B/E0-C; **no** se declara E1-A1 entero aprobado ni el prototipo integrado completo.
+**Date:** 2026-11-06  
+**Status:** Code **published in GitHub**; compilation and navigation on computer equipment **VERIFICATION PENDINGS**.  
+**Repository/branch:** JoaquinOjedaDev/Orbit, main.  
+**Scope:** first visual increase following E0-A/E0-B/E0-C; **no** the approved whole E1-A1 and the complete integrated prototype are declared.
 
-## 1. Implementado en código (sin asegurar ejecución)
+## 1. Code implemented (without ensuring execution)
 
-| Pieza | Ruta | Referencia y límite |
+| Piece | Path | Reference and limit |
 |---|---|---|
-| Shell / layout | frontend/src/App.tsx, frontend/src/App.css | E0-A Z003/Z014; marco de aplicación |
-| Registro de menú y fixtures | frontend/src/app/navigation.ts | Mapa común para sidebar y tarjetas; negocios de prueba |
-| Iconografía tipada | frontend/src/app/Icon.tsx | SVG propio, sin dependencias de iconos |
-| Enlaces con History API | frontend/src/app/AppLink.tsx | Provisorio; **React Router pendiente según ADR-007** |
-| Barra superior y selector | frontend/src/app/shell/TopBar.tsx | Selector de fixtures; no autenticación ni autorización |
-| Sidebar responsive | frontend/src/app/shell/SideMenu.tsx | Menú lateral, navegación móvil, badge DEMO |
-| Inicio personal/empresarial | frontend/src/features/dashboard/Dashboards.tsx | Panel, tarjetas de herramientas, valores vacíos intencionales |
-| Vistas sin implementación | frontend/src/features/common/Feedback.tsx | «Próximamente», 404, empresa ficticia no encontrada |
-| Reset y meta | frontend/src/index.css, frontend/index.html | Identidad visual basada en Z003/Z014 |
-| Instrucciones | frontend/README.md | Arranque local y límites |
+| Shell / layout | frontend/src/App.tsx, frontend/src/App.css | E0-A Z003/Z014; implementation framework |
+| Menu and Fixtures Record | frontend/src/app/navigation.ts | Common map for sidebar and cards; test business |
+| Typized iconography | frontend/src/app/Icon.tsx | Own SVG, no icon dependencies |
+| Enlaces con History API | frontend/src/app/AppLink.tsx | Temporary; **React Router pending according to ADR-007** |
+| Top bar and selector | frontend/src/app/shell/TopBar.tsx | Fixtures selector; no authentication or authorization |
+| Sidebar responsive | frontend/src/app/shell/SideMenu.tsx | Side menu, mobile navigation, DEMO badge |
+| Home personal/business | frontend/src/features/dashboard/Dashboards.tsx | Panel, tool cards, intentional empty values |
+| Views without implementation | frontend/src/features/common/Feedback.tsx | ‘Next’, 404, not found |
+| Reset and finish | frontend/src/index.css, frontend/index.html | Visual identity based on Z003/Z014 |
+| Instructions | frontend/README.md | Local start and boundaries |
 
-**No se modificaron** Proyecto-3-AppAdmin-Mascotas/ ni Proyecto-3-Extendido-Generico/. No se importaron ni fusionaron scripts de los 19 HTML, no se crearon cuentas ni bases de datos, no se tocaron credenciales.
+**No change** Project-3-AppAdmin-Pascotas/ nor Project-3-Extended-Generic/. No HTML 19 scripts were imported or merged, no accounts or databases were created, credentials were not touched.
 
-## 2. Qué verificar localmente (NO ejecutado aquí)
+## 2. What to verify locally (NOT executed here)
 
-En la raíz del repositorio, después de guardar cualquier cambio local ajeno:
+At the root of the repository, after saving any other local changes:
 
 ~~~powershell
 git status --short
@@ -36,32 +36,32 @@ npm.cmd run lint
 npm.cmd run dev
 ~~~
 
-Abrir la URL de Vite. **No afirmar “pasó” hasta obtener las salidas reales**.
+Open the Vite URL. **Not to say “passed” until you got the actual outputs**.
 
-| ID | Prueba manual / comando | Resultado esperado | Estado |
+| ID | Manual test / command | Expected outcome | Status |
 |---|---|---|---|
-| E1A-BOOT-01 | npm.cmd run build | TS + Vite completan sin errores | NO EJECUTADA |
-| E1A-LINT-01 | npm.cmd run lint | Sin errores de lint | NO EJECUTADA |
-| E1A-NAV-01 | /inicio → WALOS → Catálogo → Volver | Navegación sin pantallas en blanco; Catálogo dice «Próximamente» | NO EJECUTADA |
-| E1A-NAV-02 | Probar back/forward del navegador | Rutas cambian y sidebar indica destino | NO EJECUTADA |
-| E1A-UX-01 | Tamaño móvil 390 px y escritorio | Drawer abre/cierra, tarjetas visibles, no scroll horizontal accidental | NO EJECUTADA |
-| E1A-TEN-UI-01 | Cambiar WALOS ↔ Servicios Ejemplo | Encabezado y página reflejan empresa seleccionada | NO EJECUTADA |
-| E1A-ROUTE-01 | /b/otro-negocio/inicio | «Empresa no disponible», sin datos de otros fixtures | NO EJECUTADA |
-| E1A-DEMO-01 | Revisar dashboard y formularios | Sin cifras falsas ni acciones que supuestamente guardan | NO EJECUTADA |
+| E1A-BOOT-01 | npm.cmd run build | TS + Vite complete without errors | NOT EXECUTED |
+| E1A-LINT-01 | npm.cmd run lint | No Lint Errors | NOT EXECUTED |
+| E1A-NAV-01 | /start → WALOS → Catalog → Back | Navigation without blank screens; Catalogue says "Next" | NOT EXECUTED |
+| E1A-NAV-02 | Probar back/forward del navegador | Routes change and sidebar indicates destination | NOT EXECUTED |
+| E1A-UX-01 | Mobile size 390 px and desktop | Drawer opens/closing, visible cards, no horizontal scroll accidental | NOT EXECUTED |
+| E1A-TEN-UI-01 | Change WALOS ↔ Services Example | Header and page reflect selected company | NOT EXECUTED |
+| E1A-ROUTE-01 | /b/other business/start | ‘Company not available’, without data from other fixes | NOT EXECUTED |
+| E1A-DEMO-01 | Review dashboard and forms | No false figures or actions they supposedly keep | NOT EXECUTED |
 
-**Aclaración:** E1A-TEN-UI-01 verifica UX de fixtures, **no** aislamiento real de tenants; ese trabajo empieza en E1-A2 y se asegura de verdad en backend E3.
+**Clarification:** E1A-TEN-UI-01 verifica UX de fixtures, **no** real isolation of tenants; that work starts at E1-A2 and is truly assured in backend E3.
 
-## 3. Trabajo pendiente para cerrar E1-A1 y continuar E1-A2
+## 3. Work pending to close E1-A1 and continue E1-A2
 
-1. Ejecutar y corregir **build**, **lint** y pruebas de navegador. Registrar fallos o resultados observados.
-2. Incorporar React Router mediante instalación normal de npm, actualización sincronizada de package.json y lockfile y refactor controlado de navegación. Evitar publicar package.json desincronizado de package-lock.
-3. Crear shells de componentes/guards de rol **DEMO** y foco accesible al cambiar de ruta.
-4. E1-A2: perfil global, creación de empresa, membresía por businessId y estado demo único; sumar tests de cambio A↔B y borradores.
-5. Más adelante: E1-B catálogo/stock/compras; E1-C ventas/caja; E1-D QR demo. Ninguno está implementado ahora.
+1. Ejecutar y corregir **build**, **lint** and browser tests. Register bugs or observed results.
+2. Incorporate React Router by means of normal npm installation, synchronized package.json update and lockfile and controlled navigation refactor. Avoid posting packages.json desync from package-lock.
+3. Crear shells de componentes/guards de rol **DEMO** and accessible focus when changing route.
+4. E1-A2: global profile, company creation, businessId membership and single demo status; add A/25070B change tests and drafts.
+5. Later: E1-B catalog/stock/purchase; E1-C sales/box; E1-D QR demo. None is implemented now.
 
-## 4. Resultado de la entrega
+## 4. Delivery result
 
-**Estado verificable:** archivos presentes en GitHub, no pruebas ejecutadas en esta respuesta.  
-**Próxima acción del equipo:** git pull → npm.cmd run build → npm.cmd run lint → npm.cmd run dev, informar salidas para cerrar E1-A1 sin confundir documentación con pruebas.
+**Verifiable status:** files present in GitHub, not tests executed in this response.  
+**Next team action:** git pull → npm.cmd run build → npm.cmd run lint → npm.cmd run dev, report exits to close E1-A1 without confusing documentation with tests.
 
-**Fuente principal de diseño:** 00_MATRIZ_INTEGRACION_HTML.md (Z003/Z014); arquitectura: 01_ARQUITECTURA_FRONTEND.md; backlog: 02_DECISIONES_Y_BACKLOG.md; ADRs: ADR-001/007/008.
+**Main source of design:** 00_MATRIZ_INTEGRATION_HTML.md (Z003/Z014); architecture: 01_ARQUITECTURA_FRONTEND.md; backlog: 02_DECISIONS_Y_BACKLOG.md; ADRs: ADR-001/007/008.

@@ -23,7 +23,7 @@ export function RealAcceptInvitationPage({ token, userId, onNavigate, onUnauthor
   async function accept(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!canAcceptInvitationToken(secret.trim()) || busy || uncertain) {
-      if (!busy && !uncertain) setError('El código debe tener 43 caracteres válidos.')
+      if (!busy && !uncertain) setError('The code must have 43 valid characters.')
       return
     }
     setBusy(true); setError('')
@@ -37,7 +37,7 @@ export function RealAcceptInvitationPage({ token, userId, onNavigate, onUnauthor
       if (err instanceof ApiHttpError && err.status === 401) { setSecret(''); onUnauthorized(); return }
       if (err instanceof ApiTransportError && err.outcomeUnknown) {
         setUncertain(true)
-        setError('No se pudo confirmar si la invitación fue aceptada. Consultá «Mis empresas» antes de repetir. Se conserva el código solo en esta pantalla.')
+        setError('It was not possible to confirm whether the invitation was accepted. Consult "My companies" before repeating. The code is retained only on this screen.')
       } else {
         setError(operationsError(err))
       }
@@ -47,33 +47,33 @@ export function RealAcceptInvitationPage({ token, userId, onNavigate, onUnauthor
   }
 
   return <section className="real-auth-card real-business-panel">
-    <nav className="real-business-nav" aria-label="Navegación real">
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/perfil')}>Mi perfil real</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>Mis empresas</button>
+    <nav className="real-business-nav" aria-label="Real navigation">
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/perfil')}>My real profile</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>My companies</button>
     </nav>
-    <span className="real-auth-eyebrow">E2-7 · T04 · Invitaciones</span>
-    <h1>Ingresar código de invitación</h1>
-    <p>Pegá el código que recibiste para unirte a una empresa. Debés haber iniciado sesión con el mismo correo al que enviaron la invitación. El código no quedará en la URL ni en el almacenamiento local.</p>
+    <span className="real-auth-eyebrow">E2-7 · T04 · Invitations</span>
+    <h1>Enter invitation code</h1>
+    <p>Paste the code you received to join a company. You must have logged in with the same email that was sent the invitation to. The code will not be left on the URL or local storage.</p>
     <form className="real-auth-form" onSubmit={(event) => void accept(event)}>
-      <label>Código de 43 caracteres
+      <label>43 character code
         <input type="password" required autoComplete="off" minLength={43} maxLength={43}
           value={secret} onChange={(e) => setSecret(e.target.value.trim())}
           aria-describedby="real-invite-help"/>
       </label>
-      <p id="real-invite-help" className="real-auth-note">La invitación debe corresponder al correo de tu sesión. No publiques ni compartas el código en capturas.</p>
+      <p id="real-invite-help" className="real-auth-note">The invitation must correspond to the mail of your session. Do not post or share the code in screenshots.</p>
       <button className="real-auth-primary" type="submit" disabled={busy || uncertain || !canAcceptInvitationToken(secret)}>
-        {busy ? 'Aceptando en FastAPI…' : 'Aceptar invitación'}
+        {busy ? 'Accepting in FastAPI...' : 'Accept invitation'}
       </button>
     </form>
     {uncertain && <div className="real-ops-warning real-auth-message">
-      <p>Primero revisá si la empresa ya aparece entre tus negocios. No enviaremos el código automáticamente otra vez.</p>
+      <p>First check if the company already appears among your businesses. We will not automatically send the code again.</p>
       <div className="real-auth-actions">
-        <button type="button" className="real-auth-secondary" onClick={() => onNavigate('/real/empresas')}>Consultar mis empresas</button>
+        <button type="button" className="real-auth-secondary" onClick={() => onNavigate('/real/empresas')}>Consult my companies</button>
         <button type="button" className="real-auth-secondary" onClick={() => {
-          if (window.confirm('¿Confirmaste que la empresa no figura y querés reintentar con el MISMO código?')) {
+          if (window.confirm('You confirmed that the company is not listed and you want to try the same code?')) {
             setUncertain(false); setError('')
           }
-        }}>Habilitar reintento manual</button>
+        }}>Enable manual retry</button>
       </div>
     </div>}
     {error && <p className="real-auth-message real-auth-error" role="alert">{error}</p>}

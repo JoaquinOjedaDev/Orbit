@@ -28,7 +28,7 @@ const json=(payload,status=200)=>new Response(JSON.stringify(payload),{
 
 test('B5 ruta de historial QR pertenece a empresa y se integra al menú REAL',()=>{
   assert.equal(realWorkspaceBusinessId(realWorkspaceHref(business,'cobros-qr')),business)
-  assert.equal(realWorkspaceTitle(realWorkspaceHref(business,'cobros-qr')),'Cobros QR')
+  assert.equal(realWorkspaceTitle(realWorkspaceHref(business,'cobros-qr')),'QR payments')
   assert.equal(REAL_WORKSPACE_ITEMS.some(x=>x.section==='cobros-qr'),true)
   assert.equal(realWorkspaceBusinessId('/real/empresas/'+business+'/cobros-qr/'+intentId),null)
   assert.equal(realWorkspaceBusinessId('/real/empresas/'+other+'/cobros-qr'),other)
@@ -75,9 +75,9 @@ test('B5 valida paginación y rechaza IDs duplicados o respuestas demasiado gran
 })
 
 test('B5 estados de negocio nunca confunden aprobación ficticia con venta QA finalizada',()=>{
-  assert.match(qrStatusPresentation('APROBADA_DEMO').description,/Todavía no hay venta/)
-  assert.match(qrStatusPresentation('FINALIZADA').description,/venta interna/)
-  assert.match(qrStatusPresentation('REQUIERE_REVISION').description,/No se descontó stock/)
+  assert.match(qrStatusPresentation('APROBADA_DEMO').description,/still no sale/i)
+  assert.match(qrStatusPresentation('FINALIZADA').description,/internal sale/i)
+  assert.match(qrStatusPresentation('REQUIERE_REVISION').description,/No stock was deducted/i)
   assert.equal(qrNeedsRecovery('INDETERMINADA'),true)
   assert.equal(qrNeedsRecovery('APROBADA_DEMO'),false)
   assert.equal(qrEffectiveStatus('ESPERANDO_PAGO','2026-01-01T00:00:00Z',Date.parse('2026-02-01T00:00:00Z')),'EXPIRADA')

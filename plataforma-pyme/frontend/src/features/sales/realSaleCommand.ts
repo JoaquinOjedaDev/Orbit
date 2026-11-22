@@ -53,19 +53,19 @@ const milli = (value: unknown): value is number =>
   value >= 1 && value <= MAX_MILLI
 
 function normalizedText(value: unknown, max: number, field: string): string {
-  if (typeof value !== 'string') throw new RangeError(field + ': texto inválido')
+  if (typeof value !== 'string') throw new RangeError(field + ': invalid text')
   // The backend uses NFKC + collapsing Unicode whitespace before validation.
   const normalized = value.normalize('NFKC').trim().replace(/\s+/gu, ' ')
   if (normalized.length > max || /\p{C}/u.test(normalized))
-    throw new RangeError(field + ': excede el máximo o contiene caracteres de control')
+    throw new RangeError(field + ': exceeds the maximum or contains control characters')
   return normalized
 }
 
 export function calculateSaleTotals(lines: readonly SaleCommandLine[],
                                     discount_cents: number): SaleTotals {
   if (!Array.isArray(lines) || lines.length < 1 || lines.length > 30)
-    throw new RangeError('La venta necesita entre 1 y 30 renglones.')
-  if (!cents(discount_cents)) throw new RangeError('Descuento inválido.')
+    throw new RangeError('The sale needs between 1 and 30 lines.')
+  if (!cents(discount_cents)) throw new RangeError('Invalid discount.')
   const line_totals_cents: number[] = []
   let subtotal = 0n
   for (const line of lines) {
@@ -73,18 +73,18 @@ export function calculateSaleTotals(lines: readonly SaleCommandLine[],
       !keysAre(line, ['catalog_item_id', 'quantity_milli', 'unit_price_cents']) ||
       typeof line.catalog_item_id !== 'string' || !UUID_PATTERN.test(line.catalog_item_id) ||
       !milli(line.quantity_milli) || !cents(line.unit_price_cents))
-      throw new RangeError('Renglón de venta inválido.')
+      throw new RangeError('Invalid sales line.')
     // Same HALF_UP per line as purchases.schemas.line_total_cents in FastAPI.
     const amount = (BigInt(line.quantity_milli) * BigInt(line.unit_price_cents) + 500n) / 1000n
-    if (amount > BigInt(MAX_CENTS)) throw new RangeError('Total de renglón excedido.')
+    if (amount > BigInt(MAX_CENTS)) throw new RangeError('Total line exceeded.')
     line_totals_cents.push(Number(amount))
     subtotal += amount
   }
   if (subtotal < 1n || subtotal > BigInt(MAX_CENTS))
-    throw new RangeError('Subtotal fuera del rango permitido.')
+    throw new RangeError('Subtotal outside the permitted range.')
   const total = subtotal - BigInt(discount_cents)
   if (total < 1n || total > BigInt(MAX_CENTS))
-    throw new RangeError('El total de la venta debe ser positivo.')
+    throw new RangeError('The total sales must be positive.')
   return {
     line_totals_cents,
     subtotal_cents: Number(subtotal),
@@ -97,17 +97,17 @@ export function calculateSaleTotals(lines: readonly SaleCommandLine[],
 export function validateSaleCommand(raw: unknown): { body: SaleCommand; totals: SaleTotals } {
   if (!isRecord(raw) ||
     !keysAre(raw, ['location_id', 'discount_cents', 'notes', 'lines', 'payments']))
-    throw new RangeError('Campos de venta no permitidos.')
+    throw new RangeError('Sales fields not allowed.')
   if (!(raw.location_id === null ||
     (typeof raw.location_id === 'string' && UUID_PATTERN.test(raw.location_id))))
-    throw new RangeError('Sede inválida.')
-  const notes = normalizedText(raw.notes, 500, 'Notas')
+    throw new RangeError('Invalid headquarters.')
+  const notes = normalizedText(raw.notes, 500, 'Notes')
   const lines = raw.lines
-  if (!Array.isArray(lines)) throw new RangeError('Renglones inválidos.')
+  if (!Array.isArray(lines)) throw new RangeError('Invalid lines.')
   const totals = calculateSaleTotals(lines, raw.discount_cents as number)
 
   if (!Array.isArray(raw.payments) || raw.payments.length < 1 || raw.payments.length > 6)
-    throw new RangeError('Se requieren entre 1 y 6 pagos declarados.')
+    throw new RangeError('Between 1 and 6 declared payments are required.')
   const payments: SaleCommandPayment[] = []
   let paid = 0n
   for (const payment of raw.payments) {
@@ -115,7 +115,7 @@ export function validateSaleCommand(raw: unknown): { body: SaleCommand; totals: 
       !keysAre(payment, ['method', 'amount_cents', 'reference']) ||
       typeof payment.method !== 'string' || !PAYMENT_METHODS.has(payment.method) ||
       !cents(payment.amount_cents, 1))
-      throw new RangeError('Pago declarado inválido.')
+      throw new RangeError('Payment declared invalid.')
     const reference = normalizedText(payment.reference, 120, 'Referencia')
     paid += BigInt(payment.amount_cents)
     payments.push({
@@ -125,7 +125,7 @@ export function validateSaleCommand(raw: unknown): { body: SaleCommand; totals: 
     })
   }
   if (paid !== BigInt(totals.total_cents))
-    throw new RangeError('Los pagos declarados deben sumar exactamente el total.')
+    throw new RangeError('The payments declared must add up to exactly the total.')
 
   const body: SaleCommand = {
     location_id: raw.location_id as string | null,

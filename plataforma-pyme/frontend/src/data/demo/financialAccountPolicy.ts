@@ -7,14 +7,14 @@ export type FinancialAccountKind = 'BANCARIA' | 'BILLETERA'
 export type FinancialAccountChannel = 'TRANSFERENCIA' | 'MERCADO_PAGO_DECLARADO' | 'CUENTA_DNI' | 'OTRO_DECLARADO'
 
 export const financialKindLabels: Record<FinancialAccountKind, string> = {
-  BANCARIA: 'Cuenta bancaria',
-  BILLETERA: 'Billetera virtual',
+  BANCARIA: 'Bank account',
+  BILLETERA: 'Virtual wallet',
 }
 export const financialChannelLabels: Record<FinancialAccountChannel, string> = {
   TRANSFERENCIA: 'Transferencia (declarada)',
-  MERCADO_PAGO_DECLARADO: 'Mercado Pago (no conectado)',
-  CUENTA_DNI: 'Cuenta DNI (declarada)',
-  OTRO_DECLARADO: 'Otra billetera (declarada)',
+  MERCADO_PAGO_DECLARADO: 'Mercado Pago (not connected)',
+  CUENTA_DNI: 'DNI account (declared)',
+  OTRO_DECLARADO: 'Another wallet (declared)',
 }
 
 export type FinancialAccountInput = {
@@ -41,12 +41,12 @@ export const blankFinancialAccount: FinancialAccountInput = {
 }
 
 function safeText(value: unknown, label: string, max: number, min = 0): string {
-  if (typeof value !== 'string') throw new Error(label + ': ingresá un texto válido.')
+  if (typeof value !== 'string') throw new Error(label + ': enter a valid text.')
   const text = value.trim().replace(/[\t ]+/g, ' ')
   if (text.length < min || text.length > max || [...text].some((char) => {
     const cp = char.charCodeAt(0)
     return cp < 32 || cp === 127
-  })) throw new Error(label + ': debe tener entre ' + min + ' y ' + max + ' caracteres sin caracteres de control.')
+  })) throw new Error(label + ': must have between ' + min + ' y ' + max + ' characters without control characters.')
   return text
 }
 
@@ -56,28 +56,28 @@ function safeText(value: unknown, label: string, max: number, min = 0): string {
  */
 export function normalizeFinancialAccountInput(input: FinancialAccountInput): FinancialAccountInput {
   if (!input || !Object.hasOwn(financialKindLabels, input.kind)) {
-    throw new Error('Elegí un tipo de cuenta válido.')
+    throw new Error('Choose a valid account type.')
   }
   if (!Object.hasOwn(financialChannelLabels, input.channel)) {
-    throw new Error('Seleccioná el medio de cobro declarado.')
+    throw new Error('Select the declared means of collection.')
   }
   if (input.kind === 'BANCARIA' && input.channel !== 'TRANSFERENCIA') {
-    throw new Error('Una cuenta bancaria DEMO usa Transferencia como canal. Para billeteras, elegí Billetera virtual.')
+    throw new Error('A DEMO bank account uses Transfer as a channel. For wallets, I chose Digital wallet.')
   }
-  const label = safeText(input.label, 'Nombre identificador de la cuenta', 80, 2)
-  const institution = safeText(input.institution, 'Banco o billetera', 80, 2)
-  const holder = safeText(input.holder, 'Titular de referencia', 90)
+  const label = safeText(input.label, 'Account identifier name', 80, 2)
+  const institution = safeText(input.institution, 'Bank or wallet', 80, 2)
+  const holder = safeText(input.holder, 'Reference holder', 90)
   const notes = safeText(input.notes, 'Observaciones', 350)
   const alias = safeText(input.alias, 'Alias', 20).toLowerCase()
   const identifier = safeText(input.identifier, 'CBU/CVU de prueba', 22).replace(/\s/g, '')
   if (alias && !/^[a-z0-9][a-z0-9.-]{4,18}[a-z0-9]$/.test(alias)) {
-    throw new Error('El alias de ejemplo debe tener entre 6 y 20 caracteres: letras, números, puntos o guiones.')
+    throw new Error('The example alias must have 6 to 20 characters: letters, numbers, points or dashes.')
   }
   if (identifier && !/^\d{22}$/.test(identifier)) {
-    throw new Error('El CBU/CVU de ejemplo debe contener 22 dígitos sin espacios.')
+    throw new Error('The example CBU/CVU must contain 22 digits without spaces.')
   }
   if (!alias && !identifier) {
-    throw new Error('Indicá al menos un alias o un CBU/CVU ficticio para identificar la cuenta.')
+    throw new Error('Please indicate at least one alias or a fictitious CBU/CVU to identify the account.')
   }
   return { label, kind: input.kind, channel: input.channel, institution, holder, alias, identifier, notes }
 }
@@ -99,7 +99,7 @@ export function financialAccountShareText(account: Pick<DemoFinancialAccount,
     account.holder ? 'Titular: ' + account.holder : '',
     account.alias ? 'Alias: ' + account.alias : '',
     account.identifier ? (account.kind === 'BANCARIA' ? 'CBU: ' : 'CVU: ') + account.identifier : '',
-    'Datos de cuenta DEMO: verificá los datos antes de compartir.',
+    'DEMO account data: Check the data before sharing.',
   ]
   return lines.filter(Boolean).join('\n')
 }

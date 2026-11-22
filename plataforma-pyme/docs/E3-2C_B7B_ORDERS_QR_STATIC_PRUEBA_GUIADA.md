@@ -1,32 +1,32 @@
-# E3-2C · B7-B — Una caja QR Mercado Pago TEST para todas las empresas QA
+# E3-2C · B7-B — One QR Market TEST Payment Box for all QA companies
 
-**Rama:** `feature/e3-2c-qr-qa-caja-unica` — **PR #70 (borrador; base B6)**. No merge ni cambios en `main`.
-**Alcance:** QA descartable solamente. No se modifican recursos externos de Mercado Pago hasta que el operador cree manualmente la primera orden desde el POS.
+**Rama:** `feature/e3-2c-qr-qa-caja-unica` — **PR #70 (delete; base B6)**. No merge nor changes in `main`.
+**Scope:** Disposable QA only. No external resources are modified from Market Payment until the operator manually creates the first order from the POS.
 
-## Recursos existentes (NO volver a crear)
+## Existing resources (DO NOT re-create)
 
-- Vendedor TEST: `3837129107`
+- TEST Seller: `3837129107`
 - Sucursal TEST: `89968780` (`PYMEQA001`)
-- Caja TEST: `140776986` (`PYMEQA001POS001`)
-- Mismo QR estático de la respuesta oficial `POST /v2/pos`, reutilizado por todas las empresas QA
+- TEST box: `140776986` (`PYMEQA001POS001`)
+- Same static QR from official response `POST /v2/pos`, reused by all QA companies
 
-### Diferencia entre QR y pago
+### Difference between QR and payment
 
-El QR estático es una **dirección de la caja**, no una acreditación ni una orden. Se genera **una order estática por venta** con `POST /v1/orders`, `config.qr.mode="static"`, `config.qr.external_pos_id="PYMEQA001POS001"`, una `external_reference` única y la clave idempotente original de la intención QR. El desglose se toma del snapshot del servidor: si un descuento o fracciones impiden que la suma de ítems coincida, se emite un único ítem agregado en MP mientras la pantalla PyME conserva el detalle completo.
+The static QR is a **box address**Not an accreditation or order. **a static order per sale** con `POST /v1/orders`, `config.qr.mode="static"`, `config.qr.external_pos_id="PYMEQA001POS001"`, una `external_reference` unique and the original idempotent key of QR intent. The breakdown is taken from the server snapshot: if a discount or fractions prevent the sum of items from matching, a single item added in MP is issued while the PyME screen retains the full detail.
 
-## Garantías de código B7-B
+## B7-B code guarantees
 
-- `GET /businesses/{bid}/mercadopago/qa-shared/connection`: pertenencia a empresa, vista virtual de la caja QA; sin credenciales; no genera recursos.
-- `POST .../qa-shared/orders/from-qr/{qr_id}`: una orden por QR, idempotente. El backend consulta `GET /users/me` para confirmar el vendedor TEST y el país. Nunca recibe importe, token, vendedor o caja desde el navegador.
-- `mp_shared_qa_box` tiene una sola fila (id=1), con `SELECT FOR UPDATE` y reserva durable antes del POST remoto. Dos empresas no pueden tener dos órdenes pendientes en la misma caja.
-- `mp_shared_qa_orders` persiste empresa, creador, snapshot total, `request_id`, referencia, ID proveedor, estado y venta única.
-- Estados `PREPARANDO` o `INDETERMINADA`: no liberar la caja ni generar otro `request_id`. Reintentar con la misma clave solo dentro de ventana de idempotencia; si no se puede confirmar, revisión manual.
-- `POST .../orders/{id}/reconcile`: `GET` oficial validando vendedor, referencia, monto, moneda, caja, modo y transacción. Procesada/cancelada/expirada/reembolsada libera el candado, no la trazabilidad histórica.
-- `POST .../orders/{id}/cancel`: solo si `CREADA`. Se confirma cancelación con la respuesta oficial; ante duda, mantener caja bloqueada.
-- `POST .../orders/{id}/settle-qa`: titular/admin, reconsulta el proveedor, y solo si status processed y transacción acreditada registra **UNA** venta + stock atómicamente, con `MERCADO_PAGO_QR_TEST`. Si falta stock se marca para revisión sin movimiento parcial.
-- El webhook B6 firmado (cuando se configure secreto) también reconcilia órdenes compartidas con GET. El mensaje entrante no acredita nada por sí solo.
-- Se bloquean OAuth, cambios de caja y creación de órdenes B6 por empresa cuando el modo compartido está activo. También quedan bloqueadas simulaciones/finalizaciones DEMO si ya existe una orden compartida para ese intento.
-- Las cuentas nuevas se vinculan virtualmente; al crear su primer QR, se persiste la referencia interna necesaria sin pedir credenciales ni registrar otra caja.
+- `GET /businesses/{bid}/mercadopago/qa-shared/connection`: Company membership, virtual view of QA box; no credentials; no resources generated.
+- `POST .../qa-shared/orders/from-qr/{qr_id}`: an order by QR, idempotente. Backend query `GET /users/me` to confirm the TEST seller and country. Never receive amount, token, seller or box from browser.
+- `mp_shared_qa_box` has a single row (id=1), with `SELECT FOR UPDATE` and durable reserve before the remote POST. Two companies cannot have two pending orders in the same box.
+- `mp_shared_qa_orders` company persists, creator, total snapshot, `request_id`, reference, ID supplier, status and single sale.
+- States `PREPARANDO` o `INDETERMINADA`: do not release the box or generate another `request_id`. Retry with the same key only inside the idempotence window; if not confirmed, manual revision.
+- `POST .../orders/{id}/reconcile`: `GET` official validating seller, reference, amount, currency, box, mode and transaction. Processed/cancelled/expired/reimbursed releases the lock, not historical traceability.
+- `POST .../orders/{id}/cancel`: only if `CREADA`. Cancellation is confirmed with official response; in case of doubt, keep box locked.
+- `POST .../orders/{id}/settle-qa`: holder/admin, consults the provider, and only if status processed and accredited transaction records **UNA** sale + stock atomically, with `MERCADO_PAGO_QR_TEST`. If stock is missing it is marked for review without partial movement.
+- The signed webhook B6 (when secretly configured) also reconciles shared orders with GET. The incoming message does not credit anything on its own.
+- OAuth, cash changes and B6 command creation are blocked by company when the shared mode is active. DEMO simulations/finalizations are also locked if a shared order for that attempt already exists.
+- New accounts are virtually linked; when creating their first QR, the necessary internal reference is still in place without requesting credentials or registering another box.
 
 ## Flags del backend (solo QA descartable)
 
@@ -37,13 +37,13 @@ PYME_MP_SHARED_QA_ORDERS_ENABLED=1
 PYME_MP_SHARED_QA_ACCESS_TOKEN=<TOKEN TEST VENDEDOR, NO VERSIONAR>
 ```
 
-Si las tres primeras no valen exactamente `1`, el POST remoto no se habilita. La cuarta se lee solo en el backend, nunca en Vite, HTML, GitHub o esta conversación. No reutilizar un token de producción. Nunca ejecutar contra una base de datos habitual. **El uso de `APP_USR` por sí solo no garantiza que un token sea de prueba**: se comprueba el vendedor TEST `3837129107` con GET a Mercado Pago.
+If the first three aren't worth exactly `1`The fourth is read only in the backend, never in Vite, HTML, GitHub or this conversation. Do not reuse a production token. Never run against a regular database. **Use of `APP_USR` alone does not guarantee that a token is a test**: TEST seller checked `3837129107` with GET to Mercado Pago.
 
-El webhook `PYME_MP_WEBHOOK_SECRET` es opcional para la primera prueba manual (se puede usar conciliación desde el POS); es obligatorio para validar el circuito de notificaciones automáticas.
+El webhook `PYME_MP_WEBHOOK_SECRET` is optional for the first manual test (comparison can be used from the POS); it is mandatory to validate the automatic notification circuit.
 
-## Prueba manual guiada (después de CI verde)
+## Guided manual test (after green CI)
 
-**A. Aislar carpeta y DB.** Trabajar en worktree separado, desde la carpeta raíz del repo original. No modificar la base habitual:
+**A. Isolating folder and DB.** Work in separate worktree, from the root folder of the original repo. Do not modify the usual base:
 
 ```powershell
 git fetch origin
@@ -51,9 +51,9 @@ git worktree add --detach ..\TP-PyME-E3-2C-QA origin/feature/e3-2c-qr-qa-caja-un
 cd ..\TP-PyME-E3-2C-QA\plataforma-pyme
 ```
 
-El operador debe configurar en esa carpeta su conexión privada a PostgreSQL (`.env` **no versionado**); nunca copiar un Access Token allí ni a GitHub.
+The operator must configure in that folder his private connection to PostgreSQL (`.env` **not versioned**); never copy an Access Token there or GitHub.
 
-**B. Base de datos nueva.** Con PostgreSQL Docker ya levantado:
+**B. New database.** With PostgreSQL Docker already up:
 
 ```powershell
 $qaDb = "asistente_pyme_mp_b7_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
@@ -61,7 +61,7 @@ docker compose exec -T db createdb -U pyme $qaDb
 if ($LASTEXITCODE -ne 0) { throw "No se pudo crear la DB QA" }
 ```
 
-**C. Migrar SOLO la DB nueva.** En la terminal que iniciará FastAPI:
+**C. Migrate ONLY the new DB.** In the terminal that will start FastAPI:
 
 ```powershell
 cd backend
@@ -74,7 +74,7 @@ $env:PYME_MP_SHARED_QA_ORDERS_ENABLED = "1"
 .\.venv\Scripts\python.exe -m alembic check
 ```
 
-**D. Ingresar token sin mostrarlo y levantar backend QA** en la misma ventana:
+**D. Enter token without showing it and lift QA backend** in the same window:
 
 ```powershell
 $secureToken = Read-Host "Access Token de PRUEBA del vendedor QA" -AsSecureString
@@ -83,7 +83,7 @@ $secureToken = $null
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 18001
 ```
 
-**E. Frontend** en OTRA terminal dentro del worktree QA (`plataforma-pyme/frontend`):
+**E. Frontend** in OTRA terminal within the worktree QA (`plataforma-pyme/frontend`):
 
 ```powershell
 $env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18001"
@@ -91,22 +91,22 @@ npm.cmd ci
 npm.cmd run dev -- --host 127.0.0.1 --port 5174
 ```
 
-Navegar `http://127.0.0.1:5174`; crear usuario y empresa de prueba NUEVOS en esa DB descartable, artículo/servicio y una venta pequeña, p. ej. ARS 100. En «Medios de cobro» ver caja `140776986`, después POS → QR → «Asignar venta al QR real TEST». Debe aparecer `provider_order_id` que empieza con `ORD`, el QR estático y el total correcto. **Antes del POST no escanear el QR de caja**.
+Browse `http://127.0.0.1:5174`; create user and test company NEW in that disposable DB, item/service and small sale, e.g. ARS 100. In ‘Means of collection’ see box `140776986`, then POS → QR → "Assign sale to the real QR TEST". `provider_order_id` that starts with `ORD`, static QR and the correct total. **Before POST do not scan the QR box**.
 
-**F. Aislamiento.** Crear otra empresa QA y probar otro QR: el servidor debe devolver `409` mientras haya orden `CREADA` en la primera. Al cancelar esa orden desde su pantalla (confirmado por proveedor), la segunda puede iniciar una orden nueva.
+**F. Insulation.** Create another QA company and try another QR: the server must return `409` while there's order `CREADA` On cancelling that order from your screen (confirmed by provider), the second can start a new command.
 
-**G. Pago.** Usar *otro comprador TEST de Mercado Pago*, nunca la cuenta del vendedor TEST ni una personal. Comprobar pago en el dispositivo, pulsar «Verificar pago». Solo si se obtiene `PROCESADA` y transacción acreditada, titular/admin puede pulsar «Registrar venta QA verificada y descontar stock». Repetir cierre: mismo `sale_id`, ningún doble stock.
+**G. Payment.** Use *another TEST buyer of Pay Market*, never the TEST seller account or a personal. Check payment on the device, click "Check Payment". Only if you get `PROCESADA` and accredited transaction, holder/admin can click "Register verified QA sale and discount stock". Repeat closing: same `sale_id`No double stock.
 
-**H. Respuesta incierta.** Si hay HTTP 5xx/timeout, no crear otra venta ni caja. Volver al mismo QR, «Consultar orden guardada», «Verificar» si existe ID, o reintentar **la misma** orden/clave dentro de la ventana segura. Si queda `INDETERMINADA` sin ID, no forzar liberación del candado: revisión manual.
+**H. Uncertain response.** If there is HTTP 5xx/timeout, do not create another sale or box. Return to same QR, "Check Saved Command", "Check" if ID exists, or try again **same** command/key inside the secure window. If left `INDETERMINADA` no ID, do not force lock release: manual review.
 
-**Limpieza**: desconectar servidor QA, borrar variables de entorno de esa sesión y, después de exportar evidencias, eliminar la DB QA si se desea. No borrar la base habitual, no hacer merge sin autorización.
+**Cleaning**: disconnect QA server, delete environment variables from that session and, after exporting evidence, remove the DB QA if desired. Do not erase the usual base, do not merge without permission.
 
-## Evidencia exigida para cerrar B7-B
+## Evidence required to close B7-B
 
-- CI backend en Python 3.12/3.14 + migración/Alembic y CI frontend.
-- Prueba manual externa con respuestas reales de MP TEST (no basta con mocks).
-- Identidad vendedor, caja, moneda, importe y artículos; otra empresa bloqueada.
-- Payment status conciliado, factura/venta única y stock (o revisión segura).
-- Comprador TEST distinto del vendedor, webhook firmado cuando esté configurado.
+- CI backend in Python 3.12/3.14 + migration/Alembic and IC frontend.
+- External manual test with real MP TEST responses (mocks are not enough).
+- Seller identity, cash, currency, amount and items; another company blocked.
+- Payment status reconciled, single invoice/sale and stock (or secure review).
+- TEST buyer other than the seller, webhook signed when configured.
 
-Fuente oficial: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing
+Official source: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing

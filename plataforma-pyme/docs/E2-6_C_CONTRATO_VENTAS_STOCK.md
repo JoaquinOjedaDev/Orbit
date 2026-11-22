@@ -1,34 +1,34 @@
-# E2-6 C — Contrato de implementación de ventas físicas y mixtas
+# E2-6 C — Implementation contract for physical and mixed sales
 
-**Rama:** `feature/e2-6-ventas-integradas`. **Base funcional:** E2-6 B, `dc7f16c252b705cf3e4eebc96deaad9058af3468`.
-**Validación B Windows aportada:** 864 passed, 1 warning; Alembic `e26a_sales_foundation` sin diferencias. **Estado C:** pendiente de implementar y probar.
+**Rama:** `feature/e2-6-ventas-integradas`. **Functional basis:** E2-6 B, `dc7f16c252b705cf3e4eebc96deaad9058af3468`.
+**Validation B Windows provided:** 864 passed, 1 warning; Alembic `e26a_sales_foundation` No difference. **Status C:** pending implementation and testing.
 
-## Alcance
+## Scope
 
-- Conservar las ventas de servicios sin ubicación de B, con los mismos contratos de pago y reglas monetarias.
-- Aceptar ventas con bienes y ventas mixtas solo en ubicación del mismo tenant, `ACTIVA`, con `can_sell` y `can_store` verdaderos.
-- Revalidar usuario, sesión, empresa, membresía y permisos en la transacción. Para operar en la ubicación: `SELL`; para consumir stock físico: también `STORE`. Titular y administrador por rol; encargado y trabajador únicamente con asignación activa, sin permisos implícitos.
-- Bloquear empresa/membresía y ubicación antes del catálogo y saldo, respetando el orden de E2-4/E2-5. Bloquear artículos por UUID ordenado. Evitar inversiones de orden de locks con ediciones de catálogo, recepciones, traslados y ajustes.
-- Rechazar artículos inactivos, no vendibles, de otro tenant o cantidades fraccionarias en unidades discretas. El servidor calcula precios y totales desde el comando y obtiene snapshots de la ficha vigente.
-- Agrupar cantidades de bienes repetidos **solo para descontar stock**. Ejecutar `UPDATE stock_balances ... WHERE quantity_milli >= total_requerido RETURNING` por artículo con orden UUID; incrementar versión solo al descontar correctamente.
-- Crear un movimiento `VENTA_SALIDA` negativo **por cada renglón físico**, vinculado por `sale_id` y `sale_line_id`; nunca generar movimiento para servicios. Guardar `balances_after` como snapshot histórico y no como saldo editable.
-- Persistir comprobante, renglones, pagos declarados, movimientos, snapshots y saldos **en un único commit**. Ante cualquier error o falta de stock, rollback de todo; ningún comprobante ni pago parcial.
-- Conservar idempotencia por `(business_id, request_id)`. Replay idéntico devuelve 200 y misma respuesta sin mutar stock. Payload o actor distintos con la misma clave: 409. Revalidar autorización al replay.
-- Medios de pago son DECLARADOS: no acreditar bancos, Mercado Pago, cajas ni cuentas en E2-6 C. No agregar migración si `e26a_sales_foundation` es suficiente.
+- Keep sales of services without B location, with the same payment contracts and monetary rules.
+- Accept sales with mixed goods and sales only at the same tenant location, `ACTIVA`, con `can_sell` y `can_store` real.
+- Revalidate user, session, company, membership and permissions in the transaction. To operate at location: `SELL`; to consume physical stock: also `STORE`. Holder and administrator by role; manager and worker with only active assignment, without implied permissions.
+- Block company/membership and location before catalog and balance, respecting the order of E2-4/E2-5. Lock items by UUID ordered. Avoid inverted order locks with catalogue editions, receptions, transfers and adjustments.
+- Reject inactive, non-soldable items from another tenant or fractional amounts into discrete units. The server calculates prices and totals from the command and gets snapshots from the current tab.
+- Grouping quantities of repeated goods **only for stock discounting**. Ejecutar `UPDATE stock_balances ... WHERE quantity_milli >= total_requerido RETURNING` by UUID order item; increase version only when properly discounted.
+- Create a movement `VENTA_SALIDA` negative **for each physical line**, linked by `sale_id` y `sale_line_id`; never generate movement for services. Save `balances_after` as historical snapshot and not editable balance.
+- Continuation of vouchers, lines, declared payments, movements, snapshots and balances **in a single commit**. In the event of any error or lack of stock, rollback everything; no proof or partial payment.
+- Preserve Idempotence by `(business_id, request_id)`. Identical Replay returns 200 and same response without mutating stock. Payload or different actor with the same key: 409. Revalidate permission to replay.
+- Means of payment are DEclarATED: do not credit banks, Market Payment, cash or accounts in E2-6 C. Do not add migration if `e26a_sales_foundation` That's enough.
 
-## Casos de prueba obligatorios antes de declarar C terminado
+## Required evidence before declaring C completed
 
-1. Bien único: 201, saldo decrece, versión +1, movimiento único y snapshot correcto.
-2. Mixta: bien + servicio, solo el bien afecta stock.
-3. Repetición de bien en varias líneas: suma única de débito, movimiento por línea, centavos HALF_UP por línea.
-4. Stock insuficiente, saldo inexistente, ubicación sin SELL/STORE, inactiva o de otro tenant: error sin escrituras parciales.
-5. Permisos: titulares/admin; encargado/trabajador con y sin asignación; sesión revocada; empresa suspendida; membresía revocada.
-6. Dos ventas simultáneas con claves diferentes por última unidad: exactamente una 201, la otra 409 y un solo débito.
-7. Reintento simultáneo con la misma clave: exactamente un comprobante, respuesta histórica coherente y sin doble débito.
-8. Intercalación con recepción, transferencia y ajuste del mismo saldo; no saldos negativos ni pérdida de actualizaciones.
-9. Fallo SQL después de descontar saldo pero antes del commit: rollback íntegro.
-10. Ventas de servicios B siguen funcionando sin regresiones.
+1. Unique good: 201, decrease balance, version +1, single movement and correct snapshot.
+2. Mixed: good + service, only the good affects stock.
+3. Repeat good on several lines: single sum of debit, movement per line, HALF_UP cents per line.
+4. Insufficient stock, non-existent balance, location without SELL/STORE, inactive or other tenant: error without partial deeds.
+5. Permissions: holders/admin; maintainer/worker with and without assignment; session revoked; company suspended; membership revoked.
+6. Two simultaneous sales with different keys per last unit: exactly one 201, the other 409 and a single debit.
+7. Simultaneous retry with the same key: exactly a voucher, consistent historical response and no double debit.
+8. Intercalation with receipt, transfer and adjustment of the same balance; no negative balances or loss of updates.
+9. SQL failure after debiting balance but before commit: full rollback.
+10. Sales of B services continue to operate without regressions.
 
-## Criterios para el cierre
+## Closing criteria
 
-CI verde Python 3.12/3.14 + PostgreSQL 16, Alembic `current` y `check`, pruebas focalizadas y regresión completa Windows sobre DB temporal. Documentar SHA exacto, resultados reales y advertencias. No abrir PR ni fusionar a `main` hasta cerrar E2-6 D/E y realizar auditoría independiente selectiva.
+Python green CI 3.12/3.14 + PostgreSQL 16, Alembic `current` y `check`, focused testing and complete regression Windows over temporary DB. Document exact SHA, real results and warnings. Do not open PR or merge to `main` until E2-6 D/E is closed and independent auditing is carried out.

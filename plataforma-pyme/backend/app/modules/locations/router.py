@@ -24,13 +24,13 @@ router = APIRouter(prefix="/businesses/{business_id}/locations", tags=["ubicacio
 
 def _location_http_error(error: Exception) -> HTTPException:
     if isinstance(error, (LocationBusinessUnavailable, LocationNotFound)):
-        return HTTPException(404, detail="Recurso no disponible")
+        return HTTPException(404, detail="Not available")
     if isinstance(error, LocationPermissionDenied):
-        return HTTPException(403, detail="Operacion no permitida")
+        return HTTPException(403, detail="Operation not permitted")
     if isinstance(error, LocationBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, LocationConflict):
-        return HTTPException(409, detail="Ubicacion no apta para principal")
+        return HTTPException(409, detail="Location not suitable for main")
     raise TypeError("Excepción no administrada")
 
 
@@ -41,7 +41,7 @@ def _location_http_error(error: Exception) -> HTTPException:
         403: {"description": "Membresía sin permiso de consulta"},
         404: {"description": "Empresa no disponible al solicitante"},
     },
-    summary="Listar únicamente ubicaciones de la empresa autorizada",
+    summary="List only locations of the approved company",
 )
 def list_locations(
     business_id: UUID,
@@ -66,7 +66,7 @@ def list_locations(
         403: {"description": "Sin permiso de consulta"},
         404: {"description": "Empresa no disponible"},
     },
-    summary="Consultar solamente las sedes asignadas al usuario autenticado",
+    summary="Only consult the locations assigned to the authenticated user",
 )
 def my_location_assignments(
     business_id: UUID,
@@ -90,7 +90,7 @@ def my_location_assignments(
         403: {"description": "Sin permiso de consulta"},
         404: {"description": "Empresa o ubicación fuera del tenant"},
     },
-    summary="Consultar una ubicación dentro de su tenant",
+    summary="Check a location within your tenant",
 )
 def get_location(
     business_id: UUID, location_id: UUID,
@@ -116,7 +116,7 @@ def get_location(
         409: {"description": "Empresa suspendida"},
         422: {"description": "Atributos inválidos o campos protegidos"},
     },
-    summary="Crear ubicación real: titular/administrador, tenant y principal protegidos",
+    summary="Create real location: holder/manager, tenant and main protected",
 )
 def create_location(
     business_id: UUID, command: CreateLocationRequest,
@@ -142,7 +142,7 @@ def create_location(
         409: {"description": "Empresa suspendida"},
         422: {"description": "Cambios inválidos o atributos protegidos"},
     },
-    summary="Editar únicamente datos y capacidades de una ubicación propia",
+    summary="Edit only data and capabilities from a location of your own",
 )
 def update_location(
     business_id: UUID, location_id: UUID, changes: UpdateLocationRequest,
@@ -172,7 +172,7 @@ def update_location(
         409: {"description": "Empresa suspendida"},
         422: {"description": "Estado inválido"},
     },
-    summary="Pausar/reactivar; al pausar se revoca el indicador principal",
+    summary="Pause/reactivate; pause revokes the main indicator",
 )
 def change_location_status(
     business_id: UUID, location_id: UUID, command: ChangeLocationStatusRequest,
@@ -201,7 +201,7 @@ def change_location_status(
         404: {"description": "Empresa o ubicación ajena/inexistente"},
         409: {"description": "Empresa suspendida o ubicación pausada"},
     },
-    summary="Elegir una única ubicación principal ACTIVA sin cambiar otros tenants",
+    summary="Choose a single main active location without changing other tenants",
 )
 def make_location_primary(
     business_id: UUID, location_id: UUID,

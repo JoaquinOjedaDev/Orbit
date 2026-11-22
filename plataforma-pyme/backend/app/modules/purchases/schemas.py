@@ -25,7 +25,7 @@ def line_total_cents(quantity_milli: int, unit_cost_cents: int) -> int:
     """HALF_UP al centavo POR LÍNEA con enteros, incluso para 0,5 × $0,03."""
     total = (quantity_milli * unit_cost_cents + 500) // 1000
     if total > MAX_CENTS:
-        raise ValueError("Total de renglón excede el máximo permitido")
+        raise ValueError("Total line exceeds the maximum allowed")
     return total
 
 
@@ -46,9 +46,9 @@ class PurchaseLineInput(BaseModel):
     @model_validator(mode="after")
     def valid_unit_and_kind(self):
         if (self.catalog_item_id is None) != (self.unit == "CONCEPTO"):
-            raise ValueError("Concepto libre exige unit CONCEPTO; artículos requieren su unidad")
+            raise ValueError("Free concept requires unit CONCEPT; articles require your unity")
         if self.unit in DISCRETE and self.quantity_milli % 1000:
-            raise ValueError("La unidad requiere cantidades enteras (milésimas múltiplos de 1000)")
+            raise ValueError("The unit requires whole quantities (thousands of 1000 multiples)")
         line_total_cents(self.quantity_milli, self.unit_cost_cents)
         return self
 
@@ -74,11 +74,11 @@ class CreatePurchaseRequest(BaseModel):
     @model_validator(mode="after")
     def validate_date_and_total(self):
         if not date(2000, 1, 1) <= self.purchased_on <= date(2100, 12, 31):
-            raise ValueError("La fecha de compra debe estar entre 2000 y 2100")
+            raise ValueError("The purchase date must be between 2000 and 2100")
         total = sum(line_total_cents(l.quantity_milli, l.unit_cost_cents)
                     for l in self.lines)
         if total > MAX_CENTS:
-            raise ValueError("Total de compra excede el máximo permitido")
+            raise ValueError("Total purchase exceeds the maximum allowed")
         return self
 
     def payload_digest(self) -> str:

@@ -101,7 +101,7 @@ export function parseAssignment(value: unknown, businessId: string, locationId: 
 }
 
 function requireId(id: string): string {
-  if (!UUID_PATTERN.test(id)) throw new TypeError('Identificador UUID inválido')
+  if (!UUID_PATTERN.test(id)) throw new TypeError('Invalid UUID identifier')
   return id
 }
 export function canManageLocations(business: RealBusiness) {
@@ -120,7 +120,7 @@ export function canAcceptInvitationToken(token: string) {
 }
 
 export function createOperationsGateway(token: string, userId: string, fetchImpl?: typeof fetch) {
-  if (!token || !UUID_PATTERN.test(userId)) throw new TypeError('Sesión inválida')
+  if (!token || !UUID_PATTERN.test(userId)) throw new TypeError('Invalid meeting')
   const api = createApiClient({ getAccessToken: () => token, fetchImpl })
   const root = (b: string) => '/businesses/' + requireId(b)
   const locations = (b: string) => root(b) + '/locations'
@@ -166,7 +166,7 @@ export function createOperationsGateway(token: string, userId: string, fetchImpl
         { method: 'POST', body: input }), businessId)
     },
     async acceptInvitation(invitationToken: string) {
-      if (!canAcceptInvitationToken(invitationToken)) throw new TypeError('Token de invitación inválido')
+      if (!canAcceptInvitationToken(invitationToken)) throw new TypeError('Invalid invitation token')
       return parseRealBusiness(await api.request<unknown>('/invitations/accept',
         { method: 'POST', body: { invitation_token: invitationToken } }), userId)
     },
@@ -184,17 +184,17 @@ export function createOperationsGateway(token: string, userId: string, fetchImpl
 export type OperationsGateway = ReturnType<typeof createOperationsGateway>
 export function operationsError(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'Sesión inválida o vencida. Iniciá sesión otra vez.'
-    if (error.status === 403) return 'Tu rol no tiene permiso para esta operación.'
-    if (error.status === 404) return 'Recurso no disponible en esta empresa o para esta cuenta.'
-    if (error.status === 409) return 'Conflicto: revisá estado, permisos y asignaciones antes de reintentar.'
-    if (error.status === 422) return 'Revisá los campos y sus valores; la API rechazó la solicitud.'
-    return 'No se pudo completar la solicitud en FastAPI.'
+    if (error.status === 401) return 'Invalid or expired session. Log in again.'
+    if (error.status === 403) return 'Your role is not allowed for this operation.'
+    if (error.status === 404) return 'Resource not available in this company or for this account.'
+    if (error.status === 409) return 'Conflict: review status, permissions and assignments before retry.'
+    if (error.status === 422) return 'Check the fields and their values; the API rejected the request.'
+    return 'Could not complete application in FastAPI.'
   }
   if (error instanceof ApiTransportError) {
     return error.outcomeUnknown
-      ? 'Resultado no confirmado: puede haberse guardado. Consultá el estado actualizado antes de repetir.'
-      : 'No se pudo completar la consulta. Comprobá la conexión y volvé a cargar.'
+      ? 'Unconfirmed result: may have been saved. Please consult the updated status before repeating.'
+      : 'Could not complete query. Check connection and reload.'
   }
-  return 'Operación no completada. Comprobá los datos y la conexión.'
+  return 'Operation not completed. Check the data and connection.'
 }

@@ -9,7 +9,7 @@ test.beforeAll(() => {
 
 async function setup(request: APIRequestContext) {
   const email = 't11-errors-' + randomUUID() + '@example.com'
-  const password = 'Clave disposable T11 C 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registered = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'T11 errores de red QA' },
   })
@@ -35,10 +35,10 @@ async function setup(request: APIRequestContext) {
 
 async function open(page: Page, f: Awaited<ReturnType<typeof setup>>) {
   await page.goto('/real/empresas/' + f.company.id + '/proveedores')
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(f.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(f.password)
+  await page.getByLabel('Email', { exact: true }).fill(f.email)
+  await page.getByLabel('Password', { exact: true }).fill(f.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Proveedores' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Suppliers' })).toBeVisible()
   await expect(page.getByText(f.supplierName)).toBeVisible()
 }
 
@@ -55,7 +55,7 @@ test('T11-C: 401 de API invalida sesión y vuelve a login sin exponer datos', as
       body: JSON.stringify({ detail: 'Sesión revocada durante QA' }) })
   })
   await page.getByRole('button', { name: 'Actualizar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
   await expect(page.getByText(f.supplierName)).toHaveCount(0)
   expect(uiPosts).toBe(0)
 })
@@ -78,7 +78,7 @@ for (const status of [403, 404, 503] as const) {
     })
     await page.getByRole('button', { name: 'Actualizar', exact: true }).click()
     await expect(page.getByRole('alert')).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Proveedores' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Suppliers' })).toBeVisible()
     expect(injected).toBeGreaterThan(0)
     expect(writes).toBe(0)
     fail = false
@@ -99,9 +99,9 @@ test('T11-C: 409 de proveedor duplicado y 422 de compra inválida son atómicos'
   page.on('request', req => {
     if (req.method() === 'POST' && req.url().endsWith('/api/v1' + f.root + '/suppliers')) uiPosts++
   })
-  await page.getByRole('button', { name: 'Agregar proveedor REAL' }).click()
-  await page.getByLabel('Nombre comercial').fill(f.supplierName)
-  await page.getByRole('button', { name: 'Crear proveedor' }).click()
+  await page.getByRole('button', { name: 'Add REAL Provider' }).click()
+  await page.getByLabel('Trade name').fill(f.supplierName)
+  await page.getByRole('button', { name: 'Create Provider' }).click()
   await expect(page.getByRole('alert')).toBeVisible()
   expect(uiPosts).toBe(1)
   const afterResponse = await request.get(suppliersPath, { headers: f.headers })
@@ -121,7 +121,7 @@ test('T11-C: 409 de proveedor duplicado y 422 de compra inválida son atómicos'
 test('T11-C: trabajador miembro sin sede no puede recibir ni registrar venta desde POS', async ({ page, request }) => {
   const owner = await setup(request)
   const workerEmail = 't11-worker-' + randomUUID() + '@example.com'
-  const workerPassword = 'Trabajador T11 descartable 2026!'
+  const workerPassword = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const reg = await request.post(api + '/auth/register', {
     data: { email: workerEmail, password: workerPassword, display_name: 'Trabajador sin sede QA' },
   })
@@ -185,12 +185,12 @@ test('T11-C: trabajador miembro sin sede no puede recibir ni registrar venta des
   expect(toReceive.status(), await toReceive.text()).toBe(403)
 
   await page.goto('/real/empresas/' + owner.company.id + '/pos')
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(workerEmail)
-  await page.getByLabel('Contraseña', { exact: true }).fill(workerPassword)
+  await page.getByLabel('Email', { exact: true }).fill(workerEmail)
+  await page.getByLabel('Password', { exact: true }).fill(workerPassword)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Punto de venta' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible()
   await expect(page.getByText('Solo podés vender en sedes donde tengas asignación activa.', { exact: false })).toBeVisible()
-  await expect(page.getByLabel('Sede del punto de venta').locator('option[value="' + site.id + '"]')).toHaveCount(0)
+  await expect(page.getByLabel('Place of sale').locator('option[value="' + site.id + '"]')).toHaveCount(0)
   // El selector ya no permite preparar un POST para la sede no asignada.
   await expect(page.getByRole('button', { name: /Servicio venta no autorizada T11/ })).toBeVisible()
   await expect(page.getByText('Venta confirmada en PostgreSQL.', { exact: false })).toHaveCount(0)

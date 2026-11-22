@@ -29,7 +29,7 @@ router = APIRouter(prefix="/businesses", tags=["empresas"])
         401: {"description": "Sesión requerida o inválida"},
         409: {"description": "Idempotency-Key usado para datos distintos"},
     },
-    summary="Crear empresa y membresía inicial en una transacción",
+    summary="Create business and initial membership in a transaction",
 )
 def create_business(
     command: CreateBusinessRequest,
@@ -46,16 +46,16 @@ def create_business(
     except CreationSessionInvalid:
         raise unauthorized() from None
     except IdempotencyConflict:
-        raise HTTPException(status_code=409, detail="Clave de solicitud reutilizada") from None
+        raise HTTPException(status_code=409, detail="Re-used application key") from None
     except BusinessUnavailable:
-        raise HTTPException(status_code=404, detail="Empresa no disponible") from None
+        raise HTTPException(status_code=404, detail="Company not available") from None
     response.status_code = 200 if result.replayed else 201
     return result.body
 
 
 @router.get(
     "", response_model=list[BusinessView],
-    summary="Listar empresas con membresía activa de la cuenta",
+    summary="List companies with active account membership",
 )
 def list_businesses(
     context: AuthContext = Depends(current_auth),
@@ -67,7 +67,7 @@ def list_businesses(
 @router.get(
     "/{business_id}", response_model=BusinessView,
     responses={404: {"description": "Empresa no disponible"}},
-    summary="Consultar únicamente una empresa propia",
+    summary="Consult only one company of its own",
 )
 def get_business(
     business_id: UUID,
@@ -77,7 +77,7 @@ def get_business(
     try:
         return BusinessService(db).get_mine(context.user.id, business_id)
     except BusinessUnavailable:
-        raise HTTPException(status_code=404, detail="Empresa no disponible") from None
+        raise HTTPException(status_code=404, detail="Company not available") from None
 
 
 @router.patch(
@@ -90,7 +90,7 @@ def get_business(
         409: {"description": "Empresa suspendida: edición no disponible"},
         422: {"description": "Sin cambios o campos inválidos"},
     },
-    summary="Editar perfil empresarial con autorización real por tenant y rol",
+    summary="Edit business profile with real permission by tenant and role",
 )
 def update_business_profile(
     business_id: UUID,
@@ -105,12 +105,12 @@ def update_business_profile(
     except CreationSessionInvalid:
         raise unauthorized() from None
     except BusinessUnavailable:
-        raise HTTPException(status_code=404, detail="Empresa no disponible") from None
+        raise HTTPException(status_code=404, detail="Company not available") from None
     except BusinessPermissionDenied:
-        raise HTTPException(status_code=403, detail="Operacion no permitida") from None
+        raise HTTPException(status_code=403, detail="Operation not permitted") from None
     except BusinessSuspended:
         raise HTTPException(
-            status_code=409, detail="Empresa suspendida: no se puede editar"
+            status_code=409, detail="Suspended Company: Unable to edit"
         ) from None
 
 
@@ -125,7 +125,7 @@ def update_business_profile(
         409: {"description": "Empresa suspendida, miembro existente o invitación pendiente"},
         422: {"description": "Correo, rol o cuerpo inválido"},
     },
-    summary="Emitir invitación empresarial segura; no crea membresía",
+    summary="Issue secure business invitation; does not create membership",
 )
 def issue_business_invitation(
     business_id: UUID,
@@ -140,16 +140,16 @@ def issue_business_invitation(
     except CreationSessionInvalid:
         raise unauthorized() from None
     except BusinessUnavailable:
-        raise HTTPException(status_code=404, detail="Empresa no disponible") from None
+        raise HTTPException(status_code=404, detail="Company not available") from None
     except BusinessPermissionDenied:
-        raise HTTPException(status_code=403, detail="Operacion no permitida") from None
+        raise HTTPException(status_code=403, detail="Operation not permitted") from None
     except BusinessSuspended:
         raise HTTPException(
-            status_code=409, detail="Empresa suspendida: no se pueden emitir invitaciones"
+            status_code=409, detail="Company suspended: no invitations to issue"
         ) from None
     except InvitationConflict:
         raise HTTPException(
-            status_code=409, detail="El destinatario ya pertenece a la empresa o tiene invitacion pendiente"
+            status_code=409, detail="The recipient already belongs to the company or has an invitation pending"
         ) from None
 
 
@@ -162,7 +162,7 @@ def issue_business_invitation(
         404: {"description": "Empresa no disponible al solicitante"},
         409: {"description": "Equipo no visible mientras la empresa está suspendida"},
     },
-    summary="Consultar equipo de la empresa con permiso members.read",
+    summary="Consult company team with permission members.read",
 )
 def list_business_team(
     business_id: UUID,
@@ -176,11 +176,11 @@ def list_business_team(
     except CreationSessionInvalid:
         raise unauthorized() from None
     except BusinessUnavailable:
-        raise HTTPException(status_code=404, detail="Empresa no disponible") from None
+        raise HTTPException(status_code=404, detail="Company not available") from None
     except BusinessPermissionDenied:
-        raise HTTPException(status_code=403, detail="Operacion no permitida") from None
+        raise HTTPException(status_code=403, detail="Operation not permitted") from None
     except BusinessSuspended:
-        raise HTTPException(status_code=409, detail="Empresa suspendida") from None
+        raise HTTPException(status_code=409, detail="Company suspended") from None
 
 
 @router.patch(
@@ -193,7 +193,7 @@ def list_business_team(
         409: {"description": "Empresa suspendida o membresía titular protegida"},
         422: {"description": "Rol/estado/campos inválidos o cuerpo vacío"},
     },
-    summary="Modificar rol operativo o estado de colaborador, solo titular",
+    summary="Modify operational role or partner status, holder only",
 )
 def update_business_team_member(
     business_id: UUID,
@@ -210,8 +210,8 @@ def update_business_team_member(
     except CreationSessionInvalid:
         raise unauthorized() from None
     except (BusinessUnavailable, TeamMemberNotFound):
-        raise HTTPException(status_code=404, detail="Recurso no disponible") from None
+        raise HTTPException(status_code=404, detail="Not available") from None
     except BusinessPermissionDenied:
-        raise HTTPException(status_code=403, detail="Operacion no permitida") from None
+        raise HTTPException(status_code=403, detail="Operation not permitted") from None
     except (BusinessSuspended, ProtectedMembership):
-        raise HTTPException(status_code=409, detail="Operacion incompatible con el estado actual") from None
+        raise HTTPException(status_code=409, detail="Operation incompatible with current status") from None

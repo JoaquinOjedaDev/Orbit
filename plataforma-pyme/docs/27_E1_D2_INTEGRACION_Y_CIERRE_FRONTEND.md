@@ -1,32 +1,32 @@
-# E1-D2 — Integración del frontend y preparación de E2
+# E1-D2 — Frontend integration and preparation of E2
 
-**Producto:** plataforma de gestión PyME multirrubro y multiempresa. **WALOS es solamente un negocio de ejemplo.**
+**Product:** Multi- and multi-company SME management platform. **WALOS is just an example business.**
 
-**Alcance:** cerrar los incrementos E1-A/B/C/D, evitar regresiones de frontend, consolidar la QA y preparar el traspaso a contratos y modelos de backend. E1-D2 no agrega pagos reales ni autentificación.
+**Scope:** close the E1-A/B/C/D increments, avoid frontend regressions, consolidate QA and prepare for transfer to backend contracts and models. E1-D2 does not add actual payments or authentication.
 
-## 1. Evidencia y estado
+## 1. Evidence and status
 
-| Área | Evidencia | Estado |
+| Area | Evidence | Status |
 |---|---|---|
-| Shell, menú y contexto A/B | QA manual iterativa del usuario; E2E Playwright por ruta y drawer | Validado manualmente; E2E automatizado |
-| Catálogo, imágenes e Inventario | QA manual: dos ubicaciones, fotos compartidas y persistencia de stock | Validado manualmente |
-| Compras, recepción, traslados y conteos | QA del usuario de E1-B7/B8/B9, tests de políticas de inventario | Validado manualmente |
-| Ventas y pagos mixtos | QA de cobros, múltiples medios, saldo al último y cuentas activas | Validado manualmente |
-| Cuentas, Gastos, Caja | 8 pruebas de E1-C3/C3.1; tests unitarios y cierres existentes | Validado manualmente |
-| QR DEMO | Creación, F5, cancelación, aprobación simulada y producto desactivado | Validado manualmente (no MP real) |
-| Navegador escritorio y móvil | `frontend/e2e/specs/frontend.spec.ts` / GitHub Actions | CI como fuente de verificación reproducible |
+| Shell, menu and context A/B | User manual iterative QA; E2E Playwright by path and drawer | Manually validated; automated E2E |
+| Catalog, images and Inventory | Manual QA: Two locations, shared photos and stock persistence | Manually Validated |
+| Purchases, reception, transfers and counting | E1-B7/B8/B9 user QA, inventory policy tests | Manually Validated |
+| Mixed sales and payments | QA of collections, multiple media, last balance and active accounts | Manually Validated |
+| Accounts, Expenditure, Fund | 8 tests of E1-C3/C3.1; existing unit tests and closures | Manually Validated |
+| QR DEMO | Creation, F5, cancellation, simulated approval and deactivated product | Manually valid (not real MP) |
+| Desktop and Mobile Browser | `frontend/e2e/specs/frontend.spec.ts` / GitHub Actions | IC as a reproducible verification source |
 
-No se inventan capturas ni se afirma haber verificado todos los navegadores. Los E2E usan **Chromium desktop y móvil**, no Firefox ni Safari. Las fotos IndexedDB cargadas por el usuario no se suben a la CI.
+No captures are invented or all browsers are verified. E2E uses **Chromium desktop and mobile**, not Firefox or Safari. The indexedDB photos uploaded by the user do not go up to IC.
 
-## 2. Suite automatizada E1-D2
+## 2. Automated Suite E1-D2
 
-- Navegación entre empresas de ejemplo, 404 empresarial y pantalla «Próximamente».
-- Drawer: teclado Escape y devolución de foco al botón inicial.
-- Revisión de ancho horizontal en rutas clave tanto en escritorio como móvil.
-- Alta de servicio por empresa; el servicio de A no aparece en B.
-- QR DEMO con un solo medio Mercado Pago declarado; su estado PENDIENTE no crea venta; F5 recupera la intención; B no la ve; cancelar no crea venta; la aprobación simulada crea una venta y el reintento/persistencia no la duplica.
+- Navigation between example companies, 404 business and screen "Next".
+- Drawer: Keyboard Escape and focus return to the initial button.
+- Horizontal width check on key routes on both desktop and mobile.
+- Service fee per company; A service does not appear in B.
+- QR DEMO with a single half Market Payment declared; its PENDENT state does not create sale; F5 recovers intention; B does not see it; cancel does not create sale; simulated approval creates a sale and retry/persistence does not duplicate it.
 
-**Ejecución local** (PowerShell, desde `plataforma-pyme/frontend`):
+**Local execution** (PowerShell, desde `plataforma-pyme/frontend`):
 
 ```powershell
 npm.cmd ci
@@ -44,32 +44,32 @@ npx.cmd playwright install chromium
 npm.cmd test
 ```
 
-Para revisar las ejecuciones y sus evidencias, consultar GitHub → Actions → «Plataforma PyME · Frontend». `playwright-report` y `test-results` se suben como artifact si falla el E2E.
+To review the executions and their evidence, consult GitHub → Actions → "PyME Platform · Frontend". `playwright-report` y `test-results` They go up as an artifact if the E2E fails.
 
-## 3. Invariantes para el backend
+## 3. Invariants for the backend
 
-1. `businessId` filtra en el servidor y los permisos se verifican contra membresía real, no sólo por frontend.
-2. Un producto inactivo jamás es vendido al aprobar un QR previamente emitido; un QR pendiente no reserva ni descuenta stock.
-3. Venta e inventario participan de la misma transacción al confirmar, con idempotencia de `requestId`.
-4. Todas las aplicaciones de pagos suman exactamente al total en centavos; declaración interna ≠ acreditación financiera.
-5. El último medio puede completarse por el saldo pendiente, sin alterar importes anteriores.
-6. Cuentas bancarias/billeteras desactivadas no se pueden usar en operaciones nuevas, pero su referencia histórica persiste.
-7. Caja física no se mezcla con transferencias; el snapshot cerrado es inmutable.
-8. Fotos se asocian al ID del artículo y empresa, nunca al saldo/ubicación; actualmente se guardan solo en IndexedDB.
+1. `businessId` filters on the server and permissions are verified against real membership, not just by frontend.
+2. An inactive product is never sold by approving a previously issued QR; a pending QR does not reserve or discount stock.
+3. Sales and inventory participate in the same transaction when confirming, with the power of `requestId`.
+4. All payment applications add up to exactly the total in cents; internal statement
+5. The last medium can be supplemented by the outstanding balance, without altering previous amounts.
+6. Bank accounts/disabled banknotes cannot be used in new operations, but their historical reference persists.
+7. Physical box is not mixed with transfers; the closed snapshot is immutable.
+8. Photos are associated with the article ID and company, never to the balance/location; they are currently saved only in IndexedDB.
 
-## 4. Límites explícitos
+## 4. Explicit limits
 
-- Los datos continúan en `localStorage`/IndexedDB, sin sincronización segura entre pestañas o equipos.
-- No hay usuarios autenticados, autorización real ni API externa.
-- El QR es ilustrativo/no escaneable y la aprobación es una simulación.
-- El QR de pago parcial, conciliación real, reservas de stock, producciones/lotes, reembolsos y costos reales quedan diferidos.
-- No se migra el historial DEMO local a PostgreSQL automáticamente: se planificará una importación explícita tras definir contratos.
+- Data continue in `localStorage`/IndexedDB, without secure synchronization between tabs or computers.
+- There are no authenticated users, real authorization or external APIs.
+- QR is illustrative/non-scanning and approval is a simulation.
+- The QR of partial payment, actual reconciliation, stock reserves, production/lots, refunds and real costs are deferred.
+- Local DEMO history is not automatically migrated to PostgreSQL: explicit import will be planned after contract definition.
 
-## 5. Puerta de salida hacia E2
+## 5. Exit door towards E2
 
-- Conservar frontend React/TypeScript y un gateway sustituible por cliente HTTP, sin reescribir pantallas.
-- E2 debe fijar entidades `User`, `Business`, `Membership`, `CatalogItem`, `Location`, `Supplier`, `Purchase`, `Receipt`, `StockMovement`, `Sale`, `PaymentApplication`, `Expense`, `CashSession`, `FinancialAccount` y `QrPaymentIntent`.
-- Entregables próximos: UML de clases, diagramas transaccionales (venta/stock/caja), tablas SQL, contratos OpenAPI, errores, roles, patrón Repository/Service y trazabilidad de **al menos 5 requisitos** de la consigna de Programación 2.
-- Solo después: FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL, Docker Compose, registro/login real, pytest, CI y deploy.
+- Keep frontend React/TypeScript and a replaceable gateway with HTTP client, without rewriting screens.
+- E2 should fix entities `User`, `Business`, `Membership`, `CatalogItem`, `Location`, `Supplier`, `Purchase`, `Receipt`, `StockMovement`, `Sale`, `PaymentApplication`, `Expense`, `CashSession`, `FinancialAccount` y `QrPaymentIntent`.
+- Next Deliverables: UML of Classes, Transactional Diagrams (Sale/stock/box), SQL Tables, OpenAPI Contracts, Errors, Roles, Repository/Service Pattern and Traceability **at least 5 requirements** of the Programming consignment 2.
+- Only after: FastAPI, SQLAlchemy 2.x, Alembic, PostgreSQL, Docker Compose, real log/login, pytest, CI and deploy.
 
-**Criterio funcional de E1-D2:** los recorridos E2E y políticas en CI deben aprobar; la prueba de UX en navegador del usuario sigue siendo una revisión complementaria.
+**Functional criterion of E1-D2:** E2E and IC policy paths must pass; the UX user browser test remains a complementary review.

@@ -9,7 +9,7 @@ test.beforeAll(() => {
 
 async function identity(request: APIRequestContext, label: string) {
   const email = 't11-c-' + randomUUID() + '@example.com'
-  const password = 'T11-C disposable account 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registered = await request.post(api + '/auth/register', {
     data: { email, password, display_name: label },
   })
@@ -33,8 +33,8 @@ async function post(request: APIRequestContext, headers: { Authorization: string
 }
 
 async function loginBrowser(page: Page, user: { email: string; password: string }) {
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(user.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(user.password)
+  await page.getByLabel('Email', { exact: true }).fill(user.email)
+  await page.getByLabel('Password', { exact: true }).fill(user.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
 }
 
@@ -56,10 +56,10 @@ test('T11-C: cambiar A→B ignora respuesta tardía de A y no filtra proveedores
   await loginBrowser(page, user)
   await expect(page.getByText(supplierB)).toBeVisible()
   await expect(page.getByText(supplierA)).toHaveCount(0)
-  await page.getByRole('button', { name: 'Mis empresas' }).click()
-  await expect(page.getByRole('heading', { name: 'Mis empresas' })).toBeVisible()
+  await page.getByRole('button', { name: 'My companies' }).click()
+  await expect(page.getByRole('heading', { name: 'My companies' })).toBeVisible()
   await page.getByRole('button', { name: /T11 Empresa Alfa/ }).click()
-  await expect(page.getByRole('heading', { name: 'Datos de la empresa' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Company details' })).toBeVisible()
 
   let releaseA: (() => void) | undefined
   let observedA: (() => void) | undefined
@@ -74,10 +74,10 @@ test('T11-C: cambiar A→B ignora respuesta tardía de A y no filtra proveedores
   await page.getByRole('button', { name: 'Abrir Proveedores' }).click()
   try {
     await interceptedA
-    await page.getByRole('button', { name: 'Mis empresas' }).click()
-    await expect(page.getByRole('heading', { name: 'Mis empresas' })).toBeVisible()
+    await page.getByRole('button', { name: 'My companies' }).click()
+    await expect(page.getByRole('heading', { name: 'My companies' })).toBeVisible()
     await page.getByRole('button', { name: /T11 Empresa Beta/ }).click()
-    await expect(page.getByRole('heading', { name: 'Datos de la empresa' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Company details' })).toBeVisible()
     await page.getByRole('button', { name: 'Abrir Proveedores' }).click()
     await expect(page.getByText(supplierB)).toBeVisible()
   } finally {
@@ -85,7 +85,7 @@ test('T11-C: cambiar A→B ignora respuesta tardía de A y no filtra proveedores
   }
   await expect(page.getByText(supplierA)).toHaveCount(0)
   await expect(page.getByText(supplierB)).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Proveedores' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Suppliers' })).toBeVisible()
 })
 
 test('T11-C: actor ajeno no puede consultar tenant; logout/F5 borra acceso en UI', async ({ page, request }) => {
@@ -104,25 +104,25 @@ test('T11-C: actor ajeno no puede consultar tenant; logout/F5 borra acceso en UI
 
   await page.goto('/real/empresas/' + business.id + '/proveedores')
   await loginBrowser(page, outsider)
-  await expect(page.getByRole('heading', { name: 'Proveedores' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Suppliers' })).toBeVisible()
   await expect(page.getByText(secret)).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Agregar proveedor REAL' })).toHaveCount(0)
-  await page.getByRole('button', { name: 'Mis empresas' }).click()
-  await expect(page.getByRole('heading', { name: 'Mis empresas' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Add REAL Provider' })).toHaveCount(0)
+  await page.getByRole('button', { name: 'My companies' }).click()
+  await expect(page.getByRole('heading', { name: 'My companies' })).toBeVisible()
   await expect(page.getByText('T11 C Privada')).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Mi perfil' }).click()
-  await expect(page.getByRole('heading', { name: 'Mi perfil' })).toBeVisible()
-  await page.getByRole('button', { name: 'Cerrar sesión' }).click()
-  await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
+  await page.getByRole('button', { name: 'My profile' }).click()
+  await expect(page.getByRole('heading', { name: 'My profile' })).toBeVisible()
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
   await expect(page.getByText(secret)).toHaveCount(0)
 
   // A fresh login with the real owner must not inherit outsider's UI state.
   await loginBrowser(page, owner)
-  await expect(page.getByRole('heading', { name: 'Mi perfil' })).toBeVisible()
-  await page.getByRole('button', { name: 'Mis empresas' }).click()
+  await expect(page.getByRole('heading', { name: 'My profile' })).toBeVisible()
+  await page.getByRole('button', { name: 'My companies' }).click()
   // The company is also rendered in the topbar <select>; assert the actual card.
   await expect(page.getByRole('button', { name: /T11 C Privada/ })).toBeVisible()
 })

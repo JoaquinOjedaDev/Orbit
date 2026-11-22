@@ -1,145 +1,145 @@
-# E2-7 · T12-E — Acta de cierre documental, auditoría final y Etapa 2
+# E2-7 · T12-E — Documentary closure, final audit and Stage 2
 
-**Fecha:** 11 de noviembre de 2026.  
-**Proyecto:** Orbit — plataforma de gestión generalista multiempresa/multirrubro (UNSAM, Programación 2, segundo cuatrimestre 2026). WALOS es únicamente una empresa de ejemplo.  
-**Base funcional fija:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45, T11).  
-**Rama y PR de documentación:** `docs/e2-7-t12-cierre-academico`, PR #46, DRAFT hasta autorización expresa del merge.  
-**Naturaleza del cierre:** auditoría **estática y documental**, contrastada con los archivos del repositorio y antecedentes T11. No constituye auditoría de penetración, evaluación WCAG, certificación de producción ni cotejo exhaustivo de la consigna TP3. Se consultó el estado de GitHub Actions por SHA; las ejecuciones CI se informan por separado y no se atribuyen al proceso de redacción.
+**Date:** November 11, 2026.  
+**Project:** Orbit — Multi-company/multi-rub general management platform (UNSAM, Programming 2, second quarter 2026). WALOS is only an example company.  
+**Fixed functional base:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45, T11).  
+**Branch and PR documentation:** `docs/e2-7-t12-cierre-academico`, PR #46, DRAFT until express authorization of the merge.  
+**Nature of closure:** audit **static and documentary**This does not constitute penetration audit, WCAG evaluation, production certification or comprehensive matching of the TP3 slogan. The status of GitHub Actions was consulted by SHA; CI executions are reported separately and are not attributed to the drafting process.
 
-## 1. Dictamen
+## 1. Opinion
 
-**T12 DOCUMENTAL COMPLETADO CON RESERVAS DECLARADAS. APTO PARA REVISIÓN HUMANA FINAL DE PR #46; MERGE A `main` NO AUTORIZADO POR ESTA ACTA.**
+**T12 DOCUMENTS COMPLIED WITH DISCLOSED RESERVATIONS. APPROPRIATE FOR FINAL HUMAN REVISION OF PR #46; MERGE A `main` NOT AUTHORIZED BY THIS ACT.**
 
-Se resolvieron los principales desfases que causaban un **NO-GO documental**: Documento 04 obsoleto; portadas de entrega/frontend/backend; índice UML 03A/03B/03C; segundo SVG 03B; CHANGELOG; encabezados de Documento 03 y 05. Se preservó el historial y se respetó `plataforma-pyme/`.
+The main gaps that caused a **Documentary NO-GO**: Document 04 obsolete; frontend/backend delivery covers; UML 03A/03B/03C index; second SVG 03B; CHANGELOG; Document 03 and 05 headings. History preserved and respected `plataforma-pyme/`.
 
-**Reservas que no se ocultan:**
-1. **CI del cierre en evolución:** al iniciar T12 no había ejecuciones registradas para la rama documental, pero luego de publicar el acta GitHub inició **tres workflows** (​Frontend, Backend e Inventario REAL full-stack) sobre el commit `a71c946c4070602e91e1439b206ac4e1dcd1f953`, evento `pull_request`; al último control los tres estaban **IN_PROGRESS, sin conclusión**, no PASS. Los filtros por ruta de los YAML no autorizan suponer que no correrán. Un nuevo commit del acta cambia el SHA de HEAD y requiere verificar sus checks de nuevo; el antecedente T11 no equivale a CI de T12.
-2. Fuentes `03A/03B/03C.puml`: se verificó su existencia y estructura textual, **pero la compilación con el ejecutable oficial PlantUML sigue sin ejecutarse** en este entorno por falta del JAR/binario. No declarar `PASS`.
-3. La **consigna original TP3** no fue contrastada íntegramente contra cada RF/CU; no afirmar que todos los requisitos heredados están absorbidos. El [ADR-008 histórico](ADR/ADR-008-integracion-con-tp.md) menciona **≥10 tests unitarios ejecutados**: el total de 892 Pytest incluye pruebas de integración y **no basta por sí solo** para certificar ese requisito sin clasificar los casos. El alcance académico implementado conocido es RF-01 a RF-07.
-4. El desarrollo académico no equivale a un despliegue bancario/comercial de producción: no realizar ventas ni pagos reales de prueba sobre empresas o credenciales personales.
+**Reservations not hidden:**
+1. **IC of the evolving closure:** when T12 started there were no recorded executions for the documentary branch, but after publishing the GitHub act began **tres workflows** (​Frontend, Backend e Inventario REAL full-stack) sobre el commit `a71c946c4070602e91e1439b206ac4e1dcd1f953`event `pull_request`; the last check all three were **IN_PROGRESS, no conclusion**, no PASS. The YAML route filters do not allow to assume that they will not run. A new commit of the minutes changes HEAD SHA and requires checking again; the T11 background does not equal IC of T12.
+2. Sources `03A/03B/03C.puml`: its existence and textual structure were verified, **but the compilation with the official PlantUML executable is still not executed** in this environment due to lack of JAR/binary. `PASS`.
+3. La **original TP3 tag** was not fully contrasted against each RF/CU; not to claim that all inherited requirements are absorbed. [ADR-008 historical](ADR/ADR-008-integracion-con-tp.md) mentions **≥10 unit tests performed**: the total of 892 Python includes integration tests and **not enough alone** to certify that requirement without classifying cases. The known academic scope implemented is RF-01 to RF-07.
+4. Academic development does not amount to a banking/commercial deployment of production: no sales or actual test payments on companies or personal credentials.
 
-Estas reservas se diferencian de bugs demostrados: **no se detectó un nuevo bug funcional** porque el control T12 es documental y no ejecutó pruebas sobre una base de datos.
+These reservations differ from demonstrated bugs: **no new functional bug detected** Because control T12 is documentary and did not run evidence on a database.
 
-## 2. Inventario de entregables al cierre
+## 2. Inventory of deliverables at close
 
-| Entrega | Archivo principal | Resultado |
+| Delivery | Main file | Outcome |
 |---|---|---|
-| T12-A | [Plan y matriz inicial](E2-7_T12_A_PLAN_Y_MATRIZ_DESFASES.md) | Base de discrepancias y alcance, estado actualizado |
-| T12-B | [Acta RF/CU/API/UI/test](E2-7_T12_B_CONCILIACION_RF_CU_API_UI_TEST.md) | RF-01..07 REAL, RF-08..10 DEMO/diferido, rutas y evidencias |
-| T12-C1 | [Documento 03 v2.1](../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md) | 19 modelos ORM, reglas y relaciones |
-| T12-C2 | [03A](../entrega-programacion-2/diagramas/03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md) | PlantUML + SVG + guía |
-| T12-C3 | [03B](../entrega-programacion-2/diagramas/03B_EXPLICACION_COMPRAS_INVENTARIO_VENTAS.md) | PlantUML + SVG + guía; [segundo flujo explicativo](../entrega-programacion-2/diagramas/03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) conservado |
-| T12-C4 | [03C](../entrega-programacion-2/diagramas/03C_EXPLICACION_CASOS_DE_USO.md) | PlantUML + SVG + guía; 12 CU, 13 óvalos (CU-12a/b) |
-| T12-D1 | [Documento 04 AS-IMPLEMENTED](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md) | Arquitectura REAL al principio, archivo E2-3 histórico preservado, patrones con evidencia |
-| T12-D2 | [Portada de entrega](../entrega-programacion-2/README.md), [índice UML](../entrega-programacion-2/diagramas/README.md), [Frontend](../frontend/README.md), [Backend](../backend/README.md), [CHANGELOG](../CHANGELOG.md) | Encabezados y navegación actualizados, histórico preservado |
-| T12-E | **Este documento** | Conciliación final, reservas, procedimiento de verificación y backlog; [índice de ADR-001..008](ADR/README.md) reconciliado con estado vigente |
+| T12-A | [Initial plan and matrix](E2-7_T12_A_PLAN_Y_MATRIZ_DESFASES.md) | Discrepancies and scope base, updated status |
+| T12-B | [Acta RF/CU/API/UI/test](E2-7_T12_B_CONCILIACION_RF_CU_API_UI_TEST.md) | RF-01..07 REAL, RF-08..10 DEMO/deferred, routes and evidence |
+| T12-C1 | [Document 03 v2.1](../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md) | 19 ORM models, rules and relationships |
+| T12-C2 | [03A](../entrega-programacion-2/diagramas/03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md) | PlantUML + SVG + guide |
+| T12-C3 | [03B](../entrega-programacion-2/diagramas/03B_EXPLICACION_COMPRAS_INVENTARIO_VENTAS.md) | PlantUML + SVG + guide; [second explanatory flow](../entrega-programacion-2/diagramas/03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) preserved |
+| T12-C4 | [03C](../entrega-programacion-2/diagramas/03C_EXPLICACION_CASOS_DE_USO.md) | PlantUML + SVG + guide; 12 CU, 13 ovals (CU-12a/b) |
+| T12-D1 | [Documento 04 AS-IMPLEMENTED](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md) | REAL Architecture at the beginning, E2-3 archive preserved historical, patterns with evidence |
+| T12-D2 | [Delivery cover](../entrega-programacion-2/README.md), [UML index](../entrega-programacion-2/diagramas/README.md), [Frontend](../frontend/README.md), [Backend](../backend/README.md), [CHANGELOG](../CHANGELOG.md) | Updated headers and navigation, preserved historical |
+| T12-E | **This document** | Final reconciliation, reservations, verification procedure and backlog; [ADR-001.008 index](ADR/README.md) reconciled with current status |
 
-Documentos académicos completos: [01](../entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md), [02](../entrega-programacion-2/02_CASOS_DE_USO.md), [03](../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md), [04](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md), [05](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md).
+Complete academic documents: [01](../entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md), [02](../entrega-programacion-2/02_CASOS_DE_USO.md), [03](../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md), [04](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md), [05](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md).
 
-## 3. Conciliación funcional y técnica
+## 3. Functional and technical reconciliation
 
-| RF / casos de uso | Estado AS-IMPLEMENTED al corte T11 | Límite importante |
+| RF/use cases | AS-IMPLEMENTED state at cut T11 | Important limit |
 |---|---|---|
-| RF-01 / CU-01 y CU-02 | Registro, login, me, logout; token Bearer opaco | Token REAL en memoria; F5 exige reautenticarse |
-| RF-02 / CU-03 y CU-12 | Empresas, titularidad protegida, membresías, invitaciones y equipo | Invitación sola no concede permisos; sin correo automático/transferencia titular |
-| RF-03 / CU-04 | Ubicaciones y asignaciones por empresa; SELL/STORE | Trabajador/encargado necesita autorización y asignación efectiva de sede |
-| RF-04 / CU-05 | Catálogo de bienes y servicios persistido por tenant | Crear ficha no crea stock |
-| RF-05 / CU-06 y CU-07 | Proveedores, compras, snapshots y recepción única completa | Registrar compra sin recepción no modifica inventario |
-| RF-06 / CU-08, CU-09 y CU-11 | StockBalance, ledger firmado, traslados, ajustes y stock inicial | No saldos negativos; controlar concurrencia y versiones |
-| RF-07 / CU-10 | POS real con precios/descuentos por rol y pagos declarados | Ninguna integración de acreditación bancaria automática |
-| RF-08 / caja y gastos | **DEMO / DIFERIDO** | Sin router/circuito real equivalente |
-| RF-09 / cuentas financieras | **DEMO / DIFERIDO** | Sin integración bancaria REAL |
-| RF-10 / QR Mercado Pago | **DEMO / DIFERIDO** | No OAuth de comercio, webhooks ni cobro acreditado |
+| RF-01 / CU-01 y CU-02 | Log, login, me, logout; token Bearer opaque | Token REAL in memory; F5 demands reauthentication |
+| RF-02 / CU-03 y CU-12 | Companies, protected ownership, memberships, invitations and equipment | Invitation alone does not grant permissions; no automatic mail/transfer holder |
+| RF-03 / CU-04 | Locations and allocations by company; SELL/STORE | Worker/manager needs authorization and effective assignment of headquarters |
+| RF-04 / CU-05 | Catalogue of goods and services persisted by tenant | Crear ficha no crea stock |
+| RF-05 / CU-06 y CU-07 | Suppliers, purchases, snapshots and unique reception complete | Register purchase without receipt does not change inventory |
+| RF-06 / CU-08, CU-09 y CU-11 | StockBalance, signed ledger, transfers, adjustments and initial stock | No negative balances; control of competition and versions |
+| RF-07 / CU-10 | Actual POS with prices/discounts per role and payments declared | No integration of automatic bank accreditation |
+| RF-08 / cash and expenses | **DEMO / DIFFERED** | Sin router/circuito real equivalente |
+| RF-09 / financial accounts | **DEMO / DIFFERED** | No Real Bank Integration |
+| RF-10 / QR Market Payment | **DEMO / DIFFERED** | No OAuth of Commerce, Webhooks or Credited Charge |
 
-**Modelo:** 19 clases ORM persistentes cubren usuario/sesión, empresa, miembros/invitaciones, sedes/asignaciones, catálogo/proveedores y entidades comerciales. El diagrama 03B no muestra una tabla genérica inexistente `SolicitudIdempotente`; el modelo real conserva claves y huellas por operación. Separar modo de pago declarado de confirmación externa.
+**Model:** 19 persistent ORM classes cover user/session, company, members/invitations, headquarters/assignments, catalog/suppliers and commercial entities. Diagram 03B does not show a generic non-existent table `SolicitudIdempotente`; the real model retains keys and footprints per operation. Separate declared payment mode from external confirmation.
 
-**Patrones para defensa:** Repository y Service Layer implementados; sesión/commit SQLAlchemy con práctica transaccional; Observer observable en DEMO. No declarar formalmente implementados Factory, Decorator, State, Command o Memento sin prueba de clases/contratos concretos.
+**Patterns for defence:** Repository and Service Layer implemented; SQLAlchemy session/commit with transactional practice; Observable observer in DEMO. Do not formally declare factory, decorator, state, command or memento implemented without proof of specific classes/contracts.
 
-## 4. Evidencias técnicas y alcance del control
+## 4. Technical evidence and scope of control
 
-- **T11 — antecedente de calidad, NO ejecutado en T12:** [auditoría técnica](E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) registra **892 Pytest + 38 Playwright REAL + 6 DEMO** en el commit funcional específico `6aecd80e52a0712f7d1088dde8347de7f7a7c186`. La aprobación de PR #45 llevó esas funcionalidades a `main`.
-- **T12-B:** el [Documento 05](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md) documenta **46 rutas/métodos** en **13 routers** y la correspondencia con pantallas/test. Se contrastaron decoradores de los 13 routers del código y coincidió ese total.
-- **T12-E:** se comprobó la configuración de `.github/workflows/plataforma-pyme-frontend.yml`, `plataforma-pyme-backend.yml` e `inventory-real.yml`: no son validadores específicos de Markdown o PlantUML; se conservan sin cambios. **GitHub Actions sí inició tres ejecuciones automáticas** contra el SHA de evidencia `a71c946c` (IDs 43049799155, 43049799104 y 43049799167; estado observado: `in_progress`). Este dato prevalece sobre la ausencia de runs durante la auditoría inicial.
-- **Enlaces Markdown:** se cotejaron **215 enlaces relativos en 17 Markdown** de la entrega y documentos T12 contra el árbol del HEAD `a71c946c` de GitHub (**562 entradas**); **215/215 destinos existentes, 0 rotos**. La comprobación no abarca anclajes `#fragment`, enlaces externos ni URLs generadas en tiempo de ejecución.
-- **SVG:** los cuatro gráficos presentan `viewBox` y texto con atributo de color `fill`; siguen siendo diagramas editoriales y no exportaciones literales de PlantUML.
-- **PlantUML:** `@startuml` y `@enduml` presentes; compilación semántica/renderización pendientes de un ambiente con PlantUML. Se preserva la advertencia, no se simula validación.
+- **T11 — Quality history, NOT executed in T12:** [technical audit](E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) record **892 Pytest + 38 Playwright REAL + 6 DEMO** in the specific functional committee `6aecd80e52a0712f7d1088dde8347de7f7a7c186`. The approval of PR #45 led to these functionalities `main`.
+- **T12-B:** el [Document 05](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md) Document **46 routes/methods** en **13 routers** and the matching with screens/test. Decorators of 13 routers of the code were contrasted and that total coincided.
+- **T12-E:** the configuration of `.github/workflows/plataforma-pyme-frontend.yml`, `plataforma-pyme-backend.yml` e `inventory-real.yml`: are not Markdown or PlantUML specific validators; they are preserved unchanged. **GitHub Actions did start three automatic executions** Against the SHA of Evidence `a71c946c` (IDs 43049799155, 43049799104 and 43049799167; observed status: `in_progress`) This data prevails over the absence of run during the initial audit.
+- **Enlaces Markdown:** were cross-checked **215 enlaces relativos en 17 Markdown** of delivery and T12 documents against the HEAD tree `a71c946c` of GitHub (**562 entries**); **215/215 existing destinations, 0 broken**. Check does not include anchors `#fragment`, external links or URLs generated at runtime.
+- **SVG:** the four graphs present `viewBox` and text with color attribute `fill`; remain editorial diagrams and not literal PlantUML exports.
+- **PlantUML:** `@startuml` y `@enduml` present; semantic compilation/rendering pending from an environment with PlantUML. The warning is preserved, no validation simulated.
 
-### Verificación manual y reproducible pendiente
+### Manual and reproducible pending verification
 
-Desde una copia descartable del repositorio, sin tocar la base de datos de trabajo:
+From a disposable copy of the repository, without touching the working database:
 ```powershell
 # En la carpeta plataforma-pyme/entrega-programacion-2/diagramas
 java -jar .\plantuml.jar -checkonly .\03A_CLASES_IDENTIDAD_Y_CATALOGO.puml
 java -jar .\plantuml.jar -checkonly .\03B_CLASES_COMERCIO_E_INVENTARIO.puml
 java -jar .\plantuml.jar -checkonly .\03C_CASOS_DE_USO.puml
 ```
-Validar visualmente el SVG generado por el motor en cada caso, pero **no sustituir** el SVG editorial aprobado automáticamente: las composiciones tienen propósito distinto.
+Visually validate the engine-generated SVG in each case, but **do not replace** the SVG publishing automatically approved: compositions have different purpose.
 
-**CI documental sin workflow nuevo:** se recomienda un script de validación de enlaces / XML / PUML ejecutado en copia de QA o un control manual firmado; añadir `.github/workflows/*.yml` requeriría otro alcance y un PR específico. **No** se cambió infraestructura de CI aquí.
+**Documentary CI without new workflow:** a link validation script / XML/PUML executed in copy of QA or signed manual control is recommended; add `.github/workflows/*.yml` would require another scope and a specific PR. **No** IC infrastructure changed here.
 
-## 5. Observaciones residuales priorizadas
+## 5. Priority residual observations
 
-| ID | Prioridad | Observación final | Acción futura |
+| ID | Priority | Final observation | Future action |
 |---|---|---|---|
-| R-01 | P1 para cierre técnico ampliado | No hay compilación PlantUML acreditada | Ejecutar `-checkonly` y archivar salida; no falsear PASS |
-| R-02 | P1 si la rúbrica lo exige | Consigna TP3 no cotejada exhaustivamente | Comparar requisito heredado → RF/CU → archivo/test; no declarar absorción automática |
-| R-03 | P2 | Tres workflows de CI iniciados sobre `a71c946c`, pendientes de conclusión al auditar; la documentación no tiene validador dedicado | Verificar resultado de los 3 runs del último HEAD antes de merge; validador Markdown/PUML en PR posterior, sin añadir YAML aquí |
-| R-04 | P2 | README históricos extensos: secciones antiguas aún contienen palabras «pendiente» | Respetar encabezados vigentes y delimitador de archivo histórico |
-| R-05 | P2 | Warns Pydantic `Field(alias=...)` reportados en QA histórico | Evaluar con pruebas antes de cambiar el contrato |
-| R-06 | P2 | Intentos pendientes en IndexedDB sin cifrado; riesgo en equipos compartidos | Evaluar ciclo de vida, expiración, minimización y cifrado |
-| R-07 | P2 | Sesión Bearer en memoria y reingreso F5; UX imperfecta | Evaluar renovación segura, cookies HttpOnly/CSRF y controles |
-| R-08 | P2 | Falta evaluación completa de accesibilidad, móvil físico, rendimiento y seguridad producción | Plan de QA de producto separado, sin usar datos reales |
-| R-09 | P3 | Comentarios/docstrings de código pre-T11 aún pueden estar viejos | PR de limpieza independiente; no contaminar el cierre documental |
-| R-10 | P3 | Comprobaciones de anchors externos no realizadas | Añadir link checker cuando exista pipeline documental |
+| R-01 | P1 for extended technical closure | No PlantUML Accredited Compilation | Ejecutar `-checkonly` and file output; do not fake PASS |
+| R-02 | P1 if the heading so requires | TP3 not fully cross-checked | Compare inherited requirement → RF/CU → file/test; not declare automatic absorption |
+| R-03 | P2 | Three IC workflows initiated on `a71c946c`, pending completion of the audit; documentation does not have dedicated validator | Check the result of the 3 runs of the last HEAD before merge; Markdown/PUML validator in rear PR, without adding YAML here |
+| R-04 | P2 | Extensive historical README: old sections still contain "pending" words | Respect current headers and historical file delimiter |
+| R-05 | P2 | Warns Pydantic `Field(alias=...)` reported in historical QA | Test evaluation before changing the contract |
+| R-06 | P2 | Unencrypted IndexedDB pending attempts; risk on shared computers | Evaluate life cycle, expiration, minimization and encryption |
+| R-07 | P2 | Bearer session in memory and re-entry F5; UX imperfect | Evaluate secure renewal, HttpOnly/CSRF cookies and controls |
+| R-08 | P2 | Lack of comprehensive accessibility, physical mobile, performance and production safety assessment | Separate product QA plan, without using actual data |
+| R-09 | P3 | Comments/docstrings pre-T11 code may still be old | Independent cleaning PR; do not pollute the documentary closure |
+| R-10 | P3 | Unrealised external anchovy checks | Add link checker when documentary pipeline exists |
 
-**No quedan defectos demostrados en modelos nuevos por esta auditoría estática.** Eso **no prueba** ausencia de fallos: no se hicieron pruebas funcionales nuevas.
+**There are no defects demonstrated in new models by this static audit.** Eso **no proof** absence of failures: no new functional tests were performed.
 
-## 6. Matriz de puertas de cierre y decisión
+## 6. Shutter and decision door matrix
 
-| Puerta | Evaluación |
+| Door | Evaluation |
 |---|---|
-| 01..05 con encabezado vigente y límites REAL/DEMO | **Cumplido documentalmente**, con registro histórico preservado |
-| 03A/03B/03C y segundo flujo 03B incluidos | **Cumplido documentalmente** |
-| Relación RF/CU→API→UI/test en 05 | **Cumplido con base T11, no retesteado** |
-| README de entrega/frontend/backend, índice UML y changelog actualizados | **Cumplido** |
-| Ámbito único `plataforma-pyme/`, sin archivos de app/DB/infra | **Verificado:** 23 archivos documentales, 14 commits sobre `main` al SHA `a71c946c`, ningún cambio de código/DB/infraestructura |
-| Enlaces internos existentes | **215/215 destinos existentes en el árbol GitHub**, 0 rotos; no valida anclajes ni enlaces externos |
-| Build/tests/CI ejecutados para HEAD T12 | **3 workflows lanzados para `a71c946c`, en ejecución al último control**. Sin conclusión: NO declarar PASS; el commit de actualización del acta requiere consultar su propio SHA |
-| PlantUML oficial | **Pendiente** |
-| Consigna original TP3 | **Pendiente de cotejo completo** |
-| Aprobación humana explícita para pasar PR READY y hacer merge | **NO otorgada por esta acta** |
+| 01..05 with current header and REAL/DEMO limits | **Documentaryly completed**, with preserved historical record |
+| 03A/03B/03C and second flow 03B included | **Documentaryly completed** |
+| Relationship RF/CU→API→UI/test at 05 | **Complied with T11 base, not retested** |
+| README of delivery/frontend/backend, UML index and changelog updated | **Implemented** |
+| Single area `plataforma-pyme/`, no app/DB/infra files | **Checked:** 23 documentary archives, 14 committees on `main` to the SHA `a71c946c`, no code change/DB/infrastructure |
+| Existing internal links | **215/215 destinations existing in the GitHub tree**, 0 broken; does not validate anchors or external links |
+| Build/tests/CI executed for HEAD T12 | **3 workflows released for `a71c946c`, in application of the last control**. No conclusion: DO NOT declare PASS; the committ of updating the minutes requires consulting its own SHA |
+| Official plantuml | **Pending** |
+| Original TP3 consignor | **Complete matching pending** |
+| Explicit human approval to pass PR READY and make merge | **NOT granted by this Act** |
 
-**Dictamen operativo:** cierre T12 documental **CON RESERVAS**, apto para que el responsable revise la rama y decida posteriormente el merge. No cambiar `main`, no ejecutar acciones sobre PostgreSQL ni tocar funcionalidad en este cierre.
+**Operational opinion:** T12 closure documentary **RESERVES**, suitable for the responsible to review the branch and decide later on the merge. Do not change `main`, do not execute actions on PostgreSQL or touch functionality in this closure.
 
 ---
 
-## 7. BACKLOG POSTACADÉMICO — ETAPA 2 (FUERA DEL ALCANCE EVALUABLE ACTUAL)
+## 7. POST-CADEMIC BASKLOG — STAGE 2 (WHERE THE CURRENT EVALUABLE SCOPE IS OUT)
 
-> **NOTA DE ALCANCE / FIREWALL:** Las funcionalidades de esta sección son **ideas y objetivos de producto posteriores al cierre académico T12**. **NO forman parte de los compromisos RF-01 a RF-07 evaluados en este recorte**, no deben presentarse como implementadas ni convertirse en defectos de entrega por figurar aquí. Si una consigna oficial exigiera alguna, esa obligación deberá analizarse expresamente por separado.
+> **NOTA DE ALCANCE / FIREWALL:** The functionalities of this section are **ideas and product objectives after academic closure T12**. **They are NOT part of the RF-01 to RF-07 commitments assessed in this cut**, they must not be presented as implemented or become delivery defects because they appear here. If an official slogan requires any, that obligation should be explicitly analysed separately.
 
-| Orden sugerido | Línea de trabajo | Reglas que se deben conservar |
+| Suggested command | Workline | Rules to be retained |
 |---|---|---|
-| **2A** | Convergencia visual y de navegación REAL / DEMO | Reutilizar estética, flujos y accesibilidad DEMO sobre datos REAL, sin unir `demoStore` con la API ni debilitar permisos |
-| **2B** | Diagrama ERD real de PostgreSQL | Generar vista de FK, tablas y restricciones desde un entorno de prueba mediante DBeaver o similar. **No requiere migrar a Supabase** |
-| **2C** | Demostración web/móvil | Deploy de QA, HTTPS, variables seguras, datos ficticios, responsive y test táctil/teclado; no publicar BD privada |
-| **2D** | Mercado Pago QR real **por empresa** | OAuth/credenciales tenant-scoped, QR de artículo vs QR de cobro, intención/expiración, webhooks con firma verificada y conciliación; impedir ventas dobles |
-| **2E** | Gastos, caja y jornadas (RF-08) | Modelo contable, aperturas/cierres con snapshots, permisos y conciliación de efectivo distinta de pago declarado |
-| **2F** | Cuentas financieras (RF-09), reservas, producción/recetas, proveedores extendidos | Priorizar contratos por riesgo y valor; no mezclar inventario técnico ni fondos por empresa |
+| **2A** | Real Visual and Navigation Convergence / DEMO | Reusing aesthetics, flows and accessibility DEMO over REAL data, unbound `demoStore` with API or weaken permissions |
+| **2B** | PostgreSQL real ERD diagram | Generate FK view, tables and restrictions from a test environment using DBeaver or similar. **No migration required to Supabase** |
+| **2C** | Web/mobile demonstration | QA Deploy, HTTPS, secure variables, fictitious data, responsive and touch/key test; do not publish private DB |
+| **2D** | Market Real QR Payment **per company** | OAuth/credentials tenant-scoped, QR article vs QR collection, intention/expiration, webhooks with verified signature and reconciliation; prevent double sales |
+| **2E** | Expenditure, cash and days (RF-08) | Accounting model, openings/closures with snapshots, permits and reconciliation of cash other than declared payment |
+| **2F** | Financial accounts (RF-09), reserves, production/recipes, extended suppliers | Prioritize contracts for risk and value; do not mix technical inventory or funds per company |
 
-**Dependencias mínimas:** congelar primero rutas API y políticas de permisos; maquetar REAL con los flujos DEMO; mantener CI/regresiones de transacciones e idempotencia; no integrar QR productivo sin seguridad, reversas y auditoría. El calendario y presupuesto de Etapa 2 requieren decisión posterior, no nacen de este cierre.
+**Minimum units:** First freeze API routes and permission policies; model REAL with DEMO flows; maintain CI/transaction regressions and idempotence; do not integrate productive QR without security, reverse and audit. The schedule and budget of Stage 2 require further decision, they do not arise from this closure.
 
-## 8. Manifiesto de fuentes y estado de publicación
+## 8. Manifestation of sources and publication status
 
-| Referencia | Valor/verificación |
+| Reference | Value/verification |
 |---|---|
-| Repositorio | `JoaquinOjedaDev/Orbit` |
-| Base funcional | `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` |
-| PR documental | #46, rama `docs/e2-7-t12-cierre-academico` |
-| Integración final | El último SHA de evidencia antes de la aclaración de CI era `a71c946c4070602e91e1439b206ac4e1dcd1f953`; **verificar el HEAD vigente y sus checks directamente en PR #46** después de esta nota. El acta no puede autorreferenciar su propio commit de forma estable |
-| Inventario técnico | `backend/app/api/v1/router.py` y 13 routers; `backend/app/infrastructure/models/` y Alembic; `frontend/src/App.tsx` y `src/api/httpClient.ts` |
-| Evidencia T11 | `docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md` |
-| Manifiesto de cambios y comprobación final | `git diff --name-only origin/main...HEAD`, `git log -1 --oneline`, estado de PR y controles de enlaces/PUML |
+| Repository | `JoaquinOjedaDev/Orbit` |
+| Functional basis | `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` |
+| Documentary PR | #46, rama `docs/e2-7-t12-cierre-academico` |
+| Final integration | The last SHA of evidence before the IC clarification was `a71c946c4070602e91e1439b206ac4e1dcd1f953`; **verify the current HEAD and its checks directly at PR #46** After this note. The minutes cannot self-reference their own commit in a stable way. |
+| Technical inventory | `backend/app/api/v1/router.py` y 13 routers; `backend/app/infrastructure/models/` and Alembic; `frontend/src/App.tsx` y `src/api/httpClient.ts` |
+| Evidence T11 | `docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md` |
+| Change manifest and final check | `git diff --name-only origin/main...HEAD`, `git log -1 --oneline`, PR status and link controls/PUML |
 
-**Control de privacidad e integridad:** esta auditoría no ejecutó personalmente comandos de migración, tests ni ventas contra bases de datos. Los workflows de CI de GitHub operan en su infraestructura de pruebas según sus YAML y no deben confundirse con operaciones sobre la base local del usuario. No se incorporan secretos, tokens de usuario ni direcciones reales.
+**Privacy and integrity control:** This audit did not personally execute migration commands, tests or sales against databases. GitHub’s IC workflows operate in its test infrastructure according to their YAML and should not be confused with operations on the user’s local basis. No secrets, user tokens or real addresses are incorporated.
 
-**Aprobación requerida:** el usuario aprobó la ejecución y el cierre documental de T12, **no expresó en este mensaje autorización separada para fusionar el PR #46 a `main`**. Solicitarla antes de cualquier merge; mantener DRAFT hasta entonces.
+**Approval required:** the user approved the execution and documentary closure of T12, **did not express in this message separate authorization to merge PR #46 to `main`**. Request it before any merge; keep DRAFT until then.

@@ -171,7 +171,7 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
         const keys=new Set((existing as StockBalance[]).map(x=>x.location_id+':'+x.catalog_item_id))
         if(next.some(x=>keys.has(x.location_id+':'+x.catalog_item_id))){
           setBalancesHasMore(false)
-          setPageError('Los saldos cambiaron entre páginas. Actualizá el listado para evitar duplicados.')
+          setPageError('The balances changed between pages. Update the list to avoid duplicates.')
           return
         }
         setBalances(old=>[...old,...next]);setBalancesHasMore(next.length===INVENTORY_PAGE_SIZE)
@@ -181,7 +181,7 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
         const keys=new Set((existing as InventoryMovement[]).map(x=>x.id))
         if(next.some(x=>keys.has(x.id))){
           setMovementsHasMore(false)
-          setPageError('El historial cambió mientras se paginaba. Actualizá para evitar movimientos repetidos.')
+          setPageError('The history changed while paging. Update to avoid repeated movements.')
           return
         }
         setMovements(old=>[...old,...next]);setMovementsHasMore(next.length===INVENTORY_PAGE_SIZE)
@@ -211,7 +211,7 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
       const oldIds=new Set(catalog.map(x=>x.id))
       if(next.some(x=>oldIds.has(x.id))){
         setCatalogHasMore(false)
-        setMetadataError('El catálogo cambió entre páginas. Actualizá para volver a consultarlo desde el inicio.')
+        setMetadataError('The catalogue changed between pages. Update to be consulted again from the beginning.')
         return
       }
       setCatalog(old=>[...old,...next]);setCatalogHasMore(next.length===CATALOG_PAGE_SIZE)
@@ -250,17 +250,17 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
   }
   const itemLabels=useMemo(()=>new Map(catalog.map(x=>[x.id,x])),[catalog])
   const locationLabels=useMemo(()=>new Map(locations.map(x=>[x.id,x])),[locations])
-  const itemName=(id:string)=>itemLabels.get(id)?.name??'Artículo '+shortId(id)
-  const siteName=(id:string)=>locationLabels.get(id)?.name??'Ubicación '+shortId(id)
-  const unitName=(id:string)=>itemLabels.get(id)?.unit??'unidad no disponible'
+  const itemName=(id:string)=>itemLabels.get(id)?.name??'Item '+shortId(id)
+  const siteName=(id:string)=>locationLabels.get(id)?.name??'Location '+shortId(id)
+  const unitName=(id:string)=>itemLabels.get(id)?.unit??'unit not available'
   const activePage=tab==='balances'?balances:movements
   const hasMore=tab==='balances'?balancesHasMore:movementsHasMore
   const fetchingMore=tab==='balances'?balancesMoreLoading:movementsMoreLoading
   const historyCounts=useMemo(()=>loadedMovementCounts(movements),[movements])
   const filteredMovements=useMemo(()=>filterLoadedHistory(movements,historyKind,historySearch,{
-    itemName:id=>itemLabels.get(id)?.name??'Artículo '+shortId(id),
+    itemName:id=>itemLabels.get(id)?.name??'Item '+shortId(id),
     itemSku:id=>itemLabels.get(id)?.sku??'',
-    siteName:id=>locationLabels.get(id)?.name??'Ubicación '+shortId(id),
+    siteName:id=>locationLabels.get(id)?.name??'Location '+shortId(id),
   }),[movements,historyKind,historySearch,itemLabels,locationLabels])
   const filteringHistory=historyKind!=='TODOS'||historySearch.trim()!==''
   const permittedActors=company&&canReadTeam(company)
@@ -284,126 +284,125 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
     previousView.current=view
   },[view])
 
-  return <section className="real-auth-card real-business-panel real-inventory e3-inventory-page" aria-label="Inventario real">
-    {view==='list'&&<nav className="real-business-nav" aria-label="Navegación del inventario REAL">
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Empresa</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/catalogo')}>Catálogo</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/inicio')}>Primeros pasos</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/compras')}>Compras y recepciones</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas')}>Mis empresas</button>
+  return <section className="real-auth-card real-business-panel real-inventory e3-inventory-page" aria-label="Actual inventory">
+    {view==='list'&&<nav className="real-business-nav" aria-label="Real Inventory Navigation">
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Company</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/catalogo')}>Catalog</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/inicio')}>First steps</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/compras')}>Purchases and receptions</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas')}>My companies</button>
     </nav>}
     <header className="e3-inventory-heading">
       <span className="e3-inventory-heading-icon"><Icon name={view==='list'?'boxes':view==='transfer'?'truck':'package'} size={29}/></span>
       <div className="e3-inventory-heading-copy">
-        <span className="e3-inventory-eyebrow">{company?.name??'Empresa'} · Inventario REAL</span>
-        <h1 ref={mainHeadingRef} tabIndex={-1}>{view==='list'?'Inventario':view==='transfer'?'Transferir entre ubicaciones':'Stock inicial y ajustes'}</h1>
+        <span className="e3-inventory-eyebrow">{company?.name??'Company'} · REAL Inventory</span>
+        <h1 ref={mainHeadingRef} tabIndex={-1}>{view==='list'?'Inventory':view==='transfer'?'Transfer between locations':'Stock inicial y ajustes'}</h1>
         <p>{view==='list'
-          ?'Consultá existencias y movimientos confirmados por sede y artículo.'
+          ?'Check out confirmed stocks and movements by location and article.'
           :view==='transfer'
-          ?'Mové existencias entre dos sedes autorizadas, con control de saldo y auditoría.'
-          :'Registrá conteos físicos, stock inicial y ajustes versionados con trazabilidad.'}</p>
+          ?'It moved stocks between two authorized headquarters, with balance control and audit.'
+          :'Register physical counting, initial stock and versioned adjustments with traceability.'}</p>
       </div>
     </header>
-    {metadataLoading&&<p role="status">Comprobando empresa, ubicaciones y catálogo REAL…</p>}
+    {metadataLoading&&<p role="status">Checking company, locations and REAL catalog...</p>}
     {metadataError&&<p className="real-auth-error" role="alert">{metadataError}</p>}
     {!metadataLoading&&company&&<>
       {view==='list'&&<>
       <RealSetupGuide suggestion={setupSuggestion} businessId={businessId} onNavigate={onNavigate}/>
-      {dataLoaded&&!dataLoading&&<div className="e3-inventory-stats" aria-label="Resumen de inventario cargado">
-        <div><span>Existencias cargadas</span><strong>{balances.length}</strong></div>
-        <div><span>Saldos en cero cargados</span><strong>{zeroLoaded}</strong></div>
-        <div><span>Movimientos cargados</span><strong>{movements.length}</strong></div>
+      {dataLoaded&&!dataLoading&&<div className="e3-inventory-stats" aria-label="Inventory summary loaded">
+        <div><span>Loaded stocks</span><strong>{balances.length}</strong></div>
+        <div><span>Zero balances charged</span><strong>{zeroLoaded}</strong></div>
+        <div><span>Loaded movements</span><strong>{movements.length}</strong></div>
       </div>}
-      <p className="e3-inventory-limits-note">Los indicadores muestran únicamente los registros cargados. No representan totales históricos si quedan páginas pendientes.</p>
+      <p className="e3-inventory-limits-note">Indicators show only loaded records. They do not represent historical totals if pages are pending.</p>
       <div className="real-inventory-controls">
-        <label>Ubicación
-          <select aria-label="Ubicación" value={locationId} disabled={dataLoading||balancesMoreLoading||movementsMoreLoading} onChange={e=>{resetRead();setLocationId(e.target.value)}}>
-            <option value="">Todas las ubicaciones</option>
+        <label>Location
+          <select aria-label="Location" value={locationId} disabled={dataLoading||balancesMoreLoading||movementsMoreLoading} onChange={e=>{resetRead();setLocationId(e.target.value)}}>
+            <option value="">All locations</option>
             {locations.map(x=><option key={x.id} value={x.id}>{x.name} · {x.status}</option>)}
           </select>
         </label>
-        <label>Artículo del catálogo cargado
-          <select aria-label="Artículo del catálogo cargado" value={catalogItemId} disabled={dataLoading||balancesMoreLoading||movementsMoreLoading} onChange={e=>{resetRead();setCatalogItemId(e.target.value)}}>
-            <option value="">Todos los artículos</option>
+        <label>Catalogue article loaded
+          <select aria-label="Catalogue article loaded" value={catalogItemId} disabled={dataLoading||balancesMoreLoading||movementsMoreLoading} onChange={e=>{resetRead();setCatalogItemId(e.target.value)}}>
+            <option value="">All articles</option>
             {catalog.filter(x=>x.item_type==='BIEN').map(x=><option key={x.id} value={x.id}>{x.name} · {x.unit} · {x.status}</option>)}
           </select>
         </label>
         <button type="button" className="real-auth-secondary" disabled={dataLoading||metadataLoading||balancesMoreLoading||movementsMoreLoading} onClick={refresh}>
-          Actualizar desde API
+          Update from API
         </button>
       </div>
       <div className="real-transfer-launch e3-inventory-launch">
         <button type="button" className="real-auth-primary" disabled={transferOpen||adjustmentOpen||metadataLoading||dataLoading}
-          onClick={()=>setTransferOpen(true)}><Icon name="truck" size={18}/>Transferir entre ubicaciones</button>
+          onClick={()=>setTransferOpen(true)}><Icon name="truck" size={18}/>Transfer between locations</button>
         <button type="button" className="real-auth-secondary" disabled={transferOpen||adjustmentOpen||metadataLoading||dataLoading}
           onClick={()=>setAdjustmentOpen(true)}><Icon name="plus" size={18}/>Stock inicial y ajustes</button>
-        <span>Operaciones REAL: permisos STORE, auditoría y versiones verificadas en FastAPI.</span>
+        <span>REAL Operations: STORY permissions, audit and verified versions in FastAPI.</span>
       </div>
       {catalogHasMore&&<div className="real-inventory-catalog-hint">
-        El selector contiene {catalog.length} fichas cargadas. Puede haber más artículos.
+        Selector contains {catalog.length} There may be more items.
         <button type="button" className="real-auth-link" disabled={catalogLoading} onClick={()=>void loadMoreCatalog()}>
-          {catalogLoading?'Consultando…':'Cargar más fichas'}
+          {catalogLoading?'Consultando…':'Load more tiles'}
         </button>
       </div>}
-      <div className="real-inventory-tabs e3-inventory-tabs" role="group" aria-label="Vista de inventario">
+      <div className="real-inventory-tabs e3-inventory-tabs" role="group" aria-label="Inventory view">
         <button type="button" className={tab==='balances'?'real-auth-primary':'real-auth-secondary'}
           aria-pressed={tab==='balances'} onClick={()=>{setTab('balances');setPageError('')}}>Existencias</button>
         <button type="button" className={tab==='movements'?'real-auth-primary':'real-auth-secondary'}
-          aria-pressed={tab==='movements'} onClick={()=>{setTab('movements');setPageError('')}}>Historial de movimientos</button>
+          aria-pressed={tab==='movements'} onClick={()=>{setTab('movements');setPageError('')}}>History of movements</button>
       </div>
       {tab==='movements'&&<div className="real-inventory-history-filters">
-        <label>Tipo de movimiento (registros cargados)
+        <label>Type of movement (loaded records)
           <select value={historyKind} onChange={e=>setHistoryKind(e.target.value as LoadedHistoryFilter)}>
-            <option value="TODOS">Todos los movimientos</option>
-            <option value="ENTRADAS">Solo entradas (+)</option>
-            <option value="SALIDAS">Solo salidas (−)</option>
+            <option value="TODOS">All moves</option>
+            <option value="ENTRADAS">Entry only (+)</option>
+            <option value="SALIDAS">Only outputs (−)</option>
             {Object.entries(INVENTORY_EVENTS).map(([kind,label])=><option key={kind} value={kind}>{label}</option>)}
           </select>
         </label>
-        <label>Buscar en historial cargado
+        <label>Search for loaded history
           <input type="search" maxLength={120} value={historySearch}
             onChange={e=>setHistorySearch(e.target.value)}
-            placeholder="Artículo, SKU, sede o identificador"/>
+            placeholder="Article, SKU, headquarters or identifier"/>
         </label>
-        <p className="real-inventory-local-notice">Estos dos filtros se aplican solo a movimientos ya cargados.
-          Para buscar en todo el historial, seleccioná primero sede y artículo arriba y cargá más páginas cuando estén disponibles.</p>
+        <p className="real-inventory-local-notice">These two filters apply only to already loaded movements. To search the entire history, select first home and article above and load more pages when available.</p>
       </div>}
-      {dataLoading&&<p role="status">Consultando inventario confirmado…</p>}
+      {dataLoading&&<p role="status">Checking confirmed inventory...</p>}
       {dataError&&<p className="real-auth-error" role="alert">{dataError}</p>}
       {dataLoaded&&!dataLoading&&<>
         <p className="real-auth-note">{loadedInventoryCountLabel(tab,activePage.length,hasMore)}
-          {' '}Las cantidades son las registradas por el servidor, no estimaciones desde compras.</p>
+          {' '}The amounts are those recorded by the server, not estimates from purchases.</p>
         {tab==='movements'&&<p className="real-inventory-history-summary" role="status">
           {loadedHistorySummary(movements.length,historyCounts.entries,historyCounts.exits)}
           {filteringHistory&&<> {loadedMatchCountLabel(filteredMovements.length)}</>}
         </p>}
         {tab==='balances'?
-          balances.length===0?<p className="real-inventory-empty">No hay saldos registrados para los filtros seleccionados. Esto no significa que todo el catálogo tenga saldo cero.</p>
+          balances.length===0?<p className="real-inventory-empty">There are no balances recorded for the selected filters. This does not mean that the entire catalog has zero balance.</p>
           :<div className="real-inventory-balances e3-inventory-balance-grid">{balances.map(x=><article className="real-inventory-balance" key={x.location_id+':'+x.catalog_item_id}>
             <RealPhotoPreview token={token} owner={{kind:'CATALOG',businessId,resourceId:x.catalog_item_id}}
-              alt={'Foto actual de '+itemName(x.catalog_item_id)} className="e3-inventory-balance-photo"/>
+              alt={'Current photo of '+itemName(x.catalog_item_id)} className="e3-inventory-balance-photo"/>
             <div><h3>{itemName(x.catalog_item_id)}</h3>
-              <p>{siteName(x.location_id)} · {unitName(x.catalog_item_id)}{!itemLabels.has(x.catalog_item_id)?' (ficha no cargada)':''}</p>
-              <small>Versión de saldo: {x.version} · Actualizado: {formatDate(x.updated_at)}</small>
+              <p>{siteName(x.location_id)} · {unitName(x.catalog_item_id)}{!itemLabels.has(x.catalog_item_id)?' (unladen card)':''}</p>
+              <small>Balance version: {x.version} · Actualizado: {formatDate(x.updated_at)}</small>
             </div>
             <strong className={x.quantity_milli===0?'real-inventory-zero':'real-inventory-positive'}>{formatMilli(x.quantity_milli)}</strong>
           </article>)}</div>
-          : movements.length===0?<p className="real-inventory-empty">No hay movimientos registrados para la empresa, sede y artículo seleccionados.</p>
-          : filteredMovements.length===0?<p className="real-inventory-empty">No hay coincidencias entre los {movements.length} movimientos cargados.
-            {hasMore?' Puede haber coincidencias en otras páginas todavía no consultadas.':' Podés cambiar o quitar el filtro local.'}</p>
+          : movements.length===0?<p className="real-inventory-empty">There are no registered movements for the company, headquarters and article selected.</p>
+          : filteredMovements.length===0?<p className="real-inventory-empty">There are no coincidences between the {movements.length} charged movements.
+            {hasMore?' There may be matches on other pages not yet consulted.':' You can change or remove the local filter.'}</p>
           :<div className="real-inventory-movements e3-inventory-movement-list">{filteredMovements.map(x=><article className="real-inventory-movement" key={x.id}>
             <div className="real-inventory-movement-info"><h3>{itemName(x.catalog_item_id)}</h3>
               <p>{INVENTORY_EVENTS[x.event_type]} · {siteName(x.location_id)}</p>
               <small>{formatDate(x.occurred_at)} · {unitName(x.catalog_item_id)} · Movimiento {shortId(x.id)}</small>
-              <p className="e3-inventory-actor">Realizó el movimiento:
+              <p className="e3-inventory-actor">He made the move:
                 <strong>{movementActorName(x.actor_id,{id:userId,displayName:userDisplayName},permittedActors)}</strong>
               </p>
               <details className="real-inventory-trace">
-                <summary>Ver trazabilidad</summary>
+                <summary>See traceability</summary>
                 <dl>{movementTraceFields(x).map(field=><div key={field.label}>
                   <dt>{field.label}</dt><dd>{field.value}</dd>
                 </div>)}</dl>
-                <p>Son referencias internas de FastAPI y PostgreSQL, no una factura ni un comprobante de pago.</p>
+                <p>These are internal references of FastAPI and PostgreSQL, not an invoice or proof of payment.</p>
               </details>
             </div>
             <strong className={x.delta_milli>0?'real-inventory-positive':'real-inventory-negative'}>{formatDelta(x.delta_milli)}</strong>
@@ -411,18 +410,18 @@ export function RealInventoryPage({token,userId,userDisplayName,businessId,onNav
         }
         {pageError&&<p className="real-auth-error" role="alert">{pageError}</p>}
         {hasMore&&<button type="button" className="real-auth-secondary" disabled={fetchingMore} onClick={()=>void nextPage(tab)}>
-          {fetchingMore?'Consultando siguiente página…':'Cargar más '+(tab==='balances'?'saldos':'movimientos')}
+          {fetchingMore?'Seeing next page...':'Load more '+(tab==='balances'?'saldos':'movimientos')}
         </button>}
       </>}
-      <p className="real-inventory-disclaimer">Los nombres y unidades se muestran según el catálogo actual cargado para esta empresa. Los movimientos conservan su cantidad firmada y fecha histórica del ledger; no se calcula stock sumando compras. Las transferencias se registran en T08-3; stock inicial y ajustes versionados en T08-4. Ninguna de estas operaciones reescribe movimientos anteriores.</p>
+      <p className="real-inventory-disclaimer">The names and units are displayed according to the current catalog loaded for this company. Movements retain their signed quantity and historical date of the leadger; stock is not calculated by adding purchases. Transfers are recorded in T08-3; initial stock and versioned adjustments in T08-4. None of these operations rewrite previous movements.</p>
       </>}
-      {view==='transfer'&&<div className="e3-inventory-operation-view" aria-label="Pantalla de traslado de inventario">
+      {view==='transfer'&&<div className="e3-inventory-operation-view" aria-label="Inventory transfer screen">
         <RealTransferPanel token={token} actorId={userId} business={company} locations={locations}
           assignedLocationIds={assignedLocationIds} catalog={catalog} onUnauthorized={onUnauthorized}
           onClose={()=>setTransferOpen(false)} onConfirmed={refreshAfterTransfer}
           onReview={reviewAfterTransfer}/>
       </div>}
-      {view==='adjustment'&&<div className="e3-inventory-operation-view" aria-label="Pantalla de stock inicial y ajustes">
+      {view==='adjustment'&&<div className="e3-inventory-operation-view" aria-label="Initial stock display and settings">
         <RealAdjustmentPanel token={token} actorId={userId} business={company} locations={locations}
           catalog={catalog} onUnauthorized={onUnauthorized}
           onClose={()=>setAdjustmentOpen(false)} onConfirmed={refreshAfterTransfer}

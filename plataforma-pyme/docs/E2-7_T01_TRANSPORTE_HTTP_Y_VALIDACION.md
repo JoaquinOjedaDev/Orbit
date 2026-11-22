@@ -1,24 +1,24 @@
-# E2-7 T01 — Transporte HTTP y proxy de desarrollo
+# E2-7 T01 — HTTP and Development Proxy Transport
 
-**Estado:** implementación inicial en rama; pendiente de QA final del equipo y merge.  
+**Status:** initial implementation in branch; QA final pending team and merge.  
 **Rama:** `feature/e2-7-t01-cliente-http`.  
-**Alcance:** `plataforma-pyme/frontend/` y este documento; no cambia el backend ni datos comerciales.  
+**Scope:** `plataforma-pyme/frontend/` and this document; does not change the backend or commercial data.  
 **Base:** `main` `a6ef120437177600d2222b7652487d6f6f3d5b7d`.
 
-## Objetivo
+## Objective
 
-Preparar el transporte para E2-7 T02 sin activar modos ni conexiones comerciales reales todavía. La UI E1 existente permanece DEMO; **ninguna pantalla usa actualmente el nuevo cliente**.
+Prepare transport for E2-7 T02 without activating real commercial modes or connections yet. The existing UI E1 remains DEMO; **no screen currently uses the new client**.
 
-## Archivos nuevos y modificados
+## New and Modified Files
 
-- `frontend/src/api/httpClient.ts`: `createApiClient`, `apiClient`, `ApiHttpError`, `ApiTransportError`; token Bearer **opaco** inyectable, DTO genérico tipado en TypeScript (aún sin validación estructural runtime), cuerpo JSON, `Idempotency-Key`, timeout y cancelación.
+- `frontend/src/api/httpClient.ts`: `createApiClient`, `apiClient`, `ApiHttpError`, `ApiTransportError`; token Bearer **opaque** injection, generic typescript DTO (still without structural validation runtime), JSON body, `Idempotency-Key`, timeout and cancellation.
 - `frontend/tests/http-client.test.mjs`: tests con fetch simulado, sin backend.
 - `frontend/package.json`: script `npm run test:api`.
-- `frontend/vite.config.ts`: proxy en desarrollo hacia FastAPI para `/api`, `/health`, `/ready`, usando objetivo local por variable `PYME_API_PROXY_TARGET`.
+- `frontend/vite.config.ts`: developing proxy towards FastAPI for `/api`, `/health`, `/ready`, using local target per variable `PYME_API_PROXY_TARGET`.
 
-## Desarrollo en Windows
+## Development in Windows
 
-Con la rama de trabajo local correcta y dentro de `plataforma-pyme/frontend`:
+With the right local branch of work and within `plataforma-pyme/frontend`:
 
 ```powershell
 npm ci
@@ -27,24 +27,24 @@ npm run build
 npm run lint
 ```
 
-Para comprobar transporte real, arrancar FastAPI por separado con su configuración de desarrollo habitual y luego Vite. Por defecto Vite espera `http://127.0.0.1:8000`. Si FastAPI se ejecuta en el puerto publicado por Docker, en la terminal que ejecuta Vite:
+To check real transport, boot FastAPI separately with your usual development settings and then Vite. By default Vite waits `http://127.0.0.1:8000`. If FastAPI runs on the port published by Docker, in the terminal running Vite:
 
 ```powershell
 $env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"
 npm run dev
 ```
 
-Abrir `http://localhost:5173/health` y `http://localhost:5173/ready`: deben devolver el mismo resultado que el backend, a través del proxy. **Estas rutas verifican conectividad, no el flujo autenticado**.
+Open `http://localhost:5173/health` y `http://localhost:5173/ready`: must return the same result as the backend, through the proxy. **These paths verify connectivity, not authenticated flow**.
 
-Para volver al objetivo por defecto:
+To return to the default target:
 
 ```powershell
 Remove-Item Env:\PYME_API_PROXY_TARGET -ErrorAction SilentlyContinue
 ```
 
-No enviar credenciales a una URL remota; el proxy solo acepta localhost o 127.0.0.1. No poner contraseñas ni tokens en variables Vite.
+Do not send credentials to a remote URL; the proxy only accepts localhost or 127.0.0.1. Do not put passwords or tokens in Vite variables.
 
-## Contrato de cliente previsto para T02
+## Client contract planned for T02
 
 ```ts
 import { createApiClient } from './api/httpClient'
@@ -56,20 +56,20 @@ const client = createApiClient({
 const me = await client.request<unknown>('/auth/me')
 ```
 
-- `request<T>` modela el tipo estático esperado, **no valida automáticamente el esquema remoto**. T02 debe introducir DTOs/validaciones adecuados al endpoint.
-- `204`/`205` retornan `undefined`, sin parsear JSON.
-- `ApiHttpError` representa código y `detail` de la API; no inventa `error.code` ni expone HTML de proxy.
-- `ApiTransportError.reason` distingue `network`, `timeout`, `aborted`, `invalid-response`.
-- `outcomeUnknown=true` en fallos de transporte de comandos mutables indica **conservadoramente** que no se puede asegurar que el backend no haya hecho commit. El seguimiento durable de clave+cuerpo se implementará recién en T06.
-- **No hay reintentos automáticos** ni persistencia de token. T01 no introduce refresh, modo REAL, sesión autenticada, CORS en backend ni endpoints de negocio nuevos.
+- `request<T>` model the expected static type, **does not automatically validate the remote schema**. T02 must enter appropriate DTOs/validations to the endpoint.
+- `204`/`205` They're coming back. `undefined`, sin parsear JSON.
+- `ApiHttpError` represents code and `detail` API; does not invent `error.code` does not expose proxy HTML.
+- `ApiTransportError.reason` differentiate `network`, `timeout`, `aborted`, `invalid-response`.
+- `outcomeUnknown=true` mutable command transport failures indicates **conservatively** that you can't ensure the backend hasn't committed. Durable key+body tracking will only be implemented in T06.
+- **No automatic retrying** T01 does not enter refresh, REAL mode, authenticated session, CORS in backend or new business endpoints.
 
-## Criterios de aceptación y limitaciones
+## Acceptance criteria and limitations
 
-- [ ] `npm run test:api` aprobado en el entorno del equipo.
-- [ ] `npm run build` y `npm run lint` sin fallos.
-- [ ] `npm run dev` + backend elegido: `/health` OK a través de Vite.
-- [ ] `/ready` refleja disponibilidad real de la base sin inventar éxito.
-- [ ] Sin cambio visible ni funcional en pantallas DEMO actuales.
-- [ ] Sin escritura a PostgreSQL, ni uso de cuentas reales para comprobar T01.
+- [ ] `npm run test:api` approved in the equipment environment.
+- [ ] `npm run build` y `npm run lint` No faults.
+- [ ] `npm run dev` + chosen backend: `/health` OK through Vite.
+- [ ] `/ready` reflects real availability of the base without inventing success.
+- [ ] No visible or functional change in current DEMO screens.
+- [ ] No postgreSQL writing, no use of real accounts to check T01.
 
-**T01 no debe declararse cerrada** hasta registrar pruebas en SHA exacto del PR y comprobar proxy en máquina con backend accesible. El siguiente incremento T02 se ocupa de autenticación real, sin reinterpretar el token opaco como JWT.
+**T01 must not be declared closed** until you register tests on the PR's exact SHA and check proxy on machine with accessible backend. The next T02 increase deals with real authentication, without reinterpreting the opaque token as JWT.

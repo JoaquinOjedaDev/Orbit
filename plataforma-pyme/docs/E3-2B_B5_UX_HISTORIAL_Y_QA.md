@@ -1,52 +1,52 @@
-# E3-2B · B5 — UX integral de cobros QR y preparación de QA B1–B6
+# E3-2B · B5 — Comprehensive UX of QR collections and preparation of QA B1–B6
 
 **Rama:** `feature/e3-2b-mercadopago-qr-demo`  
-**Estado:** B5 implementado en la rama, sometido a CI. No es la aceptación integral; B6 sigue pendiente.  
-**Política:** NO pedir pruebas manuales intermedias. NO hacer merge parcial a `main`.
+**Status:** B5 implemented in the branch, submitted to IC. It is not integral acceptance; B6 remains pending.  
+**Policy:** DO NOT require intermediate manual tests. DO NOT make partial merge a `main`.
 
-## Objetivo
+## Objective
 
-Cerrar brechas de uso entre B1–B4 sin alterar sus reglas de venta o pagos: una empresa puede recorrer Medios de cobro → POS → generación de QR DEMO → historial y detalle → laboratorio simulado → venta QA → comprobante, y volver a cualquiera de las pantallas tras recargar la sesión.
+Close usage gaps between B1–B4 without altering your sales or payment rules: a company can travel through Media of collection → POS → generation of QR DEMO → history and detail → simulated laboratory → sale QA → proof, and return to any of the screens after recharging the session.
 
-## Cambios en backend
+## Changes in backend
 
-- **GET** `/api/v1/businesses/{business_id}/qr-payment-intents?offset=0&limit=20` (límite de 1 a 50): consulta en PostgreSQL paginada con orden determinístico `created_at DESC, id DESC`.
-- Los titulares y administradores activos ven los intentos de la empresa. Encargados y trabajadores ven solo aquellos creados con su identidad; otros negocios responden 404.
-- La lista devuelve metadatos de importe y estado, `sale_id` si ya está finalizada, pero **no** entrega las imágenes PNG del QR, notas ni líneas del carrito. El detalle permanece protegido por su endpoint existente.
-- Los QR pendientes vencidos se presentan como `EXPIRADA` sin modificar la base ni escribir movimientos de venta. Los usuarios siguen pudiendo abrir el intento y consultar la bitácora.
+- **GET** `/api/v1/businesses/{business_id}/qr-payment-intents?offset=0&limit=20` (limit of 1 to 50): PostgreSQL paged in deterministic order `created_at DESC, id DESC`.
+- The owners and active administrators see the company’s attempts. Managers and workers see only those created with their identity; other businesses respond 404.
+- The list returns metadata of amount and status, `sale_id` if it is already finished, but **no** delivers QR PNG images, notes or cart lines. The detail remains protected by your existing endpoint.
+- The expired QRs are presented as `EXPIRADA` without modifying the base or writing sales movements. Users can still open the attempt and consult the logbook.
 
-## Cambios en frontend
+## Changes in frontend
 
-- **Menú lateral:** nueva sección `Cobros QR` bajo Operaciones, asociada a la empresa activa; ruta `/real/empresas/{business_id}/cobros-qr`.
-- **Historial de cobros:** tarjetas responsive con fecha, total, referencia ficticia, estado, relación con comprobante, acceso al detalle y paginación.
-- **Medios de cobro:** acceso directo a historial y POS, aclaración de que una cuenta DEMO vinculada ya puede crear QR pero NO cobrar fondos. Ante un 409 por desvinculación con QR pendiente, dirige a revisar el historial.
-- **Punto de venta:** acceso a cobros QR anteriores sin perder contexto empresarial.
-- **Detalle QR:** acceso al historial, mensajes y próximos pasos específicos para pendiente, aprobada DEMO, rechazada, cancelada, expirada, incierta, revisión y finalizada.
-- **Cierre con resultado incierto:** la interfaz obliga a consultar por GET el QR y sus eventos; cuando no hay comprobante y el estado continúa `APROBADA_DEMO`, permite reintentar **el mismo endpoint idempotente y el mismo QR**, sin generar una venta nueva.
-- **Móvil y accesibilidad:** grilla 1 columna, botones táctiles mínimos de 42–44 px, estados y errores accesibles con `role=status`/`role=alert`, encabezados jerárquicos, foco visible y texto adaptable.
+- **Side menu:** new section `Cobros QR` under Operations, associated with the active company; route `/real/empresas/{business_id}/cobros-qr`.
+- **Collection history:** cards respond with date, total, fictional reference, status, relationship with voucher, access to detail and pagination.
+- **Means of collection:** direct access to history and POS, clarification that a linked DEMO account can already create QR but NOT collect funds. Faced with a 409 decoupling with pending QR, leads to review the history.
+- **Point of sale:** access to prior QR collections without losing business context.
+- **Detalle QR:** access to history, messages and specific next steps for pending, DEMO approved, rejected, cancelled, expired, uncertain, reviewed and completed.
+- **Closing with uncertain result:** the interface requires that you consult with GET the QR and its events; when there is no proof and the status continues `APROBADA_DEMO`, allows you to retry **the same idempotent endpoint and the same QR**without generating a new sale.
+- **Mobile and accessibility:** grid 1 column, minimal touch buttons 42–44 px, accessible states and errors with `role=status`/`role=alert`, hierarchical headers, visible focus and adaptable text.
 
-## QA automática B5
+## Automatic QA B5
 
-- Backend: endpoint autenticado, aislamiento por empresa, rol del colaborador, paginación y límites, expiración calculada sin mutación, vinculación de comprobante tras cerrar B4.
-- Frontend: URL por empresa, validación de tenant, sumarios sin credenciales, respuestas con `sale_id` incompatibles rechazadas, IDs repetidos, paginación y semántica de estados.
-- Ejecutar en GitHub Actions: Frontend (compilación, lint, Node); Backend FastAPI (Python 3.12/3.14, Postgres, migraciones); Inventario REAL full-stack (API, permisos, regresión de navegador escritorio/móvil).
-- El recorrido visual interactivo de QR y OAuth real exige completar B6 y configuración QA aislada. CI de regresión no equivale a ensayo humano de punta a punta.
+- Backend: authenticated endpoint, company isolation, partner role, pagination and limits, expiration calculated without mutation, bonding of voucher after closing B4.
+- Frontend: URL by company, tenant validation, summaries without credentials, answers with `sale_id` rejected incompatible, repeated IDs, pagination and semantic states.
+- Run on GitHub Actions: Frontend (compilation, lint, Node); Backend FastAPI (Python 3.12/3.14, Postgres, migrations); REAL full-stack inventory (API, permissions, desktop/mobile browser regression).
+- The interactive visual path of QR and real OAuth requires complete B6 and isolated QA configuration. IC regression does not amount to human test point-to-point.
 
-## Límite con Mercado Pago
+## Limit with Market Payment
 
-B5 no incorpora OAuth, `qr_data` real, webhooks ni conciliación bancaria. Los estados `APROBADA_DEMO` y `FINALIZADA` son dos hechos diferentes: el primero es un evento ficticio, el segundo es un comprobante de venta **solo de la base QA descartable**. Ninguno prueba una acreditación externa.
+B5 does not incorporate OAuth, `qr_data` real, webhooks or bank reconciliation. `APROBADA_DEMO` y `FINALIZADA` are two different facts: the first is a fictitious event, the second is a proof of sale **only from the disposable QA base**. None of them test an external accreditation.
 
-## Próximo bloque: B6
+## Next block: B6
 
-Integrar cuenta por empresa vía flujo oficial autorizado, modelar caja/sucursal, crear órdenes QR dinámicas con la API oficial, verificar autenticidad de notificaciones y reconciliar con estados internos sin duplicación. Antes de habilitar un ensayo del proveedor deben existir credenciales, cuenta y capacidades compatibles con el entorno de pruebas de Mercado Pago.
+Integrate company account via official authorized flow, model box/branch, create dynamic QR commands with the official API, verify authenticity of notifications and reconcile with internal states without duplication. Before enabling a supplier test there must be credentials, accounts and capabilities compatible with the Market Payment testing environment.
 
-## Momento para pedir pruebas de funcionalidad al usuario
+## Time to ask for user functionality tests
 
-Solo cuando se cumplan todas estas condiciones:
+Only when all these conditions are met:
 
-1. B1–B6 integrados y con todas las migraciones y pruebas automáticas en verde en **un mismo SHA** de la rama.
-2. Entorno descartable de prueba preparado, sin tocar base local habitual ni credenciales de producción.
-3. Matriz y guion de uso integral publicados, incluyendo roles, QR con detalle, estados simulados, cierre stock, retry/fallo, y conexión QR oficial sandbox cuando esté disponible.
-4. Auditoría técnica previa sin hallazgos críticos de duplicaciones, aislamiento de tenant o credenciales.
+1. B1–B6 integrated and with all migrations and automatic tests in green **the same SHA** de la rama.
+2. Disposable environment of prepared test, without touching usual local base or production credentials.
+3. Full-use matrix and script published, including roles, QR in detail, simulated states, stock closure, retry/failure, and official sandbox QR connection when available.
+4. Prior technical audit without critical findings of duplication, tenant isolation or credentials.
 
-Recién entonces indicar al usuario qué instalar/ejecutar, con comandos PowerShell y verificación de resultados esperados, antes de su autorización explícita de merge a `main`.
+Just then, tell the user what to install/execute, with PowerShell commands and verification of expected results, before your explicit authorization to merge a `main`.

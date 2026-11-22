@@ -1,60 +1,60 @@
-# E3-2B · B4 — Confirmación transaccional de venta QR DEMO en PostgreSQL QA
+# E3-2B · B4 — Transactional confirmation of sale QR DEMO in PostgreSQL QA
 
 **Rama:** `feature/e3-2b-mercadopago-qr-demo`  
-**Estado:** implementación en rama; requiere aprobación de CI sobre último SHA. No se realizó prueba manual ni merge de `main`; la aceptación integral corresponde después de B6.
+**Status:** implementation in branch; requires IC approval on last SHA. No manual testing or merge of `main`; the integral acceptance corresponds after B6.
 
-## Regla esencial
+## Essential rule
 
-Un evento `APROBADA_DEMO` **no es una acreditación externa**. B4 incorpora una acción administrativa adicional y explícita que registra **UNA venta de prueba** en PostgreSQL QA usando el snapshot persistido por B2. B4 no invoca Mercado Pago ni acredita dinero.
+An event `APROBADA_DEMO` **is not an external accreditation**. B4 incorporates an additional and explicit administrative action **A test sale** in PostgreSQL QA using the snapshot persisted by B2. B4 does not invoke Mercado Pago or credit money.
 
-El backend requiere **ambas** variables en la base de datos **descartable**:
+El backend requiere **both** variables in the database **disposable**:
 
 ```text
 PYME_ENABLE_QR_DEMO_LAB=1
 PYME_DISPOSABLE_QA=1
 ```
 
-La UI necesita `VITE_PYME_ENABLE_QR_DEMO_LAB=1` y `VITE_PYME_ENABLE_QR_FINALIZATION_QA=1` para mostrar el botón. La API no confía en las variables del frontend y valida roles de titular/administrador. **Jamás activar estas variables sobre la base cotidiana o en producción.** La base local del usuario no se modificó desde esta implementación.
+IU needs `VITE_PYME_ENABLE_QR_DEMO_LAB=1` y `VITE_PYME_ENABLE_QR_FINALIZATION_QA=1` to display the button. API does not rely on frontend variables and validates titular/administrator roles. **Never activate these variables on a daily basis or in production.** The local user base was not changed since this implementation.
 
 ## API
 
-- `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/finalize-demo` — no acepta importes, líneas o medio de pago enviados por navegador. La solicitud se identifica por el QR persistido: repetirla devuelve HTTP 200, mismo comprobante y stock inalterado.
-- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/receipt` — comprobante confirmado solo si hay enlace transaccional.
-- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}` — incluye `sale_id` nullable, que se completa solo cuando `FINALIZADA`.
-- El endpoint público `POST /sales` sigue aceptando solo **cinco pagos declarados**, y no puede declarar `MERCADO_PAGO_DEMO_QA`. Ese nuevo valor se crea exclusivamente desde el servicio interno de B4.
+- `POST /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/finalize-demo` — does not accept amounts, lines or payment means sent by browser. The request is identified by the persistent QR: repeat returns HTTP 200, same voucher and unchanged stock.
+- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}/receipt` — proof confirmed only if there is transactional link.
+- `GET /api/v1/businesses/{business_id}/qr-payment-intents/{intent_id}` — includes `sale_id` nullable, which is completed only when `FINALIZADA`.
+- The public endpoint `POST /sales` He's still accepting alone. **five payments declared**, and can not declare `MERCADO_PAGO_DEMO_QA`. This new value is created exclusively from the internal service of B4.
 
-## Transacción única, sin ventas duplicadas
+## Single transaction, no duplicate sales
 
-1. Revalidar sesión, empresa activa y rol administrativo; comprobar que el servidor usa entorno QA descartable.
-2. Bloquear `QrPaymentIntent` (`SELECT FOR UPDATE`). Si ya existe `QrPaymentSettlement`, recuperar el mismo comprobante de forma idempotente; nunca volver a debitar stock.
-3. Exigir estado `APROBADA_DEMO` y evento `APROBAR` en la bitácora de esa empresa y ese intento. Rechazados, expirados, cancelados, indeterminados o en revisión no pueden finalizarse.
-4. Construir `CreateSaleRequest` **desde las líneas y totales originales del servidor**. Asignar `request_id` UUID4 determinístico por tenant/intento. No confiar en un nuevo cuerpo enviado por cliente.
-5. Reutilizar `SaleService.create(..., commit=False, trusted_qr_demo=True)`: valida rol, sede, artículo y stock; inserta venta, renglones, pago `MERCADO_PAGO_DEMO_QA`, movimientos y modifica saldos. No hace `COMMIT` todavía. El endpoint de ventas tradicional conserva su semántica previa de commit.
-6. Conservar nombre/SKU del snapshot del QR, crear `QrPaymentSettlement` (FK tenant hacia venta e intento, único por ambos), pasar estado QR a `FINALIZADA`, añadir evento `FINALIZAR`.
-7. **Un solo commit** confirma venta + pago simulado + movimientos + stock + vínculo + evento. Cualquier fallo previo revierte toda la operación.
+1. Revalidate session, active company and administrative role; check that the server uses a disposable QA environment.
+2. Lock `QrPaymentIntent` (`SELECT FOR UPDATE`) If already exists `QrPaymentSettlement`, recover the same proof in an idepotent way; never again to owe stock.
+3. Require status `APROBADA_DEMO` and event `APROBAR` in the logbook of that company and that attempt. Rejected, expired, cancelled, undetermined or under review cannot be completed.
+4. Construir `CreateSaleRequest` **from the original server lines and totals**Assign `request_id` UUID4 deterministic by tenant/intense. Do not trust a new body sent by customer.
+5. Reuse `SaleService.create(..., commit=False, trusted_qr_demo=True)`: valid role, headquarters, item and stock; insert sale, lines, payment `MERCADO_PAGO_DEMO_QA`, moves and modifies balances. It does not `COMMIT` The traditional sales endpoint retains its previous semantic commit.
+6. Store name/SKU of QR snapshot, create `QrPaymentSettlement` (FK tenant to sale and try, unique for both), move QR status to `FINALIZADA`, add event `FINALIZAR`.
+7. **Un solo commit** confirms sale + simulated payment + movements + stock + link + event. Any previous failure reverses the entire transaction.
 
-La relación se guarda en la nueva tabla `qr_payment_settlements` y su migración `e32b_qr_sales`. La restricción de medio de pago se amplía para reconocer `MERCADO_PAGO_DEMO_QA`; la API pública no lo acepta como entrada. `QrPaymentEvent.action` incorpora `FINALIZAR` y `REVISION`.
+The relationship is saved in the new table `qr_payment_settlements` migration `e32b_qr_sales`. The restriction of means of payment is extended to recognize `MERCADO_PAGO_DEMO_QA`; the public API does not accept it as input. `QrPaymentEvent.action` incorporates `FINALIZAR` y `REVISION`.
 
-## Fallos posteriores al pago ficticio
+## Judgements after fictitious payment
 
-Si al intentar registrar la venta el artículo, la sede o el stock ya no cumplen los requisitos, la transacción de venta se revierte por completo. En una segunda transacción corta el QR pasa de `APROBADA_DEMO` a `REQUIERE_REVISION`, con evento `REVISION` y sin `Sale`, `SalePayment`, `StockMovement` ni débito. No reintentar automáticamente un cierre en revisión.
+If the sale is no longer eligible for registration of the item, headquarters or stock, the sales transaction is completely reversed. In a second transaction, the QR passes from `APROBADA_DEMO` a `REQUIERE_REVISION`, with event `REVISION` y sin `Sale`, `SalePayment`, `StockMovement` no debit. Do not automatically retry a review closure.
 
-En respuestas de red inciertas el navegador debe consultar primero el QR (y su comprobante si dice `FINALIZADA`). La finalización es idempotente porque usa el identificador del QR y un vínculo único en DB; no genera nuevas claves de venta.
+In uncertain network responses the browser must first consult the QR (and its voucher if it says `FINALIZADA`). The completion is idempotent because it uses the QR identifier and a unique link in DB; it does not generate new sales keys.
 
-## Casos automáticos previstos
+## Automatic cases envisaged
 
-- Sin aprobación, rechazado o cancelado: 409, cero ventas.
-- Aprobación simulada → POST cierre: 201, pago `MERCADO_PAGO_DEMO_QA`, evento `FINALIZAR`, vínculo 1:1.
-- Mismo POST repetido: 200, mismo comprobante y cero descuentos adicionales.
-- GET por QR y por comprobante de venta; rechazo de tenant ajeno, empleado sin rol o laboratorio deshabilitado.
-- Bien físico + servicio con saldo: stock decrece una vez, versión incrementada una vez, un solo movimiento.
-- Se agota stock después de aprobar: 409 y `REQUIERE_REVISION`, cero ventas, cero movimientos, no saldo negativo.
-- Fallo tardío antes de commit: rollback de venta, pago, stock, vínculo y estado de QR.
-- Frontend: método DEMO distinto del declarado; rechazar respuesta con QR/venta/total/SKU no coincidentes y resultado HTTP incierto.
+- No approval, rejected or cancelled: 409, zero sales.
+- Simulated approval → POST closing: 201, payment `MERCADO_PAGO_DEMO_QA`event `FINALIZAR`, link 1:1.
+- Same repeated POST: 200, same voucher and zero additional discounts.
+- GET by QR and proof of sale; rejection of foreign tenant, employed without role or laboratory disabled.
+- Physical well + service with balance: stock decreases once, version increased once, one movement.
+- Stock is exhausted after approval: 409 and `REQUIERE_REVISION`, zero sales, zero movements, no negative balance.
+- Late failure before commit: rollback sale, payment, stock, link and status of QR.
+- Frontend: DEMO method other than declared; reject QR/sale/total/SKU response not matching and HTTP outcome uncertain.
 
-## Pendiente
+## Pending
 
-**B5:** consolidación visual, controles de UX, avisos de QR en revisión y recorridos responsive.  
-**B6:** OAuth, Orders API QR dinámico, notificaciones y conciliación oficial con credenciales y permisos reales de prueba. **Solo B6 puede emitir un QR cobrable en el entorno del proveedor**, nunca este QR ficticio.
+**B5:** visual consolidation, UX controls, QR warnings in revision and responsive paths.  
+**B6:** OAuth, Dynamic QR API Orders, notifications and official reconciliation with credentials and actual test permissions. **Only B6 can issue a collectable QR in the provider environment**Never this fictional QR.
 
-No pedir pruebas manuales intermedias; hacer una única auditoría y recorrido B1–B6 antes del merge explícitamente aprobado a `main`.
+Do not request intermediate manual tests; do a single audit and B1–B6 route before the explicitly approved merge to `main`.

@@ -12,7 +12,7 @@ type Props = {
 /** H3: contextual navigation only. No APIs, POSTs, permissions or demo data. */
 export function RealSetupGuide({ suggestion, businessId, onNavigate }: Props) {
   if (!suggestion) return null
-  return <aside className="e3-h3-guide" aria-label="Orientación para primeros pasos">
+  return <aside className="e3-h3-guide" aria-label="Orientation for first steps">
     <span className="e3-h3-guide-icon" aria-hidden="true"><Icon name="book" size={21}/></span>
     <div className="e3-h3-guide-copy">
       <strong>{suggestion.title}</strong>

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { ApiHttpError, ApiTransportError } from '../src/api/httpClient.ts'
 import { createAuthGateway, parseAuthUser, parseLoginResult, authErrorMessage } from '../src/features/auth/authGateway.ts'
 
+const testPassword = 'Orbit-1-' + globalThis.crypto.randomUUID()
 const user = {
   id: '9b7b1bdb-2a3f-4966-a76b-024f0c327071', email: 'prueba@example.com',
   display_name: 'Usuario de prueba', contact_phone: null, status: 'ACTIVO',
@@ -25,13 +26,13 @@ test('registro envía campos exactos y devuelve usuario, sin crear sesión', asy
     assert.equal(options.headers.has('Authorization'), false)
     assert.deepEqual(JSON.parse(options.body), {
       email: user.email, display_name: user.display_name,
-      password: 'contraseña-de-prueba-muy-larga', contact_phone: null,
+      password: testPassword, contact_phone: null,
     })
     return json(user, 201)
   })
   assert.deepEqual(await auth.register({
     email: user.email, display_name: user.display_name,
-    password: 'contraseña-de-prueba-muy-larga', contact_phone: null,
+    password: testPassword, contact_phone: null,
   }), user)
   assert.equal(calls, 1)
 })
@@ -42,7 +43,7 @@ test('login usa token bearer opaco sin decodificar claims', async () => {
     assert.equal(options.headers.has('Authorization'), false)
     return json(result)
   })
-  assert.deepEqual(await auth.login({ email: user.email, password: 'secreto' }), result)
+  assert.deepEqual(await auth.login({ email: user.email, password: testPassword }), result)
 })
 
 test('GET /auth/me envía el token del usuario actual', async () => {
@@ -78,7 +79,7 @@ test('DTO malformados no producen sesión ficticia', () => {
 
 test('401 de credenciales inválidas se presenta sin revelar detalles internos', async () => {
   const auth = createAuthGateway(async () => json({ detail: 'Credenciales invalidas' }, 401))
-  await assert.rejects(auth.login({ email: user.email, password: 'incorrecta' }),
+  await assert.rejects(auth.login({ email: user.email, password: testPassword }),
     (error) => error instanceof ApiHttpError && error.status === 401)
-  assert.match(authErrorMessage(new ApiHttpError(401, 'interno'), 'login'), /Credenciales|sesión/i)
+  assert.match(authErrorMessage(new ApiHttpError(401, 'interno'), 'login'), /credentials|session/i)
 })

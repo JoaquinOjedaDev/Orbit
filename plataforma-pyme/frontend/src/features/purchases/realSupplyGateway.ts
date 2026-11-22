@@ -28,28 +28,28 @@ export function validateSupplierContact(input:SupplierContactDraft):SupplierCont
   for(const field of Object.keys(values) as (keyof SupplierContactDraft)[]){
     if(typeof input[field]!=='string')throw new RangeError(field+': requiere texto.')
     const cleaned=input[field].trim()
-    if(cleaned.length>supplierContactLimits[field])throw new RangeError(field+': supera el máximo permitido.')
+    if(cleaned.length>supplierContactLimits[field])throw new RangeError(field+': exceeds the maximum allowed.')
     values[field]=cleaned
   }
-  if(values.name.length<2)throw new RangeError('Ingresá un nombre comercial de al menos dos caracteres.')
+  if(values.name.length<2)throw new RangeError('Enter a commercial name of at least two characters.')
   if(values.phone&&!/^\+?[\d\s().-]{6,35}$/.test(values.phone))
-    throw new RangeError('Teléfono comercial: usá solamente números y signos telefónicos.')
+    throw new RangeError('Commercial phone: only use numbers and telephone signs.')
   if(values.whatsapp){
     if(!/^\+[1-9][\d\s().-]{6,22}$/.test(values.whatsapp) ||
       values.whatsapp.replace(/\D/g,'').length<8 ||
       values.whatsapp.replace(/\D/g,'').length>15)
-      throw new RangeError('WhatsApp: usá el número completo con prefijo internacional (+54...).')
+      throw new RangeError('WhatsApp: Use the full number with international prefix (+54...).')
   }
   if(values.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email))
-    throw new RangeError('Correo electrónico: dirección inválida.')
+    throw new RangeError('Email: Invalid address.')
   if(values.instagram&&!/^@?[a-zA-Z0-9._]{1,30}$/.test(values.instagram))
     throw new RangeError('Instagram: usá un nombre de usuario, por ejemplo @proveedor.')
   for(const field of ['maps_url','website'] as const){
     if(!values[field])continue
     let url:URL
-    try {url=new URL(values[field])}catch{throw new RangeError('Ingresá un enlace HTTPS válido.')}
+    try {url=new URL(values[field])}catch{throw new RangeError('Enter a valid HTTPS link.')}
     if(url.protocol!=='https:'||!url.hostname||url.username||url.password||url.port)
-      throw new RangeError('Los enlaces deben ser HTTPS, sin usuario, contraseña ni puerto.')
+      throw new RangeError('Links must be HTTPS, without user, password or port.')
     if(field==='maps_url'){
       const host=url.hostname.toLowerCase().replace(/\.$/,'')
       const ok=host==='maps.app.goo.gl'
@@ -57,7 +57,7 @@ export function validateSupplierContact(input:SupplierContactDraft):SupplierCont
           &&(url.pathname==='/maps'||url.pathname.startsWith('/maps/')))
         ||(host==='maps.google.com'&&(url.pathname!=='/'||url.searchParams.has('q')))
         ||(host==='goo.gl'&&url.pathname.startsWith('/maps/'))
-      if(!ok)throw new RangeError('Google Maps: pegá un enlace oficial de Google Maps.')
+      if(!ok)throw new RangeError('Google Maps: paste an official link to Google Maps.')
     }
   }
   // Desestructuración explícita evita incluir state, tenant y arreglos de promociones.
@@ -71,9 +71,9 @@ export const SUPPLIER_PAYMENT_METHODS=[
 ] as const
 export type SupplierPaymentMethod=typeof SUPPLIER_PAYMENT_METHODS[number]
 export const SUPPLIER_PAYMENT_LABELS:Record<SupplierPaymentMethod,string>={
-  EFECTIVO:'Efectivo',TRANSFERENCIA:'Transferencia',MERCADO_PAGO:'Mercado Pago',
-  CUENTA_DNI:'Cuenta DNI',TARJETA:'Tarjeta',CHEQUE:'Cheque',
-  CUENTA_CORRIENTE:'Cuenta corriente',
+  EFECTIVO:'Cash',TRANSFERENCIA:'Transferencia',MERCADO_PAGO:'Mercado Pago',
+  CUENTA_DNI:'ID account',TARJETA:'Tarjeta',CHEQUE:'Cheque',
+  CUENTA_CORRIENTE:'Current account',
 }
 export const SUPPLIER_WEEKDAYS=['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] as const
 export type SupplierPromotionRule={
@@ -95,22 +95,22 @@ export function validateSupplierCommercialDraft(input:SupplierCommercialDraft):S
   if(!Array.isArray(input.payment_methods)||input.payment_methods.length>SUPPLIER_PAYMENT_METHODS.length
     ||input.payment_methods.some(p=>!SUPPLIER_PAYMENT_METHODS.includes(p))
     ||new Set(input.payment_methods).size!==input.payment_methods.length)
-    throw new RangeError('Seleccioná medios de pago válidos, sin duplicados.')
+    throw new RangeError('Select valid payment means, without duplicates.')
   if(!Array.isArray(input.promotions)||input.promotions.length>8)
-    throw new RangeError('Podés registrar hasta ocho promociones informativas.')
+    throw new RangeError('You can register up to eight information promotions.')
   const ids=new Set<string>()
   const promotions:SupplierPromotionRule[]=input.promotions.map((rule,index)=>{
     if(!rule||typeof rule!=='object'||!uuid(rule.id)||ids.has(rule.id))
-      throw new RangeError('Regla '+(index+1)+': identificador inválido o duplicado.')
+      throw new RangeError('Regla '+(index+1)+': Invalid or duplicate identifier.')
     ids.add(rule.id)
     if(!Array.isArray(rule.days)||rule.days.length>7||
        rule.days.some(day=>!Number.isInteger(day)||day<0||day>6)||
        new Set(rule.days).size!==rule.days.length)
-      throw new RangeError('Regla '+(index+1)+': días de la semana inválidos o repetidos.')
+      throw new RangeError('Regla '+(index+1)+': days of the week invalid or repeated.')
     if(rule.payment_method!==null&&!SUPPLIER_PAYMENT_METHODS.includes(rule.payment_method))
-      throw new RangeError('Regla '+(index+1)+': medio de pago inválido.')
+      throw new RangeError('Regla '+(index+1)+': means of payment invalid.')
     if(typeof rule.benefit!=='string'||rule.benefit.trim().length<3||rule.benefit.trim().length>160)
-      throw new RangeError('Regla '+(index+1)+': beneficio de 3 a 160 caracteres.')
+      throw new RangeError('Regla '+(index+1)+': benefit of 3 to 160 characters.')
     return {id:rule.id,days:[...rule.days].sort((a,b)=>a-b),
       payment_method:rule.payment_method,benefit:rule.benefit.trim()}
   })
@@ -142,9 +142,9 @@ export function purchaseStatusPresentation(status:Purchase['status']):{
   label:string; tone:'pending'|'confirmed'|'neutral'
 } {
   switch(status){
-    case 'REGISTRADA': return {label:'REGISTRADA · RECEPCIÓN PENDIENTE',tone:'pending'}
+    case 'REGISTRADA': return {label:'REGISTRADA · PENDING RECEPTION',tone:'pending'}
     case 'RECIBIDA': return {label:'RECIBIDA',tone:'confirmed'}
-    case 'CERRADA_SIN_RECEPCION': return {label:'CERRADA SIN RECEPCIÓN',tone:'neutral'}
+    case 'CERRADA_SIN_RECEPCION': return {label:'CLOSED WITHOUT RECEPTION',tone:'neutral'}
     case 'CANCELADA': return {label:'CANCELADA',tone:'neutral'}
   }
 }
@@ -207,56 +207,56 @@ function page<T>(v:unknown,limit:number,parse:(x:unknown)=>T):T[]{
 }
 export function decimalToMilli(input:string):number{
   const raw=input.trim()
-  if(!/^(?:0|[1-9]\d*)(?:[.,]\d{1,3})?$/.test(raw))throw new RangeError('Cantidad: hasta tres decimales, sin separadores de miles.')
+  if(!/^(?:0|[1-9]\d*)(?:[.,]\d{1,3})?$/.test(raw))throw new RangeError('Quantity: up to three decimals, without separators of thousands.')
   const [whole,fraction='']=raw.replace(',','.').split('.')
   const value=Number(whole)*1000+Number(fraction.padEnd(3,'0'))
-  if(!qty(value))throw new RangeError('Cantidad fuera de rango (mínimo 0,001).')
+  if(!qty(value))throw new RangeError('Out of range (minimum 0.001).')
   return value
 }
 export function milliToDecimal(v:number):string{
-  if(!Number.isSafeInteger(v)||v<0)throw new RangeError('Cantidad inválida')
+  if(!Number.isSafeInteger(v)||v<0)throw new RangeError('Invalid amount')
   return `${Math.floor(v/1000)}`+(v%1000===0?'':','+String(v%1000).padStart(3,'0').replace(/0+$/,''))
 }
 export function lineTotalCents(quantity_milli:number,unit_cost_cents:number):number{
-  if(!qty(quantity_milli)||!money(unit_cost_cents))throw new RangeError('Cantidad o costo inválido')
+  if(!qty(quantity_milli)||!money(unit_cost_cents))throw new RangeError('Invalid amount or cost')
   // Match Python's HALF_UP per line with exact integer arithmetic.
   const computed=(BigInt(quantity_milli)*BigInt(unit_cost_cents)+500n)/1000n
-  if(computed>BigInt(MAX_CENTS))throw new RangeError('Total fuera de rango')
+  if(computed>BigInt(MAX_CENTS))throw new RangeError('Total out of range')
   return Number(computed)
 }
 export function validatePurchase(v:NewPurchase){
   if(!record(v)||Object.keys(v).sort().join('|')!==['lines','notes','purchased_on','reference','supplier_id'].join('|'))
-    throw new RangeError('Campos de compra no permitidos.')
-  if(!Array.isArray(v.lines))throw new RangeError('Renglones inválidos.')
-  if(!date(v.purchased_on)||v.purchased_on<'2000-01-01'||v.purchased_on>'2100-12-31')throw new RangeError('Fecha de compra inválida.')
-  if(v.supplier_id!==null&&!uuid(v.supplier_id))throw new RangeError('Proveedor inválido')
+    throw new RangeError('Shopping fields not allowed.')
+  if(!Array.isArray(v.lines))throw new RangeError('Invalid lines.')
+  if(!date(v.purchased_on)||v.purchased_on<'2000-01-01'||v.purchased_on>'2100-12-31')throw new RangeError('Invalid purchase date.')
+  if(v.supplier_id!==null&&!uuid(v.supplier_id))throw new RangeError('Invalid supplier')
   if(v.reference.trim().length>70||v.notes.trim().length>500
-    ||v.lines.length<1||v.lines.length>30)throw new RangeError('Máximo 30 renglones, referencia de 70 y notas de 500 caracteres.')
+    ||v.lines.length<1||v.lines.length>30)throw new RangeError('Maximum 30 lines, 70 reference and 500 character notes.')
   let total=0
   for(const l of v.lines){
     if(!record(l)||Object.keys(l).sort().join('|')!==['catalog_item_id','description','quantity_milli','unit','unit_cost_cents'].join('|'))
-      throw new RangeError('Campos de renglón no permitidos.')
+      throw new RangeError('Line fields not allowed.')
     if(typeof l.description!=='string'||l.description.trim().length<2||l.description.trim().length>140
-      ||!qty(l.quantity_milli)||!money(l.unit_cost_cents))throw new RangeError('Renglón inválido.')
+      ||!qty(l.quantity_milli)||!money(l.unit_cost_cents))throw new RangeError('Invalid line.')
     if((l.catalog_item_id===null)!==(l.unit==='CONCEPTO')
-      ||(l.catalog_item_id!==null&&!uuid(l.catalog_item_id)))throw new RangeError('Concepto libre exige unidad CONCEPTO; artículos requieren ID.')
+      ||(l.catalog_item_id!==null&&!uuid(l.catalog_item_id)))throw new RangeError('Free concept requires CONCEPT unit; articles require ID.')
     if(['UNIDAD','PAQUETE','CAJA','SERVICIO','CONCEPTO'].includes(l.unit)&&l.quantity_milli%1000!==0)
-      throw new RangeError('Esta unidad solo admite cantidades enteras.')
+      throw new RangeError('This unit only supports whole quantities.')
     total+=lineTotalCents(l.quantity_milli,l.unit_cost_cents)
   }
-  if(total>MAX_CENTS)throw new RangeError('Total de compra excede el máximo.')
+  if(total>MAX_CENTS)throw new RangeError('Total purchase exceeds the maximum.')
 }
 export const SUPPLY_PAGE_SIZE=100
 export function createSupplyGateway(token:string,businessId:string,fetchImpl?:typeof fetch){
-  if(!token||!uuid(businessId))throw new TypeError('Sesión/empresa inválida')
+  if(!token||!uuid(businessId))throw new TypeError('Invalid meeting/company')
   const api=createApiClient({getAccessToken:()=>token,fetchImpl})
   const suppliers='/businesses/'+businessId+'/suppliers'
   const purchases='/businesses/'+businessId+'/purchases'
-  const validKey=(key:string)=>{if(!UUID_V4_PATTERN.test(key))throw new TypeError('Clave idempotente UUID4 inválida');return key}
-  const id=(id:string)=>{if(!uuid(id))throw new TypeError('ID inválido');return id}
+  const validKey=(key:string)=>{if(!UUID_V4_PATTERN.test(key))throw new TypeError('Invalid UUID4 idepotent key');return key}
+  const id=(id:string)=>{if(!uuid(id))throw new TypeError('Invalid ID');return id}
   const list=(base:string,offset:number,limit:number)=>{
     if(!Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>500)
-      throw new TypeError('Paginación fuera de rango')
+      throw new TypeError('Non-range Page')
     return base+'?offset='+offset+'&limit='+limit
   }
   return {
@@ -327,26 +327,26 @@ export async function inspectReceipt(
   }
 }
 export function missingReceiptMessage(status:Purchase['status']):string {
-  if(status==='REGISTRADA')return 'Todavía no hay un comprobante de recepción confirmado para esta compra. La compra sigue REGISTRADA. Si tenés un intento pendiente guardado, se conserva la misma clave: no se envió ninguna nueva recepción. Antes de reintentar verificá tu asignación a la sede y sus permisos.'
-  if(status==='RECIBIDA')return 'La compra figura RECIBIDA, pero la API no permitió consultar el comprobante. No repitas la recepción. Actualizá y revisá el acceso con el administrador.'
-  return 'No se pudo consultar el comprobante para esta compra. No se realizó ninguna recepción adicional.'
+  if(status==='REGISTRADA')return 'There is not yet a confirmed receipt voucher for this purchase. The purchase follows REGISTRADA. If you have an outstanding attempt saved, the same key is retained: no new receipt was sent. Before retrying check your assignment to headquarters and their permits.'
+  if(status==='RECIBIDA')return 'The purchase is RECEIVED, but the API did not allow you to check the voucher. Do not receive the purchase again. Update and review the access with the administrator.'
+  return 'No additional receipts were received.'
 }
 export function supplyErrorMessage(err:unknown):string{
   if(err instanceof ApiHttpError){
-    if(err.status===401)return 'Sesión vencida. Iniciá sesión nuevamente.'
-    if(err.status===403)return 'No tenés permisos para esta operación.'
-    if(err.status===404)return 'Proveedor, compra, sede o empresa no disponible para esta cuenta.'
-    if(err.status===409)return 'Conflicto: revisá el estado y el historial antes de continuar.'
-    if(err.status===422)return 'Datos inválidos. Revisá las unidades, los artículos y el destino.'
-    return 'La API no pudo completar la operación.'
+    if(err.status===401)return 'Session expired.'
+    if(err.status===403)return 'You don\'t have permission for this operation.'
+    if(err.status===404)return 'Provider, purchase, headquarters or company not available for this account.'
+    if(err.status===409)return 'Conflict: review the status and history before continuing.'
+    if(err.status===422)return 'Invalid data. Check the units, items and destination.'
+    return 'The API could not complete the operation.'
   }
   if(err instanceof ApiTransportError)return err.outcomeUnknown
-    ? 'Resultado incierto: revisá compras/recepciones antes de reintentar la misma operación.'
-    : 'Error de conexión a FastAPI. Reintentá solo lecturas.'
-  return err instanceof Error?err.message:'Operación no completada.'
+    ? 'Uncertain result: Check purchases/receptions before retrying the same operation.'
+    : 'Error connecting to FastAPI. Retry readings only.'
+  return err instanceof Error?err.message:'Operation not completed.'
 }
 export function priceInputCents(s:string):number{
   const value=pesosToCents(s)
-  if(value===null)throw new RangeError('El costo unitario es obligatorio')
+  if(value===null)throw new RangeError('Unit cost is mandatory')
   return value
 }

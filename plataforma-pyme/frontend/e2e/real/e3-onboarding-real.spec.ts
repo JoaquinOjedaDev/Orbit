@@ -9,7 +9,7 @@ test.beforeAll(()=>{
 
 test('E3-1H1: pasos REAL, actualización GET y aislamiento de dos empresas',async({page,request})=>{
   const email='e3-h1-'+randomUUID()+'@example.com'
-  const password='Clave descartable onboarding E3 H1 2026!'
+  const password='Orbit-1-' + globalThis.crypto.randomUUID()
   const register=await request.post(api+'/auth/register',{
     data:{email,password,display_name:'QA onboarding'},
   })
@@ -34,14 +34,14 @@ test('E3-1H1: pasos REAL, actualización GET y aislamiento de dos empresas',asyn
     if(req.method()!=='GET'&&new URL(req.url()).pathname.startsWith('/api/v1/businesses/'))writes++
   })
   await page.goto('/real/empresas/'+a.id+'/inicio')
-  await page.getByLabel('Correo electrónico',{exact:true}).fill(email)
-  await page.getByLabel('Contraseña',{exact:true}).fill(password)
+  await page.getByLabel('Email',{exact:true}).fill(email)
+  await page.getByLabel('Password',{exact:true}).fill(password)
   await page.getByRole('button',{name:'Ingresar',exact:true}).click()
-  await expect(page.getByRole('heading',{name:'Inicio',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Home',exact:true})).toBeVisible()
   await expect(page.getByText(a.id,{exact:true})).toHaveCount(0)
-  const progress=page.getByRole('progressbar',{name:'Configuración inicial observada'})
+  const progress=page.getByRole('progressbar',{name:'Observed initial configuration'})
   await expect(progress).toHaveAttribute('aria-valuenow','0')
-  await expect(page.getByRole('region',{name:'Guía de configuración REAL'})).toContainText('Pendiente')
+  await expect(page.getByRole('region',{name:'REAL Configuration Guide'})).toContainText('Pending')
   expect(writes).toBe(0)
 
   const location=await request.post(api+base+'/locations',{
@@ -55,9 +55,9 @@ test('E3-1H1: pasos REAL, actualización GET y aislamiento de dos empresas',asyn
   })
   expect(item.status(),await item.text()).toBe(201)
   const itemId=(await item.json()).id
-  await page.getByRole('button',{name:'Actualizar desde API'}).click()
+  await page.getByRole('button',{name:'Update from API'}).click()
   await expect(progress).toHaveAttribute('aria-valuenow','2')
-  await expect(page.getByRole('region',{name:'Guía de configuración REAL'}))
+  await expect(page.getByRole('region',{name:'REAL Configuration Guide'}))
     .toContainText('No encontramos existencias positivas')
   expect(writes).toBe(0)
 
@@ -67,14 +67,14 @@ test('E3-1H1: pasos REAL, actualización GET y aislamiento de dos empresas',asyn
       quantity_milli:3000,expected_version:0,reason:'Onboarding REAL QA'},
   })
   expect(stock.status(),await stock.text()).toBe(201)
-  await page.getByRole('button',{name:'Actualizar desde API'}).click()
+  await page.getByRole('button',{name:'Update from API'}).click()
   await expect(progress).toHaveAttribute('aria-valuenow','3')
   await expect(page.getByText('Primeros pasos comprobados.',{exact:false})).toBeVisible()
 
-  await page.getByLabel('Cambiar de empresa REAL').selectOption(b.id)
+  await page.getByLabel('Change of company REAL').selectOption(b.id)
   await expect(page).toHaveURL(new RegExp('/real/empresas/'+b.id+'$'))
-  await page.getByRole('button',{name:'Inicio',exact:true}).click()
-  await expect(page.getByRole('heading',{name:'Inicio',exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Home',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Home',exact:true})).toBeVisible()
   await expect(progress).toHaveAttribute('aria-valuenow','0')
   await expect(page.locator('.e3-onboard-business-strip')).toContainText('Onboarding B')
   await expect(page.locator('.e3-onboard-business-strip')).not.toContainText('Onboarding A')
@@ -86,6 +86,6 @@ test('E3-1H1: pasos REAL, actualización GET y aislamiento de dos empresas',asyn
   expect(viewport,'Inicio REAL no debe desbordar la pantalla móvil')
     .toBeLessThanOrEqual(391)
   await page.reload()
-  await expect(page.getByRole('heading',{name:'Iniciar sesión real'})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Log in real'})).toBeVisible()
   expect(writes).toBe(0)
 })

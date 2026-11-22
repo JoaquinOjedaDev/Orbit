@@ -39,13 +39,13 @@ function asProbe<T>(
     :{state:'unavailable',message:explain(result.reason)}
 }
 const statusNames={
-  done:'Preparado',todo:'Pendiente',unknown:'No verificado','not-required':'No requiere stock',
+  done:'Preparado',todo:'Pending',unknown:'No verificado','not-required':'No requiere stock',
 } as const
 const nextActions=[
-  {section:'proveedores',name:'Proveedores',description:'Registrá contactos y condiciones comerciales.',icon:'briefcase'},
-  {section:'compras',name:'Compras y recepciones',description:'Registrá compras y confirmá la recepción en la sede correcta.',icon:'shopping'},
-  {section:'pos',name:'Punto de venta',description:'Prepará un carrito y revisá los medios declarados antes de confirmar.',icon:'receipt'},
-  {section:'ventas',name:'Historial de ventas',description:'Consultá comprobantes registrados por tu empresa.',icon:'clock'},
+  {section:'proveedores',name:'Suppliers',description:'Register contacts and commercial conditions.',icon:'briefcase'},
+  {section:'compras',name:'Purchases and receptions',description:'Register purchases and confirm the reception at the correct headquarters.',icon:'shopping'},
+  {section:'pos',name:'Point of sale',description:'Prepare a cart and review the declared media before confirming.',icon:'receipt'},
+  {section:'ventas',name:'Sales history',description:'Check vouchers registered by your company.',icon:'clock'},
 ] as const
 
 export function RealOnboardingPage({token,userId,businessId,onNavigate,onUnauthorized}:Props){
@@ -104,38 +104,38 @@ export function RealOnboardingPage({token,userId,businessId,onNavigate,onUnautho
     setGeneration(g=>g+1)
   }
   function actionTitle(step:SetupStep){
-    return step.status==='done'?'Consultar':canConfigure?'Configurar':'Ver sección'
+    return step.status==='done'?'Consultar':canConfigure?'Configurar':'See section'
   }
 
-  return <section className="real-auth-card real-business-panel e3-onboarding" aria-label="Inicio y primeros pasos REAL">
-    <nav className="real-business-nav" aria-label="Navegación de Inicio">
+  return <section className="real-auth-card real-business-panel e3-onboarding" aria-label="Real Start and First Steps">
+    <nav className="real-business-nav" aria-label="Home Navigation">
       <button type="button" className="real-auth-link" onClick={()=>onNavigate('/real/empresas')}>
-        <Icon name="arrow-left" size={15}/> Mis empresas
+        <Icon name="arrow-left" size={15}/> My companies
       </button>
-      <button type="button" className="real-auth-link" onClick={()=>navigate('')}>Datos de la empresa</button>
+      <button type="button" className="real-auth-link" onClick={()=>navigate('')}>Company details</button>
     </nav>
     <header className="e3-onboard-hero">
       <span className="e3-onboard-hero-icon" aria-hidden="true"><Icon name="home" size={27}/></span>
       <div className="e3-onboard-hero-copy">
-        <span className="real-auth-eyebrow">EMPRESA SELECCIONADA · DATOS REALES</span>
-        <h1>Inicio</h1>
+        <span className="real-auth-eyebrow">SELECTED COMPANY · REAL DATA</span>
+        <h1>Home</h1>
         <p>{business
-          ?'Organizá los primeros pasos de '+business.name+'.'
-          :'Consultá la preparación y las herramientas de tu empresa.'}</p>
+          ?'Organize the first steps of '+business.name+'.'
+          :'Consult the preparation and tools of your company.'}</p>
       </div>
       <button type="button" className="real-auth-secondary" onClick={refresh}
         disabled={state==='loading'}>
-        {state==='loading'?'Consultando…':'Actualizar desde API'}
+        {state==='loading'?'Consultando…':'Update from API'}
       </button>
     </header>
 
     {state==='loading'&&<p role="status" className="e3-onboard-loading">
-      Consultando la empresa, sus ubicaciones, el catálogo y el inventario en FastAPI…
+      Consulting the company, its locations, catalog and inventory at FastAPI...
     </p>}
     {state==='error'&&<div className="e3-onboard-error" role="alert">
-      <strong>No se pudo comprobar tu empresa.</strong>
+      <strong>Couldn't check your company.</strong>
       <p>{error}</p>
-      <button type="button" className="real-auth-secondary" onClick={refresh}>Reintentar lectura</button>
+      <button type="button" className="real-auth-secondary" onClick={refresh}>Retry Reading</button>
     </div>}
     {state==='ready'&&business&&assessment&&<>
       <div className="e3-onboard-business-strip">
@@ -143,37 +143,36 @@ export function RealOnboardingPage({token,userId,businessId,onNavigate,onUnautho
           <span>{business.category} · {business.membership.role.replaceAll('_',' ')}</span>
         </div>
         <span className={'e3-onboard-business-status'+(business.status==='ACTIVA'?' e3-onboard-active':'')}>
-          {business.status==='ACTIVA'?'Empresa activa':'Empresa suspendida'}
+          {business.status==='ACTIVA'?'Active company':'Company suspended'}
         </span>
       </div>
       {business.status!=='ACTIVA'&&<p role="note" className="e3-onboard-warning">
-        Esta empresa está suspendida. Podés consultar información disponible, pero las operaciones se rigen por los permisos del backend.
+        This company is suspended. You can consult information available, but operations are governed by backend permissions.
       </p>}
 
-      <section className="e3-onboard-progress" aria-label="Progreso de configuración inicial">
+      <section className="e3-onboard-progress" aria-label="Initial configuration progress">
         <div className="e3-onboard-progress-head">
-          <div><h2>Primeros pasos</h2>
-            <p>Se completan según registros existentes en PostgreSQL, no por marcar casillas.</p>
+          <div><h2>First steps</h2>
+            <p>They are completed according to existing records in PostgreSQL, not by ticking boxes.</p>
           </div>
           <strong>{assessment.completed} de {assessment.required} preparados</strong>
         </div>
         <div className="e3-onboard-progress-track" role="progressbar"
-          aria-label="Configuración inicial observada"
+          aria-label="Observed initial configuration"
           aria-valuemin={0} aria-valuemax={assessment.required}
           aria-valuenow={assessment.completed}>
           <span style={{width:(assessment.required?100*assessment.completed/assessment.required:0)+'%'}}/>
         </div>
         {!assessment.verified&&<p className="e3-onboard-partial" role="status">
-          <Icon name="shield" size={16}/> Algunas lecturas están incompletas o restringidas.
-          No mostramos datos faltantes como si fueran cero.
+          <Icon name="shield" size={16}/> Some readings are incomplete or restricted. We do not show missing data as if they were zero.
         </p>}
         {assessment.verified&&assessment.completed===assessment.required&&
           <p className="e3-onboard-complete" role="status">
-            Primeros pasos comprobados. Esto no reemplaza los permisos ni las verificaciones al operar.
+            Checked first steps. This does not replace permissions or checks when operating.
           </p>}
       </section>
 
-      <section className="e3-onboard-checklist" aria-label="Guía de configuración REAL">
+      <section className="e3-onboard-checklist" aria-label="REAL Configuration Guide">
         {assessment.steps.map((step,index)=><article key={step.id}
           className={'e3-onboard-step e3-onboard-step-'+step.status}>
           <span className="e3-onboard-step-number">{index+1}</span>
@@ -192,10 +191,10 @@ export function RealOnboardingPage({token,userId,businessId,onNavigate,onUnautho
         </article>)}
       </section>
 
-      <section className="e3-onboard-next" aria-label="Herramientas disponibles">
+      <section className="e3-onboard-next" aria-label="Available tools">
         <div className="e3-onboard-next-heading">
-          <h2>Continuá con tu negocio</h2>
-          <p>Proveedores, compras y ventas son herramientas opcionales para configurar según tu actividad.</p>
+          <h2>Continue your business</h2>
+          <p>Suppliers, purchases and sales are optional tools to configure according to your activity.</p>
         </div>
         <div className="e3-onboard-next-grid">
           {nextActions.map(action=><button type="button" key={action.section}
@@ -208,10 +207,7 @@ export function RealOnboardingPage({token,userId,businessId,onNavigate,onUnautho
         </div>
       </section>
       <p className="e3-onboard-footnote">
-        Esta guía solo hace consultas GET de esta empresa. No crea registros, no modifica stock
-        y no confirma ventas. Al regresar, actualizá para verificar los cambios guardados.
-        La consulta de catálogos e inventario se limita a {MAX_PAGES*PAGE_SIZE} registros por tipo:
-        si existe más información se muestra como parcial.
+        This guide only makes GET queries from this company. It does not create records, does not modify stock and does not confirm sales. Upon return, update to verify the changes saved. Catalogs and inventory query is limited to {MAX_PAGES*PAGE_SIZE} records by type: if more information exists it is shown as partial.
       </p>
     </>}
   </section>

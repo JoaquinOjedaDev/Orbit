@@ -1,21 +1,21 @@
-# 04 — Arquitectura del sistema y patrones de diseño
+# 04 — System architecture and design patterns
 
-**Versión vigente:** 2.1 — E2-7 / T12-D1 (11/11/2026).  
-**Proyecto:** Orbit — plataforma generalista de gestión multiempresa y multirrubro (UNSAM Programación 2).  
-**Corte funcional inmutable:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` — PR #45 (T11).  
+**Current version:** 2.1 — E2-7 / T12-D1 (11/11/2026).  
+**Project:** Orbit — generalist multi-company and multi-rub management platform (UNSAM Programming 2).  
+**Unchangeable functional cut:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` — PR #45 (T11).  
 **Rama documental:** `docs/e2-7-t12-cierre-academico`, PR #46, sin merge a `main`.  
-**Estado:** **AS-IMPLEMENTED del núcleo RF-01..RF-07**. RF-08..RF-10 permanecen exclusivamente DEMO o diferidos.  
-**Fuentes de verdad:** [Requerimientos 01](01_ANALISIS_DE_REQUERIMIENTOS.md), [casos de uso 02](02_CASOS_DE_USO.md), [dominio 03 v2.1](03_MODELO_DE_DOMINIO_Y_UML.md) y [API y trazabilidad 05](05_MATRIZ_API_Y_TRAZABILIDAD.md).
+**Status:** **AS-IMPLEMENTED core RF-01..RF-07**. RF-08..RF-10 remain exclusively DEMO or deferred.  
+**Sources of truth:** [Requirements 01](01_ANALISIS_DE_REQUERIMIENTOS.md), [use cases 02](02_CASOS_DE_USO.md), [dominio 03 v2.1](03_MODELO_DE_DOMINIO_Y_UML.md) y [API and traceability 05](05_MATRIZ_API_Y_TRAZABILIDAD.md).
 
-> **Regla de precedencia obligatoria.** Las secciones **«Estado vigente T12-D1»** describen el sistema realmente implementado al corte T11; el bloque **«ARCHIVO HISTÓRICO E2-3»**, al final de este archivo, conserva íntegramente el diseño anterior (incluidos ejemplos TO-BE, versiones y cifras antiguas). Sus frases en presente («todavía no existe», «React sigue DEMO», «no hay venta REAL») **no** describen el estado vigente. La lectura de un ejemplo didáctico no prueba la existencia de esa clase/patrón en el código.
+> **Rule of mandatory precedence.** The sections **‘T12-D1 State in force’** describe the system actually implemented to cut T11; block **‘ARCHIVO HISTORICAL E2-3’**, at the end of this file, retains the entire design above (including TO-BE examples, old versions and figures). Your phrases in present ("not yet existing", "React follows DEMO", "no REAL sale") **no** The reading of a didactic example does not prove the existence of this class/pattern in the code.
 
-## Estado vigente T12-D1 — vista ejecutiva (primero leer esta sección)
+## Current status T12-D1 — Executive view (first read this section)
 
-**Arquitectura:** monolito modular FastAPI, Python, SQLAlchemy 2.x, Alembic y PostgreSQL 16; SPA React + TypeScript + Vite con dos modos **DEMO local** y **REAL con API**. Docker Compose permite ejecución de la API y base local; GitHub Actions prueba componentes con entornos de QA descartables. Cada empresa es un tenant lógico; WALOS es solo cliente de ejemplo.
+**Architecture:** modular monolith FastAPI, Python, SQLAlchemy 2.x, Alembic and PostgreSQL 16; SPA React + TypeScript + Vite with two modes **DEMO local** y **REAL with API**. Docker Compose allows API execution and local base; GitHub Actions tests components with disposable QA environments. Each company is a logical tenant; WALOS is just an example client.
 
-**Secuencia funcional integrada:** registro/login → empresa y membresía → ubicaciones/asignaciones → catálogo/proveedores → compra → recepción física → stock → venta POS con pagos declarados. El frontend REAL utiliza la API como autoridad: no reutiliza saldos ni identidades de `demoStore`. La DEMO conserva su propia información ilustrativa. **No** hay acreditación bancaria, cuentas financieras ni QR de cobro productivo en el alcance REAL.
+**Integrated functional sequence:** registration/login → company and membership → locations/allocations → catalog/providers → purchase → physical reception → stock → sale POS with declared payments. The REAL frontend uses the API as authority: does not reuse balances or identities of `demoStore`DEMO retains its own illustrative information. **No** there is bank accreditation, financial accounts or QR of productive collection in the REAL scope.
 
-### A. Diagrama de componentes y límite de confianza
+### A. Component diagram and confidence limit
 
 ```mermaid
 flowchart LR
@@ -40,53 +40,53 @@ flowchart LR
   Repo --> PG
 ```
 
-**Interpretación:** la flecha HTTP cruza el límite de confianza; la autorización efectiva reside siempre en FastAPI y no en el menú React. No hay flecha que copie automáticamente datos desde `demoStore` a PostgreSQL.
+**Interpretation:** HTTP arrow crosses the confidence limit; effective authorization always resides in FastAPI and not in the React menu. No arrow automatically copy data from `demoStore` a PostgreSQL.
 
-### B. Componentes implementados y responsabilidades
+### B. Implemented components and responsibilities
 
-| Capa | Código y tecnología verificable | Responsabilidad / invariante |
+| Layer | Verifiable code and technology | Liability/invariant |
 |---|---|---|
-| Presentación REAL | `frontend/src/App.tsx`, pantallas `features/*`, `src/api/httpClient.ts` | Navegación, formularios, manejo de errores y sesión, sin calcular autoridad de stock ni permisos |
-| Presentación DEMO | `frontend/src/data/demo/demoStore.ts` | Prototipo autónomo para UX; valores locales, sin seguridad de backend |
-| Enrutamiento REST | `backend/app/api/v1/router.py`, routers en `app/modules/*` | **46 operaciones** en **13 routers**, segregadas de `/health` y `/ready` |
-| Servicios de aplicación | Servicios en `backend/app/modules/*`, p. ej. `sales/service.py` y `purchases/receipt_service.py` | Orquestación, transacción, validación de rol, tenant, sede, cálculos e idempotencia |
-| Repositorios | P. ej. `catalog/repository.py`, `purchases/repository.py` | Consultas filtradas por empresa; no hacen `commit()` por su cuenta |
-| Persistencia | `backend/app/infrastructure/models/`, `infrastructure/db.py`, `alembic/versions` | FKs, UNIQUE, CHECK, índices, claves compuestas por empresa y operaciones transaccionales |
-| Infraestructura | `plataforma-pyme/compose.yaml`, `backend/Dockerfile`, `.github/workflows/plataforma-pyme-*.yml` | Desarrollo, CI y pruebas en bases descartables; no implica infraestructura bancaria ni producción pública |
+| REAL Presentation | `frontend/src/App.tsx`, screens `features/*`, `src/api/httpClient.ts` | Navigation, forms, error handling and session, without calculating stock authority or permissions |
+| DEMO presentation | `frontend/src/data/demo/demoStore.ts` | Autonomous Prototype for UX; local values, no backend security |
+| REST routing | `backend/app/api/v1/router.py`, routers en `app/modules/*` | **46 operations** en **13 routers**, segregated from `/health` y `/ready` |
+| Implementation services | Services in `backend/app/modules/*`, p. ej. `sales/service.py` y `purchases/receipt_service.py` | Orchestration, transaction, role validation, tenant, headquarters, calculations and idempotency |
+| Repositories | P. ej. `catalog/repository.py`, `purchases/repository.py` | Filtered queries by company; not done `commit()` on its own |
+| Persistence | `backend/app/infrastructure/models/`, `infrastructure/db.py`, `alembic/versions` | FKs, UNIQUE, CHECK, indexes, company-based key and transactional operations |
+| Infrastructure | `plataforma-pyme/compose.yaml`, `backend/Dockerfile`, `.github/workflows/plataforma-pyme-*.yml` | Development, IC and evidence on disposable bases; does not involve banking infrastructure or public production |
 
-### C. Patrones que pueden defenderse con evidencia de código
+### C. Patterns that can defend themselves with evidence of code
 
-| Patrón / enfoque | Estado real T11 | Evidencia concreta | Qué **no** afirmar |
+| Pattern/focus | Actual status T11 | Evidence | Qué **no** affirm |
 |---|---|---|---|
-| **Repository** (arquitectónico) | **IMPLEMENTADO** | `CatalogRepository` y `PurchaseRepository` separan acceso SQL y reglas; métodos filtran `business_id` | No es automáticamente un patrón GoF ni garantiza abstracción completa en todos los módulos |
-| **Service Layer** | **IMPLEMENTADO** | Servicios de ventas, compras, recepciones y ajustes aplican autorización, cálculos y mutaciones | No debe confundirse con simples handlers REST |
-| **Unidad transaccional con SQLAlchemy** | **IMPLEMENTADA COMO PRÁCTICA** | `infrastructure/db.py` genera sesiones aisladas; servicios críticos confirman o revierten; recepción/venta atómicas | No atribuir una clase formal `UnitOfWork` universal si no existe |
-| **Observer** | **IMPLEMENTADO EN DEMO** | `demoStore.subscribe`, `getSnapshot` y `useSyncExternalStore` | No equivale a eventos distribuidos ni a persistencia multicliente |
-| **DTO / separación de capas** | **IMPLEMENTADO COMO TÉCNICA** | Esquemas FastAPI/Pydantic y modelos ORM distintos | No es automáticamente un GoF específico |
-| **Adapter / Factory / Decorator** | **CONCEPTOS HISTÓRICOS O FUTUROS**, no certificación GoF | Ejemplos en apéndice E2-3, no prueba suficiente de implementación completa T11 | No declararlos requisitos cumplidos por mostrar pseudocódigo |
-| **State / Command / Memento** | **NO ACREDITADOS COMO GOF** | Estados SQL, comandos de entrada y snapshots son conceptos del dominio | No convertir nombres o comportamientos equivalentes en patrones formales |
+| **Repository** (architectural) | **IMPLEMENTED** | `CatalogRepository` y `PurchaseRepository` separate SQL access and rules; methods filter `business_id` | It is not automatically a GoF pattern nor does it guarantee complete abstraction in all modules |
+| **Service Layer** | **IMPLEMENTED** | Sales, purchasing, reception and adjustment services apply authorization, calculations and mutations | No debe confundirse con simples handlers REST |
+| **Transactional unit with SQLAlchemy** | **IMPLEMENTED AS PRACTICAL** | `infrastructure/db.py` generates isolated sessions; critical services confirm or reverse; atomic reception/sale | Do not attribute a formal class `UnitOfWork` if not available |
+| **Observer** | **IMPLEMENTED DEMO** | `demoStore.subscribe`, `getSnapshot` y `useSyncExternalStore` | It does not amount to distributed events or multi-client persistence |
+| **DTO/layer separation** | **IMPLEMENTED AS TECHNICAL** | FastAPI/Pydantic schemas and different ORM models | It is not automatically a specific GoF |
+| **Adapter / Factory / Decorator** | **HISTORICAL OR FUTURE CONCEPTS**, not GoF certification | Examples in Appendix E2-3, not sufficient full implementation test T11 | Not declaring requirements fulfilled by showing pseudocode |
+| **State / Command / Memento** | **NOT ACREDITED AS GOF** | SQL States, Input Commands and Snapshots are domain concepts | Do not convert equivalent names or behaviors into formal patterns |
 
-**Patrón para la defensa académica:** priorizar **Repository** como separación observable y **Observer** como patrón GoF efectivamente rastreable en DEMO. Citar archivo, método y test verificable; no prometer test dedicado de Observer si no se ejecutó. Relevar la consigna oficial de patrones antes de afirmar cumplimiento de una rúbrica concreta.
+**Pattern for academic defense:** prioritize **Repository** as observable separation and **Observer** as a GoF pattern effectively traceable in DEMO. Cit file, method and verifiable test; not promise dedicated Observer test if it was not executed. Release the official pattern slogan before asserting compliance with a particular rubric.
 
-### D. Entidades, autorizaciones y transacciones
+### D. Entities, authorizations and transactions
 
-- **Multi-tenancy:** identidad global `User`; `Membership` vincula usuario y empresa. Roles persistidos `TITULAR_ADMINISTRATIVO`, `ADMINISTRADOR`, `ENCARGADO`, `TRABAJADOR`. Verificación por empresa y membresía en servidor, no por UUID conocido en navegador.
-- **Sedes:** `can_sell` y `can_store` independientes. Miembros operativos necesitan asignación activa para actuar en una sede; traslados necesitan STORE en origen/destino. Ventas de bienes exigen capacidades SELL y STORE; servicios no debitan inventario.
-- **Compras:** `Purchase` conserva snapshots, pero dar de alta una compra no mueve stock. `PurchaseReceipt` hace una recepción completa como máximo por compra y solo bienes físicos actualizan saldo.
-- **Inventario:** `StockMovement` guarda hechos firmados; `StockBalance` contiene saldo materializado por tenant/sede/artículo con versión y no-negatividad. Traslado: debit/credit en un commit; ajuste: motivo y control de versión; stock inicial: solo administradores habilitados y sin historial del par.
-- **Ventas:** `Sale`, `SaleLine`, `SalePayment`; monto en centavos, cantidades en milésimas, redondeo HALF_UP por línea. Pagos declarados deben igualar total; `MERCADO_PAGO_DECLARADO` **no** equivale a pago procesado por Mercado Pago.
-- **Idempotencia:** `Idempotency-Key` para comandos requeridos y huella de solicitud; transacciones nuevas persisten `request_id` y `request_sha256` en agregados pertinentes. **No existe una tabla genérica `SolicitudIdempotente`**. Reintento igual recupera el comprobante; cuerpo o actor diferente implica conflicto.
-- **Concurrencia:** comprobar autorizaciones y stock dentro de la transacción; un timeout no justifica generar otra venta automáticamente. La lectura de saldos de una empresa no concede autorización de escritura en todas sus sedes.
-- **Seguridad del navegador:** Bearer REAL en memoria; F5 requiere ingresar nuevamente. Algunas intenciones comerciales pendientes se guardan en IndexedDB **sin cifrado**, sin credenciales. Esto es deuda de producto; no almacenar secretos de pago allí.
+- **Multi-tenancy:** global identity `User`; `Membership` links user and company. Persistent roles `TITULAR_ADMINISTRATIVO`, `ADMINISTRADOR`, `ENCARGADO`, `TRABAJADOR`. Business verification and server membership, not by UUID known in browser.
+- **Sedes:** `can_sell` y `can_store` Independents. Operational members need active assignment to operate at a headquarters; transfers require STORY in origin/destiny. Sales of goods require SELL and STORE capabilities; services do not debit inventory.
+- **Purchases:** `Purchase` It retains snapshots, but to sign up a purchase does not move stock. `PurchaseReceipt` makes a full reception at most per purchase and only physical goods update balance.
+- **Inventory:** `StockMovement` keeps signed facts; `StockBalance` contains materialized balance by tenant/headquarters/article with version and non-negativity. Transfer: debit/credit in a commit; setting: motif and version control; initial stock: only enabled administrators without torque history.
+- **Sales:** `Sale`, `SaleLine`, `SalePayment`; amount in cents, amounts in thousandths, rounding HALF_UP per line. Declared payments must equal total; `MERCADO_PAGO_DECLARADO` **no** is equivalent to payment processed by Mercado Pago.
+- **Idempotency:** `Idempotency-Key` for required commands and application footprint; new transactions persist `request_id` y `request_sha256` in relevant aggregates. **No generic table `SolicitudIdempotente`**. Retrying equally recovers the voucher; different body or actor involves conflict.
+- **Concurrence:** check authorizations and stock within the transaction; a timeout does not justify generating another sale automatically. Reading balances from a company does not grant write permission at all its headquarters.
+- **Browser security:** Bearer REAL in memory; F5 requires re-entry. Some pending business intentions are saved in IndexedDB **no encryption**This is product debt; not storing payment secrets there.
 
-### E. Rutas, demostración y pruebas reproducibles
+### E. Reproducible routes, demonstration and testing
 
-| Modo | Acceso típico | Fuente de datos | Advertencia |
+| Mode | Typical access | Data source | Warning |
 |---|---|---|---|
-| REAL | `/real/registro`, `/real/login`, `/real/empresas`, `/real/empresas/{businessId}/...` | FastAPI/PostgreSQL | No tratar como despliegue público productivo ni usar datos/ventas reales de clientes |
-| DEMO | `/inicio` y `/b/{demoId}/...` | Almacenamiento local del prototipo | No autenticación ni conciliación bancaria; QR ilustrativo no escaneable |
+| REAL | `/real/registro`, `/real/login`, `/real/empresas`, `/real/empresas/{businessId}/...` | FastAPI/PostgreSQL | Do not treat as productive public deployment or use real customer data/sales |
+| DEMO | `/inicio` y `/b/{demoId}/...` | Local Prototyping Storage | No bank authentication or reconciliation; non-scannable illustrative QR |
 
-**Comprobación segura y no destructiva** (desde la raíz del repositorio, PowerShell, si las dependencias ya están instaladas):
+**Safe and non-destructive testing** (from the root of the repository, PowerShell, if dependencies are already installed):
 
 ```powershell
 cd plataforma-pyme/frontend
@@ -100,115 +100,115 @@ npm.cmd run test:operations-real
 cd ../..
 ```
 
-**Pruebas con PostgreSQL:** solo con base **descartable y expresamente identificada** según [guía del backend](../backend/README.md). No ejecutar migraciones, suites de escritura ni limpieza sobre la base personal sin confirmar primero el destino de conexión. Para T11, el [acta técnica](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) informa **892 Pytest + 38 Playwright REAL + 6 DEMO**, en el commit funcional `6aecd80e...`; **son evidencias históricas**, no un CI nuevo ejecutado al publicar T12.
+**PostgreSQL tests:** only with base **disposable and expressly identified** according to [backend guide](../backend/README.md). Do not execute migrations, writing suites or cleaning on a personal basis without first confirming the connection destination. For T11, the [technical report](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) reports **892 Pytest + 38 Playwright REAL + 6 DEMO**, en el commit funcional `6aecd80e...`; **are historical evidences**Not a new IC executed when publishing T12.
 
-**Control de CI de la rama documental:** los workflows actuales están filtrados por cambios en frontend/backend/compose; un PR que solo cambia Markdown, PlantUML o SVG puede tener **cero ejecuciones**. El cierre de T12 exige validación estática registrada en su acta; no declarar verde un check inexistente. Crear un nuevo workflow YAML excedería el alcance documental de este PR y queda diferido.
+**IC control of the documentary branch:** current workflows are filtered by changes in frontend/backend/compose; a PR that only changes Markdown, PlantUML or SVG may have **zero executions**. The closure of T12 requires static validation recorded in its minutes; not declaring a non-existent check green. Creating a new YAML workflow would exceed the documentary scope of this PR and is deferred.
 
-### F. Alcance evaluable, límites y continuación
+### F. Valuable scope, limits and continuation
 
-| Alcance | Estado en corte T11 | Lectura para defensa |
+| Scope | State in court T11 | Reading for Defense |
 |---|---|---|
-| RF-01..RF-07 / CU-01..CU-12 | **REAL en FastAPI/PostgreSQL, con pantallas React y evidencia T11** | Núcleo académico construido, sujeto a criterios completos de consigna |
-| RF-08 gastos y caja | **DEMO / DIFERIDO** | No backend real para caja ni conciliación de jornadas |
-| RF-09 cuentas financieras | **DEMO / DIFERIDO** | No entidad bancaria real ni saldos financieros autenticados |
-| RF-10 Mercado Pago QR | **DEMO / DIFERIDO** | No OAuth por empresa, no webhooks de cobro, no acreditación externa |
-| Recepción parcial, reservas, recetas/producción, TP3 adicional | **NO CERTIFICADOS COMO REAL** | Evaluar su correspondencia con la consigna original sin abrir compromisos ficticios |
+| RF-01..RF-07 / CU-01..CU-12 | **REAL in FastAPI/PostgreSQL, with React screens and T11 evidence** | Built academic core, subject to complete criteria of delivery |
+| RF-08 expenses and cash | **DEMO / DIFFERED** | No real backend for cashier or day reconciliation |
+| RF-09 financial accounts | **DEMO / DIFFERED** | No real bank or authenticated financial balances |
+| RF-10 Market Payment QR | **DEMO / DIFFERED** | No OAuth per company, no collection webhooks, no external accreditation |
+| Partial reception, reservations, recipes/production, additional TP3 | **NOT CERTIFIED AS REAL** | Evaluate your correspondence with the original slogan without opening fictitious commitments |
 
-**Extensión de producto post-T12 (fuera de los compromisos RF-01..RF-07 de este cierre):** (1) aproximar REAL a la experiencia visual y navegación DEMO; (2) generar ERD desde PostgreSQL (DBeaver o equivalente, no requiere migración a Supabase); (3) demo web/móvil desplegable y pruebas de accesibilidad; (4) pagos QR de Mercado Pago por cada empresa con OAuth, webhooks verificados, idempotencia y reconciliación; (5) gastos/caja/cuentas, reservas y producción por fases de alcance controlado. **No interpretar este backlog como funcionalidades ya entregadas.**
+**Product extension post-T12 (outside commitments RF-01..RF-07 of this closure):** (1) approximating REAL to visual experience and DEMO navigation; (2) generating ERD from PostgreSQL (DBeaver or equivalent, does not require migration to Supabase); (3) demo web/mobile drop down and accessibility tests; (4) payments QR Market Payment for each company with OAuth, verified webhooks, idempotency and reconciliation; (5) expenses/box/accounts, reserves and production by controlled scope phases. **Do not interpret this backlog as features already delivered.**
 
-**Criterios del TP y TP3:** esta arquitectura no certifica por sí misma los requisitos oficiales de una consigna no contrastada íntegramente. Cualquier exigencia heredada de TP3 debe vincularse a RF/CU y evidencia real, o quedar marcada **pendiente de verificar contra consigna**. Ningún requisito se da por absorbido automáticamente.
+**Criteria for TP and TP3:** this architecture does not itself certify the official requirements of a unverified slogan entirely. Any requirement inherited from TP3 must be linked to RF/CU and actual evidence, or marked **not yet checked against consignment**. No requirement is automatically taken for granted.
 
-### G. Documentación relacionada y defensa
+### G. Related documentation and defence
 
-- [Documento 01](01_ANALISIS_DE_REQUERIMIENTOS.md) — RF, alcance REAL y DEMO.
-- [Documento 02](02_CASOS_DE_USO.md) — 12 especificaciones, 13 óvalos UML por división de CU-12.
-- [Documento 03](03_MODELO_DE_DOMINIO_Y_UML.md) — clases, FKs, entidades, ledger, invariantes y evolución.
-- [Diagrama 03A](diagramas/03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg) — identidad, empresas y catálogo.
-- [Diagrama 03B](diagramas/03B_COMERCIO_INVENTARIO_REDISENADO.svg) — modelo comercial, ledger y stock.
-- [Diagrama 03B explicativo](diagramas/03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) — lectura de negocio para exposición.
-- [Diagrama 03C](diagramas/03C_CASOS_DE_USO_REDISENADO.svg) — actores funcionales, permisos y CU.
-- [Documento 05](05_MATRIZ_API_Y_TRAZABILIDAD.md) — 46 endpoints y correspondencia UI/test.
-- [Índice ADR vigente T12](../docs/ADR/README.md) — estado aplicado/parcial/diferido de ADR-001..008, con fuentes históricas preservadas.
-- [README de entrega](README.md) y [guía de diagramas](diagramas/README.md).
-- [Acta T12-B](../docs/E2-7_T12_B_CONCILIACION_RF_CU_API_UI_TEST.md) y [Plan T12-A](../docs/E2-7_T12_A_PLAN_Y_MATRIZ_DESFASES.md).
+- [Document 01](01_ANALISIS_DE_REQUERIMIENTOS.md) RF, REAL scope and DEMO.
+- [Document 02](02_CASOS_DE_USO.md) — 12 specifications, 13 UML ovals per division of CU-12.
+- [Document 03](03_MODELO_DE_DOMINIO_Y_UML.md) — classes, FKs, entities, leader, invariants and evolution.
+- [Diagram 03A](diagramas/03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg) — identity, companies and catalogue.
+- [Diagram 03B](diagramas/03B_COMERCIO_INVENTARIO_REDISENADO.svg) — modelo comercial, ledger y stock.
+- [Explanatory diagram 03B](diagramas/03B_FLUJO_COMERCIAL_EXPLICATIVO.svg) — business reading for exhibition.
+- [Diagram 03C](diagramas/03C_CASOS_DE_USO_REDISENADO.svg) — functional actors, permits and UC.
+- [Document 05](05_MATRIZ_API_Y_TRAZABILIDAD.md) — 46 endpoints y correspondencia UI/test.
+- [Current ADR Index T12](../docs/ADR/README.md) — status applied/partial/differed from ADR-001.008, with preserved historical sources.
+- [README de entrega](README.md) y [diagram guide](diagramas/README.md).
+- [Act T12-B](../docs/E2-7_T12_B_CONCILIACION_RF_CU_API_UI_TEST.md) y [Plan T12-A](../docs/E2-7_T12_A_PLAN_Y_MATRIZ_DESFASES.md).
 
 ---
 
-## ARCHIVO HISTÓRICO E2-3 — diseño original preservado (08/11/2026)
+## ARCHIVO HISTORICAL E2-3 — Original preserved design (08/11/2026)
 
-> **Advertencia permanente:** todo el texto siguiente, incluidos títulos, secciones, propuestas de Factory/Decorator/Adapter y estados de implementación declarados en presente, describe el **corte E2-3**, NO el código implementado de T11. Las decisiones aquí concebidas no deben reinterpretarse como patrones verificados. Este material se preserva para auditoría de evolución.
+> **Permanent warning:** all the following text, including titles, sections, Factory/Decorator/Adapter proposals and implementation states declared in present, describes the **Cut E2-3**, NOT the code implemented from T11. The decisions conceived here should not be reinterpreted as verified patterns. This material is preserved for evolution audit.
 
-### Portada histórica original — 04 Arquitectura del sistema y patrones de diseño
+### Original historical cover — 04 System architecture and design patterns
 
-**Proyecto:** Orbit — plataforma generalista de gestión multiempresa y multirrubro  
-**Materia:** Programación 2  
-**Versión:** 1.9 — E2-3 E, catálogo real y 580 pruebas Windows
-**Estado:** **PROPUESTA BASE + ANEXO DE COMPONENTES BACKEND REALMENTE IMPLEMENTADOS** — aprobación académica del equipo pendiente  
-**Fecha:** 8 de noviembre de 2026  
-**Base de contraste:** `main` del repositorio `JoaquinOjedaDev/Orbit`, commit `764ba20674f14621e381a4e9753017070943f2e3` (frontend y documentos 01–03). Esta referencia de commit documenta el **baseline histórico** previo a E2; el estado implementado actual se registra en el anexo E2 de este documento.  
-**Documentos vinculados:** [01 — Requerimientos](01_ANALISIS_DE_REQUERIMIENTOS.md) · [02 — Casos de uso](02_CASOS_DE_USO.md) · [03 — Modelo de dominio y UML](03_MODELO_DE_DOMINIO_Y_UML.md).
+**Project:** Orbit — Generalistic multi-company and multi-rub management platform  
+**Materia:** Programming 2  
+**Version:** 1.9 — E2-3 E, real catalogue and 580 Windows tests
+**Status:** **BASE PROPOSAL + ANNEX OF REALLY IMPLEMENTED BACKEND COMPONENTS** — academic approval of the pending equipment  
+**Date:** 8 November 2026  
+**Contrast base:** `main` repository `JoaquinOjedaDev/Orbit`, commit `764ba20674f14621e381a4e9753017070943f2e3` (frontend and documents 01–03). **historical baseline** prior to E2; the current status is recorded in annex E2 of this document.  
+**Related documents:** [01 — Requirements](01_ANALISIS_DE_REQUERIMIENTOS.md) · [02 — Cases of use](02_CASOS_DE_USO.md) · [03 — Modelo de dominio y UML](03_MODELO_DE_DOMINIO_Y_UML.md).
 
-> **Alcance y lectura obligatoria.** **AS-IS** indica funcionalidades verificables en el frontend DEMO; **TO-BE** identifica decisiones y arquitectura que deberán implementarse en FastAPI; **DIFERIDO** representa evolución posterior. Los esquemas, carpetas, interfaces, fragmentos Python y endpoints propuestos en este documento **no son código de backend existente ni pruebas de backend ejecutadas**. Esta versión se somete a revisión antes de subirla a GitHub.
+> **Scope and mandatory reading.** **AS-IS** indicates verifiable functionalities on the DEMO frontend; **TO-BE** identifies decisions and architecture to be implemented in FastAPI; **DIFFERENT** The schemas, folders, interfaces, Python fragments and endpoints proposed in this document **are not existing backend code or run backend tests**. This version is subject to revision before uploading it to GitHub.
 
-> **Cierre E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y C.4b **195/195 pruebas locales aprobadas** (`195 passed in 23.86s`). Alembic `e213c4_acceptance (head)`, sin nuevas operaciones; API y PostgreSQL Docker `healthy`, `/ready` = `ready`/`ok`. CI **3/3** del commit funcional `8cd1674`. C.5 es exclusivamente documental, no implica nuevos tests, migraciones o endpoints. React continúa DEMO; RF-03–RF-07 siguen pendientes.
+> **Closing E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y C.4b **195/195 approved local tests** (`195 passed in 23.86s`). Alembic `e213c4_acceptance (head)`, without new operations; API and PostgreSQL Docker `healthy`, `/ready` = `ready`/`ok`. CI **3/3** del commit funcional `8cd1674`C.5 is exclusively documentary, does not involve new tests, migrations or endpoints. React continues DEMO; RF-03–RF-07 are still pending.
 
-## Resumen de decisiones de esta revisión
+## Summary of decisions of this review
 
-**Se mantiene el diseño del proyecto y su alcance.** La propuesta es un **monolito modular FastAPI + PostgreSQL**, no microservicios. **Repository** continúa como patrón principal previsto para el backend; **Observer** está presente en el frontend como mecanismo de suscripción; **Factory y Decorator** se documentan con ejemplos y pruebas de aplicación posibles. Adapter acompaña la migración futura; no confundir propuestas con implementaciones.
+**Project design and scope are maintained.** The proposal is a **monolito modular FastAPI + PostgreSQL**Not microservices. **Repository** continues as the main pattern for backend; **Observer** is present on the frontend as a subscription mechanism; **Factory y Decorator** are documented with examples and possible application tests. Adapter accompanies future migration; do not confuse proposals with implementations.
 
-Esta revisión precisa nueve decisiones importantes:
+This revision requires nine important decisions:
 
-1. **ORM síncrono de SQLAlchemy 2.x → endpoints FastAPI `def`**, sin ejecutar llamadas bloqueantes directamente en un endpoint `async def`; sesiones cortas y nunca compartidas entre solicitudes concurrentes.
-2. **Una transacción por comando crítico**. Los repositorios preparan consultas y escrituras, pero **no ejecutan `commit()`**. La unidad de trabajo/servicio controla un único commit o rollback.
-3. **Saldo inexistente = cero para salidas; primer ingreso = UPSERT atómico**. No se crearán saldos a cero para todas las combinaciones de artículos y ubicaciones.
-4. **PostgreSQL 16 propuesto para Docker de desarrollo**, que soporta `UNIQUE NULLS NOT DISTINCT`; las FKs compuestas necesitan claves únicas compatibles en las tablas padre.
-5. **Renglones bonificados de precio cero permitidos, total final de venta positivo** durante el MVP ya acordado. El descuento del contrato será **un importe fijo de centavos enteros**; porcentaje, si existe como ayuda visual, se convierte explícitamente antes de enviarlo.
-6. **DTO de salida desacoplado del ORM**: el backend no devuelve objetos SQLAlchemy asociados a sesiones que ya se cerraron. Los mapeos serán explícitos pero sencillos; no hace falta un framework adicional.
-7. **Cambio de empresa protegido contra respuestas obsoletas**: consultas con ámbito empresarial, cancelación cuando sea posible y descarte por contexto/versión aunque llegue una respuesta tardía. Un fallo de red no debe activar escritura DEMO silenciosa.
-8. **Propiedad inequívoca de la sesión en cada comando**: el servicio abre su transacción mediante una fábrica de sesiones; la autorización empresarial y las escrituras críticas utilizan ese mismo contexto, sin reutilizar una sesión ORM entre dependencias, hilos o solicitudes.
-9. **Contratos mínimos de calidad antes de programar**: error estructurado, esquema monetario exacto, versionado API, migraciones comprobables, pruebas unitarias y de integración PostgreSQL claramente separadas; las interfaces/patrones se implementarán cuando aporten valor.
+1. **SQLAlchemy 2.x synchronous ORM → endpoints FastAPI `def`**, without running blocking calls directly into an endpoint `async def`; short sessions and never shared between concurrent applications.
+2. **A transaction by critical command**Repositories prepare queries and writings, but **no ejecutan `commit()`**. The work/service unit controls a single commit or rollback.
+3. **Non-existent balance = zero for outputs; first input = UPSERT atomic**. No zero balances will be created for all combinations of items and locations.
+4. **PostgreSQL 16 proposed for Docker Development**, that supports `UNIQUE NULLS NOT DISTINCT`; composite FKs need unique keys compatible with parent tables.
+5. **Permitted zero priced bonus lines, positive sale final total** during the MVP already agreed. The discount of the contract will be **a fixed amount of whole cents**; percentage, if it exists as visual aid, is explicitly converted before sending it.
+6. **DTO output decoupled from ORM**: the backend does not return SQLAlchemy objects associated with sessions that have already been closed. The maps will be explicit but simple; no additional framework is needed.
+7. **Change of company protected against obsolete responses**: queries with business environment, cancellation when possible and discard by context/version even if a late response arrives. A network failure should not activate silent DEMO writing.
+8. **Unequivocal session ownership in each command**: the service opens its transaction through a session factory; business authorization and critical deeds use the same context, without reusing an ORM session between dependencies, threads or requests.
+9. **Minimum quality contracts before programming**: structured error, exact monetary scheme, versioned API, verifiable migrations, unitary and integration tests PostgreSQL clearly separated; interfaces/patterns will be implemented when they provide value.
 
-**Al preparar la base v0.4 todavía no se habían ejecutado pruebas de backend**; el anexo E2 al final registra la implementación y resultados locales posteriores, sin atribuirlos a aquel commit.
+**Backend tests had not yet been performed in preparation for base v0.4**; Annex E2 at the end records subsequent local implementation and results, without attributing them to that commit.
 
-> **Estado vigente E2-2 (08/11/2026):** RF-03/CU-04 y E2-2 A/A.1/B/C/D implementados, con ubicaciones, asignaciones de colaboradores, autorización por tenant y política operacional reutilizable. **371/371 pruebas en Windows (47.57s)**; `e22d_assignments (head)`; Alembic sin operaciones pendientes; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. CI del código E2-2 D: 3/3 y 371 pruebas en Python 3.12 y 3.14. **No** existe todavía integración React–API ni operaciones comerciales de compras/stock/ventas que consuman la política; corresponden a bloques posteriores. Los párrafos de cortes previos que mencionan validaciones o funciones «pendientes» se conservan como **histórico**, no como estado actual. El TP integral no se declara terminado.
+> **State in force E2-2 (08/11/2026):** RF-03/CU-04 and E2-2 A/A.1/B/C/D implemented, with locations, partner assignments, tenant authorization and reusable operational policy. **371/371 tests on Windows (47.57s)**; `e22d_assignments (head)`; Alembic without pending operations; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. IC code E2-2 D: 3/3 and 371 tests in Python 3.12 and 3.14. **No** React–API integration and commercial purchases/stock/sales transactions that consume the policy are still in place; they correspond to later blocks. The previous cut-off paragraphs that mention validations or "pending" functions are retained as **history**, not as current state. The integral TP is not declared finished.
 
 
-## 1. Propósito y criterios de diseño
+## 1. Purpose and design criteria
 
-Este documento explica **cómo se construirá** la primera API de Orbit y cómo convivirá con el frontend que ya funciona. Complementa el Documento 01 (qué necesita el sistema), el Documento 02 (qué objetivos cumplen sus actores) y el Documento 03 (qué entidades y reglas componen el dominio). No reemplaza al futuro Documento 05, que fijará contratos HTTP verificables, ni al Documento 06, que reunirá pruebas y evidencias de despliegue.
+This document explains **how it will be built** The first API of Orbit and how it will live with the frontend that already works. It complements Document 01 (what the system needs), Document 02 (which objectives its actors fulfill) and Document 03 (which entities and rules make up the domain). It does not replace the future Document 05, which will fix verifiable HTTP contracts, nor Document 06, which will gather evidence and evidence of deployment.
 
-La plataforma es **multiempresa y multirrubro**. WALOS es únicamente una empresa ficticia o de ejemplo; no condiciona las entidades ni los permisos del producto. Una persona puede pertenecer a varias empresas, con distintas responsabilidades, y las operaciones de cada empresa deben permanecer aisladas en el servidor.
+The platform is **multi-enterprise and multi-rub**. WALOS is only a fictitious or example company; it does not condition the entities or the permissions of the product. A person may belong to several companies, with different responsibilities, and the operations of each company must remain isolated on the server.
 
-**Objetivos arquitectónicos:**
+**Architectural objectives:**
 
-1. Cumplir la consigna académica mediante una **API RESTful en FastAPI** con autenticación segura, **SQLAlchemy**, base de datos SQL persistente, **Docker**, al menos **diez pruebas unitarias de API**, **GitHub Actions**, despliegue y un patrón de diseño **realmente aplicado y justificado**.
-2. Proteger los invariantes del dominio: dinero exacto, compra distinta de recepción, stock sin negativos, una recepción completa por compra, pagos declarados exactos y reintentos que no dupliquen operaciones.
-3. Sustituir el almacenamiento DEMO **de manera progresiva**, sin perder la posibilidad de seguir mostrando el frontend anterior mientras la API crece.
-4. Priorizar **claridad, trazabilidad y tests** por encima de una arquitectura distribuida prematura. No se requieren microservicios, colas, Redis ni una nube específica para validar el MVP.
-5. Evitar un segundo origen de verdad: **cuando un módulo utilice la API, los datos de negocio de ese módulo deberán venir del servidor**; no se mezclarán automáticamente con registros locales del navegador.
+1. Comply with the academic slogan by means of a **API RESTful en FastAPI** with secure authentication, **SQLAlchemy**, persistent SQL database, **Docker**at least **ten unit API tests**, **GitHub Actions**display and a design pattern **actually implemented and justified**.
+2. Protect domain invariants: exact money, non-receiving purchase, no negative stock, full receipt by purchase, accurate declared payments and retryings that do not duplicate transactions.
+3. Replace DEMO storage **progressively**without losing the possibility of continuing to show the frontend above as the API grows.
+4. Prioritize **clarity, traceability and testing** above a premature distributed architecture. Microservices, queues, Redis or a specific cloud are not required to validate the MVP.
+5. Avoid a second real origin: **when a module uses the API, business data from that module must come from the server**; will not be automatically mixed with local browser logs.
 
-### 1.1 Estado de los documentos
+### 1.1 Status of documents
 
-- **Estado vigente C.5:** 01 v0.8, 02 v0.9, 03 v0.9, 04 v1.0 y 05 v0.6. Las decisiones iniciales se conservan como **historial de arquitectura**; no deben interpretarse como fotografía actual de `main`. El 03B sigue siendo conceptual para módulos aún no implementados.
+- **Current status C.5:** 01 v0.8, 02 v0.9, 03 v0.9, 04 v1.0 and 05 v0.6. Initial decisions are retained as **architecture history**; should not be interpreted as a current photograph of `main`03B remains conceptual for modules not yet implemented.
 
-## 2. Arquitectura existente — AS-IS: frontend DEMO
+## 2. Existing architecture — AS-IS: frontend DEMO
 
-### 2.1 Tecnologías y archivos constatados
+### 2.1 Technologies and archives found
 
-| Componente | Estado real en `main` | Evidencia en el repositorio |
+| Component | Actual status in `main` | Evidence in the repository |
 |---|---|---|
-| Interfaz | **React + TypeScript + Vite**, SPA | `plataforma-pyme/frontend/package.json` y `src/App.tsx` |
-| Navegación | History API con `history.pushState`, `popstate`, rutas en `App.tsx` y registro `navigation.ts` | `src/App.tsx`, `src/app/navigation.ts` |
-| Estado empresarial DEMO | Estado compartido y suscripción React mediante **`useSyncExternalStore`** | `src/data/demo/demoStore.ts` y `useDemoSnapshot()` |
-| Persistencia comercial | `localStorage`, clave versionada `asistente-pyme.e1a2.demo.v1`; datos por empresa en el snapshot | `src/data/demo/demoStore.ts` |
-| Imágenes DEMO | `IndexedDB`, blobs optimizados y aislados por clave de empresa/ficha | `src/data/demo/imageStorage.ts`, `imagePolicy.ts` |
-| Reglas funcionales | Funciones/políticas TypeScript para catálogo, compras, inventario, ventas, equipo, caja, cuentas y QR ficticio | `src/data/demo/*Policy.ts` |
-| Calidad de frontend | Build TypeScript/Vite, lint oxlint, tests Node y E2E con Playwright Chromium escritorio/móvil | `frontend/package.json`, `frontend/tests/`, `frontend/e2e/`, `.github/workflows/plataforma-pyme-frontend.yml` |
-| Backend/API | **FastAPI/SQLAlchemy/PostgreSQL reales para RF-01/RF-02** | `backend/app/`, `backend/alembic/`, `backend/tests/`; frontend React permanece DEMO desconectado |
+| Interface | **React + TypeScript + Vite**, SPA | `plataforma-pyme/frontend/package.json` y `src/App.tsx` |
+| Navigation | History API con `history.pushState`, `popstate`, routes in `App.tsx` and registration `navigation.ts` | `src/App.tsx`, `src/app/navigation.ts` |
+| DEMO corporate state | Shared status and React subscription by **`useSyncExternalStore`** | `src/data/demo/demoStore.ts` y `useDemoSnapshot()` |
+| Commercial persistence | `localStorage`, versioned key `asistente-pyme.e1a2.demo.v1`; data per company in snapshot | `src/data/demo/demoStore.ts` |
+| DEMO images | `IndexedDB`, optimized and isolated blobs by enterprise key/fiche | `src/data/demo/imageStorage.ts`, `imagePolicy.ts` |
+| Functional rules | Features/policies TypeScript for catalog, purchases, inventory, sales, equipment, box, accounts and fictitious QR | `src/data/demo/*Policy.ts` |
+| Frontend quality | Build TypeScript/Vite, Lint Oxlint, Node and E2E tests with Playwright Chromium desktop/mobile | `frontend/package.json`, `frontend/tests/`, `frontend/e2e/`, `.github/workflows/plataforma-pyme-frontend.yml` |
+| Backend/API | **FastAPI/SQLalchemy/PostgreSQL for actual RF-01/RF-02** | `backend/app/`, `backend/alembic/`, `backend/tests/`; frontend React remains DEMO disconnected |
 
-**Corrección frente a documentos históricos:** no hay evidencias de **React Router**, **Zustand** ni de un `AppGateway`/`ApiGateway` implementado en este estado. **Sí existe el objeto exportado `demoGateway`** dentro de `demoStore.ts`; todavía no hay una interfaz común de adaptadores DEMO/API. Esos nombres figuran en propuestas E0/ADR, **no** describen el runtime actual. En el **frontend DEMO** no hay autenticación ni autorización de servidor, pagos reales ni sincronización multiusuario; **en el backend E2 sí hay** autenticación, permisos empresariales, SQLAlchemy y migraciones.
+**Correction in front of historical documents:** There's no evidence of **React Router**, **Zustand** ni de un `AppGateway`/`ApiGateway` implemented in this state. **If exported object exists `demoGateway`** dentro de `demoStore.ts`; there is still no common interface of DEMO/API adapters. These names are listed in E0/ADR proposals, **no** describe the current runtime. **frontend DEMO** There is no authentication or server authorization, actual payments or multi-user synchronization; **in the backend E2 there is** authentication, business permissions, SQLAlchemy and migrations.
 
-### 2.2 Estructura real simplificada
+### 2.2 Simplified actual structure
 
 ```text
 plataforma-pyme/
@@ -227,29 +227,29 @@ plataforma-pyme/
 └── entrega-programacion-2/         # documentación académica
 ```
 
-El flujo efectivo de hoy es **pantalla React → funciones del `demoStore`/políticas locales → `localStorage` o `IndexedDB` → actualización de React**. Para proteger el estado DEMO se aplican validaciones TypeScript, pero **un navegador no ofrece aislamiento ni permisos de backend confiables**. Los datos locales no son transacciones compartidas entre usuarios.
+Today's cash flow is **React → functions screen `demoStore`/local policies → `localStorage` o `IndexedDB` → React update**. TypeScript validations are applied to protect DEMO status, but **a browser does not offer reliable insulation or backend permissions**Local data are not user-to-user transactions.
 
-### 2.3 Lo que ya funciona frente al recorte de API
+### 2.3 What already works in front of the API cut
 
-El frontend incorpora perfiles y empresas ficticias, ubicaciones, equipo e invitaciones simuladas, catálogo, proveedores, compras, recepción completa, movimientos/stock, ventas con pagos declarados y también gastos, caja, cuentas financieras y QR ilustrativo. La API académica **no está obligada a replicar de inmediato todas esas pantallas**.
+The frontend incorporates profiles and fictitious companies, locations, equipment and simulated invitations, catalog, suppliers, purchases, full reception, movements/stock, sales with declared payments as well as expenses, cashier, financial accounts and QR illustrative. **is not obliged to immediately replicate all those screens**.
 
-Las imágenes se guardan localmente; el QR es **DEMO no escaneable y no acredita dinero**. Los E2E actuales no son evidencia de autenticación o concurrencia PostgreSQL, y los tests del frontend **no sustituyen** las diez pruebas unitarias exigidas al backend.
+Images are saved locally; QR is **DEMO not scanable and does not credit money**. Current E2Es are not evidence of authentication or postgreSQL continuance, and frontend tests **do not replace** the ten unit tests required from the backend.
 
-## 3. Arquitectura objetivo — TO-BE
+## 3. Objective architecture — TO-BE
 
-### 3.1 Estilo y decisiones de alcance
+### 3.1 Style and scope decisions
 
-Se propone un **monolito modular**: una aplicación FastAPI organizada por áreas de dominio, con una sola base PostgreSQL y migraciones Alembic. Las peticiones HTTP ingresan a routers; los casos de uso se ejecutan mediante servicios; los repositorios encapsulan las consultas SQLAlchemy; las entidades y políticas definen reglas comerciales. La **transacción de base de datos es el límite de consistencia** para las operaciones que modifican varias tablas.
+A proposal is made for **modular monolith**: a FastAPI application organized by domain areas, with a single PostgreSQL base and Alembic migrations. HTTP requests enter routers; usage cases are executed through services; repositories encapsulate SQLAlchemy queries; entities and policies define trade rules. **database transaction is the limit of consistency** for operations that modify several tables.
 
-**Tecnologías previstas:** Python (versión compatible a fijar en E2), FastAPI, Pydantic, SQLAlchemy 2.x, Alembic, **PostgreSQL 16** como objetivo de entorno Compose del MVP, pytest, HTTPX, Docker/Docker Compose y GitHub Actions. La versión PostgreSQL 16 se propone para mantener compatibilidad con las restricciones documentadas, pero **el contenedor y sus migraciones aún no se probaron**. Las versiones exactas de bibliotecas y la imagen final (preferiblemente con versión menor/digest fijados para reproducibilidad) se confirmarán en los manifiestos de E2.
+**Planned technologies:** Python (compatible version to fix in E2), FastAPI, Pydatic, SQLAlchemy 2.x, Alembic, **PostgreSQL 16** as a Compose environment target for MVP, pytest, HTTPX, Docker/Docker Compose and GitHub Actions. PostgreSQL 16 is proposed to maintain compatibility with documented restrictions but **the container and its migrations have not yet been tested**. The exact versions of libraries and the final image (preferably with smaller version/digest fixed for reproducibility) will be confirmed in the E2 manifests.
 
-**Modelo de ejecución elegido para la primera API:** SQLAlchemy **síncrono** con `Session` y driver síncrono. Por ello, **los endpoints que llaman al ORM bloqueante serán `def` y no `async def`**: FastAPI ejecuta las funciones de ruta síncronas en un *threadpool*, evitando bloquear directamente el event loop. También las dependencias síncronas pueden ejecutarse en ese grupo de hilos. Esto **no** vuelve asíncrona a la base: cada solicitud sigue ocupando capacidad del *pool* de conexiones y del *threadpool*; habrá que ajustar límites razonables y controlar consultas lentas. **No** pasar una `Session` de una petición a otra, a tareas en segundo plano o entre trabajos concurrentes; tampoco compartirla entre `asyncio.gather`.
+**Execution model chosen for the first API:** SQLAlchemy **synchronous** con `Session` and synchronous driver. **the endpoints that call the ORM blocker will be `def` y no `async def`**: FastAPI executes the synchronous path functions in a *threadpool*, avoiding directly blocking the event loop. Also synchronous dependencies can be run in that string group. **no** returns asynchronous to the base: each request continues to occupy the *pool* of connections and *threadpool* capacity; reasonable limits must be adjusted and slow queries controlled. **No** pass one `Session` from one request to another, to work in the background or between concurrent works; nor do they share it between `asyncio.gather`.
 
-Un endpoint `async def` sigue siendo válido para trabajo genuinamente asíncrono sin llamadas síncronas bloqueantes; **no mezclar dentro de él una llamada SQLAlchemy síncrona directa**, ni esconderla dentro de una utilidad `def` invocada desde `async def`. Para un endpoint SQL se elige **ruta `def` + servicio síncrono + repositorio síncrono**. La fábrica `sessionmaker` puede compartirse; **la instancia `Session` no**. Cada comando crea y usa su propia sesión de manera no concurrente. Que una dependencia `def` se ejecute en el *threadpool* no garantiza que todas las dependencias de una solicitud se ejecuten en el mismo hilo; por eso se prefiere no transportar sesiones ORM abiertas entre capas/dependencias con ciclo de vida ambiguo. Si más adelante se necesita async de punta a punta, migrar conscientemente a `AsyncSession` y driver compatible, evitando crear dos estilos de acceso a datos sin justificación.
+Un endpoint `async def` remains valid for genuinely asynchronous work without blocking synchronous calls; **do not mix a direct SQLAlchemy call into it**, nor hide it within a utility `def` invoked from `async def`. Para un endpoint SQL se elige **path `def` + Synchronous service + synchronous repository**. The factory `sessionmaker` can be shared; **the instance `Session` no**. Each command creates and uses its own session in a non-concurrent way. `def` run in the *threadpool* does not guarantee that all dependencies of a request are executed on the same thread; therefore it is preferred not to transport open ORM sessions between layers/dependencies with ambiguous life cycle. If later on you need async from end to end, consciously migrate to `AsyncSession` and compatible driver, avoiding creating two styles of data access without justification.
 
-**Control de carga:** ejecutar rutas en *threadpool* evita bloquear el bucle de eventos, pero **no aumenta mágicamente** el número de conexiones PostgreSQL ni evita saturar hilos ante consultas lentas. E2 deberá usar tiempos de espera, consultas indexadas, límites de pool y pruebas de dos solicitudes reales. Referencia: [FastAPI — concurrencia y async/await](https://fastapi.tiangolo.com/async/).
+**Load control:** running paths in *threadpool* avoids blocking the event loop, but **does not increase magically** The number of PostgreSQL connections and the number of threads that can be filled in to slow queries must not be saturated. E2 should use waiting times, indexed queries, pool limits and tests for two real requests. [FastAPI — attendance and async/await](https://fastapi.tiangolo.com/async/).
 
-### 3.2 Vista de componentes
+### 3.2 Component View
 
 ```mermaid
 flowchart TB
@@ -270,29 +270,29 @@ flowchart TB
     Migrations -.-> DB
 ```
 
-El dibujo es una **vista de arquitectura**, no un diagrama UML de clases ni una implementación existente.
+The drawing is a **architecture view**, not an UML class diagram or an existing implementation.
 
-### 3.3 Responsabilidades y prohibiciones
+### 3.3 Responsibilities and prohibitions
 
-| Capa | Responsabilidad | No debe hacer |
+| Layer | Liability | You mustn't do |
 |---|---|---|
-| **Presentación React** | Formularios, navegación, feedback, estado transitorio de UI y llamadas HTTP | Autorizar empresas, decidir stock definitivo, escribir directamente en PostgreSQL |
-| **Routers FastAPI** | Exponer rutas, resolver dependencias, traducir solicitudes/respuestas, manejar códigos HTTP | Contener toda la lógica de ventas/recepción ni hacer varios `commit()` |
-| **Pydantic / DTO** | Validar forma, tipos, límites y serialización del contrato externo; definir DTOs independientes de la sesión ORM | Suponer que un ID pertenece a la empresa sin consultar servidor |
-| **Mapeo de datos** | Traducir explícitamente entre DTO de entrada, comandos, entidades/ORM y DTO de respuesta cuando los modelos difieran | Entregar instancias ORM vivas a la respuesta HTTP o añadir mapeadores genéricos por reflejo |
-| **Servicios de aplicación** | Orquestar CU, permisos, reglas, idempotencia, transacciones y resultados | Depender de pantallas React; repartir una operación atómica en commits distintos |
-| **Dominio / políticas** | Calcular dinero/cantidades, estados y decisiones comerciales verificables | Acoplar reglas a HTTP o a un ORM cuando pueden expresarse como funciones puras |
-| **Repositorios** | Buscar y persistir entidades/colecciones con SQLAlchemy; consultas condicionadas por empresa; operaciones SQL atómicas | Decidir roles de negocio o devolver `HTTPException` |
-| **Unidad de trabajo / sesión** | Delimitar commit/rollback y ciclo de vida de la sesión | Confirmar parcialmente una operación comercial que debía ser indivisible |
-| **PostgreSQL** | Persistencia, unicidad, integridad referencial, restricciones, bloqueos y transacciones | Confiar solo en validaciones de frontend para evitar registros corruptos |
+| **React presentation** | Forms, navigation, feedback, transition status of UI and HTTP calls | Authorize companies, decide definitive stock, write directly to PostgreSQL |
+| **Routers FastAPI** | Expose routes, resolve dependencies, translate requests/answers, manage HTTP codes | Contain all sales/reception logic or make several `commit()` |
+| **Pydantic / DTO** | Validate form, types, limits and serialization of the external contract; define independent DTOs from the ORM session | Suppose an ID belongs to the company without consulting server |
+| **Data mapping** | Explicitly translate between input DTO, commands, entities/ORM and response DTO when models differ | Deliver live ORM instances to HTTP response or add generic mirror mapping |
+| **Implementation services** | Orchestrate CU, permissions, rules, power, transactions and results | Depending on React screens; distributing an atomic operation into different commissions |
+| **Domain / policies** | Calculate verifiable money/quantities, states and trade decisions | Connect rules to HTTP or an ORM when they can be expressed as pure functions |
+| **Repositories** | Search for and persist entities/collections with SQLAlchemy; company-specific queries; atomic SQL operations | Decide business roles or return `HTTPException` |
+| **Work unit/session** | Delimit commit/rollback and session life cycle | Partially confirm a commercial transaction that should be indivisible |
+| **PostgreSQL** | Persistence, uniqueness, referential integrity, restrictions, blocking and transactions | Trust only frontend validations to avoid corrupt records |
 
-**Regla de dependencia:** los servicios utilizan contratos de repositorio cuando la abstracción aporta valor; los repositorios concretos usan SQLAlchemy. Los errores de negocio se traducen a HTTP en la frontera, sin filtrar excepciones SQL ni trazas internas. **Ningún repositorio llama a `session.commit()`**; las transacciones se confirman desde el caso de uso o la unidad de trabajo. Al cerrar una sesión, la respuesta ya debe estar representada mediante datos independientes del ORM.
+**Dependency rule:** services use repository contracts when abstraction brings value; specific repositories use SQLAlchemy. Business errors are translated to HTTP at the border, without filtering SQL exceptions or internal traces. **No repository calls `session.commit()`**; transactions are confirmed from the use case or work unit. By logging out, the response must already be represented by independent ORM data.
 
-**Regla de propiedad del estado:** el `Engine` y la fábrica de sesiones se inicializan en infraestructura y pueden reutilizarse; **cada solicitud/comando obtiene su propia sesión, la utiliza secuencialmente y la cierra en el mismo alcance**. Las dependencias FastAPI entregan contexto autenticado como datos inmutables, no una sesión mutable que deba sobrevivir a varios niveles de inyección. El servicio empresarial vuelve a leer su membresía y permisos en su transacción antes de escribir.
+**State ownership rule:** el `Engine` and the session factory is initialized in infrastructure and can be reused; **each request/command gets its own session, uses it sequentially and closes it in the same range**. FastAPI dependencies deliver authenticated context as immutable data, not a mutable session that must survive at various injection levels. The business service rereads its membership and permissions in your transaction before writing.
 
-## 4. Estructura propuesta de carpetas y módulos
+## 4. Proposed structure of folders and modules
 
-La estructura siguiente fue una **propuesta histórica de inicio de E2**. Actualmente `backend/` existe con módulos de autenticación y empresas, SQLAlchemy, migraciones y tests. Se conserva el árbol conceptual como referencia de diseño, no como inventario literal del repositorio.
+The following structure was a **historical proposal of E2 start**. Currently `backend/` exists with authentication and business modules, SQLAlchemy, migrations and tests. The concept tree is retained as a design reference, not as literal inventory of the repository.
 
 ```text
 plataforma-pyme/
@@ -341,17 +341,17 @@ plataforma-pyme/
 └── entrega-programacion-2/          # documentación académica
 ```
 
-**Criterio de modularidad:** no agregar subcarpetas o interfaces artificiales donde no exista necesidad; por ejemplo, un repositorio por entidad únicamente si encapsula una operación reutilizable. El patrón se demuestra con al menos un circuito real, como la venta o recepción. Evitar cientos de DTO y abstracciones antes del primer endpoint.
+**Modularity criterion:** do not add subfolders or artificial interfaces where there is no need; for example, a repository per entity only if it encapsulates a reusable operation. The pattern is shown with at least one real circuit such as sale or reception. Avoid hundreds of DTOs and abstractions before the first endpoint.
 
-## 5. Patrones de diseño: elección, aplicación y evaluación
+## 5. Design patterns: choice, application and evaluation
 
-### 5.1 Patrón principal: Repository (repositorio)
+### 5.1 Main pattern: Repository (repository)
 
-**Problema:** los servicios de compras, inventario y ventas requieren consultar y modificar datos persistidos, pero no deberían depender de consultas SQL concretas ni de detalles de SQLAlchemy. Si cada endpoint mezcla HTTP, permisos, reglas y sentencias SQL, las pruebas quedan acopladas a la base y aumenta la probabilidad de operaciones parciales.
+**Problem:** purchasing, inventory and sales services require consulting and modifying persistent data, but should not depend on specific SQL queries or SQLAlchemy details. If each endpoint mixes HTTP, permissions, rules and SQL statements, the tests are coupled to the database and increases the probability of partial operations.
 
-**Solución propuesta:** definir una interfaz pequeña que exprese operaciones del dominio (consultar compra pendiente, obtener stock, descontar condicionado, guardar venta) y construir una implementación que utilice SQLAlchemy. Los servicios usan ese contrato y no conocen cómo se emiten las consultas.
+**Proposed solution:** define a small interface that expresses domain operations (see pending purchase, obtain stock, discounted conditionality, save sale) and build an implementation using SQLAlchemy. Services use this contract and do not know how queries are issued.
 
-**Ejemplo ilustrativo de contrato Python — NO implementado:**
+**Example illustrative of Python contract — NOT implemented:**
 
 ```python
 from typing import Protocol
@@ -364,23 +364,23 @@ class StockRepository(Protocol):
     ) -> bool: ...
 ```
 
-Una implementación real de `SqlAlchemyStockRepository` ejecutará un `UPDATE` condicional o bloqueará el saldo, verificará filas afectadas y participará de **la misma sesión/transacción** que guarda la venta y el historial. Un `FakeStockRepository` en tests permitirá simular los resultados `True/False` sin necesitar PostgreSQL para probar la regla de negocio. **El fake no reemplaza tests de integración con PostgreSQL** para concurrencia.
+A real implementation of `SqlAlchemyStockRepository` execute a `UPDATE` conditional or block the balance, verify affected rows and participate in **the same meeting/transaction** that keeps the sale and history. `FakeStockRepository` in tests will allow simulate results `True/False` no need for PostgreSQL to test the business rule. **Fake does not replace integration tests with PostgreSQL** for attendance.
 
-**Ventajas verificables:** responsabilidades separadas, tests unitarios de servicios sin DB, intercambio de tecnología de persistencia sin cambiar el caso de uso, y centralización de consultas empresariales. **Costo:** más archivos y contratos; por eso se implementará solo la abstracción efectivamente usada.
+**Verifiable benefits:** Separate responsibilities, unitary tests of services without DB, exchange of technology of persistence without changing the case of use, and centralization of business consultations. **Costo:** more files and contracts; that is why only the abstraction actually used will be implemented.
 
-### 5.2 Patrón complementario: Service Layer + Unit of Work
+### 5.2 Supplementary pattern: Service Layer + Unit of Work
 
-El **servicio de aplicación** ejecuta un caso de uso completo, por ejemplo `RegistrarVentaService`. Recibe una identidad/empresa autorizada y un comando validado; aplica reglas de dominio, controla idempotencia y coordina repositorios. El **Unit of Work** o contexto transaccional garantiza que **todas las escrituras del caso se confirmen juntas o ninguna se confirme**.
+El **application service** executes a full-use case, for example `RegistrarVentaService`. Receives an authorized identity/company and a validated command; applies domain rules, controls idempotence and coordinates repositories. **Unit of Work** or transactional context ensures that **all deeds of the case are confirmed together or none is confirmed**.
 
-**Reglas obligatorias para la implementación propuesta:**
+**Mandatory rules for proposed implementation:**
 
-- Cada caso de uso que modifica varios registros tiene **un solo dueño del commit**. El servicio o la UoW confirma; los repositorios solo consultan, agregan, hacen `flush()` cuando sea necesario y ejecutan SQL atómico **dentro de la sesión recibida**.
-- `flush()` **no equivale a commit**: sirve para emitir SQL/obtener identificadores y mantener todo revertible si ocurre un error.
-- No ejecutar `commit()` en dependencias de autenticación, routers ni repositorios de forma accidental; no cerrar la sesión antes de construir la respuesta.
-- La **consulta de pertenencia** al tenant para autorización inicial puede estar en una dependencia reutilizable, pero cada comando debe volver a validar lo **mutable y sensible a concurrencia** bajo la transacción apropiada (por ejemplo, compra pendiente, artículo activo, ubicación y stock).
-- Capturar `IntegrityError` y otras excepciones de infraestructura únicamente donde pueda distinguirse un conflicto esperado; si no, permitir rollback y traducir a un error controlado en la frontera HTTP.
+- Each case of use that modifies multiple records has **a single owner of the commission**. The service or the UoW confirms; repositories only query, add, do `flush()` when necessary and execute atomic SQL **within the session received**.
+- `flush()` **no equivale a commit**: serves to issue SQL/get identifiers and keep everything revertible if an error occurs.
+- No ejecutar `commit()` in authentication dependencies, routers or repositories accidentally; do not close the session before constructing the response.
+- La **membership consultation** the tenant for initial authorization may be in a reusable dependency, but each command must revalidate it **mutable and responsive to competition** under the appropriate transaction (e.g. pending purchase, active item, location and stock).
+- Capture `IntegrityError` and other infrastructure exceptions only where an expected conflict can be distinguished; otherwise, allow rollback and translate to a controlled error at the HTTP border.
 
-**Forma mínima recomendada, ilustrativa — no existe todavía en el repositorio:** La anotación `sessionmaker[Session]` indica una fábrica de sesiones SQLAlchemy que ofrece el contexto transaccional `.begin()`; **no** se trata de cualquier función `Callable` que retorna una `Session`.
+**Minimum recommended, illustrative form — does not yet exist in the repository:** The Annotation `sessionmaker[Session]` indicates a SQLAlchemy session factory that offers the transactional context `.begin()`; **no** is any function `Callable` returning a `Session`.
 
 ```python
 from sqlalchemy.orm import Session, sessionmaker
@@ -400,31 +400,31 @@ def registrar_venta(command: "SaleCommand", session_factory: sessionmaker[Sessio
     return dto
 ```
 
-Este fragmento es **pseudocódigo Python estructural**, no una implementación completa: las clases, el método de mapeo y `execute_sale_command` no existen. Para E2 es válido utilizar directamente `with session_factory.begin() as session` **sin** construir una clase UnitOfWork propia. Solo se introducirá un objeto `UnitOfWork` que encapsule repositorios cuando aporte una mejora real de legibilidad o testabilidad. La coherencia del **límite transaccional** importa más que la cantidad de clases.
+This fragment is **pseudocode Structural Python**, not a complete implementation: classes, mapping method and `execute_sale_command` does not exist. For E2 it is valid to use directly `with session_factory.begin() as session` **sin** build a proper UnitOfWork class. Only one object will be entered `UnitOfWork` that encapsulates repositories when it provides real improvement of readability or testability. **transactional limit** matters more than the number of classes.
 
-**Inyección de dependencias recomendada para operaciones de escritura:** la ruta `def` recibe un principal autenticado inmutable y la fábrica de sesiones/servicio, **no** una instancia SQLAlchemy `Session` compartida. Dentro del servicio se abre `with session_factory.begin() as session`; allí se relee la membresía correspondiente a la empresa, se verifica el permiso específico y se ejecuta el cambio completo. Esto evita el desacople entre una primera lectura de permisos en otra sesión y el commit comercial. En altas de empresa, la transacción verifica identidad global y crea Empresa + Membresia inicial. **Un endpoint no debe abrir una segunda sesión para una parte de la misma operación ni confirmar fuera del límite definido.**
+**Recommended unit injection for writing operations:** the route `def` receives an unchangeable main authenticated and the session/service factory, **no** an SQLAlchemy instance `Session` shared. Within the service opens `with session_factory.begin() as session`; there the corresponding membership of the company is reread, the specific permission is verified and the complete change executed. This prevents the decoupling between a first reading of permits in another session and the commercial commit. At the end of the business, the transaction verifies global identity and creates Company + Initial Membership. **An endpoint should not open a second session for a part of the same operation or confirm outside the defined limit.**
 
-**Lecturas:** un servicio de consulta puede usar `with session_factory() as session` sin commit; debe cerrar la sesión antes de responder con su DTO. Para proyectos que adopten `get_db()` con `yield`, el equipo podrá hacerlo si fija **un único dueño** del alcance de transacción y evita accesos concurrentes a esa sesión. No mezclar sin análisis `Session.begin()` anidados, commits al finalizar dependencias y sesiones en hilos distintos.
+**Readings:** a query service can use `with session_factory() as session` without commit; you must close the session before responding with your DTO. For projects that adopt `get_db()` con `yield`, the team can do it if you set **a single owner** and avoid concurrent access to that session. Do not mix without analysis `Session.begin()` nested, commit at the end of dependencies and sessions in different threads.
 
-**Semántica transaccional de los errores:** si una operación falla, debe propagarse una excepción hasta salir del bloque de transacción, que hace rollback. Una validación negativa no debe traducirse en un resultado de «éxito» que provoque commit de escrituras parciales. Si se persiste una respuesta idempotente de error, definir si corresponde a una transacción separada **sin efecto comercial**, y distinguir conflictos reintentables de fallas definitivas.
+**Semantics transactional errors:** If an operation fails, an exception must be propagated until it leaves the transaction block, which rolls back. A negative validation should not result in a 'success' result that causes partial writing to commit. If an idempotent error response persists, define whether it corresponds to a separate transaction **no commercial effect**and distinguish re-tryable conflicts from definitive failures.
 
-**Evidencia futura:** un circuito de venta o recepción con código de servicio y repositorios, una sola transacción, test con repositorio fake, test de fallo inducido que produce rollback real en PostgreSQL y ausencia de commits dentro de los repositorios. Referencia: [SQLAlchemy 2.x — framing transaccional](https://docs.sqlalchemy.org/en/20/orm/session_basics.html#framing-out-a-begin-commit-rollback-block).
+**Future evidence:** a sales or reception circuit with service code and repositories, one transaction only, test with Fake repository, induced failure test that produces real rollback in PostgreSQL and no commit within the repositories. Reference: [SQLAlchemy 2.x — transactional framing](https://docs.sqlalchemy.org/en/20/orm/session_basics.html#framing-out-a-begin-commit-rollback-block).
 
-### 5.2.1 Mapeo de modelos y DTO — práctica de separación, no patrón obligatorio adicional
+### 5.2.1 Model mapping and DTO — separation practice, no additional mandatory pattern
 
-- **Router/DTO de entrada:** valida formato del contrato HTTP (UUID, enteros, strings, límites) y genera un comando de aplicación.
-- **Servicio/dominio:** decide reglas, guarda snapshots y produce un resultado de aplicación independiente de sesiones abiertas.
-- **Repositorio/ORM:** obtiene y persiste filas con SQLAlchemy; el modelo ORM no es un objeto que deba serializarse ciegamente como resultado público.
-- **DTO de respuesta:** expone campos expresamente definidos y excluye `password_hash`, tokens, secretos y datos internos; se construye **antes de cerrar la sesión** o a partir de valores ya cargados.
-- **Contrato de salida estable:** la API devuelve estructuras Pydantic o dataclasses mapeadas explícitamente (UUID, enum, centavos, fechas en UTC); las relaciones ORM de carga perezosa no participan de la serialización HTTP.
+- **Router/DTO de entrada:** validates HTTP contract format (UUID, integers, strings, limits) and generates an application command.
+- **Service/domain:** decides rules, save snapshots and produces an independent application result of open sessions.
+- **Repository/ORM:** obtains and persists rows with SQLAlchemy; the ORM model is not an object that must be serialized blindly as a public result.
+- **Response status:** sets out expressly defined fields and excludes `password_hash`, tokens, secrets and internal data; built **before the session closes** or from already loaded values.
+- **Stable departure contract:** The API returns explicitly mapped Pydatic structures or dataclasses (UUID, enum, cents, UTC dates); lazy load ORM relationships do not participate in HTTP serialization.
 
-**Ejemplo conceptual del mapeo:** `VentaORM(id, total_centavos, ...) → SaleResult(id, total_cents, ...) → SaleResponse`, sin filtrar una entidad completa. El método puede ser una función simple probada; **no** es obligatorio introducir un framework Mapper ni mantener tres tipos redundantes si el DTO de aplicación ya cumple el contrato.
+**Conceptual example of mapping:** `VentaORM(id, total_centavos, ...) → SaleResult(id, total_cents, ...) → SaleResponse`, without filtering a whole entity. The method can be a simple function tested; **no** it is mandatory to introduce a Mapper framework or maintain three redundant rates if the DTO of application already complies with the contract.
 
-No es necesario agregar un módulo `Mapper` para cada entidad. Las conversiones explícitas pequeñas pueden residir cerca de los esquemas o servicios y cubrirse con tests. Se evitará exponer relaciones ORM de carga perezosa fuera de una transacción cerrada o provocar consultas SQL ocultas durante la serialización.
+No add module required `Mapper` For each entity. Small explicit conversions can reside near the schemas or services and be covered with tests. It will avoid exposing lazy load ORM relationships outside a closed transaction or causing hidden SQL queries during serialization.
 
-### 5.3 Patrón de integración recomendado: Adapter
+### 5.3 Recommended integration pattern: Adapter
 
-Hoy la UI llama directamente a funciones sincrónicas del `demoStore`. Para integrar progresivamente con una API asíncrona se propone construir puertos por funcionalidad (por ejemplo `CatalogGateway`, `SalesGateway`) y dos adaptadores:
+Today the IU directly calls synchronous functions of `demoStore`. To integrate progressively with an asynchronous API it is proposed to build ports by functionality (for example `CatalogGateway`, `SalesGateway`) and two adapters:
 
 ```text
 Página de catálogo
@@ -433,17 +433,17 @@ Página de catálogo
         -> adaptador API: cliente HTTP /v1 (a desarrollar)
 ```
 
-**Los adaptadores intercambiables son TO-BE:** aunque ya hay un objeto `demoGateway`, aún no existe una interfaz común de operaciones para DemoGateway/ApiGateway ni un cliente API de producción. No se deberá afirmar que `AppGateway`, `DemoGateway` o `ApiGateway` ya existen. El patrón Adapter permite conservar una interfaz estable mientras cambian las fuentes, pero exige introducir asincronía y estados de carga/error; **no bastará con reemplazar un import**.
+**The interchangeable adapters are TO-BE:** although there is already an object `demoGateway`, there is no common operating interface for DemoGateway/ApiGateway or a production API client yet. It should not be stated that `AppGateway`, `DemoGateway` o `ApiGateway` already exist. The Adapter pattern allows to maintain a stable interface while changing the fonts, but requires introducing syncrony and loading/mistake states; **It won't be enough to replace an import**.
 
-Este patrón es una alternativa clara de **patrón GoF (Adapter)** si la cátedra exige uno de esa familia; Repository es el patrón principal de separación de persistencia. Ambos deberán demostrarse con **clases o funciones reales y tests**, evitando declarar patrones solo porque existen carpetas llamadas `services` o `repositories`.
+This pattern is a clear alternative to **GoF pattern (Adapter)** if the chair requires one of that family; Repository is the main pattern of separation of persistence. Both must be demonstrated by **real classes or functions and tests**, avoiding declaring patterns just because there are folders called `services` o `repositories`.
 
-### 5.4 Factory — creación consistente de movimientos (propuesto para el backend)
+### 5.4 Factory — consistent creation of movements (proposed for backend)
 
-**Qué explica el libro:** Factory encapsula la construcción de objetos para desacoplar al código cliente de detalles de creación. El capítulo 4 de *Head First Design Patterns* distingue la fábrica sencilla, Factory Method y Abstract Factory. **Una Simple Factory no equivale automáticamente al patrón GoF Factory Method.**
+**What the book explains:** Factory encapsulates the construction of objects to decouple to the client code of creation details. Chapter 4 of *Head First Design Patterns* distinguishes simple factory, Factory Method and Abstract Factory. **A Simple Factory does not automatically match the GoF Factory Method pattern.**
 
-**Problema en Orbit:** al confirmar una recepción, venta, traslado o ajuste se deben crear movimientos con empresa, artículo, ubicación, cantidad firmada, origen y auditoría. Si cada servicio arma todos esos campos manualmente, puede generar una entrada negativa, omitir una referencia o producir solo uno de los dos movimientos de un traslado.
+**Problem in Orbit:** when confirming a receipt, sale, transfer or adjustment must create movements with company, article, location, signed quantity, origin and audit. If each service assembles all those fields manually, it can generate a negative input, omit a reference or produce only one of the two movements of a shipment.
 
-**Aplicación propuesta:** un creador de borradores de MovimientoInventario concentra los tipos, signos y atributos requeridos. El servicio controla permisos, estado de compra, disponibilidad de stock e idempotencia; la fábrica **no** consulta SQL, no actualiza saldos, no publica eventos y no hace commit.
+**Proposed implementation:** a drafts of Inventory Movement concentrates the required types, signs and attributes. The service controls permits, purchase status, stock availability and idempotence; the factory **no** query SQL, do not update balances, do not publish events and do not commit.
 
 ~~~python
 # EJEMPLO DIDÁCTICO TO-BE, no presente en el código.
@@ -477,15 +477,15 @@ class MovimientoFactory:
                                cantidad, "RECEPCION", recepcion_id)
 ~~~
 
-La implementación real mapeará el campo conceptual origen a las tres referencias exclusivas (XOR) del Documento 03. Para traslados, la fábrica deberá generar **un par** de deltas opuestos vinculados a la misma OperacionInventario. Los renglones de servicios nunca generan egresos físicos.
+The actual implementation will map the original conceptual field to the three exclusive references (XOR) of Document 03. For transfers, the factory must generate **a pair** of opposite deltas linked to the same OperationInventory. The lines of services never generate physical outflows.
 
-**Valor:** menos duplicación y errores al construir movimientos; pruebas unitarias de signo, origen, cantidades y pares de traslado. **Límite:** es una *Simple Factory* útil para el MVP; Factory Method requeriría creadores/subclases que decidan qué tipo de producto instanciar, y Abstract Factory familias de productos. Solo introducirlas si aparece variabilidad real; no crear herencia artificial para sumar nombres de patrones.
+**Valor:** less duplication and errors when building movements; unitary tests of sign, origin, quantities and pairs of transfer. **Limit:** is a *Simple Factory* useful for MVP; Factory Method would require creators/subclasses to decide which type of product to instance, and Abstract Factory families. Only enter them if real variability appears; do not create artificial inheritance to add pattern names.
 
-### 5.5 Decorator — añadir observabilidad por composición (opcional)
+### 5.5 Decorator — add observability by composition (optional)
 
-**Qué explica el libro:** Decorator permite agregar responsabilidades mediante un objeto que **envuelve a otro y conserva su contrato**. El capítulo 3 usa composición para extender comportamiento sin modificar la clase decorada.
+**What the book explains:** Decorator allows you to add responsibilities using an object that **wraps up another and retains his contract**. Chapter 3 uses composition to extend behavior without modifying the decorated class.
 
-**Problema en Orbit:** los servicios de inventario pueden necesitar métricas de duración o diagnósticos de consultas SQL sin duplicar instrumentación en cada repositorio. Un Decorator puede envolver el contrato StockRepository de 5.1.
+**Problem in Orbit:** inventory services may require SQL query metrics or diagnostics without duplicating instrumentation in each repository. A Decorator can wrap the stockrepository 5.1 contract.
 
 ~~~python
 # EJEMPLO DIDÁCTICO TO-BE; interfaz StockRepository definida en 5.1.
@@ -507,17 +507,17 @@ class TimedStockRepository:
             self.record_duration(perf_counter() - start)
 ~~~
 
-**Reglas:** el envoltorio utiliza la **misma sesión/transacción** que el repositorio original y no realiza commit ni una segunda salida de stock. La métrica mide la operación de repositorio, **no el éxito definitivo de la venta**, porque el commit puede fallar después. Si el registro de métricas también falla, la versión real debe impedir que esa falla oculte el error comercial. Este ejemplo implementa el puerto mínimo del método mostrado; si el contrato se amplía, el decorador debe seguir delegando sus otros métodos o limitarse a una interfaz más pequeña.
+**Rules:** the packaging uses the **same meeting/transaction** the original repository and does not commit a second stock output. The metric measures the repository operation, **not the ultimate success of the sale**, because the commit may fail later. If the metrics record also fails, the actual version must prevent that failure from concealing the commercial error. This example implements the minimum port of the method shown; if the contract is extended, the decorator should continue to delegate its other methods or limit itself to a smaller interface.
 
-**Cómo demostrarlo:** test que confirme una sola delegación, mismos argumentos y resultado; excepción propagada; métricas añadidas sin cambiar saldo ni transacciones.
+**How to prove it:** test confirming a single delegation, same arguments and result; propagated exception; added metrics without changing balance or transactions.
 
-**Distinción académica:** usar @router.post en FastAPI o @pytest.mark en tests emplea sintaxis de decoradores de Python, **pero no demuestra por sí solo** el patrón Decorator de objetos del libro. Para defenderlo se mostrará la composición y delegación reales. Es opcional, no un requisito para arrancar E2.
+**Academic distinction:** usar @router.post en FastAPI o @pytest.mark en tests emplea sintaxis de decoradores de Python, **but does not prove by itself** The Decorator pattern of objects in the book. To defend it will show the actual composition and delegation. It is optional, not a requirement to boot E2.
 
-### 5.6 Observer — suscripción de React al demoStore (AS-IS confirmado)
+### 5.6 Observer — React subscription to demoStore (AS-IS confirmed)
 
-**Qué explica el libro:** Observer define una relación de **uno a muchos** en que un sujeto notifica cambios a sus observadores desacoplados (capítulo 2 de *Head First Design Patterns*).
+**What the book explains:** Observer defines a relationship of **one to many** in which a subject notifies changes to its discoupled observers (Chapter 2 of *Head First Design Patterns*).
 
-**Aplicación REAL del frontend actual:** en frontend/src/data/demo/demoStore.ts existe un conjunto de listeners; la función notify actualiza el snapshot e intenta persistirlo, luego invoca a los suscriptores. El objeto demoStore ofrece subscribe y getSnapshot; useDemoSnapshot integra la suscripción con el hook React useSyncExternalStore.
+**REAL Application of the current frontend:** in frontend/src/data/demo/demoStore.ts there is a set of listeners; the notify function updates snapshot and tries to persist it, then invokes subscribers. The demoStore object offers subscribe and getSnapshot; useDemoSnapshot integrates subscription with the React hook useSyncExternalStore.
 
 ~~~typescript
 // Versión abreviada del mecanismo que YA existe.
@@ -542,135 +542,135 @@ function useDemoSnapshot() {
 }
 ~~~
 
-**Correspondencia con el patrón:** el *Subject* es demoStore, los *Observers* son listeners y vistas suscriptas; cuando cambia el estado, el store notifica **sin conocer qué componente lo utiliza**. Se trata de Observer mediante callbacks/suscripciones, no de una jerarquía literal de clases Java.
+**Correspondence with pattern:** *Subject* is demoStore, *Observers* are listeners and subscribe views; when the status changes, the store notifies **without knowing what component uses it**. It is Observer via callbacks/subscriptions, not a literal hierarchy of Java classes.
 
-**Evidencia para la exposición:** mostrar el código citado, una acción DEMO que actualiza el snapshot y la vista React que se vuelve a renderizar. **Prueba adicional recomendada:** registrar un listener, cambiar el estado y comprobar que fue notificado; desuscribirlo y verificar que deja de recibir avisos. No afirmar que ya existe un test dedicado si aún no se escribió.
+**Evidence for exposure:** display the quoted code, a DEMO action that updates the snapshot and the React view that is re-rendered. **Recommended additional test:** register a listener, change the status and check that it was notified; unsubscribe it and verify that it stops receiving notices. Do not claim that there is already a dedicated test if it has not yet been written.
 
-**Límite crítico:** este mecanismo actúa en el navegador; NO reemplaza la persistencia, los permisos ni la sincronización real multiusuario. Observer **no debe ejecutar el descuento de stock fuera de la transacción SQL**. Las notificaciones futuras del backend, si se incorporan, deberían emitirse tras confirmar el commit; un sistema distribuido fiable necesitaría una estrategia de entrega como outbox, fuera de este MVP.
+**Critical limit:** This mechanism acts on the browser; it does NOT replace persistence, permissions or actual multiuser synchronization. **must not execute the stock discount outside of SQL transaction**. Future backend notifications, if incorporated, should be issued after confirmation of the commit; a reliable distributed system would need an outbox delivery strategy outside this MVP.
 
-### 5.7 Otros patrones y enfoques apropiados
+### 5.7 Other appropriate patterns and approaches
 
-| Patrón | Uso concreto | Estado / delimitación |
+| Pattern | Specific use | State/limitation |
 |---|---|---|
-| **Repository** (arquitectónico) | StockRepository separa reglas de dominio y SQLAlchemy; fake permite tests unitarios | Principal **TO-BE**, sección 5.1. No es patrón GoF del libro. |
-| **Service Layer y Unit of Work** (arquitectónicos) | Una operación de venta/recepción reúne permisos, saldos, movimientos y único commit | **TO-BE**, sección 5.2; no es obligatorio construir una clase UoW propia. |
-| **Adapter** (GoF) | Puerto estable para módulos React; adaptación gradual del demoGateway actual al futuro cliente HTTP | **TO-BE**, sección 5.3; no existe todavía el puerto intercambiable. |
-| **Simple Factory** | Movimientos con signo y origen válidos en un único lugar | **TO-BE**, sección 5.4; no atribuirle automáticamente Factory Method. |
-| **Decorator** (GoF) | Envoltorio de métricas/diagnóstico de repositorios | **Opcional**, sección 5.5. |
-| **Observer** (GoF) | Listeners y useSyncExternalStore en demoStore | **AS-IS verificable**, sección 5.6. |
-| **State** (GoF) | Podría encapsular estados de Compra | **No adoptado**: una enumeración y reglas de transición no equivalen al patrón State. |
-| **Strategy** (GoF) | Algoritmos de descuento o valorización alternativos | **Diferido**: el MVP tiene una sola regla de descuento fijo en centavos. |
-| **Command** (GoF) | Objetos invocables con receptor, ejecución y posible historial | **No adoptado**: llamarle SaleCommand a un DTO no demuestra el patrón. |
-| **Singleton** (GoF) | No compartir sesiones SQLAlchemy como una instancia global | **No recomendado** para sesiones por solicitud. |
+| **Repository** (architectural) | StockRepository separa reglas de dominio y SQLAlchemy; fake permite tests unitarios | Main **TO-BE**, section 5.1. It is not GoF pattern of the book. |
+| **Service Layer y Unit of Work** (architectonic) | A sales/reception operation gathers permits, balances, movements and unique commit | **TO-BE**, section 5.2; it is not mandatory to build a class UoW of its own. |
+| **Adapter** (GoF) | Stable port for React modules; gradual adaptation of the current demoGateway to future HTTP client | **TO-BE**, section 5.3; the interchangeable port does not yet exist. |
+| **Simple Factory** | Movements with sign and origin valid in one place | **TO-BE**, section 5.4; do not automatically attribute Factory Method to it. |
+| **Decorator** (GoF) | Metric wrapper/repository diagnosis | **Optional**Section 5.5. |
+| **Observer** (GoF) | Listeners y useSyncExternalStore en demoStore | **Verifiable AS-IS**Section 5.6. |
+| **State** (GoF) | I could encapsulate purchasing states. | **Not adopted**: an enumeration and rules of transition do not equal the State pattern. |
+| **Strategy** (GoF) | Alternative discount or recovery algorithms | **Deferred**: the MVP has a single fixed discount rule in cents. |
+| **Command** (GoF) | Invoking objects with receiver, execution and possible history | **Not adopted**: Calling SaleCommand to a DTO does not show the pattern. |
+| **Singleton** (GoF) | Do not share SQLAlchemy sessions as a global instance | **Not recommended** for sessions on request. |
 
-**Buenas prácticas derivadas del libro:** encapsular lo que cambia, preferir composición a herencia, programar contra interfaces y buscar acoplamiento flexible. Una implementación de calidad no es la que enumera más patrones sino la que justifica cada uno con un problema y una prueba.
+**Good practices derived from the book:** encapsulate what changes, prefer composition to inheritance, program against interfaces and search for flexible coupling. A quality implementation is not the one that lists more patterns but justifies each with a problem and a test.
 
-### 5.8 Plan para demostrar patrones en la entrega
+### 5.8 Plan to demonstrate patterns in delivery
 
-| Candidato | Evidencia mínima observable | Prioridad |
+| Candidate | Minimum observable evidence | Priority |
 |---|---|---|
-| **Observer (existente)** | Identificar subscribe, notify, getSnapshot y useSyncExternalStore; prueba de notificación/cancelación | Ya observable en frontend; agregar test si conviene |
-| **Repository (propuesto)** | Interfaz, implementación SQLAlchemy, fake y test de servicio sin DB | **Principal del backend** |
-| **Simple Factory (propuesta)** | Crear entradas/salidas/tránsito con signo y origen correctos; tests | Implementar junto con inventario si simplifica el código |
-| **Adapter (propuesto)** | Mismo contrato usado por DEMO y API en un módulo React; tests de solicitudes/errores | Durante integración React–FastAPI |
-| **Decorator (opcional)** | Envoltorio que delega una vez, conserva el resultado y registra una métrica | Solo si aporta utilidad |
+| **Observer (existing)** | Identify subscribe, notice, getSnapshot and useSyncExternalStore; notification/cancellation test | already observable on frontend; add test if appropriate |
+| **Repository (proposed)** | Interface, SQLAlchemy deployment, fake and service test without DB | **Principal del backend** |
+| **Simple Factory (proposed)** | Create correct entries/outputs/transit with sign and origin; tests | Implement along with inventory if you simplify the code |
+| **Adapter (proposed)** | Same contract used by DEMO and API in a React module; request/error tests | During React–FastAPI integration |
+| **Decorator (optional)** | Packing that delegates once, retains the result and records a metric | Only if it provides utility |
 
-**Advertencias para la defensa:** un diagrama no prueba que el patrón esté implementado; Depends de FastAPI no demuestra Factory Method; @router.post no demuestra por sí solo Decorator GoF; tener un estado llamado RECIBIDA no demuestra State; un DTO SaleCommand no demuestra Command. La consigna exige como mínimo un patrón **usado y explicado** en código, no una lista extensa de propuestas.
+**Warnings for the defense:** a diagram does not prove that the pattern is implemented; FastAPI Depends does not demonstrate Factory Method; @router.post does not show alone Decorator GoF; having a state called RECEIVEd does not demonstrate State; a DTO SaleCommand does not demonstrate Command. The slogan requires at least one pattern **used and explained** in code, not an extensive list of proposals.
 
-### 5.9 Referencias a los patrones vistos en clase
+### 5.9 References to patterns seen in class
 
-**Libro:** Freeman, Eric y Robson, Elisabeth; con Kathy Sierra y Bert Bates. *Head First Design Patterns: Building Extensible & Maintainable Object-Oriented Software*, segunda edición, O'Reilly Media, 2020/2021.
+**Book:** Freeman, Eric and Robson, Elisabeth; with Kathy Sierra and Bert Bates. *Head First Design Patterns: Building Extendable & Maintainable Object-Oriented Software*, second edition, O'Reilly Media, 2020/2021.
 
-- **Capítulo 2 — Observer:** suscripciones, notificaciones y bajo acoplamiento → demoStore.
-- **Capítulo 3 — Decorator:** envoltura para añadir responsabilidades → instrumentación de repositorios.
-- **Capítulo 4 — Factory:** fábrica sencilla, Factory Method y Abstract Factory → construcción de movimientos sin alegar falsamente Factory Method.
-- **Capítulo 7 — Adapter:** traducción entre interfaces → integración progresiva del frontend.
-- **Capítulo 10 — State:** comportamiento dependiente de estados → posible evolución de Compra, no necesaria ahora.
+- **Chapter 2 — Observer:** subscriptions, notifications and under link → demoStore.
+- **Chapter 3 — Decorator:** wrapper to add responsibilities → instrumentation of repositories.
+- **Chapter 4 — Factory:** simple factory, Factory Method and Abstract Factory → construction of movements without falsely claiming Factory Method.
+- **Chapter 7 — Adapter:** translation between interfaces → progressive integration of frontend.
+- **Chapter 10 — State:** behavior dependent on states → possible evolution of Purchase, not necessary now.
 
-Repository, Service Layer y Unit of Work son **patrones/decisiones arquitectónicos complementarios**, no deben confundirse con patrones GoF de esos capítulos.
+Repository, Service Layer y Unit of Work son **complementary architectural patterns/decisions**They should not be confused with GoF patterns of those chapters.
 
-### 5.10 Alternativas descartadas por ahora
+### 5.10 Discarded alternatives for now
 
-| Alternativa | Motivo |
+| Alternativa | Reason |
 |---|---|
-| Microservicios / mensajería / event sourcing completo | Excesivo para primera API y complejiza transacciones y despliegue |
-| ORM en cada endpoint con `commit()` repetidos | Acopla HTTP y SQL, dificulta rollback de una venta |
-| Todo el estado comercial dentro de React / localStorage | No protege concurrencia, persistencia, autenticación ni permisos multiusuario |
-| Crear herencias Factory Method / Strategy / State sin variación real | Sería complejidad innecesaria y no evidencia de buena ingeniería |
-| Reemplazar toda la DEMO simultáneamente | Aumenta el riesgo de regresiones y pérdida de datos locales |
+| Microservices / messaging / event sourcing complete | Overly for first API and complex transactions and deployment |
+| ORM en cada endpoint con `commit()` repeated | Connect HTTP and SQL, makes it difficult to rollback a sale |
+| All commercial status within React / localStorage | Does not protect attendance, persistence, authentication or multi-user permissions |
+| Creating Factory Method / Strategy / State Inheritance without Real Variation | It would be unnecessary complexity and not evidence of good engineering. |
+| Replace all DEMO simultaneously | Increases risk of regression and loss of local data |
 
-## 6. Modelo de datos, invariantes y persistencia
+## 6. Data model, invariants and persistence
 
-El Documento 03 es la fuente conceptual de entidades y cardinalidades. El esquema físico se documentará junto con migraciones Alembic y pruebas de restricciones. **No convertir automáticamente los recuadros UML en tablas uno-a-uno** sin considerar claves, índices, snapshots y consistencia.
+Document 03 is the conceptual source of entities and cardinalities. The physical scheme will be documented along with Alembic migrations and tests of restrictions. **Do not automatically convert UML boxes into one-to-one tables** without considering keys, indices, snapshots and consistency.
 
-### 6.1 Entidades base
+### 6.1 Base entities
 
-- **Globales:** Usuario (identidad); su correo es único normalizado y sus credenciales no dependen de una empresa.
-- **Vínculo global/tenant:** Empresa, Membresía e Invitación (esta última es soporte propuesto), con fundador histórico y pertenencias por empresa.
-- **Recursos empresariales:** Ubicación, ArtículoCatalogo, Proveedor.
-- **Comerciales:** Compra, DetalleCompra, Recepción, Venta, DetalleVenta, AplicaciónPago.
-- **Inventario:** MovimientoInventario (historial inmutable), SaldoInventario (existencia actual), OperaciónInventario (traslados/ajustes).
-- **Técnica:** SolicitudIdempotente (resultado/estado de un comando repetible).
+- **Globals:** User (identity); your mail is uniquely standardized and your credentials do not depend on a company.
+- **Global link/tenant:** Company, Membership and Invitation (the latter is proposed support), with historical founder and belongings by company.
+- **Corporate resources:** Location, ArticleCatalogue, Provider.
+- **Commercial:** Purchase, DetailBuy, Reception, Sale, DetailSale, ApplicationPayment.
+- **Inventory:** Inventory Movement (unchangeable history), Inventory Balance (current existence), Inventory Operation (transfers/adjustments).
+- **Technique:** Unimplicit request (resulting/state of a repeatable command).
 
-**El modelo SQL preservará `business_id` en los recursos de cada empresa, pero no en una identidad global** como Usuario. Para impedir referencias cruzadas se propondrán **FK compuestas por empresa**, además de permisos validados en servicios. Una restricción `CHECK` de una fila **no puede validar por sí sola datos de otras tablas**.
+**The SQL model will preserve `business_id` in the resources of each company, but not in a global identity** as a User. To prevent cross-references will be proposed **FK composed of individual companies**, in addition to valid permits in services. `CHECK` from a row **cannot validate data from other tables alone**.
 
-**Estrategia mínima de esquema:** `businesses` y `users` poseen identidad global; `memberships` enlaza ambas y limita su combinación. Los recursos tenant usan `business_id NOT NULL`, `id` global y, cuando son destino de referencias compuestas, `UNIQUE (business_id, id)` en la tabla padre. Las tablas de detalle deben conservar el `business_id` necesario para impedir con FK compuesta que un renglón de venta apunte a un artículo de otra empresa. No se exigen identificadores empresariales en todos los objetos globales, ni se agregan índices redundantes por inercia.
+**Minimum outline strategy:** `businesses` y `users` poseen identidad global; `memberships` links both and limits their combination. Tenant resources use `business_id NOT NULL`, `id` and, when they are the destination of composite references, `UNIQUE (business_id, id)` in the parent table. Detail tables should keep the `business_id` necessary to prevent a sales line from pointing to an article of another company with composite FK. Business identifiers are not required for all global objects, nor redundant inertia indexes are added.
 
-### 6.2 Reglas críticas de dominio
+### 6.2 Critical domain rules
 
-| ID de regla / caso | Invariante que debe garantizar el servidor |
+| Rule ID/case | Invariant to ensure server |
 |---|---|
-| RN-01 / CU-03 | Solo un usuario autorizado consulta o modifica recursos de la empresa solicitada; rol definido por Membresía, no global. |
-| RN-02 / CU-06, CU-07 | Registrar Compra **no** incrementa stock; Recepción posterior completa y en **una sola ubicación**. |
-| RN-03 / CU-07, CU-10 | Idempotencia de recepciones y ventas; la misma operación no crea efectos duplicados. |
-| RN-04 / CU-05, CU-10 | Los servicios no tienen saldo físico ni generan movimientos; una venta mixta descuenta únicamente bienes. |
-| RN-05 / CU-06, CU-10 | ARS en centavos enteros; cantidades en milésimas exactas; `HALF_UP` **por línea**, nunca `Float` para dinero. |
-| RN-06 / CU-10 | Suma de AplicacionesPago = TotalVenta declarado, exactamente al centavo. |
-| RF-06 / CU-09, CU-11 | Traslado = salida e ingreso de igual magnitud, atómicos; ajustes con motivo y control de concurrencia. |
+| RN-01 / CU-03 | Only an authorized user consults or modifies resources of the requested company; role defined by Membership, not global. |
+| RN-02 / CU-06, CU-07 | Register Purchase **no** stock increases; full and in- **one location only**. |
+| RN-03 / CU-07, CU-10 | Idempotence of receptions and sales; the same operation does not create duplicate effects. |
+| RN-04 / CU-05, CU-10 | The services do not have physical balance or generate movement; a mixed sale only accounts for goods. |
+| RN-05 / CU-06, CU-10 | ARS in whole cents; amounts in thousands of exact ones; `HALF_UP` **per line**Never. `Float` For money. |
+| RN-06 / CU-10 | Sum of ApplicationsPayment = TotalSale declared, exactly to the penny. |
+| RF-06 / CU-09, CU-11 | Transfer = output and input of equal magnitude, atomic; adjustments with motive and control of continuance. |
 
-**Dinero y redondeo (contrato MVP):**
+**Money and rounding (MVP contract):**
 
-- `totalLineaCentavos = HALF_UP(cantidadMilli × precioUnitarioCentavos / 1000)` **por renglón**, con cantidad positiva y precio unitario entero **mayor o igual a cero**. Para evitar imprecisiones, se utilizará aritmética entera/decimal exacta, nunca Float.
-- `subtotalVentaCentavos = Σ(totalLineaCentavos)` (no se recalcula multiplicando una cantidad consolidada), `totalVentaCentavos = subtotalVentaCentavos − descuentoCentavos`, `Σ(aplicacionPago.importeCentavos) = totalVentaCentavos`.
-- **Descuento global como importe fijo:** el cliente envía `descuentoCentavos` como **entero no negativo** dentro del rango `0 <= descuentoCentavos <= subtotalVentaCentavos`; el servidor valida y recalcula. La primera API **no recibirá un porcentaje para recalcular un descuento**. Si la UI ofrece una calculadora de porcentajes, deberá obtener el importe en centavos con una regla `HALF_UP` explícita antes de enviar; el backend sigue siendo autoridad sobre la venta y valida el monto fijo resultante. Esto evita que Python y JavaScript apliquen porcentajes con diferentes criterios de redondeo.
-- **Precio cero en una línea:** permitido para una bonificación o muestra incluida en la venta. **Total final completo cero:** diferido en el MVP actual; no se cambia de `totalVenta > 0` a `>= 0` sin actualizar antes RF/CU, política de AplicacionPago y pruebas. Una nota de crédito/reembolso tampoco es una venta de importe cero y requiere su propio proceso.
-- **Validaciones:** no admitir precios, descuentos ni importes de pago negativos; los pagos declarados deben conciliar exactamente. **La política de AplicacionPago del MVP requiere importes positivos** en una venta total positiva; una línea bonificada de cero no agrega un pago ficticio de cero. Mantener el costo histórico del DetalleCompra separado del costo de referencia informativo del catálogo.
-- **Unidades:** un bien indivisible utiliza cantidades múltiplos de `1000` milésimas; para unidades fraccionables se admiten hasta tres decimales. **No convertir automáticamente una unidad de control ya usada en movimientos**, porque el saldo y los snapshots anteriores no se reescriben. Cambio de unidad con existencias requeriría una operación de migración justificada y queda fuera del MVP.
-- **Límites aritméticos:** validar enteros y rangos antes de multiplicar/acumular; en PostgreSQL preferir `BIGINT` para importes y cantidades según límites del dominio. Python `int` no desborda, pero la columna SQL sí tiene rango finito. Las pruebas incluyen valores cercanos al límite y redondeos de medios centavo.
+- `totalLineaCentavos = HALF_UP(cantidadMilli × precioUnitarioCentavos / 1000)` **by line**, with positive quantity and whole unit price **greater than or equal to zero**. To avoid inaccuracies, exact integer/decimal arithmetic will be used, never Float.
+- `subtotalVentaCentavos = Σ(totalLineaCentavos)` (does not recalculate by multiplying a consolidated quantity), `totalVentaCentavos = subtotalVentaCentavos − descuentoCentavos`, `Σ(aplicacionPago.importeCentavos) = totalVentaCentavos`.
+- **Total discount as fixed amount:** the client sends `descuentoCentavos` as **non-negative integer** within range `0 <= descuentoCentavos <= subtotalVentaCentavos`; server validates and recalculates. The first API **you will not receive a percentage to recalculate a discount**. If the IU offers a percentage calculator, you must obtain the amount in cents with a rule `HALF_UP` explicit before sending; the backend remains the authority over the sale and validates the resulting fixed amount. This prevents Python and JavaScript from applying percentages with different rounding criteria.
+- **Zero price on one line:** allowed for a bonus or sample included in the sale. **Total full final zero:** deferred in the current MVP; no change in `totalVenta > 0` a `>= 0` no prior update RF/CU, Application PolicyPayment and testing. A credit/reimbursement note is also not a zero-value sale and requires its own process.
+- **Validations:** not accept prices, discounts or negative payments; the payments declared must be exactly reconciled. **The PPV Implementation Policy requires positive amounts** in a positive total sale; a zero-bonded line does not add a fictitious payment of zero. Keep the historical cost of DetailBuy separate from the informative reference cost of the catalog.
+- **Units:** an indivisible good uses multiple amounts of `1000` thousandths; for fractionable units up to three decimal places are allowed. **Do not automatically convert a control unit already used into movements**, because the balance and previous snapshots are not rewritten. Changing unit with stocks would require a justified migration operation and is outside of MVP.
+- **Arithmetic limits:** validate integers and ranges before multiplying/accumulating; in PostgreSQL prefer `BIGINT` for amounts and quantities according to domain limits. Python `int` does not overflow, but the SQL column does have finite range. Tests include near limit values and rounding of cent media.
 
-Las líneas repetidas de un mismo artículo se agregan para validar **stock**, no para recalcular subtotales redondeados. Esta precisión respeta el comportamiento actual y los Documentos 01–03.
+Repeated lines of the same article are added to validate **stock**This accuracy respects the current behavior and the Documents 01–03.
 
-**Servicios e insumos:** un servicio no consume inventario automáticamente durante el MVP. Asociar shampoo/acondicionador a un servicio, definir mínimos para la jornada y justificar consumos específicos queda **DIFERIDO**, sin convertirlo en obligación presente.
+**Services and inputs:** a service does not consume inventory automatically during the MVP. To associate shampoo/conditioner to a service, define minimums for the day and justify specific consumption remains **DIFFERENT**without making it a present obligation.
 
-### 6.3 Ledger más saldo materializado
+### 6.3 Ledger plus materialized balance
 
-`MovimientoInventario` registra cada hecho con delta firmado y origen auditable; se trata como **append-only**. `SaldoInventario` almacena el valor actual por el trío `(business_id, ubicacion_id, articulo_id)`, con `cantidad_milli >= 0` y `version`. Ambos participan del **mismo commit**, y una verificación de conciliación puede comparar saldo contra suma histórica. No habilitar edición directa del saldo desde la interfaz.
+`MovimientoInventario` records each event with signed delta and auditable origin; it is treated as **append-only**. `SaldoInventario` stores the current value for the trio `(business_id, ubicacion_id, articulo_id)`, con `cantidad_milli >= 0` y `version`. Both participate in the **mismo commit**, and a reconciliation check can compare balance against historical sum. Do not enable direct editing of the balance from interface.
 
-El origen de cada movimiento debe ser **exactamente uno** de: Recepción, Venta u OperaciónInventario. Una propuesta SQL es tener tres FK opcionales y `CHECK (num_nonnulls(recepcion_id, venta_id, operacion_inventario_id) = 1)`; cada referencia debe respetar el tenant mediante claves compuestas. La cancelación de un hecho se resuelve por operación compensatoria trazable, nunca borrando arbitrariamente el histórico.
+The origin of each movement must be **exactly one.** from: Reception, Sale or OperationInventory. An SQL proposal is to have three optional FKs and `CHECK (num_nonnulls(recepcion_id, venta_id, operacion_inventario_id) = 1)`; each reference must respect the tenant by means of composite keys. The cancellation of a fact is resolved by compensatory operation traceable, never arbitrarily erasing the historical one.
 
-### 6.4 Otras restricciones propuestas
+### 6.4 Other proposed restrictions
 
-- `UNIQUE(business_id, sku_normalizado)` para SKU informado (índice parcial opcional; aceptar múltiples SKU nulos). La normalización es responsabilidad de la lógica de dominio y/o restricciones de DB, para que dos escrituras concurrentes no esquiven la unicidad.
-- `UNIQUE(business_id, user_id)` para membresías.
-- `UNIQUE(compra_id)` para una única recepción completa por compra en el MVP.
-- `UNIQUE(business_id, ubicacion_id, articulo_id)` y `CHECK(cantidad_milli >= 0)` para saldos.
-- **FK compuestas** `(business_id, recurso_id)` hacia las tablas empresariales correspondientes. **La tabla padre debe ofrecer `UNIQUE(business_id, id)` o clave primaria compuesta equivalente**; una simple `PRIMARY KEY(id)` no alcanza como destino de una FK compuesta en PostgreSQL. Ejemplo: ArticuloCatalogo, Ubicacion, Proveedor, Compra y Venta pueden conservar `PK(id)` global y agregar `UNIQUE(business_id, id)` cuando sus dependientes utilicen esa FK. **No agregar columnas/índices redundantes sin una relación que los necesite**; documentar la matriz de FKs en Alembic. Los IDs globales son únicos, pero la restricción compuesta impide referenciar un recurso de otra empresa con un business_id distinto.
-- **Índices para filtros por empresa y FK** en tablas hijas que los requieran; una FK no crea automáticamente su índice en la tabla que referencia. No presentar `CHECK` de una fila como control de relaciones entre tablas. Una FK compuesta solo verifica pertenencia referencial, **no** que el usuario tenga autorización sobre ese tenant.
-- **Restricciones de negocio del stock:** además del índice único del trío empresa/ubicación/artículo y la no negatividad, se validan por servicio/estado la elegibilidad del artículo para movimiento y la aptitud de la ubicación. `CHECK (num_nonnulls(...)=1)` asegura un origen XOR dentro del movimiento, mientras que las FKs compuestas aseguran que el origen pertenezca al mismo tenant.
-- Bloqueo de eliminación física de registros con historia; baja lógica de artículos, proveedores y ubicaciones.
-- **Índice de idempotencia correcto para tenant opcional:** con PostgreSQL **15 o superior** existe `UNIQUE NULLS NOT DISTINCT` (proponemos PostgreSQL 16 para desarrollo); alternativa compatible con versiones anteriores: dos índices únicos parciales, uno para ámbito empresarial y otro para `business_id IS NULL`. El índice deberá contemplar también actor, operación y clave. **Un UNIQUE convencional permite duplicados cuando `business_id` es NULL**; no utilizarlo sin tratamiento adicional.
+- `UNIQUE(business_id, sku_normalizado)` For informed SKU (optional partial index; accept multiple null SKUs). Standardisation is the responsibility of domain logic and/or DB restrictions, so that two concurrent scriptures do not bypass oneness.
+- `UNIQUE(business_id, user_id)` for memberships.
+- `UNIQUE(compra_id)` for a single full reception per purchase on the MVP.
+- `UNIQUE(business_id, ubicacion_id, articulo_id)` y `CHECK(cantidad_milli >= 0)` for balances.
+- **Compound FK** `(business_id, recurso_id)` towards the corresponding business tables. **The parent table must offer `UNIQUE(business_id, id)` or primary composite key equivalent**; a simple `PRIMARY KEY(id)` does not reach as a destination of a postgreSQL composite FK. Example: ArticleCatalogue, Location, Supplier, Purchase and Sale may retain `PK(id)` global y agregar `UNIQUE(business_id, id)` when your dependents use that FK. **Do not add redundant columns/indexes without a relationship that needs them**; documenting the FKs matrix in Alembic. Global IDs are unique, but the composite restriction prevents referring a resource from another company with a different business_id.
+- **Indices for filters by company and FK** in child tables that require them; an FK does not automatically create its index in the table that referenced it. `CHECK` a row as control of relations between tables. A composite FK only verifies referential belonging, **no** the user has permission to have that tenant.
+- **Stock business restrictions:** In addition to the unique index of the three-way company/location/art and non-negativity, the eligibility of the item for movement and the fitness of location are validated by service/state. `CHECK (num_nonnulls(...)=1)` ensures an XOR origin within the movement, while composite FKs ensure that the origin belongs to the same tenant.
+- Physical record removal with history; low logic of items, suppliers and locations.
+- **Correct power index for optional tenant:** with PostgreSQL **15 or higher** exists `UNIQUE NULLS NOT DISTINCT` (propose PostgreSQL 16 for development); alternative compatible with previous versions: two partial single indices, one for business and the other for `business_id IS NULL`. The index should also include actor, operation and key. **A conventional UNIQUE allows for duplicates when `business_id` es NULL**; do not use without further treatment.
 
-La lista de migraciones/constraints concretos será parte de E2 y del Documento 05; **no son restricciones ya comprobadas en base de datos**.
+The list of specific migrations/constraints shall be part of E2 and Document 05; **are not restrictions already tested in database**.
 
-## 7. Transacciones, concurrencia e idempotencia
+## 7. Transactions, continuance and idempotency
 
-### 7.1 Registro y recepción de compra
+### 7.1 Registration and receipt of purchase
 
-**CU-06:** se guarda Compra + detalles con snapshot y precios acordados. Si tiene bienes físicos queda `REGISTRADA`; si solo contiene servicios/conceptos queda `CERRADA_SIN_RECEPCION`. **No** se crean entradas de stock al comprar.
+**CU-06:** Purchase + details with snapshot and agreed prices. If you have physical goods left `REGISTRADA`; if it contains only services/concepts it remains `CERRADA_SIN_RECEPCION`. **No** stock entries are created when you buy.
 
-**CU-07:** el usuario elige una ubicación activa con `canStore`. El servicio comprueba pertenencia y permisos, bloquea o condiciona el estado `REGISTRADA`, reclama idempotencia, crea **una Recepción completa**, actualiza saldos y graba movimientos físicos, cambiando Compra a `RECIBIDA`, **todo en una transacción**. Una segunda recepción con clave nueva debe ser rechazada; un reintento válido con la misma clave/carga recupera la respuesta sin duplicar movimientos. Recepciones parciales o a varios destinos están diferidas.
+**CU-07:** the user chooses an active location with `canStore`. The service checks membership and permits, blocks or conditions the status `REGISTRADA`, claims powerlessness, believes **a complete reception**, updates balances and records physical movements, changing Purchase to `RECIBIDA`, **everything in a transaction**. A second reception with new key must be rejected; a valid retry with the same key/load recovers the response without duplicating movements. Partial receptions or to several destinations are deferred.
 
-### 7.2 Venta: comprobación y descuento inseparables
+### 7.2 Sale: inseparable check and discount
 
 ```mermaid
 sequenceDiagram
@@ -693,58 +693,58 @@ sequenceDiagram
     API-->>Op: Resultado HTTP
 ```
 
-Este es un flujo conceptual; en código el cálculo monetario determinista puede realizarse antes de abrir transacción, pero la **verificación de disponibilidad y cualquier dato mutable** debe repetirse bajo control transaccional, sin brecha entre validar y descontar.
+This is a conceptual flow; in code the deterministic monetary calculation can be made before opening transaction, but the **availability verification and any mutable data** should be repeated under transactional control, without any gap between validating and discounting.
 
-- Una solicitud de venta que afecta varios artículos debe adquirir/controlar los saldos en orden estable (por ejemplo, por `business_id`, `ubicacion_id`, `articulo_id`) para reducir deadlocks.
-- Con **saldo inexistente**, la venta interpreta disponibilidad cero y rechaza: **no hace falta insertar una fila de saldo cero para intentar vender**.
-- Para **primera entrada** simultánea de una recepción o ajuste positivo, inicializar/incrementar el saldo con un `INSERT ... ON CONFLICT DO UPDATE` seguro, junto a su movimiento y en el mismo commit. El `ON CONFLICT` requiere un índice/constraint único compatible sobre `(business_id, ubicacion_id, articulo_id)`.
-- **No precrear saldos al registrar un artículo:** las empresas nuevas pueden tener cero ubicaciones; un artículo puede ser servicio y la combinación artículo–ubicación puede no existir todavía. Prellenar filas a cero genera una matriz de registros innecesaria. Solo se crea saldo materializado cuando un movimiento físico lo requiere; un saldo ausente se interpreta como cero para consultas y egresos.
-- **Venta concurrente con recepción:** una venta no debe intentar `INSERT` de saldo a cero para salir; si el ingreso se confirma antes de que la venta controle el stock, podrá vender bajo las reglas transaccionales, y si no hay saldo confirmado cuando se evalúa, se rechazará limpiamente. La prueba comprobará el orden de confirmación, no presumirá reservas de mercadería pendiente.
-- Si dos usuarios intentan vender la última unidad, se confirma una sola venta y el segundo recibe error controlado; no se toleran cantidades negativas ni pagos registrados parcialmente.
+- A request for sale involving several items must acquire/control the balances in stable order (e.g. by `business_id`, `ubicacion_id`, `articulo_id`) para reducir deadlocks.
+- Con **no balance**the sale interprets availability zero and rejects: **no need to insert a zero balance row to try to sell**.
+- Stop **first entry** simultaneous receipt or positive adjustment, initialise/increase balance with a `INSERT ... ON CONFLICT DO UPDATE` safe, along with his movement and in the same commit. `ON CONFLICT` requires a single compatible index/constraint on `(business_id, ubicacion_id, articulo_id)`.
+- **Do not pre-create balances when registering an item:** New companies can have zero locations; an article can be service and the article–location combination may not exist yet. Prefilling rows to zero generates an unnecessary record matrix. Materialized balance is created only when a physical move requires it; an absent balance is interpreted as zero for queries and discharges.
+- **Concurrent sale with reception:** A sale should not try `INSERT` from balance to zero to exit; if the income is confirmed before the sale controls the stock, you can sell under transactional rules, and if there is no balance confirmed when evaluated, it will be rejected cleanly. The proof will check the confirmation order, will not presume outstanding merchandise reserves.
+- If two users try to sell the last unit, a single sale is confirmed and the second receives controlled error; no negative amounts or partially recorded payments are tolerated.
 
-### 7.3 Idempotencia y reintentos concurrentes
+### 7.3 Idem and concurrent re-attempts
 
-Una clave de idempotencia se delimita por **operación + actor/ámbito + empresa, cuando existe**. Se almacena un hash estable de la carga relevante, estado, código y cuerpo de respuesta reproducible. Misma clave y misma carga tras éxito recuperan el resultado; misma clave con distinta carga produce conflicto.
+A key of idempotency is defined by **operation + actor/area + company, where it exists**. A stable hash of relevant load, status, code and reproducible response body is stored. Same key and same charge after success recover the result; same key with different load causes conflict.
 
-**Dos solicitudes en progreso** con la misma clave no pueden ejecutar dos efectos: el índice y la transacción deben serializarlas, esperar o emitir un rechazo temporal controlado según contrato. **No fijamos aún un TTL arbitrario** que permita repetir una operación económica una vez depurada la respuesta; una identidad comercial duradera (`requestId` o equivalente) protege además el efecto persistente. Distinguir errores de validación, fallos transitorios e interrupciones para no bloquear un comando legítimo permanentemente. La política HTTP concreta queda para Documento 05.
+**Two applications in progress** With the same key they cannot execute two effects: the index and the transaction must serialize, wait or issue a temporary rejection controlled according to contract. **We haven't set an arbitrary TTL yet.** a repeat economic operation after the response has been cleared; a lasting commercial identity (`requestId` or equivalent) also protects the persistent effect. Distinguish validation errors, transient failures and interruptions to not block a legitimate command permanently. The specific HTTP policy is left for Document 05.
 
-### 7.4 Caso difícil obligatorio: ET-03
+### 7.4 Mandatory difficult case: ET-03
 
-**Preparación:** Empresa E, Ubicación U, Bien P con una sola unidad disponible; dos usuarios diferentes autorizados.  
-**Ejecución:** dos peticiones de venta concurrentes, **claves distintas y sesiones PostgreSQL independientes**.  
-**Resultado:** exactamente **una venta**, **una salida** histórica, stock final **cero**; la otra solicitud no deja venta, aplicación de pago ni movimiento parcial. Prueba de **integración con PostgreSQL**, adicional a las pruebas unitarias requeridas.
+**Preparation:** Company E, Location U, Bien P with one unit available; two different authorized users.  
+**Implementation:** two competing sales requests, **separate keys and independent PostgreSQL sessions**.  
+**Outcome:** exactly. **a sale**, **an exit** historical, final stock **zero**; the other application does not leave sale, payment application or partial movement. **integration with PostgreSQL**, in addition to the required unitary tests.
 
-Variantes complementarias: dos primeras recepciones sobre saldo inexistente, conteo obsoleto con `version`, traslado concurrente con venta y recibo de respuesta perdido/reintentado. SQLite sola **no demuestra** el comportamiento de bloqueo de PostgreSQL.
+Additional variants: two first receptions on non-existent balance, obsolete count with `version`, concurrent transfer with sale and receipt of lost/reintended response. SQLite solo **does not demonstrate** PostgreSQL blocking behavior.
 
-## 8. Identidad, autorización y seguridad
+## 8. Identity, authorization and security
 
-### 8.1 Autenticación real — pendiente de implementar
+### 8.1 Real Authentication — Pending Implementation
 
-- **CU-01 Registro:** identidad personal global, correo normalizado único, contraseña protegida con hash adaptativo moderno (por ejemplo Argon2id a través de librería mantenida). No guardar ni devolver contraseña en claro.
-- **CU-02 Inicio de sesión:** verificar credenciales y estado, emitir sesión/token autenticado por un mecanismo elegido y documentado en E2. Se puede adoptar **Bearer de acceso de vida corta**; fijar expiración, invalidación, manejo de cierre de sesión y política de renovación antes de producción. No declarar que se implementó JWT si todavía no existe.
-- **Transporte:** usar HTTPS en despliegue. Secretos y parámetros de conexión a la base se suministran por variables de entorno/gestor de secretos; nunca en repositorio, logs, datos DEMO ni bundle Vite.
-- **Cliente web (elección pendiente para E2):** para simplificar el TP y permitir OpenAPI, es viable usar un **Bearer de acceso de vida corta en memoria del cliente**, sin guardarlo en `localStorage` ni persistirlo en el código fuente. Si expira o se recarga y no hay renovación segura, se solicita iniciar sesión nuevamente; es una decisión UX explícita, no un fallo silencioso.
-- **Alternativa para despliegue web más completo:** cookies de sesión/refresco **`HttpOnly`, `Secure` y `SameSite=Lax`** (según topología y orígenes), con **protección CSRF** para solicitudes que cambian estado, control de CORS/credenciales y expiración/revocación. `HttpOnly` reduce la exposición a lectura directa de tokens por JavaScript, **no elimina XSS ni CSRF por sí solo**. No se configura un sistema híbrido de cookies y Bearer sin definir sus amenazas y flujos.
-- **Decisión previa a E2-1:** elegir una modalidad única de autenticación para el MVP, documentar dónde reside la credencial, cuánto dura, cómo se invalida, y cómo se comporta React ante `401`/`403` y una recarga.
+- **CU-01 Registration:** global personal identity, unique standard mail, password protected with modern adaptive hash (e.g. Argon2id through maintained library). Do not save or return password in clear.
+- **CU-02 Login:** verify credentials and status, issue session/taken authenticated by a mechanism chosen and documented in E2. Can be adopted **Bearer de acceso de vida corta**; set expiration, override, session closure handling and renewal policy before production. Do not declare that JWT was implemented if it does not yet exist.
+- **Transport:** use HTTPS in deployment. Secrets and parameters of connection to the database are provided by environment variables/secret manager; never in repository, logs, DEMO data or bundle Vite.
+- **Web client (pending choice for E2):** to simplify the TP and allow OpenAPI, it is feasible to use a **Bearer de acceso de vida corta en memoria del cliente**, without saving it in `localStorage` or persist in the source code. If it expires or is recharged and there is no secure renewal, you are asked to log in again; it is an explicit UX decision, not a silent failure.
+- **Alternative for more complete web deployment:** session cookies/refreshment **`HttpOnly`, `Secure` y `SameSite=Lax`** (according to topology and origins), with **CSRF protection** for status-changing applications, CORS/credential control and expiration/revocation. `HttpOnly` reduces the exposure to direct read of tokens by JavaScript, **does not remove XSS or CSRF by itself**. A hybrid cookie system and Bearer are not configured without defining their threats and flows.
+- **Decision prior to E2-1:** choose a unique authentication modality for the MVP, document where the credential resides, how long it lasts, how it is invalidated, and how React behaves before `401`/`403` And a refill.
 
-### 8.2 Autorización y aislamiento multiempresa
+### 8.2 Multi-company authorisation and isolation
 
-La identidad autenticada **no basta** para operar sobre un negocio. Para un endpoint de `/businesses/{businessId}/...` se debe:
+Authenticated identity **no basta** to operate on a business. For an endpoint of `/businesses/{businessId}/...` should:
 
-1. Autenticar al usuario de la petición.
-2. Comprobar existencia y estado operativo de la Empresa.
-3. Obtener su Membresía correspondiente a esa empresa y validar estado/rol/permisos requeridos.
-4. Verificar que **cada artículo, ubicación, proveedor, compra, venta o cuenta referenciada** pertenezca a la empresa autorizada.
-5. Filtrar las consultas por `business_id` y utilizar FK compuestas para integridad; **los índices/constraints SQL no sustituyen estas verificaciones de autorización**.
-6. Denegar sin alterar datos y sin revelar información innecesaria de recursos ajenos. Se definirá si se devuelve `403` o `404` según sensibilidad y contrato.
+1. Authenticate the user of the request.
+2. Check existence and operational status of the Company.
+3. Obtain your Membership for that company and validate required status/rol/permissions.
+4. Verify that **each item, location, supplier, purchase, sale or referenced account** belongs to the authorised company.
+5. Filter queries by `business_id` and use composite FK for integrity; **SQL indices/constraints do not replace these authorization checks**.
+6. Refuse without altering data and without revealing unnecessary information from other people's resources. `403` o `404` according to sensitivity and contract.
 
-Un usuario puede administrar Empresa A y vender en Empresa B; no debe adquirir permisos sobre A por su membresía en B. Los roles del frontend DEMO no otorgan permisos reales. La invitación CU-12 requiere aceptación autenticada y es soporte propuesto, no correo automático obligatorio.
+A user can manage Enterprise A and sell on Company B; he must not acquire permissions about A for membership in B. The roles of the DEMO frontend do not grant real permits. The CU-12 invitation requires authenticated acceptance and is proposed support, not mandatory automatic mail.
 
-### 8.2.1 Autenticación reutilizable y autorización dentro del caso de uso — propuesta
+### 8.2.1 Reusable authentication and authorisation within the use case — proposed
 
-La API debe reutilizar una dependencia FastAPI que autentique al solicitante y produzca **datos inmutables de identidad**, por ejemplo un `AuthenticatedPrincipal(user_id, ...)`. **No debe devolver como autorización definitiva un rol almacenado en el token o en React**: los permisos se determinan consultando la Membresia de la empresa correspondiente.
+API should reuse a FastAPI unit that authenticates the applicant and produces **Immutable identity data**, for example a `AuthenticatedPrincipal(user_id, ...)`. **You must not return a paper stored in token or React as final authorization**: the permits are determined by consulting the Membership of the corresponding company.
 
-**Decisión de implementación para operaciones de escritura:** el endpoint `def` delega al servicio empresarial y el servicio abre **su única transacción**. Dentro de ese contexto se verifica membresía/rol, pertenencia de recursos y condiciones mutables; los repositorios que participan comparten la misma sesión, nunca la misma sesión con otra solicitud. Esto no impide validar previamente la autenticación en la dependencia, pero evita una autorización crítica en una sesión separada y una escritura comercial en otra sin revalidación.
+**Implementation decision for write operations:** el endpoint `def` delegates to the business service and the service opens **your only transaction**. Within this context, membership/rol, belonging to resources and mutable conditions are verified; the participating repositories share the same session, never the same session with another request. This does not prevent prior validation of authentication in the dependency, but avoids a critical authorization in a separate session and a commercial writing in another without revalidation.
 
 ```python
 # PSEUDOCÓDIGO: clases, dependencias y políticas aún no existen.
@@ -778,37 +778,37 @@ class SaleService:
             return map_to_sale_response(result)  # DTO puro, sin ORM vivo
 ```
 
-**Observación:** el ejemplo ilustra la secuencia, no define un modelo Python ejecutable. `get_authenticated_principal` también debe comprobar identidad y vigencia del mecanismo autenticador; si consulta PostgreSQL síncrono lo hará en un contexto acotado y devolverá **datos**, no un objeto ORM vivo ni una sesión compartida. El servicio vuelve a consultar el estado empresarial necesario antes de confirmar. Para crear Empresa (CU-03) se autentica el usuario global y la transacción crea Empresa y Membresia sin depender de una membresía preexistente.
+**Comment:** The example illustrates the sequence, does not define an executable Python model. `get_authenticated_principal` you must also check the identity and validity of the authentication mechanism; if you consult PostgreSQL synchronous it will do so in a limited context and return **data**, not a live ORM object or shared session. The service re-checks the necessary business status before confirming. To create Enterprise (CU-03) the global user is authenticated and the transaction creates Enterprise and Membership without relying on a pre-existing membership.
 
-**Lecturas de consulta:** pueden utilizar sesiones de solo lectura con duración corta. El criterio es el mismo: nunca guardar una `Session` en singletons, no compartirla entre peticiones y no devolver relaciones de carga perezosa después de cerrarla. Un `403`/`404` es una decisión de contrato; no se debe revelar la existencia de registros ajenos al tenant.
+**Consultation readings:** can use short-reading sessions only. The criterion is the same: never save a `Session` in singletons, not share it between requests and not return lazy load ratios after closing it. `403`/`404` is a contract decision; the existence of records other than tenant should not be disclosed.
 
-### 8.3 Controles complementarios
+### 8.3 Supplementary controls
 
-- Validación Pydantic de entradas, longitudes, unidades, centavos, cantidades y enums; consultas parametrizadas con SQLAlchemy.
-- Límites de tamaño de solicitudes y paginación, sobre todo en listados históricos; registros de auditoría de acciones sensibles sin contraseñas ni tokens.
-- CORS limitado a orígenes autorizados (CORS **no es** un mecanismo de autorización); cabeceras y manejo apropiado de cookies si las hay.
-- Errores sin datos internos de stack trace, credenciales ni referencias ajenas.
-- Protección básica frente a fuerza bruta en autenticación (p. ej., límites de intentos); detalles operativos ajustables al despliegue.
-- Estado `SUSPENDIDA` de Empresa está previsto conceptualmente, **sin endpoint de suspensión exigido en MVP**.
+- Pydatic validation of inputs, lengths, units, cents, quantities and enums; queries parameterized with SQLAlchemy.
+- Request size and pagination limits, especially in historical listings; audit records of sensitive actions without passwords or tokens.
+- CORS limited to authorised origins (CORS) **no es** a mechanism for authorization); headers and appropriate handling of cookies if any.
+- Errors without internal stack trace data, credentials or other references.
+- Basic protection against brute force in authentication (e.g., limits of attempts); operational details adjustable to deployment.
+- Status `SUSPENDIDA` Enterprise is conceptually planned, **no suspension endpoint required in MVP**.
 
-## 9. Contratos HTTP preliminares y manejo de errores
+## 9. Preliminary HTTP contracts and error handling
 
-Los endpoints siguientes son **nombres de trabajo**, no rutas FastAPI existentes. Documento 05 definirá métodos exactos, path/query/body, esquemas, permisos, estados, OpenAPI y tests.
+Los endpoints siguientes son **working names**Document 05 will define exact methods, path/query/body, schemas, permissions, states, OpenAPI and tests.
 
-| Requisito | Caso | Operación HTTP tentativamente propuesta |
+| Requirement | Case | Intentionally proposed HTTP operation |
 |---|---|---|
 | RF-01 | CU-01 / CU-02 | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` |
 | RF-02 | CU-03 | `POST /api/v1/businesses`, `GET /api/v1/businesses` |
-| RF-02 (soporte) | CU-12 | `POST /api/v1/businesses/{businessId}/invitations`, aceptación por token (ruta a definir) |
+| RF-02 (support) | CU-12 | `POST /api/v1/businesses/{businessId}/invitations`, acceptance by token (path to define) |
 | RF-03 | CU-04 | `POST/GET /api/v1/businesses/{businessId}/locations` |
 | RF-04 | CU-05 | `POST/GET /api/v1/businesses/{businessId}/items` |
 | RF-05 | CU-06 / CU-07 | `POST/GET .../purchases`, `POST .../purchases/{purchaseId}/receipt` |
 | RF-06 | CU-08 / CU-09 / CU-11 | `GET .../inventory`, `POST .../transfers`, `POST .../adjustments` |
 | RF-07 | CU-10 | `POST/GET .../sales` |
 
-**Convención:** prefijo versionado `/api/v1`; URLs empresariales siempre incluyen un identificador de empresa, pero ello no sustituye la verificación del actor. De preferencia JSON, timestamps ISO 8601 con zona horaria explícita, UUIDs en servidor y enteros para importes/cantidades en el límite de API. El servidor es autoridad sobre cálculos de totales, estados y existencia.
+**Convention:** prefixed versioned `/api/v1`; Business URLs always include a business identifier, but this does not replace the actor verification. Preferredly JSON, timestamps ISO 8601 with explicit time zone, UUIDs on server and integers for amounts/quantities in API limit. The server is authority over calculations of totals, states and existence.
 
-**Errores estandarizados:** proponer Problem Details según [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html), MIME `application/problem+json`. Ejemplo **ilustrativo, no respuesta implementada**:
+**Standardized errors:** propose Problem Details according to [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html), MIME `application/problem+json`Example: **illustrative, no response implemented**:
 
 ```json
 {
@@ -820,113 +820,113 @@ Los endpoints siguientes son **nombres de trabajo**, no rutas FastAPI existentes
 }
 ```
 
-`ejemplo.invalid` es **solo un dominio reservado para ilustrar la estructura**: el URI de tipo real debe ser estable y documentado bajo un dominio propio o `about:blank` donde corresponda. El campo `detail` se redacta para el cliente, sin revelar SQL, claves ni información de otras empresas. Los códigos `400/401/403/404/409/422/500` se asignarán por categoría y con criterios consistentes en Documento 05; no confundir errores de sintaxis, permisos y conflictos comerciales.
+`ejemplo.invalid` es **only one domain reserved to illustrate the structure**: the real-type URI must be stable and documented under its own domain or `about:blank` Where appropriate. `detail` is written for the client, without revealing SQL, keys or information from other companies. `400/401/403/404/409/422/500` shall be assigned by category and with criteria consisting of Document 05; do not confuse syntax errors, permits and commercial conflicts.
 
-## 10. Integración progresiva frontend ↔ backend
+## 10. Progressive integration frontend ↔ backend
 
-### 10.1 Principio de transición
+### 10.1 Transitional principle
 
-**No reescribir la UI en bloque.** Mantener el modo DEMO actual como entorno de presentación mientras la API se desarrolla en paralelo. El primer circuito conectado a la API debe ser pequeño (por ejemplo, empresas/ubicaciones/catálogo) y conservar la experiencia visual existente.
+**Do not rewrite the UI in block.** Keep current DEMO mode as a presentation environment while the API is developing in parallel. The first circuit connected to the API must be small (e.g., companies/locations/catalogue) and retain existing visual experience.
 
-1. Definir DTO de un caso de uso y su contrato OpenAPI en backend.
-2. Crear un cliente HTTP tipado en frontend y un **adaptador del módulo**. Los componentes deberán manejar promesas, carga, error y actualización de datos.
-3. Configurar **explícitamente** qué fuente utiliza ese módulo en ese entorno. No realizar escrituras dobles ni mezclar IDs DEMO con UUIDs backend.
-4. Verificar autenticación, selección de empresa, error de red, permisos y reintentos.
-5. Solo cuando el flujo esté probado, reemplazar la lectura/escritura local del módulo y retirar su código DEMO gradualmente. Conservar un modo DEMO deliberado para exhibición si el equipo lo desea.
+1. Define DTO of a use case and your OpenAPI contract in backend.
+2. Create a frontend typed HTTP client and a **module adapter**. Components must handle promises, upload, error and update of data.
+3. Configure **explicitly** which source uses that module in that environment. Do not double write or mix DEMO IDs with UUIDs backend.
+4. Check authentication, company selection, network error, permissions and retry.
+5. Only when the flow is tested, replace the local reading/writing of the module and remove your DEMO code gradually. Keep a deliberate DEMO mode for display if the computer wants to.
 
-**No hacer fallback silencioso:** si falla la API, mostrar error; **no guardar en localStorage fingiendo que se guardó en el servidor**. Los datos existentes en el navegador **no se migran automáticamente** a PostgreSQL; la importación, si se requiere, se diseñará como procedimiento explícito, validado y reversible.
+**Do not make silent fallback:** if API fails, display error; **not save to localStorage pretending it was saved on the server**. The existing data in the browser **do not migrate automatically** a PostgreSQL; import, if required, shall be designed as an explicit, validated and reversible procedure.
 
-### 10.2 Compatibilidad y fuentes de verdad
+### 10.2 Compatibility and Sources of Truth
 
-| Situación | Fuente autorizada | Comportamiento esperado |
+| Status | Authorized source | Expected behaviour |
 |---|---|---|
-| DEMO sin conexión | `demoStore` + IndexedDB | Seguir mostrando que es una simulación local |
-| Módulo nuevo conectado a API | FastAPI + PostgreSQL | Servidor valida y persiste; frontend puede cachear solo estado derivado |
-| Error HTTP / falta de red | Sin confirmación | Mensaje y opción de reintento seguro; no confirmar venta local |
-| Cambio Empresa A → B | Contexto/consulta del nuevo tenant | Limpiar carrito, borradores y caché empresarial que puedan mostrar datos de A |
-| Fotografías | IndexedDB solo en DEMO; API por definir | No asumir que imágenes localmente guardadas se comparten; URL/imageKey opcional o carga de binarios diferida |
-| QR | Visual ilustrativo de DEMO | Nunca comunicar acreditación real; Mercado Pago OAuth/Orders/webhooks quedan post-MVP |
+| DEMO offline | `demoStore` + IndexedDB | Keep showing that it is a local simulation |
+| New module connected to API | FastAPI + PostgreSQL | Server validates and persists; frontend can cache only derivative status |
+| HTTP error / network failure | No confirmation | Message and Safe Retry option; not confirm local sale |
+| Change Company A → B | Context/consultation of the new tenant | Clear cart, drafts and business cache that can display A data |
+| Photographs | IndexedDB solo en DEMO; API por definir | Do not assume that locally saved images are shared; optional URL/imageKey or delayed binary upload |
+| QR | Visual illustration of DEMO | Never communicate real accreditation; Market Payment OAuth/Orders/webhooks remain post-MVP |
 
-**Compatibilidad técnica:** las políticas TypeScript del frontend sirven como referencia de comportamiento y pruebas, pero **no son seguridad** ni se ejecutan automáticamente en Python. Los invariantes deben reimplementarse y probarse en backend (normalización SKU, dinero, escalas, stock, transiciones).
+**Technical compatibility:** frontend typescript policies serve as a benchmark for behavior and testing, but **They're not security.** Invariants must be reintroduced and tested in backend (SKU standardization, money, scales, stock, transitions).
 
-### 10.3 Cambio de empresa, solicitudes en vuelo y estados UX
+### 10.3 Change of company, flight applications and UX states
 
-En la DEMO las funciones locales responden de forma inmediata; el `ApiGateway` futuro trabajará con promesas y respuestas que pueden llegar **después** de cambiar de empresa. Para impedir fuga visual de datos empresariales y escrituras aparentes:
+In DEMO local functions respond immediately; `ApiGateway` future will work with promises and answers that can come **after** to prevent visual leaking of business data and apparent deeds:
 
-1. **El ámbito es parte de la identidad de la consulta:** toda lectura/caché de negocio se indexa por `businessId` y recurso; nunca se usa una caché global `catalogItems` sin ámbito empresarial.
-2. **Cancelar peticiones obsoletas cuando sea posible:** usar `AbortController` al desmontar una pantalla, cambiar de ruta o modificar el tenant. Cancelar en el navegador **no deshace una escritura POST que el servidor ya procesó**; una respuesta perdida se resuelve consultando el resultado de la operación/idempotencia.
-3. **Descartar respuestas tardías aunque no puedan cancelarse:** al recibir la respuesta, comprobar `businessId` y un identificador/versionado de consulta vigente; una respuesta de A no puede actualizar la lista visible de B. No alcanza con AbortController por sí solo.
-4. **Reiniciar estado transitorio de cada empresa:** al cambiar de empresa se vacían/aislan carritos, ubicación seleccionada, formularios sin guardar y errores del contexto anterior; un contenedor React con `key={businessId}` puede ayudar, pero **no reemplaza** el control de caché ni la verificación del servidor. Si había un borrador no guardado, advertir antes de descartarlo cuando corresponda.
-5. **Mutaciones con feedback explícito:** botones con `loading`/`disabled`, mensajes de errores de red y permisos, y reintento seguro con **el mismo requestId/payload** para operaciones cuya respuesta se perdió. Si el servidor confirma una venta pero la respuesta no llega, el cliente **no debe crear otra con un requestId nuevo**.
-6. **Carrito y stock ante `409`:** conservar los datos de usuario mientras se informa falta de stock; ofrecer refrescar cantidades. El `409` debe provenir de una validación transaccional, no solo de una comprobación previa en UI.
+1. **The scope is part of the identity of the consultation:** all reading/business cache is indexed by `businessId` and resource; never use global cache `catalogItems` without a business environment.
+2. **Cancel obsolete requests when possible:** use `AbortController` when unmounting a screen, change route or modify the tenant. Cancel in browser **does not undo a POST script that the server has already processed**; a lost response is resolved by consulting the result of the operation/idempotency.
+3. **Discard late replies even if they cannot be cancelled:** upon receipt of the reply, check `businessId` and an existing query identifier/versioned; an A response cannot update the visible B list. It is not enough with AbortionController alone.
+4. **Restarting the transitional status of each undertaking:** when changing company, empty/inslane carts, selected location, unsaved forms and previous context errors; a React container with `key={businessId}` may help, but **does not replace** the cache control or server verification. If there was an unsaved draft, warn before discarding it where appropriate.
+5. **Mutations with explicit feedback:** buttons with `loading`/`disabled`, network error messages and permissions, and I try to be safe with **el mismo requestId/payload** for operations whose response was lost. If the server confirms a sale but the answer does not arrive, the client **must not create another with a new requestId**.
+6. **Cart and stock `409`:** keep user data while reporting lack of stock; offer refresh quantities. `409` it must come from transactional validation, not just a previous check in IU.
 
-**Prueba frontend–API recomendada:** disparar una consulta demorada de A, cambiar a B, completar después A y comprobar que solo se renderizan datos B. También verificar que repetir una venta después de un corte de red no genera dos registros.
+**Recommended frontend–API test:** shoot a delayed query of A, switch to B, then complete A and check that only B data is rendered. Also verify that repeating a sale after a network cut does not generate two records.
 
-## 11. Calidad, testing y criterios de aceptación
+## 11. Quality, testing and acceptance criteria
 
-### 11.1 Pirámide de pruebas
+### 11.1 Test pyramid
 
-- **Unitarias del backend:** funciones puras, servicios con repositorios fake, errores de dominio, cálculo de montos, reglas de estados y permisos. **Mínimo diez** tests ejecutables, no diez escenarios escritos en papel.
-- **Integración del backend:** SQLAlchemy/PostgreSQL real, migraciones, FK compuestas, unicidad, rollback, idempotencia y concurrencia. No se sustituyen por SQLite cuando se desea comprobar bloqueos de PostgreSQL.
-- **API/contrato:** HTTPX/TestClient según configuración elegida, endpoints reales, validaciones Pydantic, estados y payload Problem Details.
-- **Frontend existente:** conservar tests Node, build/lint y Playwright Chromium escritorio/móvil.
-- **Integración frontend–API:** flujo mínimo de alta de empresa/catálogo/compra/recepción/venta, comparando respuestas e interfaces; no depender de datos del navegador de un integrante del equipo.
+- **Unitarias del backend:** pure functions, services with fake repositories, domain errors, calculation of amounts, state rules and permissions. **Minimum ten** Executable tests, not ten scenarios written on paper.
+- **Backend integration:** SQLAlchemy/PostgreSQL real, migrations, composite FK, uniqueness, rollback, idempotency and continuance. They are not replaced by SQLite when you want to check PostgreSQL locks.
+- **API/contract:** HTTPX/TestClient according to chosen settings, actual endpoints, Pydatic validations, states and payload Problems Details.
+- **Existing Frontend:** keep Node, build/lint and Playwright Chromium desktop/mobile tests.
+- **Frontend-API integration:** Minimum company/catalogue/purchase/reception/sale discharge flow, comparing responses and interfaces; not relying on browser data from a team member.
 
-### 11.2 Propuesta mínima de tests unitarios reales
+### 11.2 Minimum proposal for actual unit tests
 
-| ID propuesto | Regla que prueba | Relación |
+| Proposed ID | Rule proving | Relationship |
 |---|---|---|
-| U-01 | Normalización y unicidad lógica de correo | RF-01 / CU-01 |
-| U-02 | Rechazo de credenciales inválidas y cuenta inactiva | RF-01 / CU-02 |
-| U-03 | Rol empresarial distinto del usuario global | RF-02 / CU-03 |
-| U-04 | Rechazo por permisos/tenant en un servicio de aplicación | RN-01 / CU-05 |
-| U-05 | Validación de SKU por empresa, servicio sin inventario | RF-04 / CU-05 |
-| U-06 | Cálculo `HALF_UP` por línea en centavos | RN-05 / CU-06, CU-10 |
-| U-07 | Registrar compra no genera movimientos | RN-02 / CU-06 |
-| U-08 | Recepción completa rechaza segunda confirmación | RN-02/03 / CU-07 |
-| U-09 | Traslado conserva cantidad total (origen/destino) | RF-06 / CU-09 |
-| U-10 | Ajuste negativo insuficiente es rechazado | RF-06 / CU-11 |
-| U-11 | Pagos divididos deben conciliar exactamente | RN-06 / CU-10 |
-| U-12 | Venta mixta solo consume bienes físicos | RN-04 / CU-10 |
-| U-13 | Misma clave con distinta carga genera conflicto | RN-03 / CU-07, CU-10 |
+| U-01 | Standardisation and logical mail uniqueness | RF-01 / CU-01 |
+| U-02 | Rejection of invalid credentials and inactive account | RF-01 / CU-02 |
+| U-03 | Business Role other than Global User | RF-02 / CU-03 |
+| U-04 | Rejection for permissions/tenant in an application service | RN-01 / CU-05 |
+| U-05 | Validation of SKU by company, service without inventory | RF-04 / CU-05 |
+| U-06 | Calculation `HALF_UP` per line in cents | RN-05 / CU-06, CU-10 |
+| U-07 | Register purchase does not generate movements | RN-02 / CU-06 |
+| U-08 | Full reception rejects second confirmation | RN-02/03 / CU-07 |
+| U-09 | Transfer retains total quantity (origin/destination) | RF-06 / CU-09 |
+| U-10 | Insufficient negative adjustment is rejected | RF-06 / CU-11 |
+| U-11 | Divided payments must reconcile exactly | RN-06 / CU-10 |
+| U-12 | Mixed sale only consumes physical goods | RN-04 / CU-10 |
+| U-13 | Key Same with Different Burden Creates Conflict | RN-03 / CU-07, CU-10 |
 
-**Importante:** estos son **nombres propuestos**, no pruebas existentes. Un test unitario que involucre una BD real debe clasificarse como integración, aunque utilice `pytest`. La evidencia final será el comando de ejecución y un reporte reproducible en GitHub Actions.
+**Important:** These are **proposed names**, not existing tests. A unit test involving a real BD should be classified as integration, even if it uses `pytest`. The final evidence will be the execution command and a reproducible report in GitHub Actions.
 
-### 11.3 Pruebas de integración críticas
+### 11.3 Critical integration tests
 
-| ID | Preparación | Resultado requerido |
+| ID | Preparation | Required result |
 |---|---|---|
-| I-01 | Usuario A intenta acceder con ID de recurso de Empresa B | No obtiene información ni modifica datos B |
-| I-02 | Compra con físicos registrada y sin recepción | Stock sin cambios |
-| I-03 | Repetir recepción con misma y distinta clave | Una sola recepción y movimientos únicos; resultado idempotente o conflicto según caso |
-| I-04 | Dos usuarios venden simultáneamente la última unidad | Una venta confirmada; una rechazada; saldo final cero; sin datos parciales |
-| I-05 | Dos primeras entradas concurrentes sobre saldo inexistente | Suma exacta y un único saldo sin error de duplicación |
-| I-06 | Insertar movimiento con origen múltiple o recurso de empresa ajena | Restricciones de DB rechazan inserción inválida |
-| I-07 | Fallo inducido entre descuento de saldo y guardado de movimiento | Rollback deja saldo y ledger consistentes |
-| I-08 | Ajuste por conteo con versión antigua | Rechazo por concurrencia, sin sobrescribir movimientos nuevos |
-| I-09 | Reintentar creación de empresa con clave igual y ámbito sin `business_id` | No crea dos empresas ni dos membresías iniciales |
-| I-10 | Ejecutar endpoints SQLAlchemy síncronos bajo dos solicitudes concurrentes | No compartir sesiones ni bloquear el event loop invocando SQL síncrono desde rutas `async def`; cierre correcto de recursos |
-| I-11 | Cambiar de Empresa A a B durante una consulta HTTP demorada | El estado visual y la caché activa solo contienen datos de B |
-| I-12 | Comprar un artículo sin ubicaciones físicas y luego crear su primera ubicación/recibirlo | No se precrean saldos inútiles; primera entrada segura; venta sin stock confirmado rechazada |
+| I-01 | User A tries to access with Company Resource ID B | No information obtained or modified B data |
+| I-02 | Purchase with registered physicists and no reception | Stock unchanged |
+| I-03 | Repeat reception with the same and different key | Single reception and single movements; idepotent result or conflict depending on case |
+| I-04 | Two users simultaneously sell the last unit | A confirmed sale; a rejected; zero final balance; no partial data |
+| I-05 | First two concurrent entries on non-existent balance | Accurate amount and single balance without duplication error |
+| I-06 | Insert multiple origin movement or other company resource | DB restrictions refuse invalid insertion |
+| I-07 | Induced failure between balance discount and motion save | Rollback leaves balance and leadger consistent |
+| I-08 | Old version count adjustment | Rejection for attendance, without overwriting new movements |
+| I-09 | Retrying to start a business with equal key and scope without `business_id` | Do not create two companies or two initial memberships |
+| I-10 | Run SQLAlchemy synchronous endpoints under two concurrent requests | Do not share sessions or block event loop by invoking SQL synchron from routes `async def`; correct closure of resources |
+| I-11 | Switch from Enterprise A to B during a delayed HTTP query | Visual status and active cache only contain B data |
+| I-12 | Buy an item without physical locations and then create its first location/receive it | No useless balances are pre-created; first safe entry; sale without stock confirmed rejected |
 
-### 11.4 CI y evidencias
+### 11.4 CI and evidence
 
-Ya existe `.github/workflows/plataforma-pyme-frontend.yml`, que se ejecuta ante cambios del frontend o su propio workflow; **no ejecuta tests de backend**. En E2 se agregará un flujo separado para cambios de `plataforma-pyme/backend/**` y su configuración, con entorno PostgreSQL de prueba, instalación reproducible, migraciones, tests unitarios/integración y chequeos básicos de calidad. Las versiones concretas de Python, PostgreSQL y dependencias se fijarán entonces.
+It already exists. `.github/workflows/plataforma-pyme-frontend.yml`, which runs against changes to the frontend or its own workflow; **no ejecuta tests de backend**. In E2 a separate flow will be added for changes to `plataforma-pyme/backend/**` and its configuration, with PostgreSQL testing environment, reproducible installation, migrations, unit tests/integration and basic quality checks. Concrete versions of Python, PostgreSQL and dependencies will then be fixed.
 
-**Puerta de integración de cada incremento:** tests unitarios y de integración relevantes verdes, endpoint/documento trazados, no afectar rutas ajenas del monorepo, y verificación manual breve cuando se conecte UI. Los workflows podrán ejecutarse en PR y `main` para registrar evidencia de revisión.
+**Integration door of each increment:** Unitary and integration tests relevant green, endpoint/document traced, do not affect alien monorepo routes, and short manual verification when UI is connected. Workflows may be executed in PR and `main` to record evidence of review.
 
-## 12. Docker, configuración y despliegue
+## 12. Docker, configuration and deployment
 
-### 12.1 Entorno de desarrollo propuesto
+### 12.1 Proposed development environment
 
-- **Backend:** un contenedor de FastAPI con configuración por variables de entorno.
-- **Base:** PostgreSQL **16** en contenedor con volumen persistente para desarrollo, compatible con `UNIQUE NULLS NOT DISTINCT` introducido en PostgreSQL 15. El tag final se fijará al implementar (incluida versión menor/digest cuando sea posible) y se verificará con `SELECT current_setting('server_version')`. Su salud debe comprobarse antes de migraciones o pruebas. No reutilizar ciegamente un volumen físico de otra versión mayor sin una estrategia de actualización de datos.
-- **Migraciones:** Alembic con revisiones versionadas; establecer si se ejecutan en una tarea explícita de despliegue o paso controlado de inicio, evitando que múltiples réplicas apliquen migraciones simultáneamente.
-- **Frontend:** continuar con Vite para desarrollo; puede ejecutarse fuera de Docker durante E2. **No exigir contenedor React** para la primera API si la consigna no lo necesita.
-- **Conexión SQL sin interpolar URI manualmente:** los caracteres reservados en una contraseña no deben romper `DATABASE_URL`. Se propone suministrar `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` por entorno y construir el URL con `sqlalchemy.engine.URL.create(...)`; alternativamente aceptar una URL previamente codificada/verificada.
-- **Configuración:** `backend/.env.example` sin secretos, `DATABASE_URL`, origen permitido del frontend, parámetros de autenticación y modo de entorno. El archivo `.env` real no se versiona.
+- **Backend:** a FastAPI container with configuration by environment variables.
+- **Base:** PostgreSQL **16** in container with persistent volume for development, compatible with `UNIQUE NULLS NOT DISTINCT` entered in PostgreSQL 15. The final tag will be set when implementing (including minor/digest version where possible) and checked with `SELECT current_setting('server_version')`. Your health should be checked before migration or testing. Do not blindly reuse a physical volume of another major version without a data update strategy.
+- **Migration:** Alembic with versioned revisions; set whether they are executed in an explicit deployment task or controlled start step, preventing multiple replicas from applying migration simultaneously.
+- **Frontend:** continue with Vite for development; it can run outside Docker during E2. **Do not require React container** for the first API if the delivery does not need it.
+- **SQL connection without interpolar URI manually:** characters reserved in a password should not break `DATABASE_URL`. It is proposed to provide `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` by environment and build the URL with `sqlalchemy.engine.URL.create(...)`; alternatively accept a previously encoded/verified URL.
+- **Settings:** `backend/.env.example` without secrets, `DATABASE_URL`, enabled frontend source, authentication parameters and environment mode. `.env` real no se versiona.
 
-Ejemplo **ilustrativo histórico** de Compose (no representa exactamente el `compose.yaml` ya implementado):
+Example **historical illustration** of Compose (not exactly the `compose.yaml` already implemented):
 
 ```yaml
 # Archivo conceptual: plataforma-pyme/compose.yaml (TODAVÍA NO EXISTE)
@@ -960,299 +960,299 @@ volumes:
   pgdata:
 ```
 
-**Nota técnica:** es una **propuesta de estructura**, todavía no ejecutable porque faltan `backend/Dockerfile`, dependencias, configuración, comando de aplicación y migraciones. Se adopta **PostgreSQL 16 como objetivo**, pero no se afirma haber ejecutado ese contenedor. El ejemplo supone que Compose reside en `plataforma-pyme/`, por eso `build: ./backend` es relativo a esa carpeta; el host de PostgreSQL **dentro del contenedor** es `db`, no `localhost`. El backend deberá generar su URL con `URL.create("postgresql+psycopg", username=..., password=..., host=..., database=...)`; de este modo no depende de concatenar credenciales sin escapar. El `.env` usado por Docker Compose se excluye de Git y los logs, aunque pasar secretos mediante variables de entorno sigue requiriendo controles adecuados de despliegue. La imagen final, migraciones, healthcheck y comandos se probarán y registrarán en el Documento 06.
+**Technical Note:** is a **proposed structure**, still not executable because they are missing `backend/Dockerfile`, dependencies, configuration, application command and migrations. **PostgreSQL 16 as a target**The example assumes that Compose resides in the `plataforma-pyme/`That's why. `build: ./backend` is related to that folder; the PostgreSQL host **inside the container** es `db`, no `localhost`. The backend must generate its URL with `URL.create("postgresql+psycopg", username=..., password=..., host=..., database=...)`; thus it does not depend on concatenating credentials without escaping. `.env` used by Docker Compose is excluded from Git and logs, although passing secrets through environment variables still requires adequate deployment controls. Final image, migrations, healthcheck and commands will be tested and recorded in Document 06.
 
-### 12.2 Despliegue de entrega y observabilidad mínima
+### 12.2 Delivery deployment and minimum observability
 
-La consigna exige desplegar la API. Antes de marcarlo cumplido habrá que registrar **URL pública funcional**, modo de acceso a `/docs`/OpenAPI (según protección), endpoint de salud, configuración de HTTPS, base persistente, migraciones aplicadas, logs sin credenciales y evidencia de tests/CI. Un Dockerfile que compila **no demuestra** por sí solo despliegue.
+The display requires the API to be displayed. Before marking it must be recorded **Functional public URL**, access mode to `/docs`/OpenAPI (according to protection), health endpoint, HTTPS configuration, persistent base, applied migrations, log without credentials and evidence of tests/CI. A Dockerfile compiles **does not demonstrate** deployment alone.
 
-**Observabilidad mínima:** logs estructurados con requestId y evento (sin tokens ni passwords), errores con correlación, salud de proceso y conectividad de DB cuando se consulte readiness. No agregar monitoreo distribuido costoso sin necesidad.
+**Minimum observability:** structured logs with requestId and event (no tokens or passwords), correlation errors, process health and DB connectivity when readiness is consulted. Do not add expensive distributed monitoring without need.
 
-## 13. Plan de implementación E2 — incremental y verificable
+## 13. E2 Implementation Plan — incremental and verifiable
 
-| Corte | Construcción | Criterio de cierre |
+| Cut | Construction | Closing criterion |
 |---|---|---|
-| **E2-0** | Crear `backend/`, FastAPI mínimo, SQLAlchemy síncrono, PostgreSQL 16, Alembic, Docker, pytest y workflow backend | Build/arranque, migración base, endpoint de salud, fábrica de sesiones por operación y tests iniciales reproducibles; comprobar endpoints `def` y credenciales por entorno |
-| **E2-1** | Registro, login, identidad global, Empresas, Membresías y autorización mínima | CU-01 a CU-03; acceso ajeno rechazado; credenciales seguras |
-| **E2-2** | Ubicaciones, Catálogo y Proveedores mínimos | CU-04/CU-05; SKU por empresa; servicios sin stock; permisos comprobados |
-| **E2-3** | Compra y recepción completa | CU-06/CU-07; registrar no suma stock; una recepción, un destino; idempotencia |
-| **E2-4** | Inventario: ledger, saldo, traslados y ajustes | CU-08/CU-09/CU-11; sin negativos; prueba de arranque en frío, rollback y versión de conteos |
-| **E2-5** | Venta y pagos declarados exactos | CU-10; total positivo y renglón cero válido, descuento fijo en centavos, rollback, reintentos y concurrencia con 2 usuarios |
-| **E2-6** | Primer circuito conectado a React y pulido de API | Se ejecuta con frontend real sin depender del estado DEMO para ese circuito; error de red explícito y cambio de tenant sin respuesta obsoleta |
-| **E2-7** | Revisión final de documentación, tests, CI, contenedor y deploy | Evidencias de ≥5 RF, ≥10 tests unitarios backend, patrón realmente aplicado y API publicada |
+| **E2-0** | Create `backend/`, Minimum FastAPI, SQLAlchemy synchronic, PostgreSQL 16, Alembic, Docker, pytest and workflow backend | Build/start, base migration, health endpoint, factory sessions per operation and reproducible initial tests; check endpoints `def` and credentials by environment |
+| **E2-1** | Registration, login, global identity, Companies, Memberships and minimum authorization | CU-01 to CU-03; rejected third party access; secure credentials |
+| **E2-2** | Locations, Catalog and Minimum Suppliers | CU-04/CU-05; SKU per company; services without stock; permits checked |
+| **E2-3** | Purchase and full reception | CU-06/CU-07; recording no sum stock; a reception, a destination; idempotency |
+| **E2-4** | Inventory: ledger, balance, transfers and adjustments | CU-08/CU-09/CU-11; no negatives; cold start test, rollback and count version |
+| **E2-5** | Exact sales and payments | CU-10; positive total and zero line valid, fixed discount in cents, rollback, retrying and 2 user engagement |
+| **E2-6** | First circuit connected to React and API polishing | It runs with real frontend without depending on DEMO status for that circuit; explicit network error and change of tenant without outdated response |
+| **E2-7** | Final review of documentation, tests, IC, container and deployment | Evidence of ≥5 RF, ≥10 unit backend tests, actually applied pattern and published API |
 
-**No prometer implementación de todos los cortes como completada antes de ejecutarlos.** Si el plazo del TP obliga a reducir alcance, actualizar formalmente los RF/CU de los Documentos 01–03 y asegurar primero **al menos cinco RF implementados y demostrables**, sin simular permisos o stock desde la UI.
+**Do not promise to implement all cuts as completed before executing them.** If the TP deadline requires a reduction in scope, formally update the RF/CU of Documents 01–03 and ensure first **at least five RFs implemented and demonstrable**, without simulating permits or stock from the IU.
 
-## 14. Trazabilidad preliminar: RF → CU → capa responsable → evidencia futura
+## 14. Preliminary Traceability: RF → CU → responsible layer → future evidence
 
-| RF | CU | Servicio/capacidad propuesta | Evidencia esperada |
+| RF | CU | Proposed service/capacity | Evidence expected |
 |---|---|---|---|
-| RF-01 | CU-01/02 | `AuthService` y repositorio de identidades | Registro/login, protección de contraseña, tests |
-| RF-02 | CU-03 y CU-12 opcional | `BusinessService`, membresías y políticas | Crear empresa transaccional, denegar tenant ajeno |
-| RF-03 | CU-04 | `LocationService` | Alta/consulta, permisos, capacidades de ubicación |
-| RF-04 | CU-05 | `CatalogService` | SKU único, tipos y servicios sin existencia física |
-| RF-05 | CU-06/07 | `PurchaseService` + `ReceiptService` | Registro sin entrada, recepción única y rollback |
-| RF-06 | CU-08/09/11 | `InventoryService` + repositorio de stock/ledger | Saldos, traslado/ajuste, no negativo, concurrencia |
-| RF-07 | CU-10 | `SaleService` + `StockRepository` | Montos exactos, pagos, stock y reintentos en commit único |
+| RF-01 | CU-01/02 | `AuthService` and identity repository | Log/login, password protection, tests |
+| RF-02 | CU-03 and CU-12 optional | `BusinessService`memberships and policies | Create transactional company, deny foreign tenant |
+| RF-03 | CU-04 | `LocationService` | High/consultation, permissions, location capabilities |
+| RF-04 | CU-05 | `CatalogService` | Unique SKU, types and services without physical existence |
+| RF-05 | CU-06/07 | `PurchaseService` + `ReceiptService` | Registration without entrance, single reception and rollback |
+| RF-06 | CU-08/09/11 | `InventoryService` + repositorio de stock/ledger | Balances, relocation/adjustment, not negative, concurring |
+| RF-07 | CU-10 | `SaleService` + `StockRepository` | Accurate amounts, payments, stock and re-trying on single commitment |
 
-Los nombres de servicios son **convenciones propuestas**, no clases presentes hoy. Documento 05 deberá sustituir esta matriz preliminar por **rutas y tests con identificadores reales**. RF-08 a RF-10 permanecen post-MVP del backend, aunque existan pantallas DEMO.
+The service names are **proposed conventions**, not classes present today. Document 05 should replace this preliminary matrix with **routes and tests with real identifiers**. RF-08 to RF-10 remain post-MVP from the backend, even if DEMO displays exist.
 
-## 15. Decisiones arquitectónicas y aspectos a auditar
+## 15. Architectural decisions and audit aspects
 
-| ID | Decisión | Estado | Comprobación pendiente |
+| ID | Decision | Status | Pending check |
 |---|---|---|---|
-| A04-01 | Monolito modular FastAPI + PostgreSQL | **PROPUESTO** | Layout backend y contratos aprobados |
-| A04-02 | SQLAlchemy 2.x síncrono, rutas bloqueantes `def` y sesiones por operación | **PROPUESTO** | Verificar threadpool, ciclo de sesión y ausencia de SQL síncrono directo en rutas async |
-| A04-03 | Repository + Service/Unit of Work para operaciones críticas | **PROPUESTO** | Código, fake de repositorio y rollback visible |
-| A04-04 | Adaptadores de frontend por módulo, sin reescritura global | **PROPUESTO** | Extraer interfaz, probar asincronía y estados de UI |
-| A04-05 | Identidad global y autorización por membresía/tenant | **REGLA DEL DOMINIO** | Definir mecanismo de sesión/token y RBAC mínimo |
-| A04-06 | Ledger append-only + saldo actual transaccional | **REGLA / DISEÑO PROPUESTO** | Migraciones, locking y reconciliación en PostgreSQL |
-| A04-07 | Idempotencia por ámbito/actor/operación | **REGLA / DISEÑO PROPUESTO** | Resolución de concurrencia, retención y claves con tenant nulo |
-| A04-08 | Imágenes multiusuario y QR real fuera del MVP | **DIFERIDO** | Diseño separado si se incorpora |
-| A04-09 | Alcance definitivo RF-01–07 / mínimo académico | **PENDIENTE DE APROBACIÓN** | Validar con tiempos reales y consignas |
-| A04-10 | UML técnico 03B completo y su vinculación documental | **PENDIENTE** | Incorporar vistas corregidas; la lámina editorial simplifica relaciones |
-| A04-11 | PostgreSQL 16 como objetivo; versiones exactas de dependencias y lugar final de Compose | **PROPUESTO / PENDIENTE DE VERIFICAR E2-0** | Imagen `postgres:16-alpine`, migraciones y comandos reproducibles |
-| A04-12 | Saldo ausente representa cero; entradas por UPSERT, nunca matriz de saldos precreada | **REGLA / DISEÑO PROPUESTO** | Test de primera recepción concurrente y venta de saldo inexistente |
-| A04-13 | Precio cero por línea, venta total positiva, descuentos fijos en centavos | **DECISIÓN FUNCIONAL CONSERVADA** | Contratos RF/CU sin contradicciones, tests de redondeo/descuentos |
-| A04-14 | Mapeo DTO explícito y protección frente a solicitudes tardías al cambiar tenant | **PROPUESTO** | Test de serialización fuera de sesión y test A→B con respuesta tardía |
-| A04-15 | FK compuestas respaldadas por UNIQUE compuesto en la tabla padre | **RESTRICCIÓN SQL PROPUESTA** | Migración Alembic y test de tenant cruzado |
-| A04-16 | Principal autenticado inmutable + autorización por Membresia dentro de la transacción comercial | **PROPUESTO** | Prueba de permisos revocados y rollback; una única sesión por comando |
-| A04-17 | No serializar ORM, no compartir Session entre hilos/dependencias y no concatenar contraseñas en URI | **PROPUESTO** | Tests de DTO y ciclo de sesión; Compose con credenciales por entorno |
-| A04-18 | Observer en demoStore | **AS-IS VERIFICABLE** | Suscripción y notificación demostrables; test dedicado recomendable |
-| A04-19 | Simple Factory de movimientos | **TO-BE OPCIONAL** | Tests de signos, origen y traslado |
-| A04-20 | Decorator para instrumentación | **TO-BE OPCIONAL** | Delegación sin duplicar mutaciones ni commits |
+| A04-01 | Monolito modular FastAPI + PostgreSQL | **PROPOSAL** | Layout backend and approved contracts |
+| A04-02 | SQLAlchemy 2.x synchronous, blocking routes `def` and sessions per operation | **PROPOSAL** | Check threadpool, session cycle and absence of direct SQL sync routes |
+| A04-03 | Repository + Service/Unit of Work for critical operations | **PROPOSAL** | Code, repository and visible rollback fake |
+| A04-04 | Frontend adapters per module, without global rewriting | **PROPOSAL** | Extract interface, test asynchrony and UI states |
+| A04-05 | Global identity and membership/tenant authorization | **RULES OF THE DOMINIUM** | Define minimum session/token and RBAC mechanism |
+| A04-06 | Ledger append-only + saldo actual transaccional | **PROPOSED RULES / DESIGN** | Migration, Locking and Reconciliation in PostgreSQL |
+| A04-07 | Idempotency by field/actor/operation | **PROPOSED RULES / DESIGN** | Concurrent resolution, retention and keys with null tenant |
+| A04-08 | Multi-user and real QR images outside the MVP | **DIFFERENT** | Separate design if incorporated |
+| A04-09 | Definitive scope RF-01–07 / academic minimum | **ADVICE PENDING** | Validate with real times and slogans |
+| A04-10 | Technical UML 03B complete and its documentary link | **PENDING** | Incorporate corrected views; the editorial sheet simplifies relationships |
+| A04-11 | PostgreSQL 16 as target; exact versions of dependencies and final place of Compose | **PROPOSED/PENDENT TO VERIFY E2-0** | Image `postgres:16-alpine`, reproducible migrations and commands |
+| A04-12 | Absent balance represents zero; inputs by UPSERT, never matrix of pre-created balances | **PROPOSED RULES / DESIGN** | Test of first concurrent reception and sale of non-existent balance |
+| A04-13 | Zero price per line, positive total sale, fixed discounts in cents | **CONSERVED FUNCTIONAL DECISION** | RF/CU contracts without contradictions, rounding/discount tests |
+| A04-14 | Explicit DTO mapping and protection against late requests when changing tenant | **PROPOSAL** | Out-of-session serialization test and A→B test with late response |
+| A04-15 | FK Composers backed by UNIQUE composed in parent table | **PROPOSED SQL RESTRICTION** | Alembic migration and cross-tenant test |
+| A04-16 | Main authenticated immutable + Membership authorization within the commercial transaction | **PROPOSAL** | Test of revoked permissions and rollback; one session per command |
+| A04-17 | Do not serialize ORM, do not share a session between threads/dependencies and do not concatenate passwords in URI | **PROPOSAL** | DTO tests and session cycle; Compose with credentials by environment |
+| A04-18 | Observer en demoStore | **AS-IS VERIFIABLE** | Demonstrable subscription and notification; recommended dedicated test |
+| A04-19 | Simple Movement Factory | **OPTIONAL TO-BE** | Sign tests, origin and transfer |
+| A04-20 | Decorator for instrumentation | **OPTIONAL TO-BE** | Delegation without duplicate mutations or commit |
 
-### 15.1 Checklist de auditoría de este Documento 04
+### 15.1 Audit checklist of this Document 04
 
-- [ ] Las afirmaciones AS-IS corresponden a rutas y código de `main`.
-- [ ] Ningún `AppGateway`, React Router, Zustand, SQLAlchemy o login se marca como implementado.
-- [ ] Las capas tienen responsabilidad concreta y el patrón Repository puede probarse con un caso real.
-- [ ] Factory, Decorator y Observer se clasifican correctamente, con el estado AS-IS o TO-BE y pruebas exigibles.
-- [ ] SQLAlchemy síncrono no corre bloqueando directamente un endpoint `async def`; endpoints y dependencias tienen sesiones acotadas.
-- [ ] Un único dueño de commit por caso de uso; repositorios sin commits propios y DTOs desacoplados del ORM.
-- [ ] El endpoint recibe principal inmutable; el servicio realiza autorización empresarial y mutación crítica en su sesión propia, sin compartir instancias ORM entre threads.
-- [ ] El despliegue no depende de concatenar contraseñas en una URL SQL ni de guardar secretos en Git.
-- [ ] Claves únicas compuestas respaldan todas las FK multiempresa que se declaren en Alembic.
-- [ ] El modelo permite saldo inexistente como cero y UPSERT para primera entrada, sin precreaciones innecesarias.
-- [ ] Las operaciones de venta respetan descuento fijo en centavos, línea cero válida y total de venta positivo.
-- [ ] Cambio de empresa cancela/descarta respuestas antiguas y evita reutilizar el carrito/caché de otro tenant.
-- [ ] El plan exige una transacción única para Compra/Recepción, traslados, ajustes y Venta/Movimientos.
-- [ ] Se preservan dinero exacto, línea redondeada, recepción completa, servicio sin stock, idempotencia y aislamiento multiempresa.
-- [ ] Se distingue test unitario de test de integración/concurrencia real PostgreSQL.
-- [ ] Se definen pasos verificables antes de llamar desplegada a una API.
-- [ ] Los cortes E2 respetan la condición académica de al menos cinco RF y diez tests unitarios.
-- [ ] El diagrama técnico 03B pendiente no se oculta ni se presenta como cerrado.
-- [ ] Cualquier cambio de alcance decidido en esta auditoría se reflejará en Documentos 01–03 y en el futuro Documento 05.
+- [ ] AS-IS statements correspond to routes and code of `main`.
+- [ ] None `AppGateway`, React Router, Zustand, SQLAlchemy o login se marca como implementado.
+- [ ] The layers have specific responsibility and the Repository pattern can be proved with a real case.
+- [ ] Factory, Decorator and Observer are correctly classified with AS-IS or TO-BE status and required proof.
+- [ ] SQLAlchemy synchron does not run by directly blocking an endpoint `async def`; endpoints y dependencias tienen sesiones acotadas.
+- [ ] A single owner of commit per case of use; repositories without own commits and DTOs decoupled from ORM.
+- [ ] The endpoint receives unchangeable primary; the service performs business authorization and critical mutation in its own session, without sharing ORM instances among threads.
+- [ ] Deployment does not depend on concatenating passwords in a SQL URL or keeping secrets in Git.
+- [ ] Single composite keys support all multi-company FKs declared in Alembic.
+- [ ] The model allows non-existent balance as zero and UPSERT for first entry, without unnecessary precreations.
+- [ ] Sales transactions respect fixed discount in cents, valid zero line and positive sales total.
+- [ ] Change of company cancels/discards old answers and avoids re-using the cart/cache from another tenant.
+- [ ] The plan requires a unique transaction for Purchase/Reception, transfers, adjustments and Sale/Movements.
+- [ ] Exact money, rounded line, full reception, stockless service, idempotency and multi-company isolation are preserved.
+- [ ] Unit test of integration test/real concurrence PostgreSQL is distinguished.
+- [ ] Verifiable steps are defined before calling an API.
+- [ ] The E2 courts respect the academic condition of at least five RF and ten unit tests.
+- [ ] The technical diagram 03B slope is not concealed or presented as closed.
+- [ ] Any changes in scope decided upon in this audit will be reflected in Documents 01–03 and in the future Document 05.
 
-### 15.2 Criterios verificables de aprobación antes de iniciar E2
+### 15.2 Verifiable criteria for approval before E2 start
 
-Este documento puede aprobarse **como arquitectura propuesta** sin exigir que los endpoints ya existan. No obstante, el primer corte E2-0 debe producir pruebas reproducibles de estas decisiones:
+This document is for adoption **as proposed architecture** without requiring that endpoints already exist. However, the first E2-0 cut must produce reproducible evidence of these decisions:
 
-| Decisión | Evidencia observable al implementarla | Qué NO constituye evidencia |
+| Decision | Evidence observable when implementing it | What is NOT evidence |
 |---|---|---|
-| Backend ejecutable | Contenedor/API arranca, `GET /health` funciona, DB responde, Alembic migra desde cero | Solo el diagrama o un Dockerfile sin ejecutar |
-| Repository aplicado | Servicio invoca contrato de repositorio, implementación SQLAlchemy y fake probado | Crear una carpeta `repositories/` vacía |
-| Observer (actual) | Localizar `subscribe`, `notify`, `useDemoSnapshot` y probar alta/baja de listeners | Confundirlo con sincronización entre navegadores |
-| Factory/Decorator (si se implementan) | Código y tests de creación correcta / delegación sin cambiar resultados | Presentar el ejemplo del documento como código existente |
-| Una transacción comercial | Fallo inducido entre saldo y ledger provoca rollback completo | Demostración manual de una venta exitosa |
-| Authorization por tenant | Usuario de A no accede a IDs de B, con dos usuarios reales de prueba | Ocultar un botón en React |
-| Concurrencia | PostgreSQL con dos sesiones confirma una sola venta ante stock 1 | `asyncio.gather` sobre funciones mock o SQLite |
-| Exactitud monetaria | Test de redondeo por línea, descuento fijo y pagos mixtos | Cálculo visual en JavaScript sin revalidación servidor |
-| Idempotencia | Misma clave/carga no duplica; distinta carga conflicto; caso `business_id=NULL` | Deshabilitar un botón mientras carga |
-| Integración React | Respuestas tardías de A no reemplazan la vista de B, fallo HTTP no hace escritura DEMO | Cambiar de ruta sin solicitudes en vuelo |
+| Backend ejecutable | Container/IPA starts, `GET /health` It works, DB responds, Alembic migrates from scratch | Only the diagram or a Dockerfile not executed |
+| Repository applied | Service invokes repository contract, SQLAlchemy implementation and proven fake | Create Folder `repositories/` empty |
+| Observer (actual) | Locate `subscribe`, `notify`, `useDemoSnapshot` and test high/low lister | Confused with synchronization between browsers |
+| Factory/Decorator (si se implementan) | Code and tests of correct creation / delegation without changing results | Present the example of the document as an existing code |
+| A commercial transaction | Induced failure between balance and leadger causes full rollback | Manual demonstration of successful sale |
+| Authorization por tenant | A user does not access B IDs, with two actual test users | Hide a button in React |
+| Concurrence | PostgreSQL with two sessions confirms one sale before stock 1 | `asyncio.gather` on mock or SQLite functions |
+| Monetary accuracy | Rounding test by line, fixed discount and mixed payments | Visual calculation in JavaScript without server revalidation |
+| Idempotency | Same key/load does not duplicate; different conflict load; case `business_id=NULL` | Disable a button while loading |
+| React Integration | Late A responses do not replace B view, HTTP failure does not write DEMO | Change route without flight requests |
 
-Las **restricciones SQL y contratos API definitivos** se aprobarán al programar E2 y en los Documentos 05/06. Una revisión de la UI o del UML no sustituye estas evidencias.
+Las **SQL restrictions and final API contracts** are approved by the E2 programming and in Documents 05/06. A review of the IU or UML does not replace these evidences.
 
-## 16. Referencias y decisiones de continuidad
+## 16. References and continuity decisions
 
-**Fuentes internas inspeccionadas (estado de `main` indicado en portada):**
+**Internal sources inspected (state of `main` as shown on cover:**
 
 1. `plataforma-pyme/frontend/package.json` y `frontend/src/App.tsx`.
 2. `plataforma-pyme/frontend/src/app/navigation.ts`.
 3. `plataforma-pyme/frontend/src/data/demo/demoStore.ts`, `catalogPolicy.ts`, `purchasePolicy.ts`, `salePolicy.ts`, `inventoryPolicy.ts` e `imageStorage.ts`.
 4. `plataforma-pyme/frontend/README.md` y `.github/workflows/plataforma-pyme-frontend.yml`.
-5. `plataforma-pyme/docs/27_E1_D2_INTEGRACION_Y_CIERRE_FRONTEND.md` y ADR-004/006/007/008 (**algunos ADR son propuestas históricas, no evidencia de runtime**).
-6. Documentos académicos 01, 02 y 03, incluidos los diagramas y sus guías individuales.
+5. `plataforma-pyme/docs/27_E1_D2_INTEGRACION_Y_CIERRE_FRONTEND.md` and ADR-004/006/007/008 (**Some ADRs are historical proposals, not evidence of runtime**).
+6. Academic documents 01, 02 and 03 including diagrams and individual guides.
 
-**Referencias técnicas externas para implementación, no evidencia del estado del proyecto:**
+**External technical references for implementation, not evidence of project status:**
 
 - [FastAPI — dependencias con `yield`](https://fastapi.tiangolo.com/tutorial/dependencies/dependencies-with-yield/).
-- [FastAPI — concurrencia y elección `def`/`async def`](https://fastapi.tiangolo.com/es/async/).
+- [FastAPI — attendance and election `def`/`async def`](https://fastapi.tiangolo.com/es/async/).
 - [SQLAlchemy 2 — transacciones y `Session.begin()`](https://docs.sqlalchemy.org/en/20/orm/session_basics.html#framing-out-a-begin-commit-rollback-block).
 - [PostgreSQL 16 — constraints de unicidad y FK](https://www.postgresql.org/docs/16/ddl-constraints.html#DDL-CONSTRAINTS-FOREIGN-KEYS) y [`NULLS NOT DISTINCT`](https://www.postgresql.org/docs/16/ddl-constraints.html#DDL-CONSTRAINTS-UNIQUE-CONSTRAINTS).
 - [RFC 9457 — Problem Details](https://www.rfc-editor.org/rfc/rfc9457.html).
 
-**Actualización C.5:** la decisión anterior corresponde a una etapa histórica previa a construir E2. Hoy el Documento 05 registra la API y pruebas reales de RF-01/RF-02; el Documento 06 de pruebas/despliegue queda pendiente. La auditoría del compañero se prepara en otro paso, después de esta sincronización.
+**Update C.5:** The previous decision corresponds to a historical stage prior to building E2. Today Document 05 records the API and actual tests of RF-01/RF-02; Document 06 of testing/displacement is pending. The partner's audit is prepared in another step, after this synchronization.
 
-## 17. Dictamen de revisión externa y decisiones adoptadas (v0.3)
+## 17. External review opinion and decisions adopted (v0.3)
 
-La revisión externa proporcionada por el equipo se consideró **insumo crítico**, no autoridad normativa. Las decisiones se contrastaron con los documentos RF/CU, el frontend real y fuentes técnicas oficiales.
+The external review provided by the team was considered **critical input**The decisions were contrasted with the RF/CU documents, the real frontend and official technical sources.
 
-| Observación | Tratamiento | Motivo / verificación esperada |
+| Observation | Treatment | Reason / verification expected |
 |---|---|---|
-| ORM síncrono en endpoint async | **Adoptada**: rutas `def` para I/O SQLAlchemy síncrono | FastAPI delega las rutas síncronas a un threadpool; CI revisará comportamiento y sesiones independientes |
-| Precrear saldo cero en todos los artículos/ubicaciones | **Descartada**; adoptar UPSERT seguro en primeras entradas | Empresa sin ubicaciones, servicios sin stock y modelo sparse; las ventas con saldo inexistente rechazan sin escribir |
-| PostgreSQL >=15 para `NULLS NOT DISTINCT` | **Adoptada**: objetivo PostgreSQL 16 | Se verificará en Docker y migraciones; alternativa son índices parciales si cambia versión |
-| FK compuestas necesitan UNIQUE correspondiente en padre | **Adoptada** | Se reflejará en Alembic y tests de integridad referencial |
-| Permitir Venta.totalCentavos = 0 | **No adoptada en MVP** | Los documentos 02/03 y la DEMO exigen total positivo; bonificaciones por línea sí valen 0; cambiarlo exige caso de uso/contrato nuevos |
-| Descuento porcentual | **Concretada**: solo descuento fijo en centavos para API v1 | Evita divergencia de redondeo entre UI y Python; cálculo opcional en UI con HALF_UP documentado |
-| Unit of Work y DI | **Adoptada con simplificación** | Un `session_factory.begin()` por comando es suficiente inicialmente; patrón explícito si demuestra valor |
-| Mapper / DTO | **Adoptada como práctica ligera**, no patrón obligatorio | No devolver ORM vivo ni secretos en JSON; conversiones explícitas simples |
-| Respuestas obsoletas al cambiar tenant | **Adoptada**: cancelar cuando sea posible y siempre validar contexto vigente | AbortController por sí solo no garantiza que una respuesta tardía no altere el estado ni revierte un POST |
-| Cookies HttpOnly frente a tokens en localStorage | **Adoptada como evaluación de seguridad, no imposición de cookies** | Elegir explícitamente Bearer en memoria o cookies protegidas + CSRF; el MVP no requiere ambos mecanismos |
-| Dependencia común de membresía | **Ajustada:** dependencia de principal autenticado + autorización empresarial reutilizable dentro de la transacción del servicio | Evita omisiones y una brecha entre lectura de permisos en otra sesión y ejecución de un cambio sensible |
+| synchronous ORM in endpoint async | **Adopted**: routes `def` for I/O SQLAlchemy synchronous | FastAPI delegates synchronous routes to a threadpool; IC will review behavior and independent sessions |
+| Pre-set zero balance on all items/locations | **Discarded**; adopting UPSERT secure in first entries | Company without locations, services without stock and model sparse; sales with no balance do not reject without writing |
+| PostgreSQL >=15 for `NULLS NOT DISTINCT` | **Adopted**: PostgreSQL 16 target | Will be checked in Docker and migrations; alternative are partial indexes if version changes |
+| Composite FK need corresponding UNIQUE in parent | **Adopted** | It will be reflected in Alembic and referential integrity tests |
+| Allow sale.totalCentavos = 0 | **Not adopted in MVP** | Documents 02/03 and DEMO require total positive; line bonuses are 0; changing requires new use/contract |
+| Percentage discount | **Concrete**: only fixed discount in cents for API v1 | Avoids rounding divergence between IU and Python; optional calculation in IU with documented HALF_UP |
+| Unit of Work y DI | **Adopted with simplification** | Un `session_factory.begin()` per command is initially sufficient; explicit pattern if it demonstrates value |
+| Mapper / DTO | **Adopted as a light practice**, no mandatory pattern | Do not return live ORM or secrets in JSON; simple explicit conversions |
+| Obsolete responses to changing tenant | **Adopted**: cancel when possible and always validate current context | AbortionController alone does not guarantee that a late response will not alter the state or reverse a POST |
+| HttpOnly cookies versus localStorage tokens | **Adopted as a security assessment, no cookies imposed** | Explicitly choose Bearer in memory or cookies protected + CSRF; MVP does not require both mechanisms |
+| Common membership unit | **Adjusted:** main authenticated dependency + reusable business authorization within the service transaction | Avoids omissions and a gap between reading permissions in another session and executing a sensitive change |
 
-**Puntos por resolver al iniciar E2:** fijar credencial elegida, esquema de permisos mínimo, contratos REST/Problem Details, imagen exacta de Python/PostgreSQL, sesión/UoW concreta, estrategia de índices e idempotencia persistente, y primer circuito que migrará de DEMO a API. Cada decisión debe dejar una prueba o verificación asociada, no solo una afirmación en Markdown.
+**Points to be resolved when starting E2:** fix chosen credential, minimum permission scheme, REST/Problem Details contracts, exact Python/PostgreSQL image, specific session/UoW, persistent index strategy and idempotency, and first circuit that will migrate from DEMO to API. Each decision must leave an associated test or verification, not just a statement in Markdown.
 
-### 17.1 Mejoras adicionales verificadas durante esta auditoría
+### 17.1 Additional improvements verified during this audit
 
-- **Sesión y permisos:** evitar que una `Session` de SQLAlchemy viva en una dependencia de autorización y otra distinta sea dueña de las mutaciones, sin una revalidación apropiada. Elegimos principal autenticado inmutable en el router y validación empresarial dentro del servicio transaccional.
-- **Seguridad de configuración:** eliminar del ejemplo Compose la interpolación directa de contraseña dentro de `DATABASE_URL`; usar variables y `URL.create()` para prevenir URI inválidos por caracteres reservados.
-- **Inventario:** reafirmar que un saldo ausente se rechaza como cero en salidas, y que las entradas iniciales son UPSERT atómicos, sin precrear todas las combinaciones.
-- **Dinero y unidades:** introducir explícitamente el manejo de productos discretos en milésimas, límites de BIGINT y bonificaciones por renglón sin pagos ficticios cero.
-- **Simetría AS-IS/TO-BE:** las pruebas frontend permanecen independientes de las pruebas PostgreSQL actuales para RF-01/RF-02 y futuras para los requerimientos comerciales; el diseño de API no es un resultado de tests.
+- **Session and permissions:** prevent that a `Session` SQLAlchemy lives in an authorization unit and another is owned by mutations, without proper revalidation. We choose main authenticated unchangeable on router and business validation within transactional service.
+- **Configuration security:** remove from the example Compose direct password interpolation within `DATABASE_URL`; use variables and `URL.create()` to prevent invalid URIs by reserved characters.
+- **Inventory:** reaffirm that an absent balance is rejected as zero in outputs, and that the initial entries are UPSERT atomic, without pre-creating all combinations.
+- **Money and units:** explicitly introduce the handling of discrete products in thousandths, BIGINT limits and bonuses per line without fictitious zero payments.
+- **AS-IS/TO-BE symmetry:** Frontend tests remain independent of current PostgreSQL tests for RF-01/RF-02 and future tests for commercial requirements; API design is not a test result.
 
 ---
 
-**Conclusión histórica de la revisión v0.3:** documento técnico revisado. **La v0.4 agrega una sección pedagógica sobre los patrones estudiados en clase y sus aplicaciones posibles**, sin declarar implementado el backend. Los ejemplos Python, Compose, diagrama Mermaid, rutas y pruebas son proyecciones **TO-BE**; los resultados de backend solo se declararán implementados cuando existan en código y estén verificados.
+**Historical conclusion of the revision v0.3:** Revised technical paper. **v0.4 adds a pedagogical section on the patterns studied in class and their possible applications**, without declaring implemented the backend. Examples Python, Compose, Mermaid diagram, routes and tests are projections **TO-BE**; backend results will only be declared implemented when they exist in code and are verified.
 
-## 18. Control de revisión v0.4
+## 18. Review control v0.4
 
-Se incorporó la bibliografía *Head First Design Patterns* y se diferenciaron los patrones **AS-IS (Observer en el frontend)** de los **TO-BE (Repository, Adapter, Factory y Decorator)**. Factory se documenta como *Simple Factory* y Decorator como envoltorio por composición; son propuestas, no afirmaciones de ejecución. Se corrigió además la descripción del objeto real `demoGateway`. Los patrones no alteran los requisitos ni las garantías transaccionales: la venta, el movimiento y el saldo siguen confirmándose en una única transacción PostgreSQL.
+The bibliography *Head First Design Patterns* was incorporated and the patterns were differentiated **AS-IS (Observer en el frontend)** of the **TO-BE (Repository, Adapter, Factory y Decorator)**. Factory is documented as *Simple Factory* and Decorator as wrapping by composition; they are proposed, not claims of execution. The description of the actual object was also corrected `demoGateway`. The patterns do not alter the requirements or transactional guarantees: sale, movement and balance continue to be confirmed in a single PostgreSQL transaction.
 
 
-## 19. Anexo E2 implementado — identidad, tenants y política RBAC
+## 19. Implementing Annex E2 — identity, tenants and RBAC policy
 
-**Evidencia base:** backend en `plataforma-pyme/backend/`, migraciones `e2003_baseline` hasta `e213b_business_creation`, Pytest de integración con PostgreSQL real; 80 pruebas locales aprobadas para E2-1.3B. El frontend DEMO no está conectado a esta API. La sección AS-IS original documentaba el estado del **commit histórico**, no el estado vigente.
+**Evidencia base:** backend en `plataforma-pyme/backend/`migrations `e2003_baseline` hasta `e213b_business_creation`, Integration Pytest with Actual PostgreSQL; 80 local tests approved for E2-1.3B. The DEMO frontend is not connected to this API. The original AS-IS section documented the status of the **commit historical**Not the current state.
 
-- **FastAPI:** rutas técnicas `/health`, `/ready`; autenticación `/api/v1/auth`; empresas `/api/v1/businesses`.
-- **Persistencia:** SQLAlchemy 2.x y psycopg sobre PostgreSQL 16; Alembic, `Session` por solicitud, repositorios sin `commit`; servicios confirmando transacciones completas.
-- **Autenticación:** Argon2id y token aleatorio cuyo SHA-256 se almacena como huella para consultas/revocación. Ningún rol empresarial viaja como permiso global en la sesión.
-- **Multiempresa:** `BusinessRepository` filtra empresas por membresías activas; alta atómica de Empresa + Membresía titular + registro de idempotencia. Una PK compuesta en `business_creation_requests` garantiza reintentos por actor/clave. Para un conflicto concurrente sobre esa PK el servicio consulta el resultado previo tras revertir la escritura fallida; la rama de recuperación se corrigió en E2-1.3C.1.
-- **RBAC E2-1.3C.1:** módulo puro `app/modules/businesses/permissions.py` con cuatro roles y cuatro acciones corporativas. Evaluación *fail-closed*: membresía `ACTIVA`, estado de empresa conocido, rol conocido y permiso conocido. Empresa `SUSPENDIDA` permite solo `business.view`. Es una política **implementada y testeada como función**, pero no es todavía el punto de autorización definitivo de operaciones futuras.
-- **Siguiente corte E2-1.3C.2:** usar esa política en una operación HTTP efectiva de edición de perfil empresarial, con transacción que vuelve a leer Membresía, rol, empresa y sesión; 401 anónimo, 404 empresa ajena/sin miembro activo, 403 miembro sin facultad, 409 empresa suspendida.
-- **E2-1.3C.3/C.4:** invitación segura; aceptación y gestión de miembros con protección adicional del titular, en incrementos separados. No inferir que los permisos de invitar/administrar están operativos antes de exponer y verificar esos endpoints.
+- **FastAPI:** technical routes `/health`, `/ready`; authentication `/api/v1/auth`; companies `/api/v1/businesses`.
+- **Persistence:** SQLAlchemy 2.x and psychocopg about PostgreSQL 16; Alembic, `Session` by request, repositories without `commit`; services confirming complete transactions.
+- **Authentication:** Argon2id and random token whose SHA-256 is stored as a mark for queries/revocation. No business role travels as a global permission in the session.
+- **Multi-company:** `BusinessRepository` filters companies by active memberships; company atomic high + membership holder + registration of idempotency. A PK composed of `business_creation_requests` guarantees re-attempted by actor/key. For a concurrent conflict over this PK the service consults the previous result after reversing the failed writing; the recovery branch was corrected in E2-1.3C.1.
+- **RBAC E2-1.3C.1:** pure module `app/modules/businesses/permissions.py` with four roles and four corporate actions. *fail-closed* evaluation: membership `ACTIVA`, known company status, known role and known permission. `SUSPENDIDA` allows only `business.view`It's a policy. **implemented and tested as a function**but it is not yet the final point of authorisation for future operations.
+- **Next cut E2-1.3C.2:** use that policy in an effective HTTP business profile editing operation, with transaction reading again Membership, role, company and session; 401 anonymous, 404 non-member/non-active member, 403 facultyless member, 409 suspended company.
+- **E2-1.3C.3/C.4:** secure invitation; acceptance and management of members with additional protection from the holder, in separate increments. Do not infer that permission to invite/manage are operational before exposing and verifying those endpoints.
 
-La aplicación de los patrones **Repository**, **Service Layer** y **Observer** se describe con evidencias específicas, mientras que las propuestas **Factory**/**Decorator** continúan TO-BE hasta contar con clases ejecutadas en el módulo comercial apropiado. No forzar su adopción para cumplir nomenclatura.
+The application of patterns **Repository**, **Service Layer** y **Observer** is described with specific evidence, while proposals **Factory**/**Decorator** continue TO-BE until you have classes executed in the appropriate commercial module. Do not force your adoption to comply with nomenclature.
 
-## 20. E2-1.3C.2 — autorización real RBAC en transacciones empresariales
+## 20. E2-1.3C.2 — Royal authorisation for RBAC business transactions
 
-Se incorporó `PATCH /api/v1/businesses/{business_id}` en el módulo `businesses`. La estructura sigue el flujo **Router → Service → Repository → SQLAlchemy/PostgreSQL**: la capa HTTP autentica Bearer y traduce errores; el servicio, dentro de una transacción, revalida usuario y sesión bloqueando sus filas, obtiene el par empresa–membresía **filtrado por actor y empresa con `SELECT ... FOR UPDATE`**, aplica `has_business_permission(... EDIT_PROFILE)`, cambia solo campos permitidos, ejecuta `flush()` y hace `commit()` único. `rollback()` ante cualquier excepción. La misma transacción evita tomar permisos de una empresa y ejecutar la escritura en otra, y serializa cambios relevantes de membresía/empresa.
+He's in. `PATCH /api/v1/businesses/{business_id}` in the module `businesses`. The structure follows the flow **Router → Service → Repository → SQLAlchemy/PostgreSQL**: the HTTP layer authenticates Bearer and translates errors; the service, within a transaction, revalidates user and session blocking its rows, gets the pair company–membership **filtered by actor and company with `SELECT ... FOR UPDATE`**, applies `has_business_permission(... EDIT_PROFILE)`, changes only allowed fields, executes `flush()` and makes `commit()` unique. `rollback()` The same transaction avoids taking permissions from one company and executing the deed on another, and serializes relevant membership/company changes.
 
-No basta con pasar un `role` en el cuerpo; este valor se consulta exclusivamente en DB. El API rechaza `founder_user_id`, `status`, `role` y `membership` mediante Pydantic `extra=forbid`. `ADMINISTRADOR` y `TITULAR_ADMINISTRATIVO` pueden editar nombre, rubro y actividad; `ENCARGADO` y `TRABAJADOR` no. Con rol apto pero negocio `SUSPENDIDA`, la respuesta es 409; empresa ajena o membresía inactiva, 404. Auth no disponible, 401; rol insuficiente, 403. No se habilitan cambios de titularidad o de estado.
+It's not enough to pass a `role` in the body; this value is only consulted on DB. API rejects `founder_user_id`, `status`, `role` y `membership` by Pydantic `extra=forbid`. `ADMINISTRADOR` y `TITULAR_ADMINISTRATIVO` can edit name, item and activity; `ENCARGADO` y `TRABAJADOR` No, with a fit role but business. `SUSPENDIDA`, the answer is 409; third party or inactive membership, 404. Auth not available, 401; insufficient role, 403. No changes of ownership or status are enabled.
 
-**Pruebas publicadas en C.2 (evidencia actualizada en C.5):** `test_business_update_schemas.py`, `test_business_update_http.py` y `test_business_update_integration.py`; la última usa transacciones externas y SAVEPOINTs para revertir datos de prueba. C.2 aprobó **125 pruebas locales y CI**; la regresión E2-1 llegó a **195 pruebas locales** en C.4b. No se incorporaron migraciones ni cambios al frontend en el corte C.2.
+**Evidence published in C.2 (updated evidence in C.5):** `test_business_update_schemas.py`, `test_business_update_http.py` y `test_business_update_integration.py`; the last one uses external transactions and SAVEPOINTs to reverse test data. C.2 approved **125 local tests and IC**; regression E2-1 reached **195 local tests** in C.4b. No migrations or changes to the frontend were incorporated in court C.2.
 
-**Continuidad:** futuras invitaciones C.3 y membresías C.4 usarán este mismo modelo de autorización por tenant, relectura transaccional, políticas sin acceso SQL y manejo explícito de estados. No introducir patrones decorativos ni nuevos frameworks para RBAC.
+**Continuity:** future C.3 invitations and C.4 memberships will use this same model of tenant authorization, transactional rereading, policies without SQL access and explicit state management. Do not introduce decorative patterns or new frameworks for RBAC.
 
-## 21. E2-1.3C.3 — Emisión segura de invitaciones CU-12a
+## 21. E2-1.3C.3 — Safe issuance of CU-12a invitations
 
-**Ruta:** `POST /api/v1/businesses/{business_id}/invitations`. Mantiene el circuito **Router → BusinessService → BusinessRepository → PostgreSQL** y las dependencias `current_auth`/sesión por petición. En una transacción el servicio vuelve a comprobar usuario/sesión, bloquea el par Empresa–Membresía activo del tenant (filtrado por actor), invoca la política `members.invite`, valida rol/email y duplicados, crea el registro y confirma un único `commit`. No hay mutaciones ORM realizadas por el router ni `commit` en repositorio.
+**Path:** `POST /api/v1/businesses/{business_id}/invitations`. Maintains the circuit **Router → BusinessService → BusinessRepository → PostgreSQL** and units `current_auth`/session by request. In a transaction the service re-checks user/session, blocks the Enterprise–Active Membership pair of tenant (filtered by actor), invokes policy `members.invite`, validate role/email and duplicates, create the record and confirm a single `commit`. No ORM mutations performed by the router or `commit` in repository.
 
-- **Credencial:** `secrets.token_urlsafe(32)` produce un token opaco aleatorio de 256 bits. Solo su `sha256` se persiste; el token aparece **una vez** en el DTO de emisión y debe comunicarse por un canal seguro. No se devuelve en consultas ni se registra en logs.
-- **Vida útil:** siete días desde emisión. La fecha `expires_at` es la fuente de verdad; si existe pendiente vencida para el mismo correo/empresa se marca `EXPIRADA` en la misma transacción antes de insertar una nueva. No hay borrado automático ni tarea de vencimiento.
-- **Aislamiento y colisiones:** índice parcial impide dos `PENDIENTE` para el mismo correo normalizado en una empresa. El bloqueo de fila empresarial serializa emisiones concurrentes sobre el mismo tenant por los endpoints que respetan esa disciplina. Un destinatario puede recibir invitaciones a empresas distintas. Si ya integra la empresa con membresía activa se rechaza la emisión (409); una membresía inactiva podrá reactivarse al aceptar en C.4, según reglas a verificar entonces.
-- **Roles admitidos:** C.3 permite solo `ENCARGADO` o `TRABAJADOR`; no admite titularidad ni `ADMINISTRADOR` por invitación básica. El invitador debe ser titular o administrador. Ningún rol entra desde React como autoridad; el servidor lee la membresía de DB.
-- **HTTP:** 201 emisión; 401 sesión inválida, 403 rol insuficiente, 404 empresa ajena/sin membresía activa, 409 suspendida/miembro existente/pendiente vigente, 422 datos inválidos.
-- **Alcance futuro:** falta aceptar/rechazar/cancelar invitaciones, crear/activar membresía, evitar reutilización de token y emitir enlaces de acceso. No hay correo, QR ni infraestructura externa; se deben incorporar controles de abuso/rate limiting antes de abrir la emisión públicamente. El caso de respuesta HTTP perdida no admite recuperación del token (solo hash persistido); queda como límite explícito hasta diseñar renovación/cancelación segura.
+- **Credit:** `secrets.token_urlsafe(32)` produces a 256 bit random opaque token. `sha256` persists; token appears **once** in the DTO of issue and must communicate via a secure channel. It is not returned in queries nor recorded in logs.
+- **Life expectancy:** seven days from issue. `expires_at` is the source of truth; if there is expired pending for the same mail/company it is marked `EXPIRADA` in the same transaction before inserting a new one. No automatic deletion or expiration task.
+- **Isolation and collisions:** partial index prevents two `PENDIENTE` For the same standard mail in a company. The business row blocking serializes concurrent broadcasts on the same tenant by endpoints that respect that discipline. A recipient can receive invitations to different companies. If already integrates the company with active membership the issue is rejected (409); an inactive membership can be reactivated by accepting in C.4, according to rules to verify then.
+- **Roles admitted:** C.3 allows only `ENCARGADO` o `TRABAJADOR`; does not admit ownership or `ADMINISTRADOR` by basic invitation. The guest must be a holder or administrator. No role enters from React as authority; the server reads DB membership.
+- **HTTP:** 201 issue; 401 invalid session, 403 insufficient role, 404 non-member/active member, 409 suspended/existing/pending member, 422 invalid data.
+- **Future scope:** no mail, QR or external infrastructure; abuse/rate limiting controls must be incorporated before public release is opened. The missing HTTP response case does not support token recovery (persistent hash only); it remains an explicit limit until safe renewal/cancellation is designed.
 
-**Verificación:** GitHub Actions sobre el código del incremento C.3 aprobó los trabajos Python 3.12, Python 3.14 (Pytest, migración y Alembic check) y Docker; resultado local pendiente. Las pruebas con PostgreSQL usan `SAVEPOINT` y transacción externa reversible; no se generan usuarios/empresas persistentes por ejecutarlas.
+**Verification:** GitHub Actions on the C.3 increment code approved Python 3.12, Python 3.14 (Pytest, Migration and Alembic Check) and Docker; local result pending. PostgreSQL tests use `SAVEPOINT` and reversible external transaction; no persistent users/companies are generated for execution.
 
-## 22. C.4a — Aceptación CU-12b en transacción PostgreSQL
+## 22. C.4a — Acceptance CU-12b in PostgreSQL transaction
 
-La ruta separada `POST /api/v1/invitations/accept` utiliza `current_auth` y `BusinessService.accept_invitation`. El solicitante se identifica **exclusivamente por su sesión Bearer**. El payload contiene solamente `invitation_token` de forma opaca. Primero se revalidan y bloquean usuario/sesión; luego se busca la invitación mediante huella SHA-256 y se bloquea con `FOR UPDATE`. Antes de admitir el token se compara el email normalizado con el del actor (404 uniforme ante token desconocido/ajeno), se verifica pendiente no vencido y rol acotado. Se bloquea la Empresa y luego la Membresía preexistente si existe. Un único `commit` crea/reactiva membresía y marca invitación ACEPTADA con `accepted_by_user_id/accepted_at`; cualquier excepción provoca `rollback` de ambas escrituras. El segundo uso del token produce 409. La protección concurrente se basa en bloqueo de la invitación y de la empresa, más UNIQUE `(business_id,user_id)`.
+The separate route `POST /api/v1/invitations/accept` use `current_auth` y `BusinessService.accept_invitation`. The applicant is identified **exclusively for your Bearer session**. El payload contiene solamente `invitation_token` First, user/session is revalidated and blocked; then the invitation is searched by SHA-256 and blocked with `FOR UPDATE`. Before accepting token, the standard email is compared with that of the actor (404 uniform against unknown token/foreign), it is verified pending and limited role. The Company is blocked and then preexisting Membership if there is one. `commit` create/reactive membership and mark invitation ACCEPTED with `accepted_by_user_id/accepted_at`; any exceptions cause `rollback` The second use of token produces 409. Concurrent protection is based on blocking the invitation and company, plus UNIQUE `(business_id,user_id)`.
 
-**Restricciones:** rol `ENCARGADO` o `TRABAJADOR` definido al invitar, nunca en el body de aceptación; no administrar titulares históricos por este flujo; empresa suspendida o membresía ya activa producen 409. El receptor puede haberse registrado después de la invitación; no hay creación automática de cuenta. Token, email ajeno o rol no otorgan privilegios sin una sesión válida. No hay correo ni automatización de entrega, rate limit ni verificación de propiedad del email antes de publicación pública; el secreto debe comunicarse por canal seguro y jamás quedar en logs/capturas. El estado `PENDIENTE` puede permanecer después del vencimiento, pero `expires_at` siempre tiene prioridad.
+**Restrictions:** rol `ENCARGADO` o `TRABAJADOR` defined when inviting, never in the acceptance body; not managing historical holders by this flow; suspended company or membership already active produce 409. The recipient may have registered after the invitation; there is no automatic account creation. Token, other person's email or role do not grant privileges without a valid session. There is no mail or delivery automation, limit rate or ownership verification of the email before public publication; the secret must be communicated by secure channel and never remain in log/captures. `PENDIENTE` may remain after maturity, but `expires_at` It always takes priority.
 
-**Auditoría SQL:** migración `20261108_0007_business_invitation_acceptance.py` y entidad `BusinessInvitation` con FK a usuario aceptante, timestamp y CHECK de coherencia. **Tests:** `test_business_acceptance_schema.py` y `test_business_acceptance_integration.py`, con PostgreSQL real y SAVEPOINT transaccional. CI de C.4a superó Python 3.12/3.14, migraciones/Alembic y Docker. La validación Windows posterior comprobó **195 pruebas**, API/DB `healthy` y `/ready` conectado; C.4b queda implementado y validado en su alcance.
+**SQL Audit:** migration `20261108_0007_business_invitation_acceptance.py` and entity `BusinessInvitation` with FK to accept user, timestamp and CHECK coherence. **Tests:** `test_business_acceptance_schema.py` y `test_business_acceptance_integration.py`, with PostgreSQL real and SAVEPOINT transactional. CI of C.4a exceeded Python 3.12/3.14, migrations/Alembic and Docker. Windows validation later checked **195 tests**, API/DB `healthy` y `/ready` connected; C.4b is implemented and validated in scope.
 
-## 23. C.4b — Consulta y modificación de membresías sin escalada de privilegios
+## 23. C.4b — Consultation and modification of memberships without escalation of privileges
 
-**Patrón de aplicación:** router recibe la sesión mediante `current_auth`; `BusinessService` revalida y bloquea Usuario/Sesión, comprueba par Empresa–Membresía activa y aplica la política pura `BusinessPermission.READ_MEMBERS` (titular/administrador) o `BusinessPermission.MANAGE_MEMBERS` (solo titular). `BusinessRepository` lee el directorio mediante JOIN a `users` filtrado por `business_id`, y busca/bloquea el objetivo con `Membership.business_id == business_id` más su UUID. Esto impide usar el ID de una membresía de otra empresa. El GET libera bloqueos con `rollback` tras materializar la respuesta; el PATCH ejecuta `flush` y `commit` único, con rollback al fallar cualquier etapa.
+**Application pattern:** router receives the session via `current_auth`; `BusinessService` revalidate and block User/Session, check for Enterprise–Active Membership and apply pure policy `BusinessPermission.READ_MEMBERS` (holder/manager) or `BusinessPermission.MANAGE_MEMBERS` (holder only). `BusinessRepository` lee el directorio mediante JOIN a `users` filtered by `business_id`, and search/block target with `Membership.business_id == business_id` This prevents you from using the ID of a member of another company. The GET releases locks with `rollback` after the response has been completed; PATCH executes `flush` y `commit` unique, with rollback when failing any stage.
 
-**Política de mínimos privilegios:** se añadió la capacidad `members.read` para no exponer emails y nombres del equipo al rol operativo general. Los administradores pueden consultar e invitar, pero no cambiar roles/estados. El titular activo puede promover/degradar entre `ADMINISTRADOR`, `ENCARGADO` y `TRABAJADOR`, además de marcar `ACTIVA`/`INACTIVA` la membresía ajena no titular. La propia membresía titular y cualquier membresía con `role=TITULAR_ADMINISTRATIVO` permanecen inmodificables desde esta API; transferencia futura exige un caso de uso y una transacción específica. Ninguna mutación toca el perfil global del Usuario ni su pertenencia a otros tenants. Empresa suspendida admite lectura del perfil empresarial, pero no listar equipo sensible ni administrar miembros.
+**Minimum privileges policy:** capacity added `members.read` to avoid exposing emails and team names to the overall operational role. Administrators may consult and invite, but not change roles/states. The active holder may promote/degrade between `ADMINISTRADOR`, `ENCARGADO` y `TRABAJADOR`, besides dialing `ACTIVA`/`INACTIVA` the non-titled third party membership. The own titular membership and any membership with `role=TITULAR_ADMINISTRATIVO` remain unmodifiable from this API; future transfer requires a specific case of use and transaction. No mutation touches the User's global profile or membership in other tenants. Suspended company supports reading of business profile, but does not list sensitive equipment or manage members.
 
-**API:** `GET /api/v1/businesses/{business_id}/memberships` (200/401/403/404/409); `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` (200/401/403/404/409/422). `BusinessTeamMemberView` expone id, user_id, email normalizado, display_name, role, status, job_title; no password, teléfono ni tokens. `UpdateBusinessTeamMemberRequest` prohíbe campos extra, `null`, actualización vacía y cambio a rol TITULAR. Se verifica con pruebas Pydantic/HTTP y PostgreSQL transaccional. CI funcional C.4b 3/3 aprobado y verificación local 195/195 superada el 08/11/2026. **No se añadió migración** ni se tocó React.
+**API:** `GET /api/v1/businesses/{business_id}/memberships` (200/401/403/404/409); `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` (200/401/403/404/409/422). `BusinessTeamMemberView` exposes id, user_id, standard email, display_name, role, status, job_title; no password, phone or tokens. `UpdateBusinessTeamMemberRequest` bans extra fields, `null`, empty update and change to role VEPER. It is verified with Pydatic/HTTP tests and Transactional PostgreSQL. Functional CI C.4b 3/3 approved and local verification 195/195 exceeded 08/11/2026. **No migration added** React didn't touch it.
 
-**Pendientes declarados:** control de titularidad/traspaso, edición de `job_title`, auditoría histórica de cambios de rol, verificación de email y endurecimiento público de sesiones/invitaciones, UX de equipo en frontend. No introducirlos automáticamente en una revisión correctiva de este incremento.
+**Outstanding declared:** title control/transfer, edition of `job_title`, historical audit of role changes, email verification and public hardening of sessions/invitations, UX of frontend equipment. Do not automatically introduce them in a corrective review of this increase.
 
-## 24. C.5 — Arquitectura consolidada y límites de alcance
+## 24. C.5 — Consolidated architecture and scope limits
 
-El backend real de E2-1 aplica **FastAPI Router → BusinessService → BusinessRepository → SQLAlchemy/PostgreSQL**, sesiones por petición y validación de identidad/sesión, empresa y membresía en el contexto concreto del tenant. La política RBAC permite editar perfil, invitar y consultar/administrar equipo según rol; las escrituras se confirman en transacciones con rollback. C.4b agregó endpoints de equipo sin migraciones ni cambios de negocio comercial. Los ejemplos y diagramas históricos de secciones anteriores pueden seguir siendo TO-BE y **no sustituyen la implementación verificada**.
+El backend real de E2-1 aplica **FastAPI Router → BusinessService → BusinessRepository → SQLAlchemy/PostgreSQL**, sessions by request and validation of identity/session, company and membership in the specific context of tenant. The RBAC policy allows editing profile, inviting and consulting/managing team according to role; scriptures are confirmed in rollback transactions. C.4b added equipment endpoints without migrations or business changes. Examples and historical diagrams from previous sections may remain TO-BE and **not replace verified implementation**.
 
-**Evidencia:** `195 passed in 23.86s` en Windows, Alembic `e213c4_acceptance (head)` sin deriva, Docker API/PostgreSQL `healthy`, `/ready` correcto, CI 3/3 del commit funcional `8cd1674`. En C.5 solo se cambian documentos y UML 03A. **No se declara integración React, deploy público ni RF-03–RF-07 implementados.**
+**Evidence:** `195 passed in 23.86s` in Windows, Alembic `e213c4_acceptance (head)` sin deriva, Docker API/PostgreSQL `healthy`, `/ready` correcto, CI 3/3 del commit funcional `8cd1674`. In C.5 only documents and UML 03A are changed. **React, public deploy or RF-03–RF-07 integration are not declared implemented.**
 
-## 25. E2-2 A — Evolución aditiva de esquema de ubicaciones
+## 25. E2-2 A — Additive evolution of location scheme
 
-**E2-2 A — persistencia de Ubicaciones (08/11/2026):** se publicó `Location`/`locations` con FK obligatoria `business_id → businesses.id` (`RESTRICT`), seis tipos, `can_sell`/`can_store` independientes, campos de referencia opcionales, `ACTIVA/PAUSADA`, `is_primary`, índice parcial que permite como máximo una principal activa por tenant y CHECK que impide principal pausada. Migración aditiva `20261108_0008_business_locations.py` (`e22a_locations`, descendiente de `e213c4_acceptance`). La empresa continúa iniciándose **sin ubicaciones**. **No hay todavía rutas HTTP de ubicaciones**, ni inventario/compra/venta conectado, ni permisos de ubicación; esos cambios pertenecen a E2-2 B/C y bloques siguientes. El CI del código del corte se verificó en `300fa6f` (GitHub Actions run 42491816481): resultado `success`. La validación local Windows del nuevo corte aún se requiere; los 195 tests anteriores correspondían a E2-1.
+**E2-2 A — Persistence of Locations (08/11/2026):** Published `Location`/`locations` with FK required `business_id → businesses.id` (`RESTRICT`), six types, `can_sell`/`can_store` independent, optional reference fields, `ACTIVA/PAUSADA`, `is_primary`, partial index that allows at most a main active per tenant and CHECK that prevents main paused. Additive migration `20261108_0008_business_locations.py` (`e22a_locations`, descendant of `e213c4_acceptance`) The company continues to start **no locations**. **No HTTP Location Routes yet**, no inventory/purchase/connected sale, no location permits; these changes belong to E2-2 B/C and subsequent blocks. The IC of the cut code was verified in `300fa6f` (GitHub Actions run 42491816481): result `success`. Local Windows validation of the new cut is still required; the previous 195 tests corresponded to E2-1.
 
-Se conserva el stack de E2-0/E2-1, las migraciones previas y el flujo Router → Service → Repository para cuando se agregue API en E2-2 B. La tabla no impone por sí sola autorización, aislamiento de lectura ni validación de Google Maps: **las consultas y escrituras del futuro módulo filtrarán por `business_id` y revalidarán el actor y su membresía en PostgreSQL**. El índice de principal protege el invariante bajo concurrencia, pero el servicio deberá manejar el conflicto y cambiar el principal de forma transaccional. La pausa de una ubicación con stock/caja activa requiere reglas en sus bloques respectivos; esta migración no crea dependencias comerciales ni datos ficticios. `alembic check` y la migración fueron validados en el CI del código; Windows local debe actualizar a head antes de sus pruebas.
+The E2-0/E2-1 stack, previous migrations and Router flow are retained → Service → Repository for when API is added in E2-2 B. The table does not impose Google Maps authorization, read isolation or validation alone: **the queries and deeds of the future module will filter by `business_id` and will revalidate the actor and his membership in PostgreSQL**. The main index protects the invariant under continuance, but the service must handle the conflict and change the principal transactionally. Pausing a location with stock/box active requires rules in their respective blocks; this migration does not create commercial dependencies or fictitious data. `alembic check` and the migration was validated in the code IC; Windows local must upgrade to head before its testing.
 
 
-### E2-2 A.1 — Nuevo tipo CASA (08/11/2026)
+### E2-2 A.1 — New CASA type (08/11/2026)
 
-Se incorporó `CASA` como sexto tipo de ubicación, sin cambiar el contrato de capacidades independientes `can_sell` y `can_store`, ni los estados `ACTIVA`/`PAUSADA`. Una casa puede vender, almacenar, ambas actividades o ninguna (domicilio administrativo). **No se crean direcciones ni ubicaciones automáticamente** y no se presupone habilitación comercial. La migración nueva `e22b_location_casa`, descendiente de `e22a_locations`, amplía `ck_locations_kind` sin reescribir la migración anterior ni alterar filas existentes; impide su reversión mientras queden filas CASA. La DEMO React admite CASA en el selector y en validación/lectura del almacenamiento local, pero sigue separada de la API. CI del código `b50bf200`: **backend 217/217 pruebas, Alembic sin deriva y Docker 3/3** (run backend); **frontend 2/2, incluido E2E de escritorio y móvil** (run frontend). Resultado Windows anterior de E2-2 A: 212 pruebas; **validación local de A.1 pendiente**. CRUD HTTP y permisos por ubicación siguen para E2-2 B/C. E2-1/03B/03C no se alteran.
+He's in. `CASA` as sixth type of location, without changing the independent capacity contract `can_sell` y `can_store`, nor states `ACTIVA`/`PAUSADA`. A house can sell, store, both or none of these activities (administrative address). **No address or location is created automatically** and no commercial empowerment is assumed. `e22b_location_casa`, descendant of `e22a_locations`expand `ck_locations_kind` without rewriting the previous migration or altering existing rows; it prevents its reversal while there are CASA rows. DEMO React supports CASA in the selector and local storage validation/reading, but remains separate from API. IC from code `b50bf200`: **backend 217/217 pruebas, Alembic sin deriva y Docker 3/3** (run backend); **frontend 2/2 including E2E desktop and mobile** (run frontend). Previous Windows result of E2-2 A: 212 tests; **local validation of A.1 pending**HTTP CRUD and location permissions remain for E2-2 B/C. E2/1/03B/03C are not altered.
 
-## 26. E2-2 B — Router, servicio, repositorio y RBAC de ubicación
+## 26. E2-2 B — Router, Service, Repository and Location RBAC
 
-**Estado E2-2 B (08/11/2026):** se publicaron tres rutas reales para ubicaciones bajo `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` lista 200, `GET /{location_id}` 200). La creación valida DTO sin campos protegidos, revalida identidad/sesión, bloquea la empresa y membresía del actor, exige tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, y confirma una única transacción. Una primera ubicación recibe `is_primary=true`; las posteriores no la reemplazan. Los miembros activos de cualquier rol reconocido pueden consultar las ubicaciones propias, incluso con empresa suspendida; una empresa suspendida no permite crear. Empresa ajena o membresía inactiva devuelve 404; rol sin permiso 403; sesión inválida 401; empresa suspendida al crear 409; cuerpo incorrecto 422. `CASA` y Google Maps HTTPS validado están incluidos. **No hay PATCH/DELETE, ni pausa/reactivación, cambio de principal, asignación individual de personal o consumo comercial de ubicaciones todavía.** La DEMO permanece independiente. Backend sin migración nueva respecto de `e22b_location_casa`.
+**State E2-2 B (08/11/2026):** Three real routes were published for low locations `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` ready 200, `GET /{location_id}` 200). The creation valid DTO without protected fields, revalidates identity/session, blocks the company and membership of the actor, demands tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, and confirms a single transaction. A first location receives `is_primary=true`; the subsequent ones do not replace it. Active members of any recognized role can consult their own locations, even with suspended company; a suspended company does not allow to create. A third party or inactive membership returns 404; role without permission 403; invalid session 401; company suspended when creating 409; incorrect body 422. `CASA` and Google Maps HTTPS validated are included. **There is no PATCH/DELETE, no pause/reactivation, change of principal, individual staff assignment or commercial consumption of locations yet.** DEMO remains independent. Backend without new migration from `e22b_location_casa`.
 
-La arquitectura extiende `app/api/v1/router.py` con `app/modules/locations/router.py`, `schemas.py`, `permissions.py`, `service.py` y `repository.py`. El módulo mantiene política separada del RBAC de E2-1 para no modificar retroactivamente la matriz existente. Los tres endpoints dependen de `current_auth` y sesión `get_db`, el servicio revalida la sesión y bloquea filas, los repositorios no hacen commit y las lecturas liberan bloqueos mediante rollback. Ninguna respuesta contiene datos de otra empresa. `map_url` solo acepta enlaces HTTPS de Google Maps, de forma compatible con el prototipo, sin consultar ni geocodificar la dirección. No se conecta React ni se incorporan permisos por ubicación/operación comercial.
+Architecture extends `app/api/v1/router.py` con `app/modules/locations/router.py`, `schemas.py`, `permissions.py`, `service.py` y `repository.py`. The module maintains separate policy from the E2-1 RBAC to avoid retroactive modification of the existing matrix. All three endpoints depend on `current_auth` and session `get_db`, the service revalidates the session and blocks rows, repositories do not commit and readings release locks via rollback. No response contains data from another company. `map_url` only accepts Google Maps HTTPS links, in a prototype compatible manner, without consulting or geocoding the address. React is not connected and permissions are not incorporated by commercial location/operation.
 
-**Evidencia de CI:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 pruebas aprobadas**, `e22b_location_casa (head)` y Alembic sin deriva. La salida local de Windows aportada previamente para **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **fue validado en Windows con `277 passed in 31.22s`**, Alembic sin deriva y Docker saludable; E2-2 C agrega nuevas pruebas por verificar localmente. La revisión de E2-1 por el compañero sigue anclada en el commit entregado.
+**Evidence of IC:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 approved tests**, `e22b_location_casa (head)` and Alembic without drift. The local Windows output provided previously for **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **was validated in Windows with `277 passed in 31.22s`**, Alembic without drift and healthy Docker; E2-2 C adds new tests to be verified locally. The peer review of E2-1 remains anchored in the commit delivered.
 
-## 27. E2-2 C — Comandos transaccionales de ubicaciones
+## 27. E2-2 C — Transactional Location Commands
 
-**E2-2 C (08/11/2026) — operaciones reales sobre ubicaciones:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` permite editar únicamente `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (campos opcionales en el cuerpo, pero se rechazan `null`, cuerpos vacíos, valores inválidos y campos protegidos). `PATCH /{location_id}/status` recibe solo `ACTIVA` o `PAUSADA`: pausar revoca `is_primary` en la misma transacción y reactivar **no** recupera la titularidad de ubicación automáticamente. `PUT /{location_id}/primary` designa una ubicación `ACTIVA`, desmarca la anterior y marca la elegida dentro del **mismo tenant y de una transacción única**, serializada por bloqueo de empresa y protegida con el índice SQL `uq_locations_one_active_primary`. La operación sobre una ubicación ya principal no realiza cambios adicionales. Titular/administrador con membresía ACTIVA pueden administrar; encargado/trabajador solo consultan. Empresa `SUSPENDIDA` admite lectura pero no cambios; recurso ajeno/inexistente 404, rol sin permiso 403, sesión inválida 401, estado incompatible 409 y cuerpo inválido 422. No se habilitó DELETE ni se crearon tablas nuevas.
+**E2-2 C (08/11/2026) — actual location operations:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` allows editing only `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (optional fields in the body, but rejected `null`, empty bodies, invalid values and protected fields). `PATCH /{location_id}/status` receive only `ACTIVA` o `PAUSADA`: pause revoke `is_primary` in the same transaction and reactivate **no** recovers location ownership automatically. `PUT /{location_id}/primary` designates a location `ACTIVA`, unmarks the previous one and marks the one chosen within the **and a single transaction**, serialized by company lock and protected with the SQL index `uq_locations_one_active_primary`. The operation on an already main location does not make any additional changes. Owner/Manager with Active Membership can manage; maintainer/worker only consult. `SUSPENDIDA` read but no change; other/non-existent resource 404, role without permission 403, invalid session 401, incompatible status 409 and invalid body 422. DELETE was not enabled nor new tables were created.
 
-**Arquitectura:** el mismo `LocationService` de E2-2 B revalida usuario/sesión y usa `BusinessRepository.lock_active_member_business` para serializar las operaciones por empresa; `LocationRepository.get_for_update` comprueba que el registro objetivo pertenece al tenant y obtiene bloqueo exclusivo. `clear_primary` desmarca la anterior con actualización SQL y flush, seguido de la promoción y commit en un solo límite transaccional. `LocationRepository` no hace commit. Los DTO de actualización prohíben mutar UUIDs, FK, `is_primary` o `status` por una ruta genérica. Los estados usan una ruta separada y la principal una operación PUT idempotente. No se altera el modelo de sesiones/autorizaciones de E2-1 ni se toca React.
+**Architecture:** same `LocationService` E2-2 B revalidates user/session and uses `BusinessRepository.lock_active_member_business` to serialize operations by company; `LocationRepository.get_for_update` checks that the target record belongs to the tenant and obtains exclusive lock. `clear_primary` uncheck the above with SQL and flush update, followed by promotion and commit in a single transactional limit. `LocationRepository` No commit. Update DTOs forbid mutar UUIDs, FK, `is_primary` o `status` The states use a separate route and the main one is an idepotent PUT operation. The E2-1 session/authorization model is not altered or React touched.
 
-**Evidencia:** código funcional `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 exitoso**, 325/325 pruebas en Python 3.12 y 3.14 con PostgreSQL, Alembic `e22b_location_casa (head)` sin deriva y Docker correcto. Windows había validado previamente E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **Los 325 tests todavía deben reproducirse en Windows para dar por cerrado localmente E2-2 C.** La integración React/API, la asignación individual de miembros a ubicaciones, control de existencias al quitar `can_store`, recepciones/ventas y gestión de cajas operativas son trabajos futuros; no se atribuyen a este incremento. E2-1 y UML 03B/03C no fueron modificados.
+**Evidence:** functional code `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 successful**, 325/225 Python 3.12 and 3.14 tests with PostgreSQL, Alembic `e22b_location_casa (head)` no drift and correct Docker. Windows had previously validated E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **The 325 tests must still be played on Windows to close locally E2-2 C.** React/API integration, individual assignment of members to locations, inventory control when removing `can_store`, receptions/sales and operating fund management are future works; they are not attributed to this increase. E2-1 and UML 03B/03C were not modified.
 
-## 28. E2-2 D — Diseño y autorización operacional
+## 28. E2-2 D — Design and operational clearance
 
-**E2-2 D (08/11/2026) — implementado, pendiente de validación local:** tabla `location_assignments` con clave triple `(business_id,location_id,user_id)`; FK compuesta `(business_id,user_id)` a `memberships` y `(business_id,location_id)` a `locations` para impedir cruces de empresa aun en SQL directo. Migración aditiva `e22d_assignments`, sin modificar migraciones de E2-1; UNIQUE auxiliar `(business_id,id)` en `locations`. Asignaciones `ACTIVA`/`REVOCADA` con `revoked_at` coherente (CHECK). GET de colección de asignaciones y PUT de estado de una membresía de la sede, solamente por titular/administrador de la empresa; activar asignaciones se limita a ENCARGADO/TRABAJADOR. Revocar preserva la fila y puede hacerse con sede pausada o miembro inactivo; activar exige ambos activos. Empresa suspendida permite consulta pero impide escrituras. La función pura `can_operate_at_location` requiere ubicación y empresa activas, membresía activa, capacidad `SELL`/`STORE` pertinente y, para encargados/trabajadores, asignación ACTIVA. **No se invoca aún desde inventario, compras o ventas**, porque esos endpoints son de bloques futuros. No cambia la membresía empresarial, no conecta React y no crea ubicaciones ficticias.
+**E2-2 D (08/11/2026) — implemented, pending local validation:** tabla `location_assignments` con clave triple `(business_id,location_id,user_id)`; Composite FK `(business_id,user_id)` a `memberships` y `(business_id,location_id)` a `locations` to prevent company crossings even in direct SQL. Additive migration `e22d_assignments`, unchanged migrations of E2-1; UNIQUE auxiliary `(business_id,id)` en `locations`Allocations `ACTIVA`/`REVOCADA` con `revoked_at` coherent (CHECK). GET of mapping collection and PUT status of a headquarters membership, only per owner/manager of the company; activating assignments is limited to ENTRY/TRAWER. Revealing preserves row and can be done with paused or inactive seat; activating requires both assets. Suspended company allows query but prevents deeds. Pure function `can_operate_at_location` requires active location and company, active membership, capacity `SELL`/`STORE` relevant and, for managers/workers, active assignment. **Not yet invoked from inventory, purchases or sales**It doesn't change business membership, it doesn't connect React and it doesn't create fictitious locations.
 
 
 
-**Evidencia:** código final `3cd7bce71d951218e8c77da58d147e78fb0d426e` y CI E2-2 D 3/3 aprobado, **371 pruebas** en Python 3.12/3.14, `e22d_assignments (head)` sin deriva y Docker correcto. El último resultado local aportado es E2-2 C, **325 passed in 36.91s**. **La migración y las 371 pruebas de E2-2 D aún requieren ejecución local Windows antes de cerrar el bloque y preparar la hoja de auditoría.**
+**Evidence:** final code `3cd7bce71d951218e8c77da58d147e78fb0d426e` and IC E2-2 D 3/3 approved, **371 tests** en Python 3.12/3.14, `e22d_assignments (head)` The last local result provided is E2-2 C, **325 passed in 36.91s**. **Migration and 371 E2-2 D tests still require local Windows execution before closing the block and preparing the audit sheet.**
 
-## 29. E2-3 A — Persistencia sin API del Catálogo
+## 29. E2-3 A — Persistence without Catalog API
 
-**Corte E2-3 A (08/11/2026), persistencia parcial de RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` obligatorio, FK a Empresa (`RESTRICT`) y par UNIQUE `(business_id,id)` para futuras FK comerciales del mismo tenant. Cuatro clases de ficha según la DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (bienes físicos) y `SERVICIO` (conceptualmente un servicio). Un servicio obliga unidad `SERVICIO`; un bien físico la prohíbe. Unidades físicas: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Se almacenan nombre, clave normalizada `name_key`, categoría, SKU opcional, descripción, observaciones internas, estado `ACTIVO`/`INACTIVO`, condición `sellable`, `price_cents` y `reference_cost_cents` opcionales. Importes enteros BIGINT entre 0 y 99.999.999.999 centavos, sin Float. Dos restricciones independientes impiden repetir `name_key` y SKU no nulo **dentro de la empresa**, también en fichas inactivas; distintos tenants pueden reutilizarlos. En E2-3 B el servicio deberá calcular `name_key` de forma canónica (NFKC, espacios colapsados, equivalencia de mayúsculas) y normalizar SKU a mayúsculas **antes de insertar/editar**: SQL impone la unicidad de las claves guardadas y el formato de SKU, pero no deriva `name_key` automáticamente. Crear ficha no crea ubicación, stock, compras, ventas ni movimientos.
+**Cut E2-3 A (08/11/2026), partial persistence of RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` Compulsory, FK to Company (`RESTRICT`) y par UNIQUE `(business_id,id)` for future commercial FK of the same tenant. Four kinds of tab according to DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (physical property) and `SERVICIO` (conceptually a service). `SERVICIO`; physical property prohibits it. `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Name, standardized key is stored `name_key`, category, optional SKU, description, internal observations, status `ACTIVO`/`INACTIVO`, condition `sellable`, `price_cents` y `reference_cost_cents` optional. Whole amounts BIGINT between 0 and 99,999,999.999 cents, without Float. Two independent restrictions prevent repeat `name_key` and SKU not null **within the company**, also in inactive chips; different tenants can reuse them. In E2-3 B the service must calculate `name_key` canonically (NFKC, collapsed spaces, capital equivalence) and normalize SKU to uppercase **before inserting/editing**: SQL imposes the uniqueness of saved keys and SKU format, but does not derive `name_key` Create tab does not create location, stock, purchases, sales or movements.
 
-**Arquitectura:** ORM `app/infrastructure/models/catalog_item.py`, import de metadatos de Alembic en `models/__init__.py`, migración aditiva `20261108_0011_catalog_items.py` (`e23a_catalog`, dependiente de `e22d_assignments`), tests SQL estructurales y de integración PostgreSQL. La futura API E2-3 B tendrá Router → Service → Repository, autorización y transacción, sin permisos deducidos de datos cliente. No se ejecuta `CatalogItem` desde la DEMO React: no confundir import del modelo con endpoint habilitado. Los duplicados deben resolverse por restricciones PostgreSQL y error HTTP controlado, incluso bajo dos altas concurrentes.
+**Architecture:** ORM `app/infrastructure/models/catalog_item.py`, import of Alembic metadata into `models/__init__.py`Additive migration `20261108_0011_catalog_items.py` (`e23a_catalog`, dependent on `e22d_assignments`), PostgreSQL integration and structural SQL tests. The future E2-3 B API will have Router → Service → Repository, authorization and transaction, without permissions deducted from client data. Not executed `CatalogItem` from DEMO React: do not confuse import of the model with enabled endpoint. Duplicates must be solved by PostgreSQL restrictions and controlled HTTP error, even under two high concurrent ones.
 
-**Evidencia:** corte de código/pruebas `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 pruebas aprobadas** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` sin cambios pendientes de Alembic. **Validación local de Windows pendiente para E2-3 A**; los 371 tests anteriores corresponden al cierre de E2-2. **No existen rutas HTTP de Catálogo** en este corte; CRUD, RBAC de catálogo, SKU/name normalization de entrada y protección de historias comerciales se implementarán en E2-3 B/C/D. No hay integración React API ni revisión independiente de E2-3 todavía. No se modificó E2-1 ni E2-2 ni frontend DEMO.
+**Evidence:** code/test cut `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 approved tests** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` no pending changes from Alembic. **Local Windows Validation Pending for E2-3 A**; the above 371 tests correspond to the closure of E2-2. **No HTTP Catalog paths** in this cut; CRUD, catalog RBAC, SKU/name standardization of entry and protection of business stories will be implemented in E2-3 B/C/D. No React API integration or independent review of E2-3 yet. No change to E2-1 or E2-2 or DEMO frontend.
 
-## 30. E2-3 B — Router, servicio, repositorio y control de errores
+## 30. E2-3 B — Router, Service, Repository and Error Control
 
-**E2-3 B — API real de Catálogo (RF-04/CU-05, 08/11/2026):** cuatro rutas bajo `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 alta), `GET /catalog` (200 lista con `offset>=0`, `1<=limit<=500`; por defecto `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 edición parcial). Cada operación requiere Bearer válido, revalidación de sesión, usuario y membresía de la empresa solicitada. Titular/administrador pueden leer y escribir; encargado/trabajador con membresía activa solo leen; empresa SUSPENDIDA solo lectura; empresa o artículo ajenos/inexistentes 404. El servidor normaliza los nombres Unicode NFKC, colapsa espacios y genera `name_key` con `casefold`; normaliza SKU a mayúsculas ASCII y convierte SKU vacío en NULL. PostgreSQL conserva la unicidad por empresa de `name_key`/SKU incluso con fichas INACTIVO, y la API traduce esa colisión a 409. Datos inválidos o campos protegidos (id, tenant, status, clave derivada) reciben 422. Tipo SERVICIO exige unidad SERVICIO; ninguna otra clasificación puede usarla. Son válidos `price_cents` y `reference_cost_cents` NULL o enteros desde 0 hasta 99.999.999.999. El PATCH permite eliminar SKU/precio/costo con NULL, pero no editar estado. La ficha conserva su `status` y timestamps SQL. La creación no crea ubicación, saldo de stock, compras, ventas ni movimientos.
+**E2-3 B — Real Catalogue API (RF-04/CU-05, 08/11/2026):** four low routes `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 high), `GET /catalog` (200 list with `offset>=0`, `1<=limit<=500`; default `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 part edition). Each operation requires valid Bearer, session revalidation, user and membership of the requested company. Owner/manager can read and write; maintainer/worker with active membership only read; company SUSPENDED read only; enterprise or article other/non-existent 404. The server normalizes Unicode NFKC names, collapses spaces and generates `name_key` con `casefold`; normalizes SKU to ASCII capital letters and converts empty SKU into NULL. PostgreSQL retains the uniqueness per company of `name_key`/SKU even with INACTIVE tabs, and the API translates that collision to 409. Invalid data or protected fields (id, tenant, status, derivative key) receive 422. SERVICE type requires SERVICE unit; no other classification can use it. They are valid `price_cents` y `reference_cost_cents` NULL or integers from 0 to 99.999.999.999. The PATCH allows you to remove SKU/price/cost with NULL, but do not edit status. `status` and timestamps SQL. Creation does not create location, stock balance, purchases, sales or movements.
 
-**Componentes:** `app/modules/catalog/{schemas,repository,service,router}.py`, registro de router en `app/api/v1/router.py`. `CatalogService` revalida usuario/sesión y bloqueo de Empresa/Membresía, sin modificar el contrato de E2-1. `CatalogRepository` filtra siempre por `business_id` y no confirma transacciones; el servicio delimita commit/rollback y convierte solo colisiones de restricciones únicas de nombre/SKU en 409. `POST` crea la ficha en una transacción; `PATCH` bloquea el artículo del tenant antes de modificarlo. `GET` libera bloqueos por rollback sin escritura. El registro existente de E2-2 no se modifica.
+**Components:** `app/modules/catalog/{schemas,repository,service,router}.py`, registro de router en `app/api/v1/router.py`. `CatalogService` revalidation of the Company/Membership user/session and blocking, without modification of the E2-1 contract. `CatalogRepository` filters always by `business_id` and does not confirm transactions; the service delimits commit/rollback and converts only unique name/SKU restrictions collisions by 409. `POST` creates the tab in a transaction; `PATCH` block the tenant item before modifying it. `GET` releases rollback locks without writing. The existing E2-2 record is unchanged.
 
-**Límites explícitos:** E2-3 B no expone todavía `PATCH /status` ni borrado físico (se evaluarán en E2-3 C). No existe integración del frontend React con esta API; no se implementan recepción, ventas, snapshots comerciales ni protección de edición de unidad con historia, pues esos módulos son posteriores. Los tests nuevos comprueban permisos, rollback de duplicados, SKU/nombres normalizados, aislamiento multiempresa, lectura bajo suspensión y fallas 401/403/404/409/422. **Evidencia CI E2-3 B:** GitHub Actions 42506409757 finalizó **3/3 trabajos exitosos**, **498 pruebas aprobadas** tanto en Python 3.12 (53.96s) como Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` sin operaciones, imagen Docker/liveness aprobado. Código funcional validado: `35ff901855397c024cee50fa590c6c05a7f04cfe`. El CI anterior `42506050141` había detectado dos fallos de mapeo HTTP en PATCH con tipo/unidad incompatible; se corrigieron y ambos casos pasan ahora. **La validación Windows local de E2-3 B sigue pendiente**; el último resultado local confirmado es 407/407 de E2-3 A.
+**Explicit limits:** E2-3 B not yet exposed `PATCH /status` No integration of frontend React with this API; no reception, sales, commercial snapshots or history unit editing protection are implemented as these modules are later. New tests check permissions, duplicate rollbacks, SKU/standard names, multi-company isolation, suspended reading and fault 401/403/404/409/422. **Evidence CI E2-3 B:** GitHub Actions 42506409757 finished **3/3 successful jobs**, **498 approved tests** both in Python 3.12 (53.96s) and Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` No operations, Docker/liveness image approved. Validated functional code: `35ff901855397c024cee50fa590c6c05a7f04cfe`. Previous IQ `42506050141` had detected two HTTP mapping failures in PATCH with incompatible type/unit; they were corrected and both cases are now happening. **Local Windows validation of E2-3 B is still pending**; the last confirmed local result is 407/407 of E2-3 A.
 
-## 30. E2-3 C — Servicio transaccional de estado
+## 30. E2-3 C — State transactional service
 
-**E2-3 C (08/11/2026):** se implementó `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` con cuerpo exclusivo `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, validación estricta y rechazo de atributos extra (422). La ruta revalida sesión y membresía y exige titular/administrador de empresa ACTIVA para escribir (401/403/404/409 según caso). El artículo se bloquea dentro del tenant y se cambia de estado en una sola transacción. El cambio repetido es idempotente, sin alterar `updated_at`. El artículo inactivo continúa visible en GET/listados, con UUID, nombre y SKU reservados incluso ante altas duplicadas; no hay DELETE ni stock ficticio. El PATCH genérico mantiene `status` protegido. Esta funcionalidad tampoco modifica el campo independiente `sellable`.
+**E2-3 C (08/11/2026):** implemented `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` with exclusive body `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, strict validation and rejection of extra attributes (422). The path revalidates session and membership and requires an ACTIVA company owner/manager to write (401/403/404/409 as the case may be).The article is blocked inside the tenant and changed status in a single transaction.The repeated change is idepotent, without altering `updated_at`. The inactive article remains visible on GET/listed, with UUID, name and SKU reserved even for duplicate highs; there is no DELETE or fictitious stock. Generic PATCH maintains `status` This functionality also does not modify the independent field `sellable`.
 
-**Dependencias:** las futuras compras/ventas deben prohibir nuevos movimientos con fichas INACTIVO y conservar snapshots históricos reales. Todavía no hay operaciones comerciales ni frontend integrado; por lo tanto, tampoco existe una restricción real de cambio de unidad por transacciones anteriores. Ninguna migración nueva: se reutiliza CHECK `ACTIVO/INACTIVO` de `e23a_catalog`.
+**Units:** future purchases/sales must prohibit new movements with INACTIVE chips and keep real historical snapshots. There are still no commercial operations or integrated frontend; therefore, there is no real restriction on unit change for previous transactions either. No new migration: CHECK reused `ACTIVO/INACTIVO` de `e23a_catalog`.
 
-**Pruebas:** CI E2-3 C **3/3 trabajos aprobados**, **527 passed** en Python 3.12 y 3.14 con PostgreSQL, `e23a_catalog (head)`, `alembic check` sin operaciones y Docker correcto; código `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pendiente**. El commit documental posterior no equivale a otra ejecución CI.
+**Tests:** CI E2-3 C **3/3 work adopted**, **527 passed** in Python 3.12 and 3.14 with PostgreSQL, `e23a_catalog (head)`, `alembic check` no operations and correct Docker; code `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pending**. The subsequent documentary committ is not equivalent to another IC execution.
 
-## 31. E2-3 D — Regresión real de persistencia y contrato HTTP
+## 31. E2-3 D — Real regression of persistence and HTTP contract
 
-**E2-3 D (08/11/2026):** se reforzó el Catálogo existente, **sin agregar tablas ni migraciones**. Los tests nuevos verifican equivalencias Unicode NFKC + `casefold` en nombres, SKU NFKC y mayúsculas ASCII, rechazo de controles y formas inválidas, desbordamiento de `name_key` por expansión Unicode, importes enteros estrictos (sin booleanos ni decimales), diferenciación entre `PATCH` con campo omitido y con `null` explícito, incompatibilidad SERVICIO/unidad física, campos protegidos de `/status`, colisiones de nombre/SKU incluso en fichas INACTIVO, independencia entre dos empresas del mismo usuario, recuperación de la sesión tras 409, y rollback provocado después de `flush` tanto en alta como en edición. Se añadió un límite máximo a `offset` de catálogo (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): excederlo produce 422 antes de ejecutar SQL, manteniendo `limit` de 1 a 500 y `offset` no negativo. Los cinco endpoints de Catálogo conservan sus contratos y permisos empresariales; no se crea stock.
+**E2-3 D (08/11/2026):** the existing Catalogue was strengthened, **without adding tables or migrations**. New tests verify Unicode NFKC+ equivalences `casefold` in names, SKU NFKC and ASCII capitals, rejection of invalid controls and forms, overflowing `name_key` per Unicode expansion, strict integer amounts (no booleans or decimals), differentiation between `PATCH` field and with `null` Explicit, incompatibility SERVICE/physical unit, protected fields of `/status`, name/SKU collisions even in INACTIVE chips, independence between two companies of the same user, session recovery after 409, and rollback provoked after `flush` both in high and in edition. A ceiling was added to `offset` catalogue (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): exceed it produces 422 before running SQL, maintaining `limit` de 1 a 500 y `offset` The five Catalog endpoints retain their contracts and business permits; no stock is created.
 
-**Alcance y límites:** las UNIQUE por `(business_id,name_key)` y `(business_id,sku)` y las transacciones/bloqueos existentes protegen ante colisiones; los tests ejercen duplicados y recuperaciones reales en PostgreSQL, **pero no son una prueba simultánea de carga/concurrencia con múltiples conexiones independientes**. Esta última queda registrada como verificación futura antes de producción. No hay aún compras, ventas, movimientos ni snapshots, por lo que no se puede comprobar una regla de cambio de unidad/estado con historial comercial real. `sellable` no sustituye `status`. No conectar frontend DEMO ni E2-1/E2-2 para este corte.
+**Scope and limits:** NICK `(business_id,name_key)` y `(business_id,sku)` and existing transactions/blocks protect against collisions; tests exercise actual duplicates and recoveries in PostgreSQL, **but are not simultaneous load/concurrence testing with multiple independent connections**. The latter is registered as future verification before production. There are not yet purchases, sales, movements or snapshots, so you cannot check a unit/state change rule with real business history. `sellable` does not replace `status`. Do not connect frontend DEMO or E2-1/E2-2 for this cut.
 
-**Evidencia CI del código D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 trabajos aprobados**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` sin diferencias. **Validación local Windows E2-3 C:** 527 passed in 59.60s, contenedores saludables y `/ready` correcto. **Validación local Windows E2-3 D:** todavía pendiente. No confundir CI remoto con pruebas ejecutadas en la computadora del autor.
+**IC evidence of code D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 work adopted**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` No difference. **Local Validation Windows E2-3 C:** 527 passed in 59.60s, healthy containers and `/ready` Right. **Local Validation Windows E2-3 D:** Do not confuse remote IC with tests performed on the author's computer.
 
-## E2-3 E — Arquitectura implementada: modelo, pruebas y límites reconciliados
+## E2-3 E — Implemented architecture: model, tests and bounds reconciled
 
-**E2-3 E (08/11/2026) — cierre funcional:** E2-3 A/B/C/D implementó `CatalogItem`/`catalog_items`, migración `e23a_catalog`, cinco operaciones REST (GET/POST colección, GET/PATCH detalle, PATCH estado), permisos por tenant y rol, nombre canónico y SKU únicos dentro de la empresa, cuatro clases ELABORADO/REVENTA/INSUMO/SERVICIO, tipo BIEN/SERVICIO derivado sin columna duplicada, importes opcionales en centavos y desactivación reversible sin borrar fichas ni liberar claves. No se crean existencias al registrar un artículo. **La fuente PlantUML 03A v0.7 y su SVG editorial ya se conciliaron** con el Catálogo real; `Proveedor` sigue TO-BE.
+**E2-3 E (08/11/2026) — functional closure:** E2-3 A/B/C/D implemented `CatalogItem`/`catalog_items`, migration `e23a_catalog`, five REST operations (GET/POST collection, GET/PATCH detail, PATCH status), permissions for tenant and role, canonical name and SKU unique within the company, four classes ELABORATED/REVENT/INSUMO/SERVICE, type GOOD/SERVICE derivative without duplicate column, optional amounts in cents and reversible deactivation without erasing chips or releasing keys. No stock is created when registering an item. **PlantUML 03A v0.7 source and its editorial SVG have already been reconciled** with the actual Catalogue; `Proveedor` Go on, TO-BE.
 
-**Windows D comprobado por el desarrollador:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 tests Python 3.12 y 3.14, 3/3 jobs aprobados. Cambios posteriores solo de UML/documentos no constituyen nueva ejecución CI.
+**Windows D checked by the developer:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 Python tests 3.12 and 3.14, 3/3 jobs approved. Subsequent changes only of UML/documents do not constitute new IC execution.
 
-**Pendientes explícitos:** no se ejecutó una prueba de doble alta concurrente con dos conexiones independientes ni carga sostenida. Aún no hay compras, stock, ventas, snapshots comerciales ni uso de permisos SELL/STORE en operaciones reales. Las reglas sobre cambios de tipo/unidad con historial comercial deberán aplicarse cuando existan esos módulos. React continúa DEMO sin integración HTTP. E2-1/E2-2 y diagramas 03B/03C permanecen fuera del alcance. El bloque está preparado para **auditoría independiente** y no se declara auditado ni listo para producción.
+**Explicit pending:** no double-high test was performed at the same time with two independent connections and no sustained load. There are still no purchases, stock, sales, commercial snapshots or use of SELL/STORE permissions in real operations. The rules on type/unit changes with business history should be applied when these modules exist. React continues DEMO without HTTP integration. E2-1/E2-2 and diagrams 03B/03C remain out of reach. The block is prepared for **independent audit** and is not declared audited or ready for production.

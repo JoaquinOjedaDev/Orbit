@@ -12,14 +12,14 @@ export type AdjustmentJournalPort={
  remove(scope:string,key:string):Promise<void>
 }
 export class AdjustmentJournalUnavailable extends Error{
- constructor(){super('IndexedDB no está disponible: no se enviará un ajuste sin clave recuperable.')}
+ constructor(){super('IndexedDB is not available: no retrievable key-free setting will be sent.')}
 }
 export class AdjustmentJournalConflict extends Error{
- constructor(){super('Existe una operación pendiente diferente para este actor y empresa; no se sobrescribe.')}
+ constructor(){super('There is a different pending operation for this actor and company; it is not overwritten.')}
 }
 export function adjustmentScope(actorId:string,businessId:string):string{
  if(!UUID_PATTERN.test(actorId)||!UUID_PATTERN.test(businessId))
-   throw new TypeError('Actor o empresa inválida')
+   throw new TypeError('Invalid Actor or Company')
  return [actorId,businessId,'inventory.adjustment'].join(':')
 }
 export function parsePendingAdjustment(raw:unknown,scope:string):PendingAdjustment{
@@ -59,7 +59,7 @@ export function createAdjustmentJournal(port:AdjustmentJournalPort){
      return result
    },
    async discard(scope:string,key:string):Promise<void>{
-     if(!UUID_V4_PATTERN.test(key))throw new TypeError('Clave inválida')
+     if(!UUID_V4_PATTERN.test(key))throw new TypeError('Invalid key')
      await port.remove(scope,key)
    },
  }

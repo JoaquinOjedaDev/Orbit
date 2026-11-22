@@ -1,201 +1,201 @@
-# 03B — Guía de clases: compras, recepciones, inventario y ventas
+# 03B — Class Guide: purchases, receptions, inventory and sales
 
-**Proyecto:** Orbit — Plataforma generalista de gestión multiempresa y multirrubro  
-**Materia:** Programación 2 — UNSAM (2C2026)  
-**Versión:** 2.1 — **E2-7 / T12-C3**, aprobada y publicada en la rama documental  
-**Fecha de corte documental:** 11 de noviembre de 2026  
-**Referencia funcional:** `main` en `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (integración T11, PR #45)  
-**Documento rector:** [03 — Modelo de dominio y diagramas UML](../03_MODELO_DE_DOMINIO_Y_UML.md), versión 2.1 aprobada en la rama documental de PR #46  
-**Diagrama complementario:** [03A — Identidad, empresas, sedes, catálogo y proveedores](03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md), versión 2.1 / T12-C2  
-**Fuente editable:** [03B_CLASES_COMERCIO_E_INVENTARIO.puml](03B_CLASES_COMERCIO_E_INVENTARIO.puml)  
-**Lámina vectorial:** [03B_COMERCIO_INVENTARIO_REDISENADO.svg](03B_COMERCIO_INVENTARIO_REDISENADO.svg).
+**Project:** Orbit — Generalistic multi-company and multi-rub management platform  
+**Materia:** Programming 2 — UNSAM (2C2026)  
+**Version:** 2.1 — **E2-7 / T12-C3**approved and published in the documentary branch  
+**Documentary cut-off date:** 11 November 2026  
+**Functional reference:** `main` en `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (integration T11, PR #45)  
+**Leading document:** [03 — Modelo de dominio y diagramas UML](../03_MODELO_DE_DOMINIO_Y_UML.md), version 2.1 approved in the documentary branch of PR #46  
+**Supplementary diagram:** [03A — Identity, companies, offices, catalogues and suppliers](03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md)version 2.1 / T12-C2  
+**Editable source:** [03B_Classes_COMMERCIO_E_INVENTARY.puml](03B_CLASES_COMERCIO_E_INVENTARIO.puml)  
+**Vector foil:** [03B_COMMERCIO_INVENTARY_REDIENT.svg](03B_COMERCIO_INVENTARIO_REDISENADO.svg).
 
-> **Alcance:** documentación **AS-IMPLEMENTED** de los módulos comerciales efectivamente persistidos en PostgreSQL, no una propuesta de nuevas tablas ni una ejecución de pruebas. Esta entrega sustituye la edición conceptual **v0.3 TO-BE**. El 03B describe hechos comerciales, saldos y trazabilidad; el 03A describe identidades, permisos, sedes, artículos y proveedores. **Los tres archivos fueron aprobados y publicados en la rama documental de PR #46; no se realizó merge a `main`.**
+> **Scope:** Documentation **AS-IMPLEMENTED** of the commercial modules effectively persisted in PostgreSQL, not a proposal for new tables or an execution of tests. This delivery replaces the conceptual edition **v0.3 TO-BE**03B describes commercial facts, balances and traceability; 03A describes identities, permits, locations, items and suppliers. **All three archives were approved and published in the documentary branch of PR #46; no merit was made `main`.**
 
-![03B — Compras, recepciones, movimientos y ventas](03B_COMERCIO_INVENTARIO_REDISENADO.svg)
+![03B — Purchases, receptions, movements and sales](03B_COMERCIO_INVENTARIO_REDISENADO.svg)
 
-## 1. Para qué sirve el 03B y cómo interpretarlo
+## 1. What 03B is for and how to interpret it
 
-El objetivo es demostrar cómo la plataforma registra **una compra sin crear existencias automáticamente**, **la recepción física de esa compra**, **una modificación justificada de stock** y **una venta confirmada**. Todos esos hechos se aíslan por empresa y conservan datos históricos que no se deben volver a calcular con el catálogo actual.
+The goal is to show how the platform registers **an purchase without creating stocks automatically**, **the physical receipt of that purchase**, **a justified change in stock** y **a confirmed sale**All these facts are isolated by company and retain historical data that should not be recalculated with the current catalogue.
 
-La fuente PlantUML contiene **nueve clases comerciales persistentes** y cuatro enumeraciones conceptuales de valores restringidos, además de **cinco clases de referencia al 03A**; estas últimas *no son tablas nuevas*. El SVG editorial muestra las nueve clases principales y sintetiza las asociaciones transversales mediante una banda de orígenes del ledger. Para evitar un dibujo ilegible, no enumera las 19 tablas del sistema ni todas las FK a cada modelo externo.
+The PlantUML source contains **nine persistent business classes** and four conceptual enumerations of restricted values, in addition to **five classes of reference to 03A**; these latter *are not new tables*. The editorial SVG shows the nine main classes and synthesizes cross-sectional associations using a band of leadger origins. To avoid an unreadable drawing, it does not list the 19 system tables or all FK to each external model.
 
-**Diferencia esencial:** el 03B es un **diagrama UML de clases** (relaciones y responsabilidades), **no un DER generado desde PostgreSQL**. La posterior visualización ER de la base, por ejemplo con DBeaver, es un objetivo independiente **post-T12**. Los atributos del UML están nombrados conceptualmente en español; la columna SQL exacta aparece en la correspondencia siguiente.
+**Essential difference:** el 03B es un **diagrama UML de clases** (relations and responsibilities), **not a DER generated from PostgreSQL**. The subsequent base ER display, for example with DBeaver, is an independent target **post-T12**. UML attributes are conceptually named in Spanish; the exact SQL column appears in the following correspondence.
 
 ## 2. Correspondencia clase UML ↔ SQLAlchemy ↔ PostgreSQL
 
-| Clase UML | ORM | Tabla real | Responsabilidad principal |
+| Clase UML | ORM | Tabla real | Principal responsibility |
 |---|---|---|---|
-| `Compra` | `Purchase` | `purchases` | Alta de adquisición sin ingreso físico inmediato. |
-| `DetalleCompra` | `PurchaseLine` | `purchase_lines` | Renglón histórico (bien, servicio o concepto libre) y total calculado. |
-| `Recepcion` | `PurchaseReceipt` | `purchase_receipts` | Confirmación **única y completa** de bienes físicos, a una sede. |
-| `Venta` | `Sale` | `sales` | Comprobante confirmado, totales y snapshot de saldos. |
-| `DetalleVenta` | `SaleLine` | `sale_lines` | Renglón vendido con precio, cantidad, tipo y descripción históricos. |
-| `AplicacionPago` | `SalePayment` | `sale_payments` | Medio e importe **declarados**, sin acreditar fondos externos. |
-| `OperacionInventario` | `InventoryOperation` | `inventory_operations` | Traslado, ajuste de entrada/salida o stock inicial justificado. |
-| `MovimientoInventario` | `StockMovement` | `stock_movements` | **Ledger** de deltas firmados y origen comprobable. |
-| `SaldoInventario` | `StockBalance` | `stock_balances` | Existencias actuales por empresa–sede–artículo, con versión. |
+| `Compra` | `Purchase` | `purchases` | High acquisition without immediate physical income. |
+| `DetalleCompra` | `PurchaseLine` | `purchase_lines` | Historical line (good, service or free concept) and total calculated. |
+| `Recepcion` | `PurchaseReceipt` | `purchase_receipts` | Confirmation **unique and complete** of physical property, to a headquarters. |
+| `Venta` | `Sale` | `sales` | Confirmed check, totals and snapshot balances. |
+| `DetalleVenta` | `SaleLine` | `sale_lines` | Line sold with price, quantity, type and historical description. |
+| `AplicacionPago` | `SalePayment` | `sale_payments` | Average and amount **declared**, without external funds. |
+| `OperacionInventario` | `InventoryOperation` | `inventory_operations` | Transfer, input/output adjustment or initial stock justified. |
+| `MovimientoInventario` | `StockMovement` | `stock_movements` | **Ledger** of signed deltas and proven origin. |
+| `SaldoInventario` | `StockBalance` | `stock_balances` | Current stocks per company–headquarters–article, versioned. |
 
-**Contexto importado del 03A:** `Empresa` (`Business`), `Ubicacion` (`Location`), `ArticuloCatalogo` (`CatalogItem`), `Proveedor` (`Supplier`) y `Membresia` (`Membership`). Un identificador `business_id` es la clave de separación de tenant; `Proveedor` ya está **implementado**, no es TO-BE. `SolicitudIdempotente` **no** se incluye porque **no existe** una tabla persistente genérica con ese nombre.
+**The context imported from 03A:** `Empresa` (`Business`), `Ubicacion` (`Location`), `ArticuloCatalogo` (`CatalogItem`), `Proveedor` (`Supplier`) y `Membresia` (`Membership`). An identifier `business_id` is the key to tenant separation; `Proveedor` That's it. **implemented**, no es TO-BE. `SolicitudIdempotente` **no** is included because **does not exist** a persistent generic table with that name.
 
-### 2.1 Diccionario de atributos que no conviene confundir
+### 2.1 Dictionary of attributes not to be confused
 
-| UML | Columna / contrato real | Matiz relevante |
+| UML | Column / actual contract | Relevant matiz |
 |---|---|---|
-| `Compra.requestId` y `requestSha256` | `purchases.request_id`, `request_sha256` | `request_sha256` admite `NULL` a nivel modelo por compatibilidad; nuevas altas calculan hash. |
-| `Compra.proveedorNombreSnapshot` | `purchases.supplier_name_snapshot` | String no nulo; vacío cuando no se eligió proveedor. |
-| `DetalleCompra.numeroLinea`, `articuloId` | `purchase_lines.line_number`, `catalog_item_id` | Número entre 1 y 30; artículo **opcional solo en CONCEPTO libre**. |
+| `Compra.requestId` y `requestSha256` | `purchases.request_id`, `request_sha256` | `request_sha256` admite `NULL` at model level for compatibility; new highs calculate hash. |
+| `Compra.proveedorNombreSnapshot` | `purchases.supplier_name_snapshot` | String is not null; empty when no supplier was chosen. |
+| `DetalleCompra.numeroLinea`, `articuloId` | `purchase_lines.line_number`, `catalog_item_id` | Number between 1 and 30; article **optional only in free CONCEPT**. |
 | `DetalleCompra.tipoSnapshot` | `purchase_lines.kind_snapshot` | **`BIEN`, `SERVICIO`, `CONCEPTO`**; NO `ELABORADO/REVENTA/INSUMO`. |
-| `DetalleVenta.tipoSnapshot` | `sale_lines.kind_snapshot` | **`BIEN` o `SERVICIO`**; artículo obligatorio. |
-| `DetalleCompra.skuSnapshot` / `DetalleVenta.skuSnapshot` | `purchase_lines.sku_snapshot`, `sale_lines.sku_snapshot` | String no nulo; se almacena cadena vacía cuando no hay SKU. |
-| `Recepcion.balancesAfter` | `purchase_receipts.balances_after` | JSONB arreglo para replay histórico; **no** saldo vigente alternativo. |
-| `OperacionInventario.cantidadMilli` | `inventory_operations.quantity_milli` | Cantidad positiva de la operación; no existe columna `cantidad_milli_snapshot` separada. |
-| `OperacionInventario.unidadSnapshot` | `inventory_operations.unit_snapshot` | Unidad física congelada. |
-| `MovimientoInventario.tipoOperacionOrigen` | `stock_movements.operation_kind` | Participa en la FK compuesta con la operación y su tipo. |
-| `MovimientoInventario.detalleCompraId` | `stock_movements.purchase_line_id` | Origen por **renglón físico** de recepción. |
-| `MovimientoInventario.detalleVentaId` | `stock_movements.sale_line_id` | Origen por **renglón físico** de venta. |
-| `Venta.balancesAfter` | `sales.balances_after` | Snapshot después de la venta, no fuente de inventario. |
-| `AplicacionPago.numeroSecuencia` | `sale_payments.payment_number` | Secuencia entre 1 y 6, única dentro de la venta/empresa. |
-| `AplicacionPago.referencia` | `sale_payments.reference` | String no nulo, vacío por defecto; no es número bancario verificado. |
-| `SaldoInventario` | `stock_balances` | **PK triple** `(business_id, location_id, catalog_item_id)`; `version` comienza en 1. |
+| `DetalleVenta.tipoSnapshot` | `sale_lines.kind_snapshot` | **`BIEN` o `SERVICIO`**; mandatory article. |
+| `DetalleCompra.skuSnapshot` / `DetalleVenta.skuSnapshot` | `purchase_lines.sku_snapshot`, `sale_lines.sku_snapshot` | String is not null; empty string is stored when there is no SKU. |
+| `Recepcion.balancesAfter` | `purchase_receipts.balances_after` | JSONB arrangement for historical replay; **no** alternative balance. |
+| `OperacionInventario.cantidadMilli` | `inventory_operations.quantity_milli` | Positive amount of operation; no column `cantidad_milli_snapshot` Separate. |
+| `OperacionInventario.unidadSnapshot` | `inventory_operations.unit_snapshot` | Physical unit frozen. |
+| `MovimientoInventario.tipoOperacionOrigen` | `stock_movements.operation_kind` | He participates in the FK composed with the operation and its type. |
+| `MovimientoInventario.detalleCompraId` | `stock_movements.purchase_line_id` | Origin by **physical line** From reception. |
+| `MovimientoInventario.detalleVentaId` | `stock_movements.sale_line_id` | Origin by **physical line** sales. |
+| `Venta.balancesAfter` | `sales.balances_after` | Snapshot after sale, not inventory source. |
+| `AplicacionPago.numeroSecuencia` | `sale_payments.payment_number` | Sequence between 1 and 6, unique within the sale/company. |
+| `AplicacionPago.referencia` | `sale_payments.reference` | String is not null, empty by default; it is not verified banking number. |
+| `SaldoInventario` | `stock_balances` | **PK triple** `(business_id, location_id, catalog_item_id)`; `version` Starts at 1. |
 
-La clasificación comercial original de `CatalogItem.kind` (`ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`) sí está en el 03A; el snapshot `kind_snapshot` en un detalle representa su **comportamiento físico** (`BIEN`/`SERVICIO`) o la ausencia de artículo (`CONCEPTO` en compra). Esta distinción evita documentar columnas y restricciones inexistentes.
+The original commercial classification of `CatalogItem.kind` (`ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`) yes it is in the 03A; the snapshot `kind_snapshot` in a detail represents his **physical behaviour** (`BIEN`/`SERVICIO`) or the absence of an article (`CONCEPTO` This distinction avoids documenting columns and restrictions that are not available.
 
-## 3. Relaciones, multiplicidades y alcance de las FK
+## 3. Relations, multiplicity and scope of KFs
 
-| Relación | Cardinalidad de un registro válido por API | Sustento y precisión |
+| Relationship | Cardinality of a Valid API Record | Sustent and accuracy |
 |---|---|---|
-| `Compra — DetalleCompra` | **1 → 1..30** líneas | FK `(business_id,purchase_id)`, numeración única; el mínimo de líneas lo impone el contrato de comando. |
-| `Compra — Recepcion` | **1 → 0..1** recepción | `uq_purchase_receipts_business_purchase`; no hay recepción parcial/multidestino. |
-| `Proveedor — Compra` | **1 proveedor → 0..*** compras; **compra → 0..1** proveedor | Proveedor opcional, FK empresarial; su nombre queda congelado al registrar. |
-| `Venta — DetalleVenta` | **1 → 1..30** líneas | FK empresarial y número único por comprobante. |
-| `Venta — AplicacionPago` | **1 → 1..6** pagos declarados | FK y número secuencial; el límite/mínimo se valida en la API. |
-| `OperacionInventario — MovimientoInventario` | **1 → 1 o 2** movimientos | Traslado: exactamente dos; ajustes/stock inicial: uno, por creación controlada en servicio. |
-| `Recepcion — MovimientoInventario` | **0..1** recepción por movimiento; **0..*** movimientos por recepción | Solo líneas físicas `BIEN`, con FK por recepción y detalle. |
-| `Venta — MovimientoInventario` | **0..1** venta por movimiento; **0..*** movimientos por venta | Solo líneas físicas; FK triple a `sale_lines` identifica la venta y línea. |
-| `MovimientoInventario → SaldoInventario` | **Sin multiplicidad de FK directa** | Dependencia **transaccional** por triple empresa–ubicación–artículo, no FK de movimiento a una PK de saldo obligatoria. |
+| `Compra — DetalleCompra` | **1 → 1..30** lines | FK `(business_id,purchase_id)`, single numbering; minimum lines are required by the command contract. |
+| `Compra — Recepcion` | **1 → 0..1** reception | `uq_purchase_receipts_business_purchase`; there is no partial/multi-destiny reception. |
+| `Proveedor — Compra` | **1 provider → 0..*** purchases; **purchase → 0.1** supplier | Optional provider, business FK; your name is frozen when you register. |
+| `Venta — DetalleVenta` | **1 → 1..30** lines | Business FK and single number per voucher. |
+| `Venta — AplicacionPago` | **1 → 1..6** declared payments | FK and sequential number; the limit/minimum is validated in API. |
+| `OperacionInventario — MovimientoInventario` | **1 → 1 o 2** movements | Transfer: exactly two; initial adjustments/stock: one, by controlled creation in service. |
+| `Recepcion — MovimientoInventario` | **0..1** reception by movement; **0..*** movements by reception | Only physical lines `BIEN`with FK for reception and detail. |
+| `Venta — MovimientoInventario` | **0..1** sale by movement; **0..*** sales movements | Physical lines only; FK triple to `sale_lines` identifies the sale and line. |
+| `MovimientoInventario → SaldoInventario` | **No direct FK multiplicity** | Dependencia **transactional** per triple company–location–article, not FK moving to a PK of mandatory balance. |
 
-**No leer las líneas del UML como garantía SQL de todos los mínimos.** En PostgreSQL no hay un CHECK de padre que cuente automáticamente los renglones hijos; el servicio crea el agregado completo. De igual modo, no se afirma que una FK de `purchase_line_id` pruebe por sí sola que la línea corresponda a la compra de `receipt_id`: la selección del agregado y su consistencia se controlan al ejecutar la recepción.
+**Do not read UML lines as SQL warranty for all minima.** In PostgreSQL there is no parent CHECK that automatically counts the child lines; the service creates the full aggregate. Similarly, it is not claimed that a FK of `purchase_line_id` prove by itself that the line corresponds to the purchase of `receipt_id`: the selection of the aggregate and its consistency are controlled when executing the reception.
 
-**Aislamiento:** las FK compuestas con `business_id` impiden varias referencias físicas cruzadas, y los servicios deben autorizar la sesión, membresía y sede. **Una FK válida no otorga permiso.**
+**Insulation:** the FK composed with `business_id` prevent multiple cross-referenced physical, and services must authorize the session, membership and venue. **A valid FK does not grant permission.**
 
-## 4. Compras: registrar no significa recepcionar (RF-05, CU-06)
+## 4. Shopping: registering does not mean reception (RF-05, CU-06)
 
-`Purchase` guarda empresa, proveedor opcional, nombre histórico del proveedor, fecha, autor, estado, referencia, notas, total e idempotencia. `PurchaseLine` conserva descripción, tipo, unidad, SKU, cantidad y costo acordado. La API **calcula** el total sumando las líneas individualmente redondeadas.
+`Purchase` save company, optional supplier, supplier history name, date, author, status, reference, notes, total and idempotence. `PurchaseLine` retains description, type, unit, SKU, quantity and cost agreed. API **calculates** the total by adding individually rounded lines.
 
-**Flujo actual:** se registra una compra con artículos físicos y/o servicios/conceptos sin elegir todavía destino. En esta operación **no se crea `StockMovement` ni se altera `StockBalance`**. El destino se decide después, en la recepción.
+**Current flow:** a purchase is recorded with physical items and/or services/concepts not yet chosen destination. In this operation **no se crea `StockMovement` does not alter `StockBalance`**. The destination is decided later, at the reception.
 
-| Estado permitido por `ck_purchases_status` | Significado real |
+| State permitted by `ck_purchases_status` | Actual meaning |
 |---|---|
-| `REGISTRADA` | Hay al menos un bien físico pendiente de recepción. |
-| `RECIBIDA` | Se confirmó la recepción física completa en una sede. |
-| `CERRADA_SIN_RECEPCION` | Solo servicios/conceptos; nunca se crean movimientos de recepción. |
-| `CANCELADA` | **Estado admitido por el CHECK, sin endpoint público de cancelación en el corte T11.** No inventar transición. |
+| `REGISTRADA` | There is at least one physical good pending reception. |
+| `RECIBIDA` | Full physical reception was confirmed at a headquarters. |
+| `CERRADA_SIN_RECEPCION` | Only services/concepts; never receive movements are created. |
+| `CANCELADA` | **State admitted by CHECK, no public cancellation endpoint in court T11.** Don't invent transition. |
 
-Una compra mixta solo recepciona los renglones `BIEN`. El proveedor debe pertenecer a la empresa y estar activo al registrar la compra; una modificación posterior de su nombre **no reescribe** `supplier_name_snapshot`. Un concepto libre carece de `catalog_item_id`, y no debe convertirse en un artículo físico implícito.
+A mixed purchase only receives lines `BIEN`. The supplier must belong to the company and be active when registering the purchase; a subsequent modification of its name **no reescribe** `supplier_name_snapshot`. A free concept lacks `catalog_item_id`and should not become an implicit physical article.
 
-## 5. Recepción: un ingreso físico, una sede y un commit (CU-07)
+## 5. Reception: a physical income, a headquarters and a commission (CU-07)
 
-`PurchaseReceipt` relaciona una compra `REGISTRADA` con **una sola ubicación ACTIVA con capacidad STORE**. La autorización operativa por sede se comprueba en el servicio: titulares/administradores pueden operar sin asignación individual; encargados/trabajadores requieren la asignación habilitante según la política correspondiente.
+`PurchaseReceipt` relates a purchase `REGISTRADA` con **one active location with STORE capacity**. Operating authorization by headquarters is checked in the service: holders/administrators can operate without individual assignment; managers/workers require the enabling assignment according to the corresponding policy.
 
-1. Revalidar sesión, empresa, membresía, compra y capacidad STORE de la sede elegida.
-2. Bloquear/verificar la compra y confirmar que aún no exista recepción previa.
-3. Identificar **todas** las líneas físicas de la compra y revalidar su unidad/tipo aplicables.
-4. Insertar la recepción (`request_id`, hash, actor, fecha, `balances_after`) y acreditar saldos por artículo con UPSERT seguro.
-5. Insertar un `StockMovement` de tipo `COMPRA_RECEPCION` **por renglón físico**, con `receipt_id` y `purchase_line_id`.
-6. Marcar la compra `RECIBIDA` y confirmar **todo junto**; cualquier excepción implica rollback.
+1. Revalidate session, company, membership, purchase and capacity STORE of the chosen headquarters.
+2. Lock/check the purchase and confirm that there is no prior receipt.
+3. Identificar **all** the physical lines of purchase and revalidate its applicable unit/type.
+4. Insert reception (`request_id`, hash, actor, date, `balances_after`) and credit balances per item with UPSERT secure.
+5. Insert `StockMovement` of a kind `COMPRA_RECEPCION` **by physical line**, con `receipt_id` y `purchase_line_id`.
+6. Mark purchase `RECIBIDA` and confirm **all together**; any exception involves rollback.
 
-El índice `uq_purchase_receipts_business_purchase` constituye la última barrera contra una segunda recepción para esa compra. `balances_after` preserva los saldos/versiones *devueltos en la respuesta original* aunque el inventario cambie después. No es un saldo editable.
+The index `uq_purchase_receipts_business_purchase` constitutes the last barrier against a second reception for such purchase. `balances_after` preserves *backed balances/versions in the original response* even if inventory changes later. It is not an editable balance.
 
-**No implementado:** recepción parcial, múltiples sedes para una misma compra, recepción de insumos vinculada automáticamente a recetas, conciliación de pago de compra.
+**Not implemented:** partial reception, multiple venues for the same purchase, receipt of inputs automatically linked to recipes, reconciliation of purchase payment.
 
-## 6. Inventario: operación, movimiento y saldo son conceptos distintos (RF-06)
+## 6. Inventory: operation, movement and balance are different concepts (RF-06)
 
-### 6.1 Operación de inventario (`inventory_operations`)
+### 6.1 Inventory operation (`inventory_operations`)
 
-`InventoryOperation` registra una acción manual identificable, justificada e idempotente. Sus campos `source_location_id` y `destination_location_id` son opcionales en el modelo pero la restricción `ck_inventory_operations_direction_locations` les exige una combinación según `kind`:
+`InventoryOperation` records an identifiable, justified and idempotent manual action. `source_location_id` y `destination_location_id` are optional in the model but restriction `ck_inventory_operations_direction_locations` requires a combination according to `kind`:
 
-| `kind` | Sede origen | Sede destino | Eventos | Consecuencia |
+| `kind` | Headquarters | Headquarters | Events | Consequence |
 |---|---|---|---|---|
-| `TRASLADO` | Obligatoria | Obligatoria y distinta | `TRASLADO_SALIDA`, `TRASLADO_ENTRADA` | Dos deltas opuestos; variación neta 0. |
-| `AJUSTE_ENTRADA` | NULL | Obligatoria | `AJUSTE_ENTRADA` | Ingreso justificado. |
-| `AJUSTE_SALIDA` | Obligatoria | NULL | `AJUSTE_SALIDA` | Egreso justificado, exige saldo suficiente. |
-| `STOCK_INICIAL` | NULL | Obligatoria | `STOCK_INICIAL` | Primera carga controlada sin historial previo. |
+| `TRASLADO` | Mandatory | Mandatory and Different | `TRASLADO_SALIDA`, `TRASLADO_ENTRADA` | Two opposite deltas; net variation 0. |
+| `AJUSTE_ENTRADA` | NULL | Mandatory | `AJUSTE_ENTRADA` | Justified entry. |
+| `AJUSTE_SALIDA` | Mandatory | NULL | `AJUSTE_SALIDA` | Justified discharge, requires sufficient balance. |
+| `STOCK_INICIAL` | NULL | Mandatory | `STOCK_INICIAL` | First load controlled without previous history. |
 
-La cantidad `quantity_milli` es **positiva** en la operación; el signo se expresa mediante el **delta** del movimiento. Tanto la unidad como el artículo y las sedes se validan. No se admite un traslado a la misma sede.
+The amount `quantity_milli` es **positiva** in the operation; the sign is expressed by the **delta** The unit, the article and the headquarters are validated. A transfer to the same office is not allowed.
 
-**Permisos vigentes:** para ajustes positivos/negativos, el servicio permite titular/administrador/encargado bajo políticas STORE; `TRABAJADOR` no realiza ajustes. Para `STOCK_INICIAL`, solo titular/administrador. Los traslados y recepciones requieren capacidad STORE en las sedes involucradas y autorización efectiva por ubicación. La autorización es lógica de aplicación y no una propiedad de un CHECK SQL.
+**Permits in force:** for positive/negative adjustments, the service allows holder/manager/charger under STORE policies; `TRABAJADOR` does not make adjustments. `STOCK_INICIAL`, only holder/manager. Transfers and receptions require STORE capacity at the locations involved and effective authorization by location. Authorization is application logic and not a ownership of a CHECK SQL.
 
-**Conteo físico y `expected_version`:** el comando de ajuste lleva una versión observada para rechazar saldos que cambiaron concurrentemente; **`expected_version` no es columna de `inventory_operations`**. Si el conteo coincide con el saldo observado no corresponde generar un movimiento ficticio.
+**Physical count and `expected_version`:** the setting command carries an observed version to reject balances that have changed concurrently; **`expected_version` no es columna de `inventory_operations`**. If the count matches the observed balance, it is not appropriate to generate a fictitious movement.
 
-### 6.2 Libro histórico de movimientos (`stock_movements`)
+### 6.2 Historical movement book (`stock_movements`)
 
-El ledger almacena hechos de stock *con signo*. La restricción `ck_stock_movements_origin_and_sign` comprueba que **tipo de evento, identificadores de origen y signo** se correspondan, no simplemente que una de tres FK sea distinta de NULL.
+The leadger stores stock facts *with sign*. `ck_stock_movements_origin_and_sign` checks that **type of event, origin identifiers and sign** they correspond, not simply that one of three FK is different from NULL.
 
-| `event_type` persistido | Origen obligatorio | Delta | Efecto |
+| `event_type` persisted | Mandatory origin | Delta | Effect |
 |---|---|---|---|
-| `COMPRA_RECEPCION` | `receipt_id` + `purchase_line_id` | Positivo | Bien recibido. |
-| `TRASLADO_SALIDA` | `inventory_operation_id` + `operation_kind=TRASLADO` | Negativo | Se descuenta del origen. |
-| `TRASLADO_ENTRADA` | Misma operación y clase | Positivo | Se acredita al destino. |
-| `AJUSTE_ENTRADA` | Operación de tipo `AJUSTE_ENTRADA` | Positivo | Ajuste justificado. |
-| `AJUSTE_SALIDA` | Operación de tipo `AJUSTE_SALIDA` | Negativo | Ajuste justificado. |
-| `STOCK_INICIAL` | Operación de tipo `STOCK_INICIAL` | Positivo | Carga inicial. |
-| `VENTA_SALIDA` | `sale_id` + `sale_line_id` | Negativo | Bien físico vendido. |
+| `COMPRA_RECEPCION` | `receipt_id` + `purchase_line_id` | Positive | Well received. |
+| `TRASLADO_SALIDA` | `inventory_operation_id` + `operation_kind=TRASLADO` | Negative | It's off the record. |
+| `TRASLADO_ENTRADA` | Same operation and class | Positive | It's credited to the destination. |
+| `AJUSTE_ENTRADA` | Type operation `AJUSTE_ENTRADA` | Positive | Justifiable adjustment. |
+| `AJUSTE_SALIDA` | Type operation `AJUSTE_SALIDA` | Negative | Justifiable adjustment. |
+| `STOCK_INICIAL` | Type operation `STOCK_INICIAL` | Positive | Initial charge. |
+| `VENTA_SALIDA` | `sale_id` + `sale_line_id` | Negative | Well-physically sold. |
 
-Las FK compuestas verifican tenant, y `fk_stock_movements_operation_kind_tenant` vincula incluso la **clase de la operación manual**. Las unicidades `uq_stock_movements_receipt_line`, `uq_stock_movements_operation_event` y `uq_stock_movements_sale_line` impiden duplicaciones según su origen. **No hay una columna `motivo` genérica en `stock_movements`:** el motivo de una operación manual se encuentra en `inventory_operations.reason`.
+Composite FKs verify tenant, and `fk_stock_movements_operation_kind_tenant` even the **class of manual operation**. The Oneness `uq_stock_movements_receipt_line`, `uq_stock_movements_operation_event` y `uq_stock_movements_sale_line` prevent duplication according to origin. **There's no column. `motivo` generic in `stock_movements`:** the reason for a manual operation is found in `inventory_operations.reason`.
 
-**Ledger auditable** significa que las aplicaciones no deben reescribir movimientos antiguos para corregir existencias; una corrección necesita un nuevo hecho autorizado. No implica afirmar que PostgreSQL tenga un trigger genérico que haga a todas las filas físicamente inmutables frente a cualquier acceso privilegiado.
+**Ledger auditable** means that applications should not rewrite old moves to correct stocks; a correction needs a new authorized fact. It does not imply stating that PostgreSQL has a generic trigger that makes all rows physically immutable in front of any privileged access.
 
-### 6.3 Saldos transaccionales (`stock_balances`)
+### 6.3 Transactional balances (`stock_balances`)
 
-La **PK de tres partes** `(business_id, location_id, catalog_item_id)` identifica el saldo único de un bien en una sede y empresa. SQL exige `quantity_milli` no negativa y una `version` positiva. Una fila todavía inexistente se interpreta como cero al intentar una salida. Para una primera entrada el servicio utiliza UPSERT concurrente; para descontar, condiciones atómicas de disponibilidad, por ejemplo `UPDATE ... WHERE quantity_milli >= cantidad`.
+La **Three-part PK** `(business_id, location_id, catalog_item_id)` identifies the unique balance of a property at a headquarters and company. SQL requires `quantity_milli` non-negative and one `version` Positive. A still non-existent row is interpreted as zero when attempting an output. For a first entry the service uses concurrent UPSERT; to discount, atomic conditions of availability, for example `UPDATE ... WHERE quantity_milli >= cantidad`.
 
-Al registrar un movimiento, el saldo materializado y el ledger se actualizan en el mismo commit. El saldo no se considera un artículo editable libremente ni se debe recontar en el frontend para aplicar cambios. La conciliación lógica esperada es:
+When recording a move, the materialized balance and ledger are updated in the same commit. The balance is not considered an editable article freely nor must it be re-recounted on the frontend to apply changes. The expected logical reconciliation is:
 
 ```text
 Saldo actual (empresa, sede, artículo)
     = suma de delta_milli de sus movimientos confirmados
 ```
 
-Esta conciliación es un **invariante sistémico conservado por los servicios**, no un CHECK SQL que agregue filas históricas. La validación de versiones y las pruebas de concurrencia deben utilizar PostgreSQL real y sesiones independientes.
+This conciliation is a **systemic invariant retained by services**, not a CHECK SQL that adds historical rows. Version validation and proof of continuance should use actual PostgreSQL and independent sessions.
 
-## 7. Ventas y pagos declarados (RF-07, CU-10)
+## 7. Sales and payments declared (RF-07, CU-10)
 
-### 7.1 Venta y sus renglones
+### 7.1 Sales and its lines
 
-`Sale` persiste **solo `CONFIRMADA`**; no hay una entidad SQL de carrito o borrador comercial. `SaleLine` guarda su artículo obligatorio y los snapshots de nombre, clase física, unidad, SKU, cantidad y precio pactado. Tiene números de línea 1 a 30.
+`Sale` persists **only `CONFIRMADA`**; there is no SQL entity for cart or commercial draft. `SaleLine` save your required item and the snapshots of name, physical class, unit, SKU, quantity and price agreed. It has line numbers 1 to 30.
 
-**Flujo de venta REAL del backend:**
+**Real backend sales flow:**
 
-1. Verificar sesión y membresía activa en empresa ACTIVA; validar autorización para la ubicación de la venta.
-2. Comprobar que el catálogo esté ACTIVO, sea `sellable` y que unidades/cantidades sean compatibles.
-3. Aplicar **política de precio por rol (T10/T11)**: `ENCARGADO` y `TRABAJADOR` no pueden cambiar precio de lista ni aplicar descuentos. Para ellos se exige `catalog_items.price_cents` no nulo y coincidencia exacta. El backend vuelve a validar, independientemente del estado de inputs en React.
-4. Calcular el total de **cada línea** con HALF_UP y luego el subtotal y descuento. Comprobar que la suma de pagos declarados coincide con el total.
-5. Agrupar cantidades de un mismo bien físico **solo para controlar y descontar stock**; preservar cada línea y su importe histórico.
-6. Para venta física: exigir sede con **SELL + STORE** y stock suficiente, con asignación ACTIVA del operario cuando corresponda.
-7. Insertar venta, líneas, aplicaciones declaradas, movimientos de `VENTA_SALIDA`, actualización de saldos y `balances_after` en **una única transacción**; si falta stock, no queda venta ni pago parcial.
+1. Check session and active membership in an Active Company; validate authorization for the location of the sale.
+2. Check that the catalogue is ASSISTANT, `sellable` and that units/quantities are compatible.
+3. Apply **price policy per role (T10/T11)**: `ENCARGADO` y `TRABAJADOR` cannot change list price or apply discounts. For them it is required `catalog_items.price_cents` The backend revalidates, regardless of the input status in React.
+4. Calculate total of **each line** with HALF_UP and then the subtotal and discount. Check that the sum of payments declared matches the total.
+5. Grouping amounts of the same physical good **only to control and discount stock**; preserve each line and its historical amount.
+6. For physical sale: demand headquarters with **SELL + STORE** and sufficient stock, with active operator allocation where appropriate.
+7. Insert sale, lines, declared applications, movements of `VENTA_SALIDA`, update of balances and `balances_after` en **one transaction**; if stock is missing, no sale or partial payment remains.
 
-**Venta solo de servicios:** no produce egreso físico y puede omitir sede únicamente para titular/administrador. Un rol operativo sin sede no puede confirmar venta. **Venta mixta:** descuenta únicamente los bienes `BIEN`, no los servicios ni sus insumos de manera automática.
+**Sale of services only:** does not produce physical discharge and may omit headquarters only for holder/manager. An operating role without a head office cannot confirm sale. **Mixed sale:** accounts only for assets `BIEN`not services or inputs automatically.
 
-### 7.2 Medios declarados (`sale_payments`)
+### 7.2 Declared means (`sale_payments`)
 
-| Medio persistido | Significado |
+| Medium persisting | Meaning |
 |---|---|
-| `EFECTIVO` | El operador declaró efectivo. |
-| `TRANSFERENCIA` | Declaración de una transferencia, no conciliación bancaria. |
-| `CUENTA_DNI` | Declaración de medio CUENTA DNI. |
-| `TARJETA` | Declaración de cobro por tarjeta. |
-| `MERCADO_PAGO_DECLARADO` | Declaración manual; **no** comprobante de QR o webhook confirmado. |
+| `EFECTIVO` | The operator declared cash. |
+| `TRANSFERENCIA` | Declaration of a transfer, not bank reconciliation. |
+| `CUENTA_DNI` | Declaration of half a DNI ACCOUNT. |
+| `TARJETA` | Declaration of payment by card. |
+| `MERCADO_PAGO_DECLARADO` | Manual declaration; **no** QR or webhook proof confirmed. |
 
-El total comercial puede distribuirse entre **1 y 6** medios declarados positivos. El número de secuencia es único dentro de la venta. **No existen aquí cuentas financieras de empresa, caja diaria persistida, settlement de pagos ni conexión OAuth/QR REAL de Mercado Pago.** Esas integraciones quedan para un incremento posterior a T12.
+The total commercial can be distributed to **1 y 6** The sequence number is unique within the sale. **There are no company financial accounts, persistent daily cash, settlement of payments or real OAuth/QR connection for payment market.** These integrations are left for a post-T12 increase.
 
-### 7.3 Consultas y visibilidad de ventas
+### 7.3 Sales consultation and visibility
 
-La consulta histórica no da permisos irrestrictos al autor. Titular/administrador pueden consultar ventas de la empresa bajo su membresía; encargado/trabajador solo ven ventas de sedes a las que actualmente tienen asignación ACTIVA. Una revocación puede quitar visibilidad sobre ventas anteriores. La lectura de stock tiene sus propias reglas; no es correcto extrapolar automáticamente la política de ventas a todo inventario.
+The historical query does not give unrestricted permissions to the author. Owner/Manager may consult sales of the company under their membership; maintainer/worker only see sales of headquarters to which they currently have an active assignment. A revocation can remove visibility over previous sales. Stock reading has its own rules; it is not correct to automatically extrapolate sales policy to any inventory.
 
-## 8. Aritmética monetaria exacta y límites
+## 8. Accurate monetary arithmetic and limits
 
-Los importes son **enteros de centavos**, las cantidades son **enteros de milésimas de la unidad del artículo** y se aplica redondeo **HALF_UP por renglón**.
+The amounts are **wholes of cents**, the quantities are **100ths of the unit of the article** and applied rounding **HALF_UP by line**.
 
 ```text
 line_total_cents = floor((quantity_milli × unit_price_or_cost_cents + 500) / 1000)
@@ -205,133 +205,133 @@ Venta.total_cents = subtotal_cents - discount_cents
 Σ SalePayment.amount_cents = Venta.total_cents
 ```
 
-Ejemplo matemático ilustrativo: tres renglones por separado de `0,333` unidad a `10,50` por unidad (1.050 centavos) generan **350 centavos por línea y 1.050 centavos en total**. Si se agruparan `0,999` unidades y recién después se redondeara, el total sería **1.049 centavos**. Por eso el backend **agrupa cantidades físicas para stock**, pero **no fusiona los renglones para facturar**.
+Illustrative mathematical example: three lines separately from `0,333` unit a `10,50` per unit (1,050 cents) generated **350 cents per line and 1,050 cents in total**. If they are grouped `0,999` units and only after it was rounded, the total would be **1,049 cents**That's why the backend **group physical quantities for stock**but **does not merge lines to bill**.
 
-`PurchaseLine` admite costo unitario 0 y el encabezado puede tener total 0. `SaleLine` admite precio por línea 0 como bonificación, pero `Sale` requiere **subtotal y total final estrictamente positivos**. Para artículos discretos (`UNIDAD`, `PAQUETE`, `CAJA`; y `SERVICIO`/`CONCEPTO` donde corresponda), la cantidad debe ser múltiplo de 1.000 milésimas. SQL controla la aritmética de cada línea; la suma de múltiples filas y pagos se verifica en la capa de aplicación.
+`PurchaseLine` supports unit cost 0 and the header may have total 0. `SaleLine` supports price per line 0 as a bonus, but `Sale` requires **Subtotal and total final strictly positive**. For discrete items (`UNIDAD`, `PAQUETE`, `CAJA`; y `SERVICIO`/`CONCEPTO` where applicable), the amount must be multiple of 1,000 thousandths. SQL controls the arithmetic of each line; the sum of multiple rows and payments is verified in the application layer.
 
-## 9. Idempotencia real por agregado; no existe tabla genérica
+## 9. Actual Impotency per Aggregate; No Generic Table
 
-La identidad del comando se envía en `Idempotency-Key` como UUID y se guarda en su entidad correspondiente:
+The command identity is sent to `Idempotency-Key` as UUID and is kept in its respective entity:
 
-| Comando | Persistencia del `request_id` y hash | Regla observable |
+| Command | Persistence of `request_id` y hash | Observable rule |
 |---|---|---|
-| Crear compra | `purchases`, UNIQUE `(business_id, request_id)` | Replay mismo actor+cuerpo; otro contenido/actor entra en conflicto. |
-| Confirmar recepción | `purchase_receipts`, UNIQUE `(business_id, request_id)` | Replay de la recepción ya confirmada; no vuelve a ingresar stock. |
-| Trasladar / ajustar / stock inicial | `inventory_operations`, UNIQUE `(business_id, request_id)` | Replay de la operación, sin segundo movimiento. |
-| Confirmar venta | `sales`, UNIQUE `(business_id, request_id)` | Replay del comprobante sin nueva salida ni pago. |
-| Crear empresa | `business_creation_requests` con PK `(actor_user_id, idempotency_key)` | Mecanismo propio del alta empresarial; está documentado en 03A/Documento 03. |
+| Crear compra | `purchases`, UNIQUE `(business_id, request_id)` | Replay same actor+body; another content/actor conflicts. |
+| Confirm receipt | `purchase_receipts`, UNIQUE `(business_id, request_id)` | Replay of the received already confirmed; does not re-enter stock. |
+| Move / adjust / initial stock | `inventory_operations`, UNIQUE `(business_id, request_id)` | Replay of the operation, no second move. |
+| Confirm sale | `sales`, UNIQUE `(business_id, request_id)` | Replay of voucher without new departure or payment. |
+| Create company | `business_creation_requests` with PK `(actor_user_id, idempotency_key)` | The mechanism of the firm's discharge is documented in 03A/Document 03. |
 
-El **par** `request_id` + `request_sha256` y la validación del actor ayudan a distinguir un reintento legítimo de una reutilización conflictiva de clave. Estas unicidades se aplican **por tabla/agregado**, no como una clave global única entre compra y venta. Los hashes de solicitud no son hashes de contraseña ni acreditaciones de dinero.
+El **par** `request_id` + `request_sha256` and the validation of the actor help to distinguish a legitimate retry from a conflictive reuse of key. **by table/aggregate**, not as a unique global key between purchase and sale. Application hashes are not password hashes or money accreditations.
 
-**Si se confirma en DB pero se pierde la respuesta HTTP**, el cliente debe recuperar el resultado existente, **no volver a crear la transacción**. En ventas el backend expone consulta por `request_id`: `GET /api/v1/businesses/{business_id}/sales/by-request/{request_id}`. La guía no supone que toda pantalla ya implemente una recuperación automática tras timeout. La verificación UX previa a reintentar y los mensajes de error tipados son tareas post-T12.
+**If confirmed in DB but lost HTTP response**, the client must recover the existing result, **do not re-create the transaction**. In sales the backend displays consultation by `request_id`: `GET /api/v1/businesses/{business_id}/sales/by-request/{request_id}`. The guide does not assume that every screen already implements an automatic recovery after timeout. The UX verification before retry and the typed error messages are post-T12 tasks.
 
-## 10. Integridad: restricciones PostgreSQL frente a reglas de servicio
+## 10. Integrity: PostgreSQL restrictions against service rules
 
-| Regla crítica | Implementación / límite |
+| Critical rule | Implementation / limit |
 |---|---|
-| Compra por solicitud | `uq_purchases_business_request`, más digest/actor en servicio. |
-| Recepción única por compra | `uq_purchase_receipts_business_purchase`, más bloqueo y estado en servicio. |
-| Evento por línea física | `uq_stock_movements_receipt_line` y `uq_stock_movements_sale_line`. |
-| Evento por operación | `uq_stock_movements_operation_event`, más `operation_kind` coherente. |
-| Origen y signo del movimiento | `ck_stock_movements_origin_and_sign`; exige combinaciones permitidas de identificadores/tipo/signo. |
-| Saldos no negativos/versionados | `ck_stock_balances_quantity_nonnegative`, `ck_stock_balances_version`; `UPDATE` condicional/UPSERT. |
-| Dirección de traslados y ajustes | `ck_inventory_operations_direction_locations` y verificaciones de sede, permisos y catálogo. |
-| Precisión por línea | `ck_purchase_lines_half_up_total`, `ck_sale_lines_half_up_total`; servicio calcula en centavos. |
-| Venta confirmada y total coherente | `ck_sales_status_confirmed`, `ck_sales_positive_total_equals_subtotal_minus_discount`. |
-| Pagos y suma total | `sale_payments.method` restringido en `ck_sale_payments_declared_method`; **suma entre pagos** validada por servicio. |
-| Multiempresa | FK compuestas por `business_id` y consultas tenant-scoped; permiso autorizado en cada servicio. |
+| Purchase by request | `uq_purchases_business_request`, more digest/actor in service. |
+| Single reception per purchase | `uq_purchase_receipts_business_purchase`More lock and lock. |
+| Event by physical line | `uq_stock_movements_receipt_line` y `uq_stock_movements_sale_line`. |
+| Event per operation | `uq_stock_movements_operation_event`, más `operation_kind` coherent. |
+| Origin and sign of movement | `ck_stock_movements_origin_and_sign`; requires allowed combinations of identifiers/type/sign. |
+| Non-negative/versioned balances | `ck_stock_balances_quantity_nonnegative`, `ck_stock_balances_version`; `UPDATE` conditional/UPSERT. |
+| Direction of transfers and adjustments | `ck_inventory_operations_direction_locations` and headquarters checks, permits and catalogue. |
+| Accuracy per line | `ck_purchase_lines_half_up_total`, `ck_sale_lines_half_up_total`; service is calculated in cents. |
+| Confirmed and total consistent sale | `ck_sales_status_confirmed`, `ck_sales_positive_total_equals_subtotal_minus_discount`. |
+| Payments and total amount | `sale_payments.method` restricted in `ck_sale_payments_declared_method`; **amount between payments** validated by service. |
+| Multi-company | FK composed of `business_id` and tenant-scoped queries; permission authorized in each service. |
 
-En particular, una base correctamente relacionada **no elimina** el riesgo de autorización si el servidor omite validar permisos. Y un CHECK sobre `Sale` no verifica automáticamente la suma de N registros `SalePayment`.
+In particular, a properly related base **does not remove** the risk of authorization if the server fails to validate permissions. `Sale` does not automatically check the sum of N records `SalePayment`.
 
-## 11. Concurrencia y casos de error relevantes
+## 11. Relevant concurrence and cases of error
 
-**Dos ventas de la última unidad:** el servidor debe permitir que una confirme y otra falle sin stock negativo. El rechazo se produce **sin venta, pagos ni movimientos parciales**. La diferencia entre hacer un SELECT y un `UPDATE` condicional atómico es fundamental para demostrar por qué el saldo es seguro.
+**Two sales of the last unit:** the server must allow one to confirm and another to fail without negative stock. **no sale, payments or partial movements**. The difference between making a SELECT and a `UPDATE` atomic conditional is essential to show why the balance is safe.
 
-**Dos recepciones de una compra:** una única recepción puede persistir, incluso si las solicitudes tienen claves distintas; no se acepta acreditar dos veces la misma compra física.
+**Two receptions of a purchase:** a single reception can persist, even if the requests have different keys; it is not accepted to double credit the same physical purchase.
 
-**Saldo inicialmente ausente:** egreso físico sin fila equivale a 0 y falla; ingreso positivo inicial usa UPSERT concurrente.
+**Balance initially absent:** physical output without row equals 0 and failure; initial positive input uses concurrent UPSERT.
 
-**Traslado más venta concurrente:** se debita origen y acredita destino dentro del mismo commit que registra los dos hechos de traslado; una venta competidora no debe dejar inconsistencia.
+**Transfer plus concurrent sale:** origin is debited and accredits destination within the same commit that records both transfer facts; a competing sale should not leave inconsistency.
 
-**Conteo con versión obsoleta:** `expected_version` no coincide y el servicio rechaza la operación. El router de ajustes devuelve **409** con texto «Version de saldo obsoleta o saldo inexistente», no un campo `code: STALE_BALANCE_VERSION` confirmado.
+**Counting with obsolete version:** `expected_version` does not match and the service rejects operation. The settings router returns **409** with text ‘Version of obsolete balance or non-existent balance’, not a field `code: STALE_BALANCE_VERSION` confirmed.
 
-**Accesos de otra empresa / sede:** un UUID válido de un negocio ajeno no habilita operación; un colaborador sin asignación activa a STORE/SELL no accede a esa función en esa ubicación.
+**Accesses from another company/headquarters:** a valid UUID of an external business does not enable operation; an unallocated contributor to STORE/SELL does not access that function at that location.
 
-Estos son **escenarios de verificación y evidencia**. Este trabajo documental no ejecuta nuevas pruebas de carga, Pytest, Playwright ni migraciones: no presentarlo como un nuevo resultado CI de T12-C3.
+These are **verification scenarios and evidence**This documentary work does not perform new load tests, Pytest, Playwright or migrations: do not present it as a new result IC of T12-C3.
 
-## 12. API REST relacionada con el modelo
+## 12. Model-related REST API
 
-Prefijo común: **`/api/v1/businesses/{business_id}`**. La información de alta, edición y permisos de proveedores/catálogo/sedes reside en 03A.
+Common prefix: **`/api/v1/businesses/{business_id}`**. The information of registration, editing and permissions of suppliers/catalogue/headquarters resides in 03A.
 
-| Operación REAL documentada | Método y ruta | CU |
+| Documented REAL Operation | Method and route | CU |
 |---|---|---|
-| Crear y consultar compras | `POST /purchases`, `GET /purchases`, `GET /purchases/{purchase_id}` | CU-06 |
-| Recepcionar y consultar comprobante | `POST /purchases/{purchase_id}/receive`, `GET /purchases/{purchase_id}/receipt` | CU-07 |
-| Traslado y consulta | `POST /inventory/transfers`, `GET /inventory/transfers/{transfer_id}` | CU-09 |
-| Ajuste y consulta | `POST /inventory/adjustments`, `GET /inventory/adjustments/{adjustment_id}` | CU-11 |
-| Confirmar / listar / consultar ventas | `POST /sales`, `GET /sales`, `GET /sales/{sale_id}` | CU-10 |
-| Recuperación de venta por comando | `GET /sales/by-request/{request_id}` | CU-10 |
+| Create and Consult Shopping | `POST /purchases`, `GET /purchases`, `GET /purchases/{purchase_id}` | CU-06 |
+| Receive and consult voucher | `POST /purchases/{purchase_id}/receive`, `GET /purchases/{purchase_id}/receipt` | CU-07 |
+| Transfer and consultation | `POST /inventory/transfers`, `GET /inventory/transfers/{transfer_id}` | CU-09 |
+| Adjustment and consultation | `POST /inventory/adjustments`, `GET /inventory/adjustments/{adjustment_id}` | CU-11 |
+| Confirm / list / consult sales | `POST /sales`, `GET /sales`, `GET /sales/{sale_id}` | CU-10 |
+| Recovery from sale by command | `GET /sales/by-request/{request_id}` | CU-10 |
 
-**Nota de rutas:** esta selección no pretende ser el inventario completo de la API del proyecto. Las consultas de saldos/movimientos y administración de otros recursos se describen en sus módulos y documentos contractuales; no agregar endpoints imaginarios de cancelación, caja o QR externo.
+**Route note:** This selection is not intended to be the full inventory of the project API. Balance/movement queries and other resources management are described in its modules and contractual documents; do not add imaginary cancellation endpoints, cashier or external QR.
 
-## 13. Relación con 03A, Documento 03 y la futura visualización de la base
+## 13. Relationship to 03A, Document 03 and future visualization of the base
 
-El 03B **no duplica** las clases de negocio del 03A. Para toda operación, su `business_id` delimita la empresa; `catalog_item_id` referencia una ficha real; `location_id` representa una sede con capacidades; `supplier_id` es opcional para compras; `created_by_id` / `actor_id` se asocian a la membresía del tenant.
+El 03B **no duplicate** the business classes of 03A. For all operations, your `business_id` defines the undertaking; `catalog_item_id` reference to a real sheet; `location_id` represents a headquarters with capabilities; `supplier_id` is optional for purchases; `created_by_id` / `actor_id` are associated with the tenant's membership.
 
-El Documento 03 v2.1 es la fuente rectora de las definiciones, el 03A muestra las entidades base, el 03B muestra los hechos comerciales y el 03C mostrará casos de uso y actores. Tras T12 se propone generar **un DER físico desde PostgreSQL real** con una herramienta como DBeaver, sin migrar la base ni reemplazar los UML por un diagrama de tablas ajeno a los contratos implementados.
+Document 03 v2.1 is the guiding source of definitions, 03A shows base entities, 03B shows commercial facts and 03C will show cases of use and actors. After T12 it is proposed to generate **a physical DER from PostgreSQL real** with a tool like DBeaver, without migrating the base or replacing UMLs by a diagram of tables that are foreign to the contracts implemented.
 
-**Sobre el SVG:** es un diseño editorial **semánticamente equivalente** a las nueve clases centrales del PUML, no un resultado exportado automáticamente por PlantUML. Las asociaciones desde `Recepcion` y `Venta` hacia `MovimientoInventario` se representan en la banda inferior de trazabilidad para evitar líneas que atraviesen las tarjetas. `Empresa`, `Proveedor`, `Ubicacion`, `ArticuloCatalogo` y `Membresia` figuran como contexto proveniente del 03A, no como nuevas persistencias del 03B.
+**On the SVG:** is an editorial design **semantically equivalent** to the nine central classes of the PUML, not a result automatically exported by PlantUML. `Recepcion` y `Venta` towards `MovimientoInventario` are represented in the lower traceability band to avoid lines that pass through cards. `Empresa`, `Proveedor`, `Ubicacion`, `ArticuloCatalogo` y `Membresia` are listed as a context from 03A, not new persistences of 03B.
 
-## 14. Decisiones pospuestas — no confundir DEMO con REAL
+## 14. Decisions postponed — do not confuse DEMO with REAL
 
-- **Convergencia REAL/DEMO:** conservar operaciones y seguridad del backend, acercar la navegación, estética, validaciones visuales y secuencias de uso del frontend REAL a las pantallas DEMO existentes.
-- **Demostración web/móvil:** preparar una experiencia React/Vite responsive y reproducible para uso docente y pruebas en navegador o teléfono, sin que ello certifique un despliegue público seguro.
-- **Diagrama ER del esquema real:** derivarlo de PostgreSQL con DBeaver, dbdiagram u otra herramienta; es representación física adicional, no sustitución de este UML.
-- **Mercado Pago QR REAL:** cada empresa conectará su **propia cuenta**; distinguir **QR de artículo** (identificación/enlace) de **QR de cobro** (transacción), confirmar pagos mediante proveedores/webhooks verificados e implementar idempotencia específica. `MERCADO_PAGO_DECLARADO` hoy **no hace ese trabajo**.
-- **Caja, gastos, cuentas financieras, reservas/pagos con seña y automatismos de consumo de insumos:** pueden figurar en la DEMO o en el plan, pero no se atribuyen a estos nueve modelos persistentes sin código/migración y pruebas adicionales.
+- **REAL/DEMO Convergence:** maintain backend operations and security, bring navigation, aesthetics, visual validations and realistic frontend usage sequences closer to existing DEMO screens.
+- **Web/mobile demo:** prepare a React/Vite experience responsive and reproducible for teaching use and testing in browser or phone, without certifying a safe public deployment.
+- **ER diagram of the actual scheme:** derive it from PostgreSQL with DBeaver, dbdiagram or other tool; it is additional physical representation, not substitution of this UML.
+- **Market Real QR Payment:** each company will connect its **own account**; distinguishing **Article QR** (identification/link) of **QR collection** (transaction), confirm payments via verified providers/webhooks and implement specific idempotency. `MERCADO_PAGO_DECLARADO` hoy **He doesn't do that job.**.
+- **Cash, expenses, financial accounts, reserves/payments with sign and input consumption automation:** may be included in DEMO or the plan, but are not attributed to these nine persistent models without additional code/migration and testing.
 
-La inclusión de esta hoja de ruta **no cambia los criterios de aceptación académica** ni autoriza trabajo funcional sobre el repositorio durante T12-C3.
+The inclusion of this road map **does not change academic acceptance criteria** does not authorize functional work on the repository during T12-C3.
 
-## 15. Preguntas clave para la defensa oral
+## 15. Key Questions for Oral Defense
 
-**¿Por qué separar Compra de Recepcion?** Porque adquirir no significa disponer físicamente. La compra conserva el compromiso y la recepción representa el ingreso de bienes en una sede concreta, con fecha y actor.
+**Why separate Purchase from Reception?** Because acquiring does not mean physically disposition. The purchase retains the commitment and receipt represents the income of goods in a specific venue, with date and actor.
 
-**¿Por qué hay `StockMovement` y `StockBalance`?** El primero es el historial auditable de eventos; el segundo es la proyección consultable y bloqueable. Se sincronizan atómicamente, sin duplicar una fuente de verdad editable.
+**Why is there `StockMovement` y `StockBalance`?** The first is the auditable history of events; the second is the queryable and blockable projection. They sync atomically, without duplicating an editable source of truth.
 
-**¿Qué impide doble recepción o doble venta por reintento?** Unicidades SQL por agregado y clave de comando, verificación de digest/actor y una sola transacción. La doble recepción también se restringe por compra.
+**What prevents double reception or double sale by retry?** SQL uniqueness by addition and command key, digest/actor verification and a single transaction. Double receipt is also restricted by purchase.
 
-**¿Qué protege contra sobreventa?** Descuento condicional con saldo suficiente en PostgreSQL y rollback íntegro en caso de conflicto.
+**What does it protect against overselling?** Conditional discount with sufficient balance in PostgreSQL and full rollback in case of conflict.
 
-**¿Por qué los precios y descripciones son snapshots?** Para no reescribir comprobantes históricos cuando el catálogo o proveedor cambian. El precio unitario de venta de roles operativos además se valida contra catálogo en el backend.
+**Why are prices and descriptions snapshots?** To avoid rewriting historical vouchers when the catalog or supplier changes. The unit price of selling operational roles is also validated against catalog in backend.
 
-**¿Por qué `MERCADO_PAGO_DECLARADO` no equivale a Mercado Pago QR?** Porque declarar el medio manualmente no consulta ni verifica una orden de cobro del procesador externo. La integración real requiere credenciales por empresa, verificación de notificaciones, estados de pago y conciliación.
+**Why `MERCADO_PAGO_DECLARADO` does not equal Market Payment QR?** Because declaring the media manually does not consult or verify an external processor recovery order. Real integration requires company credentials, verification of notifications, payment statements and reconciliation.
 
-**¿Qué patrones se pueden defender?** Service Layer, Repository donde existe, manejo transaccional mediante la sesión SQLAlchemy, snapshots históricos e idempotencia/replay. No afirmar que existen clases GoF `State`, `Memento` ni una implementación universal de `UnitOfWork` cuando el código no las exhibe.
+**What patterns can be defended?** Service Layer, Repository where it exists, transactional handling through the SQLAlchemy session, historical snapshots and idempotency/replay. Do not claim that there are GoF classes `State`, `Memento` a universal implementation of `UnitOfWork` when the code doesn't display them.
 
-## 16. Matriz de trazabilidad y comprobaciones del entregable
+## 16. Traceability matrix and deliverable checks
 
-| Área | Requisito / CU | Tabla / evidencia de código | Resultado documental esperado |
+| Area | Requirement / CU | Table/evidence of code | Expected documentary result |
 |---|---|---|---|
-| Compra | RF-05 / CU-06 | `Purchase`, `PurchaseLine`, servicio de compras | No ingreso físico al crear; snapshot y estados correctos. |
-| Recepción | RF-05 / CU-07 | `PurchaseReceipt`, `StockMovement`, `StockBalance` | Una recepción física por compra, una sede STORE, entrada por línea. |
-| Inventario y consulta | RF-06 / CU-08 | `StockBalance`, `StockMovement` | Triple de stock y ledger, historial y conciliación. |
-| Traslado | RF-06 / CU-09 | `InventoryOperation`, dos movimientos | Salida y entrada atómicas, neto cero. |
-| Ajuste/conteo | RF-06 / CU-11 | `InventoryOperation`, versión del saldo | Roles, motivo y control de concurrencia. |
-| Venta | RF-07 / CU-10 | `Sale`, `SaleLine`, `SalePayment` | Comprobante confirmado, pagos declarados y egreso físico atómico. |
-| Contexto | RF-01..05 / 03A | `Business`, `Membership`, `Location`, `CatalogItem`, `Supplier` | Tenant, permisos, sede, catálogo y proveedor reales. |
+| Purchase | RF-05 / CU-06 | `Purchase`, `PurchaseLine`, Shopping service | No physical income when creating; snapshots and correct states. |
+| Receipt | RF-05 / CU-07 | `PurchaseReceipt`, `StockMovement`, `StockBalance` | A physical reception by purchase, a STORE headquarters, entrance by line. |
+| Inventory and consultation | RF-06 / CU-08 | `StockBalance`, `StockMovement` | Triple stock and ledger, history and reconciliation. |
+| Transfer | RF-06 / CU-09 | `InventoryOperation`Two moves. | Atomic output and input, net zero. |
+| Adjustment/counting | RF-06 / CU-11 | `InventoryOperation`, version of balance | Roles, motive and control of attendance. |
+| Sale | RF-07 / CU-10 | `Sale`, `SaleLine`, `SalePayment` | Confirmed check, declared payments and atomic physical discharge. |
+| Context | RF-01..05 / 03A | `Business`, `Membership`, `Location`, `CatalogItem`, `Supplier` | Tenant, permits, headquarters, catalog and actual supplier. |
 
-**Lista de aceptación T12-C3 (se completa tras revisión):**
+**Acceptance list T12-C3 (completed after revision):**
 
-- [x] Están modeladas las **9 entidades comerciales persistentes**.
-- [x] El PlantUML declara 4 estados de compra, 4 tipos de operación, 7 eventos de ledger y 5 medios de pago declarado.
-- [x] El diagrama/guía no inventan una tabla SQL `SolicitudIdempotente`.
-- [x] Se identifica `Purchase.request_sha256` como nullable en el modelo y `kind_snapshot` con tipos correctos.
-- [x] Se explican `operation_kind`, los identificadores por línea y la regla de origen/evento/signo del movimiento.
-- [x] Se distinguen SQL CHECK/FK/UNIQUE de validaciones transaccionales del servicio.
-- [x] Se distingue pago declarado de QR acreditado; se conservan los objetivos post-T12.
-- [x] El SVG editorial es legible; las 156 etiquetas `<text>` tienen atributo `fill` explícito y conservan su diseño aprobado.
-- [ ] Validar sintaxis del `.puml` con un **motor PlantUML** (si no está disponible, consignarlo sin inventar resultado).
-- [x] Revisión humana y **aprobación expresa** de los tres archivos para sustituirlos en PR #46.
-- [x] Actualizar **solo** `.puml`, `.svg` y esta guía en `docs/e2-7-t12-cierre-academico`; verificar commit y referencias, sin tocar `main`, frontend, backend ni DB.
+- [x] The modeled **9 persistent commercial entities**.
+- [x] The PlantUML declares 4 purchase statements, 4 types of transactions, 7 ledger events and 5 declared payment means.
+- [x] The diagram/guide does not invent an SQL table `SolicitudIdempotente`.
+- [x] Se identifica `Purchase.request_sha256` as nullable in the model and `kind_snapshot` With the right guys.
+- [x] Explanations `operation_kind`, the identifiers per line and the origin/event/sign of movement rule.
+- [x] SQL CHECK/FK/UNIQUE is distinguished from transactional validations of the service.
+- [x] Declared payment of accredited QR is distinguished; post-T12 objectives are retained.
+- [x] The editorial SVG is legible; all 156 labels `<text>` have attribute `fill` explicit and retain their approved design.
+- [ ] Validate syntax of `.puml` with a **motor PlantUML** (if not available, enter it without inventing result).
+- [x] Human and **express approval** of the three files to replace them in PR #46.
+- [x] Update **only** `.puml`, `.svg` and this guide in `docs/e2-7-t12-cierre-academico`; verificar commit y referencias, sin tocar `main`, frontend, backend ni DB.
 
-**Dictamen:** **T12-C3 APROBADO Y PUBLICADO EN RAMA DOCUMENTAL**, derivado del corte funcional T11 y compatible con el Documento 03 v2.1/03A v2.1. El PR #46 permanece DRAFT; no se fusionó a `main`. La compilación con PlantUML continúa pendiente por falta del ejecutable en este entorno. El siguiente incremento documental es **T12-C4 — 03C, casos de uso**.
+**Opinion:** **T12-C3 ADOPTED AND PUBLISHED IN DOCUMENTAL RAM**, derived from functional cut T11 and compatible with Document 03 v2.1/03A v2.1. PR #46 remains DRAFT; not merged to `main`. The compilation with PlantUML is still pending due to lack of executable in this environment. The next documentary increase is **T12-C4 — 03C, use cases**.

@@ -1,95 +1,95 @@
-# E2-5 — Matriz de auditoría por invariante y superficie técnica
+# E2-5 — Invariant and technical area audit matrix
 
-**Alcance:** E2-5 A/B/C congelado en `748e69319d8d04900c009d5184168a264a9deeac`.  
-**Carácter:** **plan de auditoría independiente**, NO lista de defectos confirmados. Cada fila requiere evidencia y dictamen del futuro revisor.  
-**Principio para IA:** la implementación y el contrato aprobado mandan sobre diagramas conceptuales, pseudocódigo externo y preferencias de estilo. La IA debe comparar modelos, SQL, HTTP, dependencias y pruebas: no inferir propiedades de una sola capa.
+**Scope:** E2-5 A/B/C frozen in `748e69319d8d04900c009d5184168a264a9deeac`.  
+**Character:** **independent audit plan**, NO list of confirmed defects. Each row requires evidence and opinion from the future reviewer.  
+**Principle for AI:** implementation and the approved contract send out conceptual diagrams, external pseudocode and style preferences. AI must compare models, SQL, HTTP, dependencies and tests: do not infer properties from a single layer.
 
-## 1. Límites de confianza y arquitectura de referencia
+## 1. Limits of confidence and reference architecture
 
 `Cliente (Swagger/React/externo) → FastAPI/Pydantic → autenticación Bearer opaca con sesión revocable → Business/Membership/LocationAssignment → Service + Session SQLAlchemy síncrona → ORM/SQL PostgreSQL 16 + constraints + commit → ledger y proyección`.
 
-- `business_id` deriva de la URL, pero **no concede permisos**; el servidor verifica la pertenencia y los recursos en ese tenant.
-- `StockMovement` es la **evidencia histórica firmada** y `StockBalance` la **proyección actual bloqueable**. Una corrección no debe borrar historia ni crear un segundo saldo editable.
-- `InventoryOperation` es la cabecera idempotente de un **solo artículo** y clase; `TRASLADO` requiere dos movimientos, cada ajuste/inicial **uno**.
-- `PurchaseReceipt` y movimientos `COMPRA_RECEPCION` pertenecen a E2-4 y deben permanecer operativos y legibles.
-- `money` en ARS centavos solo afecta la dependencia de compras/recepción. **No hay transacción de efectivo, pago ni venta** en un traslado/ajuste E2-5.
-- Los locks de ubicación y el orden fijo en traslados son parte del diseño; el uso de `expected_version` solo en ajustes **no es por sí mismo un bug**.
-- Autenticación real: `app/modules/auth/tokens.py` genera tokens aleatorios URL-safe de 256 bits; no JWT. `SessionService` consulta su huella y estado en DB.
+- `business_id` derived from the URL, but **does not grant permissions**; the server checks the belonging and resources in that tenant.
+- `StockMovement` es la **Signed historical evidence** y `StockBalance` la **Current projection blockable**. A correction should not erase history or create a second editable balance.
+- `InventoryOperation` is the idepotent header of a **article only** and class; `TRASLADO` requires two movements, each adjustment/initial **uno**.
+- `PurchaseReceipt` and movements `COMPRA_RECEPCION` belong to E2-4 and must remain operational and legible.
+- `money` In ARS cents only affects the purchasing/reception dependency. **No cash transaction, payment or sale** in a transfer/adjustment E2-5.
+- Location locks and fixed order in transfers are part of the design; use of `expected_version` only in adjustments **is not by itself a bug**.
+- Actual authentication: `app/modules/auth/tokens.py` genera tokens aleatorios URL-safe de 256 bits; no JWT. `SessionService` Check your fingerprint and status on DB.
 
-## 2. Matriz principal RF/CU, invariantes y evidencia buscada
+## 2. Main matrix RF/CU, invariants and evidence sought
 
-| ID | RF/CU | Invariante o política examinada | Fuente primaria | Test representativo | Pregunta crítica del auditor |
+| ID | RF/CU | Invariant or policy examined | Primary source | Representative test | Critical Auditor Question |
 |---|---|---|---|---|---|
-| **INV-01** | RF-06 | Tabla de operación manual, `kind` permitido, direcciones correctas y motivo 3–500 | `models/inventory_operation.py`, migración 0016 | `test_inventory_operation_model.py` y `integration.py` | ¿Un INSERT SQL inválido (dirección, unidad o motivo) puede entrar por semántica NULL o FK parcial? |
-| **INV-02** | RF-06 | FK compuestas por tenant para artículo, ubicación y actor de operación | ORM + DDL `e25a_inventory_ops` | `test_inventory_operation_integration.py` | ¿Puede un movimiento/cabecera asociarse a recurso de empresa ajena con UUID conocido? |
-| **INV-03** | RF-06 | Origen XOR: movimiento de compra O manual; signo/tipo concordante | `models/stock_movement.py`, migración 0016 | `test_signed_origin_kind_is_enforced_in_postgres` | ¿Una fila mezcla `receipt_id` con `inventory_operation_id` o contradice `operation_kind`? |
-| **INV-04** | RF-06 | Ledger compatible con documentos de recepción E2-4 | `receipt_schemas.py`, `receipt_service.py`, `inventory_router.py` | `test_receipt_http_and_historical_movement_remain_unchanged` | ¿Se modificaron datos históricos o cambió el DTO antiguo de recibo por campos opcionales nuevos? |
-| **INV-05** | CU-08 | Lectura de saldos/movimientos por empresa, filtros y paginación | `inventory_router.py`, `ReceiptService.list_*` | `test_transfer_movements_visible_in_general_ledger_and_old_receipt_unchanged` | ¿La lectura comparte auth/tenant? ¿Filtra correctamente ambos ids y no agrega de otro negocio? |
-| **INV-06** | CU-09 | Traslado requiere dos ubicaciones distintas, activas y STORE | `transfer_schemas.py`, `TransferService.transfer`, `locations/permissions.py` | `test_location_status_store_and_foreign_tenant` | ¿Es posible usar lugar SELL-only o propio sin STORE? ¿Cuándo se bloquea y revalida? |
-| **INV-07** | CU-09 | Origen suficiente, débito SQL condicional; destino UPSERT; total conservado | `transfer_service.py`, `stock_balance.py` | `test_transfer_atomic_two_movements_same_total_and_replay` | ¿Puede existir crédito sin débito, negativo o doble confirmación? |
-| **INV-08** | CU-09 | Orden de lock estable para dos sedes y deadlock/reintentos | `transfer_service.py`, `test_transfer_concurrency_integration.py` | `test_opposite_direction_transfers_lock_locations_in_stable_order` | ¿Qué ocurre con transferencias opuestas y transacciones que usan otro orden (recepción/ajuste)? |
-| **INV-09** | CU-09 | Replay exacto del mismo actor/cuerpo/tenant devuelve 200 sin mutación | `TransferService._replay`, UNIQUE `business_id,request_id` | `test_concurrent_replay_same_key_does_not_duplicate_stock` | ¿Nueva clave, misma clave distinta carga, actor o tipo pueden provocar duplicación o información sensible? |
-| **INV-10** | CU-11 | `STOCK_INICIAL` una sola vez por empresa/ubicación/artículo, incluso saldo histórico cero | `adjustment_service.py` | `test_initial_is_forbidden_after_receipt_or_previous_initial_even_when_empty` | ¿Puede volver a «inicializar» tras mover todo el stock? ¿Qué pasa si existe ledger sin balance? |
-| **INV-11** | CU-11 | Solo titular/admin inicializa; ENCARGADO asignado puede ajustar; TRABAJADOR no | `adjustment_service.py`, `locations/permissions.py` | `test_permissions_employee_and_manager_location_assignment` | ¿Se aplican restricciones a POST, GET, replay, rol cambiado o membresía revocada? |
-| **INV-12** | CU-11 | Ajuste exige balance previo y versión exacta, +1 por éxito | `adjustment_service.py`, `stock_balance.py` | `test_no_prior_balance_cannot_be_adjusted_without_stock_initial` / `test_insufficient_stock_and_stale_version_do_not_change_ledger` | ¿El mismo saldo leído admite una segunda escritura con versión vieja? ¿Se devuelven 409 consistentes? |
-| **INV-13** | CU-11 | Ajuste positivo/negativo firmado; no sobrepasar cero/máximo | `adjustment_service.py`, `MAX_BALANCE_MILLI` | `test_adjust_increase_decrease_and_history_are_signed` | ¿Hay overflow, error SQL 500 no mapeado o signo incorrecto bajo carga extrema? |
-| **INV-14** | CU-11 | Replay y colisión de tipo/actor/cuerpo en ajustes | `AdjustmentService._replay` y request digest | `test_adjustment_key_cannot_be_reused_after_transfer` | ¿Un UUID4 usado en traslado puede reutilizarse para inicial? ¿Qué efecto tiene una carrera? |
-| **INV-15** | RF-06/RF-05 | Compra no acredita; recepción acredita una vez; ajuste/traslado no alteran compra | `receipt_service.py`, `receipt_schemas.py`, `transfer_service.py` | `test_receipt_api_integration.py` | ¿Existe comportamiento accidental E2-4 al operar E2-5? |
-| **INV-16** | RF-06 | Un commit/rollback integral para cabecera, dos movimientos y balances | `transfer_service.py`, `adjustment_service.py` | tests de error parcial; revisar su exhaustividad | ¿Un fallo entre debit/credit/insert deja efectos persistentes? ¿Se propagó 500 inesperado? |
-| **INV-17** | Seguridad | Sesión revocable y membresía/empresa revalidadas; recursos ajenos ocultos | `auth/session_service.py`, `purchases/service.py`, `businesses/repository.py` | `test_transfer_denied_on_invalid_token_and_foreign_operation` y tests de ajuste | ¿Queda algún camino sin revalidar, especialmente GET de comprobantes o replay temprano? |
-| **INV-18** | RF-06 | Cantidad en milésimas, unidades discretas, `StrictInt` y limites de `BIGINT` | `*_schemas.py`, CHECK en 0016, `StockBalance` | `test_schema_rejects_discrete_fraction_bad_reason_boolean_or_extra` | ¿Se filtran booleanos, fracciones, unidades inválidas y valores extremos sin coerción silenciosa? |
-| **INV-19** | RF-06 | Consistencia ledger ↔ balance bajo concurrencia mixta | `receipt_service.py`, `transfer_service.py`, `adjustment_service.py` | **Cobertura específica cruzada no demostrada** | ¿Una recepción simultánea a inicial o traslado entrante simultáneo a ajuste se serializa siempre sin doble conteo? |
-| **INV-20** | Seguridad DB | Integridad de ledger ante UPDATE/DELETE SQL directo; mínimo privilegio | esquema 0016, roles DB/Compose, ausencia de endpoint REST mutador | **No probado en cierre** | ¿Qué rol SQL usa runtime? ¿Puede modificar histórico y cómo auditarlo? |
-| **INV-21** | Seguridad/operación | Uso de DB de tests aislada y limpieza limitada a tenant | `test_*_concurrency_integration.py`, fixtures de recepción | CI efímero PostgreSQL 16; desarrollo local compartido | ¿Alguna fixture borra más que su tenant? ¿Config permite accidentalmente tocar base real? |
-| **INV-22** | UX/DX | Estado de error y contratos de reintento consistentes | routers E2-5, OpenAPI, Pydantic | tests HTTP/Swagger | ¿La aplicación cliente puede distinguir causa de 409 sin parsear texto libre? Registrar como riesgo, no cambiar API sin decisión |
-| **INV-23** | Arquitectura | Nuevos patrones/abstracciones solo cuando eliminan problemas reales | routers → services → modelos | revisión estática y tests | ¿AI introduciría otro almacén editable, commits escondidos, AsyncSession o duplicaría interfaces? |
-| **INV-24** | Documentación | RF-06, CU-08/09/11, UML 03B AS-IS/TO-BE, CI/QA atribuidos bien | 01–05, ADR-004, documentos E2-5 y cierre | matriz manual documentada | ¿Se atribuye backend real a frontend DEMO, se interpreta 840 como cobertura total o se mezclan SHAs? |
+| **INV-01** | RF-06 | Manual operating table, `kind` allowed, correct addresses and 3–500 motif | `models/inventory_operation.py`, migration 0016 | `test_inventory_operation_model.py` y `integration.py` | Can an invalid INSERT SQL (address, unit or motive) enter by semantics NULL or partial FK? |
+| **INV-02** | RF-06 | FK composed of tenant for article, location and operating actor | ORM + DDL `e25a_inventory_ops` | `test_inventory_operation_integration.py` | Can a movement/leader associate with the UUID known to an outsider? |
+| **INV-03** | RF-06 | XOR Origin: purchase movement O manual; sign/type matching | `models/stock_movement.py`, migration 0016 | `test_signed_origin_kind_is_enforced_in_postgres` | A row mix `receipt_id` con `inventory_operation_id` or contradicts `operation_kind`? |
+| **INV-04** | RF-06 | Ledger compatible with E2-4 reception documents | `receipt_schemas.py`, `receipt_service.py`, `inventory_router.py` | `test_receipt_http_and_historical_movement_remain_unchanged` | Did historical data change or did the old receipt DTO change to new optional fields? |
+| **INV-05** | CU-08 | Reading balances/movements by company, filters and pagination | `inventory_router.py`, `ReceiptService.list_*` | `test_transfer_movements_visible_in_general_ledger_and_old_receipt_unchanged` | Does the reading share auth/tenant? Does it correctly filter both ids and not add from another business? |
+| **INV-06** | CU-09 | Transfer requires two different locations, active and STORE | `transfer_schemas.py`, `TransferService.transfer`, `locations/permissions.py` | `test_location_status_store_and_foreign_tenant` | Is it possible to use SELL-only or its own place without STORE? When is it blocked and revalidated? |
+| **INV-07** | CU-09 | Sufficient origin, conditional SQL debit; UPSERT destination; total retained | `transfer_service.py`, `stock_balance.py` | `test_transfer_atomic_two_movements_same_total_and_replay` | Can there be credit without debit, negative or double confirmation? |
+| **INV-08** | CU-09 | Stable lock order for two locations and deadlock/reintense | `transfer_service.py`, `test_transfer_concurrency_integration.py` | `test_opposite_direction_transfers_lock_locations_in_stable_order` | What happens to opposite transfers and transactions using another order (reception/adjustment)? |
+| **INV-09** | CU-09 | Exact replay of the same actor/body/tenant returns 200 without mutation | `TransferService._replay`, UNIQUE `business_id,request_id` | `test_concurrent_replay_same_key_does_not_duplicate_stock` | Can new key, same different load key, actor or type cause duplication or sensitive information? |
+| **INV-10** | CU-11 | `STOCK_INICIAL` once per company/location/article, including zero historical balance | `adjustment_service.py` | `test_initial_is_forbidden_after_receipt_or_previous_initial_even_when_empty` | Can you re-start after moving the entire stock? What if there is a leader without balance? |
+| **INV-11** | CU-11 | Only holder/admin initializes; assigned CHARGE can adjust; WORKER does not | `adjustment_service.py`, `locations/permissions.py` | `test_permissions_employee_and_manager_location_assignment` | Are restrictions on POST, GET, replay, changed role or revoked membership applied? |
+| **INV-12** | CU-11 | Adjustment requires pre-balance and accurate version, +1 per success | `adjustment_service.py`, `stock_balance.py` | `test_no_prior_balance_cannot_be_adjusted_without_stock_initial` / `test_insufficient_stock_and_stale_version_do_not_change_ledger` | Does the same balance read support a second old version writing? 409 consistent returns? |
+| **INV-13** | CU-11 | Positive/negative adjustment signed; not exceeding zero/maximum | `adjustment_service.py`, `MAX_BALANCE_MILLI` | `test_adjust_increase_decrease_and_history_are_signed` | Is there overflow, unmapped SQL 500 error or incorrect sign under extreme charge? |
+| **INV-14** | CU-11 | Replay and collision type/actor/body in adjustments | `AdjustmentService._replay` y request digest | `test_adjustment_key_cannot_be_reused_after_transfer` | Can a UUID4 used in moving be reused for initial? What effect does a race have? |
+| **INV-15** | RF-06/RF-05 | Uncredited purchase; once credited receipt; no change in adjustment/transfer | `receipt_service.py`, `receipt_schemas.py`, `transfer_service.py` | `test_receipt_api_integration.py` | Is there accidental E2-4 behavior when operating E2-5? |
+| **INV-16** | RF-06 | A comprehensive commit/rollback for header, two movements and balance sheets | `transfer_service.py`, `adjustment_service.py` | partial error tests; review their completeness | Does a default between debit/credit/insert leave persistent effects? Was 500 unexpected spread? |
+| **INV-17** | Security | Revocable session and revalidated membership/company; hidden resources | `auth/session_service.py`, `purchases/service.py`, `businesses/repository.py` | `test_transfer_denied_on_invalid_token_and_foreign_operation` y tests de ajuste | Is there any way left unvalidated, especially GET of vouchers or early replay? |
+| **INV-18** | RF-06 | Amount in thousandths, discrete units, `StrictInt` and limits of `BIGINT` | `*_schemas.py`, CHECK at 0016, `StockBalance` | `test_schema_rejects_discrete_fraction_bad_reason_boolean_or_extra` | Are booleans, fractions, invalid units and extreme values filtered without silent coercion? |
+| **INV-19** | RF-06 | Leader consistency ↔ balance under mixed attendance | `receipt_service.py`, `transfer_service.py`, `adjustment_service.py` | **Unsubstantiated cross-specific coverage** | Is a simultaneous reception to initial or simultaneous incoming transfer to adjustment always serialized without double counting? |
+| **INV-20** | DB security | Leader integrity to UPDATE/DELETE SQL direct; minimum privilege | esquema 0016, roles DB/Compose, ausencia de endpoint REST mutador | **Not tested on closure** | What SQL role does runtime use? Can you modify history and how to audit it? |
+| **INV-21** | Safety/operation | Use of DB isolated tests and limited cleaning to tenant | `test_*_concurrency_integration.py`, receiving fixes | PostgreSQL 16 ephemeral CI; shared local development | Does any fixture erase more than your tenant? config accidentally allows you to touch real base? |
+| **INV-22** | UX/DX | Status of error and consistent retrying contracts | routers E2-5, OpenAPI, Pydantic | HTTP/Swagger tests | Can the client application distinguish cause of 409 without parsing free text? Register as risk, not change API without decision |
+| **INV-23** | Architecture | New patterns/abstractions only when they eliminate real problems | routers → services → modelos | static review and tests | Would you introduce another editable store, hidden commit, AsyncSession or duplicate interfaces? |
+| **INV-24** | Documentation | RF-06, CU-08/09/11, UML 03B AS-IS/TO-BE, CI/QA attributed well | 01–05, ADR-004, documents E2-5 and closure | documented manual matrix | Is real backend attributed to frontend DEMO, is 840 interpreted as total coverage or does SHAs mix? |
 
-## 3. Matriz RBAC que debe probarse contra API y políticas
+## 3. RBAC matrix to be tested against APIs and policies
 
-| Operación | Titular/Admin con membresía activa | Encargado activo y asignado | Trabajador activo y asignado | Restricciones adicionales |
+| Operation | Holder/Admin with active membership | Active and assigned manager | Active and assigned worker | Additional restrictions |
 |---|---|---|---|---|
-| POST traslado | Permitido en ambas ubicaciones STORE | Permitido **solo si asignado a ambas** | Permitido **solo si asignado a ambas** | Empresa y ubicaciones activas, catálogo físico activo, saldo suficiente |
-| POST stock inicial | Permitido | **Prohibido** | **Prohibido** | Sin saldo ni movimiento previo en el par, versión 0 |
-| POST ajuste entrada/salida | Permitido | Permitido **solo asignado a esa sede** | **Prohibido** | Balance existente y versión actual, sin negativo |
-| GET saldos/ledger | Membresía empresarial activa | Según política de lectura, verificar en `ReceiptService` | Según política de lectura, verificar en `ReceiptService` | Filtro por tenant; no suponer permisos STORE por estar autenticado |
-| GET comprobante traslado/ajuste | Membresía empresarial activa | Verificar permiso exacto y condiciones actuales | Verificar permiso exacto y condiciones actuales | Investigar si basta VIEW o se exige haber operado; no inventar política |
+| POST transfer | Allowed at both STORE locations | Allowed **only if assigned to both** | Allowed **only if assigned to both** | Active company and locations, active physical catalog, sufficient balance |
+| POST stock inicial | Allowed | **Prohibited** | **Prohibited** | No balance or previous movement in the pair, version 0 |
+| POST adjustment in/out | Allowed | Allowed **only assigned to that headquarters** | **Prohibited** | Existing balance and current version, no negative |
+| GET saldos/ledger | Active business membership | According to reading policy, check `ReceiptService` | According to reading policy, check `ReceiptService` | Filter per tenant; not suppose STORE permissions for being authenticated |
+| GET transfer/adjustment voucher | Active business membership | Verify exact permission and current conditions | Verify exact permission and current conditions | Investigating whether VIEW is enough or requiring operation; not inventing policy |
 
-Asegurarse de comprobar cambios de rol/asignación/empresa y reintentos históricos **después** del cambio. El comportamiento de lectura puede ser deliberadamente más amplio que la escritura: la auditoría debe contrastarlo con la regla de negocio, no elevar un 200 de lectura a vulnerabilidad por defecto.
+Ensure that role/assignment/business changes and historical re-attempts are checked **after** The reading behavior can be deliberately broader than writing: the audit must contrast it with the business rule, not raise a 200 reading to default vulnerability.
 
-## 4. Modelo SQL y contraejemplos que debe inspeccionar la segunda IA
+## 4. SQL model and counterexamples to be inspected by the second AI
 
-Comprobar desde PostgreSQL 16 y SQLAlchemy:
-- `inventory_operations`: restricción de dirección por `kind`; `business_id`/`id`/`kind` y FK compuesta al ledger; unicidad de request por tenant; actor de membresía del mismo negocio; motivo y unidades.
-- `stock_movements`: `COMPRA_RECEPCION` usa recibo+línea y delta positivo; `TRASLADO_*` usa cabecera `TRASLADO`; `AJUSTE_*` y `STOCK_INICIAL` tienen signo correcto. Ningún movimiento con ambos orígenes ni con origen indeterminado.
-- `stock_balances`: clave triple; cantidad no negativa, límite máximo, versión positiva y progresiva a través de servicios.
-- **Límite SQL que NO se debe ocultar:** CHECK/FK no garantizan por sí solos que la magnitud/ubicación de cada movimiento manual coincida con todos los atributos de su cabecera, ni que una operación tenga exactamente dos eventos; el **servicio y las pruebas** sostienen esas garantías. Auditar si existe un camino alternativo con privilegios DML que rompa el contrato y cómo limitarlo.
-- **Idempotencia:** la huella se calcula con JSON normalizado y ordenado; la clave UUID4 no es un secreto pero su valor de QA real no se publica. Probar `actor`, `kind`, `digest`, `business_id`, concurrencia y colisiones.
-- **No borrar/editar las migraciones previas:** para endurecer el esquema, nuevas migraciones compatibles y plan de rollback lógico que respete registros existentes.
+Check from PostgreSQL 16 and SQLAlchemy:
+- `inventory_operations`: direction restriction by `kind`; `business_id`/`id`/`kind` and FK composed of the leader; uniqueness of request per tenant; member actor of the same business; motive and units.
+- `stock_movements`: `COMPRA_RECEPCION` use receipt+line and positive delta; `TRASLADO_*` uses header `TRASLADO`; `AJUSTE_*` y `STOCK_INICIAL` No movement with both origins or with undetermined origin.
+- `stock_balances`: triple key; non-negative quantity, maximum limit, positive and progressive version through services.
+- **SQL limit that should NOT be hidden:** CHECK/FK does not by itself guarantee that the magnitude/location of each manual movement matches all attributes of its header, nor that an operation has exactly two events; **service and testing** They support these guarantees. Audit if there is an alternative path with DML privileges that breaks the contract and how to limit it.
+- **Idempotency:** the print is calculated with JSON normalized and ordered; UUID4 key is not a secret but its real QA value is not published. `actor`, `kind`, `digest`, `business_id`, turnout and collisions.
+- **Do not delete/edit previous migrations:** to harden the scheme, new compatible migrations and logical rollback plan that respects existing records.
 
-## 5. Matriz de resultados esperados (sin hacer de la auditoría una formalidad)
+## 5. Expected results matrix (not making audit a formality)
 
-| Caso | Resultado actual esperado | Qué debe observar |
+| Case | Expected current result | What to observe |
 |---|---|---|
-| Traslado nuevo 4 de 10 | `201` | Origen 6, destino 4, dos eventos neto 0 |
-| Replay exacto traslado | `200` | Igual cabecera y mismos ids; sin evento nuevo |
-| Traslado 7 desde saldo 6 | `409` | Sin mutación parcial |
-| Inicial de par nuevo | `201` | Versión 1, evento positivo |
-| Replay exacto inicial | `200` | Recupera cabecera original sin nueva fila |
-| Segundo inicial con clave nueva | `409` | Histórico intacto incluso si llega a cero |
-| Ajuste +2 sobre v1 | `201` | Saldo 7, versión 2 |
-| Ajuste -1 sobre v2 | `201` | Saldo 6, versión 3 |
-| Salida 7 desde saldo 6 | `409` | Sin nuevo movimiento |
-| Ajuste con v1 tras v3 | `409` | Sin cambio de saldo ni ledger |
-| Cualquier recurso de otro tenant | `404` o denegación conforme al contrato | Sin fuga de datos ni escritura cruzada |
-| Sesión inválida/revocada | `401` | Sin efectos comerciales |
-| Datos Pydantic inválidos | `422` | Sin efecto; no aceptar decimal/boolean como cantidad |
-| Acceso no autorizado | `403` en empresa propia | No confundir con 404 de tenant ajeno |
+| New transfer 4 out of 10 | `201` | Source 6, destination 4, two net events 0 |
+| Replay exact transfer | `200` | Same header and same ids; no new event |
+| Transfer 7 from balance 6 | `409` | No partial mutation |
+| Initial new torque | `201` | Version 1, Positive event |
+| Replay exacto inicial | `200` | Recover original header without new row |
+| Initial second with new key | `409` | History intact even if it reaches zero |
+| Adjustment +2 over v1 | `201` | Balance 7, version 2 |
+| Adjustment -1 over v2 | `201` | Balance 6, version 3 |
+| Output 7 from balance 6 | `409` | No new movement |
+| Adjust with v1 after v3 | `409` | No change of balance or leadger |
+| Any other tenant's appeal | `404` or refusal under the contract | No data leak or cross-write |
+| Invalid/revocated meeting | `401` | No commercial effects |
+| Invalid Pydantic data | `422` | No effect; do not accept decimal/boolean as quantity |
+| Unauthorised access | `403` in own enterprise | Do not confuse with 404 of foreign tenant |
 
-## 6. Riesgos a revisar sin convertirlos en implementaciones automáticas
+## 6. Risks to review without converting them into automatic implementations
 
-**En alcance de auditoría:** race mix traslados/ajustes/recepciones, permisos durante reintentos y revocación, SQL directo del ledger/roles DB, aislamiento de fixture test, saturaciones/errores, discrepancia entre docs, esquema, contratos y reglas.
+**In audit scope:** race mix transfers/adjustments/receptions, permissions during retry and revocation, direct SQL of the ledger/roles DB, isolation of fixture test, saturation/error, discrepancy between docs, schema, contracts and rules.
 
-**Fuera del desarrollo de E2-5:** reservas/ventas `RF-07`, multimoneda, parcial de recepción, redondeo general nuevo, motivo tipificado/aprobaciones y reversión vinculada (decisiones posteriores). **Se pueden recomendar**, pero NO introducir sin autorización y evaluación de compatibilidad.
+**Outside the development of E2-5:** reserves/sales `RF-07`, multicurrency, partial reception, new general rounding, typified reason/approvals and related reversal (reciprocal decisions). **They can be recommended**but NOT introduce without authorisation and compatibility assessment.
 
-**Resultado que se exige al auditor:** para cada INV-xx, registrar `INSPECCIONADO + evidencia`, `NO INSPECCIONADO + motivo` o `NECESITA TEST`. Ningún `OK` global sin matizar verificaciones faltantes.
+**Outcome required of the auditor:** for each INV-xx, register `INSPECCIONADO + evidencia`, `NO INSPECCIONADO + motivo` o `NECESITA TEST`No one. `OK` global without nuance missing verifications.

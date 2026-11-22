@@ -46,10 +46,10 @@ export function Topbar({
   }, [menuOpen])
 
   const pinAction = sidebarMode === 'expanded'
-    ? 'Contraer menú fijo a íconos'
+    ? 'Collapse fixed menu to icons'
     : sidebarMode === 'compact'
-      ? 'Expandir menú fijo'
-      : 'Fijar menú lateral'
+      ? 'Expand Fixed Menu'
+      : 'Set Side Menu'
 
   return <header className="topbar">
     <div className="topbar-left">
@@ -58,8 +58,8 @@ export function Topbar({
           ref={triggerRef}
           type="button"
           className="icon-button menu-drawer-trigger"
-          aria-label={menuOpen ? 'Cerrar menú principal' : 'Abrir menú principal'}
-          title={menuOpen ? 'Cerrar menú' : 'Abrir menú principal'}
+          aria-label={menuOpen ? 'Close Main Menu' : 'Open Main Menu'}
+          title={menuOpen ? 'Close Menu' : 'Open Main Menu'}
           aria-expanded={menuOpen}
           aria-haspopup="dialog"
           aria-controls="app-sidebar"
@@ -81,8 +81,8 @@ export function Topbar({
           <button
             type="button"
             className="icon-button desktop-hide-trigger"
-            aria-label="Ocultar menú fijo"
-            title="Ocultar menú fijo"
+            aria-label="Hide Fixed Menu"
+            title="Hide Fixed Menu"
             aria-controls="app-sidebar"
             onClick={onHideSidebar}
           >
@@ -90,25 +90,25 @@ export function Topbar({
           </button>
         )}
       </div>
-      {showBack && <button type="button" className="back-button" aria-label="Volver a la sección anterior" title="Volver" onClick={onBack}><Icon name="arrow-left" size={19}/><span>Volver</span></button>}
+      {showBack && <button type="button" className="back-button" aria-label="Back to previous section" title="Back" onClick={onBack}><Icon name="arrow-left" size={19}/><span>Back</span></button>}
       <div className="breadcrumbs">
-        <span>{business ? 'Mi negocio' : 'Mi espacio'}</span>
+        <span>{business ? 'Mi negocio' : 'My space'}</span>
         <Icon name="chevron" size={14} />
         <strong>{title}</strong>
       </div>
     </div>
     <div className="topbar-right">
       <label className="company-picker">
-        <span className="sr-only">Empresa activa</span>
+        <span className="sr-only">Active company</span>
         <Icon name="building" size={16} />
-        <select aria-label="Cambiar de empresa" value={business?.id ?? ''} onChange={(event) => navigate(event.target.value ? businessHref(event.target.value, 'inicio') : '/inicio')}>
-          <option value="">Mi espacio personal</option>
+        <select aria-label="Switch companies" value={business?.id ?? ''} onChange={(event) => navigate(event.target.value ? businessHref(event.target.value, 'inicio') : '/inicio')}>
+          <option value="">My personal space</option>
           {businesses.map((item) => <option key={item.id} value={item.id}>{item.name} · DEMO</option>)}
         </select>
       </label>
       <span className="demo-chip">DEMO</span>
-      <AppLink navigate={navigate} to="/perfil" className="user-avatar" ariaLabel="Ir a mi perfil">
-        <DemoPhoto imageKey={demoImageKey('profile')} alt="Foto de perfil" fallback={profileInitials(profile)} className="demo-photo-avatar"/>
+      <AppLink navigate={navigate} to="/perfil" className="user-avatar" ariaLabel="Go to my profile">
+        <DemoPhoto imageKey={demoImageKey('profile')} alt="Profile Photo" fallback={profileInitials(profile)} className="demo-photo-avatar"/>
       </AppLink>
     </div>
   </header>

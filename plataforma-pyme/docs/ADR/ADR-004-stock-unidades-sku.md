@@ -1,31 +1,31 @@
-# ADR-004 — Catálogo, unidades y stock basado en movimientos
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO (parámetros de unidades y homónimos PENDIENTES para fijar en E1-B).  
-**Responsable de aprobación:** equipo del TP / responsable funcional (a designar).  
-**Fuentes:** E0-A Z050/Z069/Z072/Z070; H07/H09/H16/H18/H19/H22/H25/H26; D04/D09/D10; E0-B ``6–8; v4.
+# ADR-004 — Catalogue, units and stock based on movements
+**Date:** 2026-11-06  
+**Status:** PROPOSED (unit parameters and homonyms PENDING to fix in E1-B).  
+**Responsible for approval:** TP team/functional manager (to be designated).  
+**Sources:** E0-A Z050/Z069/Z072/Z070; H07/H09/H16/H18/H19/H22/H25/H26; D04/D09/D10; E0-B ``6–8; v4.
 
-## Decisión propuesta
-1. `CatalogItem` es **BIEN** o **SERVICIO**. Reventa, insumo y elaboración son capacidades opcionales del BIEN. Servicio no requiere existencias, depósito, lote ni receta.
-2. Identificador y SKU pertenecen a negocio; **SKU único por empresa** (repetible entre empresas). Reglas de generación automática, nombres homónimos y cambios de SKU siguen propuestas.
-3. El saldo no se edita directamente en las vistas. `StockMovement` es el registro del que se derivan saldos físico, reservado y disponible por empresa/artículo/ubicación; ninguna pantalla mantiene contador independiente.
-4. Compra, recepción, traslado y pago son hechos diferentes. Recepción aplica entrada una única vez (idempotente); traslado aplica -q y +q en un comando atómico. Rechazar negativo y transferencias mayores a disponible.
-5. Cantidades incluyen unidad y escala; **no** utilizar `parseInt` para kilos/litros; parseo estricto y representación exacta en unidades menores enteras o decimal con escala declarada. Elegir escalas por tipo antes de E1-B2.
-6. Conteo registra ajuste y motivo; cambios concurrentes obligan a revisar versión en API. Retorno de feria/traslado no consume «faltantes» automáticamente: diferencia se documenta explícitamente.
+## Proposed decision
+1. `CatalogItem` es **Okay.** o **SERVICE**. Resale, input and processing are optional capabilities of the BIEN. Service does not require stock, deposit, batch or recipe.
+2. Identifier and SKU belong to business; **Single SKU per company** (repeatable between companies).Auto-generation rules, homonymous names and SKU changes follow proposals.
+3. The balance is not edited directly in the views. `StockMovement` is the record from which physical balances are derived, reserved and available by company/article/location; no display maintains independent counter.
+4. Purchase, reception, transfer and payment are different. Reception applies one time (idempotent) entry; transfer applies -q and +q in an atomic command. Refuse negative and transfers greater than available.
+5. Quantities include unit and scale; **no** use `parseInt` For kilos/liters; strict parseo and exact representation in whole or decimal smaller units with declared scale. Choose scales by type before E1-B2.
+6. Count records adjustment and motive; concurrent changes require revision of version in API. Return from fair/transfer does not automatically consume "lacks": difference is explicitly documented.
 
-## Alternativas
-- Campo `stockActual` editable en cada módulo: descartado por H09.
-- Compra que recibe/paga automáticamente: descartado por inconsistencias.
-- Cantidad JavaScript float sin política de redondeo: no aceptada para operaciones comerciales.
+## Alternatives
+- Field `stockActual` editable in each module: discarded by H09.
+- Purchases that receive/pays automatically: discarded by inconsistencies.
+- JavaScript float quantity without rounding policy: not accepted for commercial operations.
 
-## Consecuencias
-Se requiere gateway con operaciones transaccionales de DEMO y test de invariantes. La protección de concurrencia entre dispositivos se incorpora **en backend PostgreSQL**, no con flags UI.
+## Consequences
+A gateway is required with DEMO transactional operations and invariant testing. The protection of the continuance between devices is incorporated **en backend PostgreSQL**, no con flags UI.
 
-## Pruebas pendientes
-- **DEMO-STK-01 / QA-STK-01:** recibir 10 dos veces con misma clave deja +10, no +20.
-- **DEMO-STK-02 / QA-STK-02:** traslado 3 de 10 deja 7 origen/3 destino; trasladar 11 falla completo.
-- **QA-STK-03:** dos ventas concurrentes del último disponible no dejan saldo negativo (**API real**).
-- **QA-CAT-01:** mismo SKU en distinto tenant permitido; servicio no tiene stock.
-- Conteo diferencial y retorno no producen pérdida silenciosa H25.
+## Pending evidence
+- **DEMO-STK-01 / QA-STK-01:** receive 10 twice with the same key leaves +10, no +20.
+- **DEMO-STK-02 / QA-STK-02:** transfer 3 of 10 leaves 7 source/3 destination; move 11 complete fault.
+- **QA-STK-03:** two concurrent sales of the last available no negative balance (**Real API**).
+- **QA-CAT-01:** same SKU in different tenant allowed; service has no stock.
+- Differential count and return do not produce silent loss H25.
 
-## Pendientes acotados
-Escalas/unidades, homónimos y política de SKU se fijarán al iniciar E1-B2, sin bloquear shell E1-A.
+## Earrings
+Scales/units, homonyms and SKU policy will be set when starting E1-B2, without blocking shell E1-A.

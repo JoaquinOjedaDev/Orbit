@@ -1,21 +1,21 @@
-# E2-7 A — Encargo de revisión crítica del plan de integración para Astra
+# E2-7 A — Critical review of the integration plan for Astra
 
-**Estado:** preparado, **no ejecutado**.  
-**Objetivo:** que una segunda IA critique el plan de E2-7 **antes de implementar código**, sin confundir diseño con auditoría de los bloques previos.  
-**Proyecto:** Plataforma PyME — TP Programación 2 UNSAM 2C2026; `plataforma-pyme/`.  
-**Referencia base que utilizaron los documentos:** `main` `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`, PR #28 cerrado; confirmar SHA real al iniciar revisión.  
-**Rama propuesta para documentos:** `docs/e2-7a-plan-integracion`; el auditor debe registrar HEAD real, que incluye estos documentos.
+**Status:** prepared, **not executed**.  
+**Objective:** that a second AI criticizes the plan of E2-7 **before implementing code**without confusing design with auditing of previous blocks.  
+**Project:** PyME Platform — TP Programming 2 UNSAM 2C2026; `plataforma-pyme/`.  
+**Baseline used by documents:** `main` `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`, PR #28 closed; confirm actual SHA when initiating revision.  
+**Proposed branch of documents:** `docs/e2-7a-plan-integracion`; the auditor must register real HEAD, which includes these documents.
 
-## Texto listo para entregar a Astra
+## Text ready to deliver Astra
 
-> Quiero que actúes como **revisor técnico independiente** del plan E2-7 de mi plataforma PyME multiempresa/multirrubro (no un sistema exclusivo de WALOS). El objetivo de E2-7 es **integración frontend React/TypeScript E1 con backend FastAPI/PostgreSQL E2-1..E2-6, QA integral y cierre académico**. No es un nuevo módulo de gastos, caja o Mercado Pago.
+> I want you to act like **independent technical reviewer** the E2-7 plan of my multi-company/multi-rub SEM platform (not an exclusive system of WALOS). **Frontend React/TypeScript E1 integration with FastAPI/PostgreSQL E2-1..E2-6, QA comprehensive and academic closure**. It is not a new expense module, cash or Pay Market.
 >
-> Repositorio: https://github.com/JoaquinOjedaDev/Orbit  
-> Carpeta exclusiva: `plataforma-pyme/`  
-> Base de código revisada por el plan: `main` SHA `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`  
+> Repository: https://github.com/JoaquinOjedaDev/Orbit  
+> Exclusive Folder: `plataforma-pyme/`  
+> Code base revised by plan: `main` SHA `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`  
 > Rama del plan: `docs/e2-7a-plan-integracion`
 >
-> **Antes de juzgar, verificá acceso real a ambas carpetas `frontend/` y `backend/`, a los routers/schemas, los tests relevantes y a los siguientes documentos completos:**
+> **Before judging, check real access to both folders `frontend/` y `backend/`, routers/schemes, relevant tests and the following complete documents:**
 >
 > 1. `docs/E2-7_PLAN_RECTOR_INTEGRACION_Y_CIERRE.md`
 > 2. `docs/E2-7_MATRIZ_FRONTEND_BACKEND_Y_CONTRATOS.md`
@@ -24,29 +24,29 @@
 > 5. `docs/revisiones/E2-6_CIERRE/00_LEEME.md`
 > 6. `entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md`, `02_CASOS_DE_USO.md`, `03_MODELO_DE_DOMINIO_Y_UML.md`, `04_ARQUITECTURA_Y_PATRONES.md`, `05_MATRIZ_API_Y_TRAZABILIDAD.md`.
 >
-> Revisá también `frontend/src/App.tsx`, `frontend/src/data/demo/demoStore.ts`, `frontend/src/features/`, `frontend/package.json`, `frontend/vite.config.ts`, `backend/app/main.py`, `backend/app/api/v1/router.py` y los servicios/schemas de auth, businesses, locations, catalog, suppliers, purchases, inventory y sales.
+> Check it out too. `frontend/src/App.tsx`, `frontend/src/data/demo/demoStore.ts`, `frontend/src/features/`, `frontend/package.json`, `frontend/vite.config.ts`, `backend/app/main.py`, `backend/app/api/v1/router.py` y los servicios/schemas de auth, businesses, locations, catalog, suppliers, purchases, inventory y sales.
 >
-> **Tu misión es evaluar el plan, no implementarlo.** No edites, borres, publiques o fusiones archivos/ramas, ni abras PR. Confirmá SHA exacto de base y plan; si no podés leer el repo, declará la limitación y no inventes análisis.
+> **Your mission is to evaluate the plan, not implement it.** Do not edit, delete, publish or merge files/branches, or open PR. Confirm SHA exact base and plan; if you cannot read the repo, declare the limitation and do not invent analysis.
 >
-> Preguntas principales:
+> Main questions:
 >
-> - ¿E2-7 A–E cubre las funciones mínimas del TP y de los contratos E2-1..E2-6 sin ampliar indebidamente el MVP?
-> - ¿El diseño REAL/DEMO permite aprovechar toda la UX actual sin mezclar datos o falsear persistencia?
-> - ¿Son razonables un cliente HTTP simple, estado de sesión en memoria y Vite proxy antes de agregar librerías? ¿Qué riesgos y alternativas concretas existen?
-> - ¿Cómo debería tratarse la autenticación después de F5 si no hay refresh endpoint? ¿Se necesita una decisión técnica adicional de sesión?
-> - ¿Hay problemas de RBAC, filtraciones de tenant, idempotencia, carreras por cambio de empresa o dobles escrituras entre demoStore/API?
-> - ¿Qué discrepancias concretas hay entre DTOs UI y schemas/backend? Contrastar nombres y enum reales, campos extra prohibidos y URL exactas.
-> - ¿Es imprescindible crear `GET /sales` paginado para integrar la pantalla de historial o se puede reducir el alcance de forma académicamente correcta? ¿Qué pruebas requeriría ese endpoint?
-> - ¿Cómo tratar fotos IndexedDB, invitaciones simuladas, jornada/cuenta asociada a venta, batch de stock y QR sin prometer que son reales?
-> - ¿Los subincrementos B0–B3, C1–C3, D y E están bien ordenados? ¿Cambiarías dependencias o tamaño de PR?
-> - ¿Qué falta en los tests E2E reales, en CI, en seguridad de token, en red y en la recuperación de operaciones con resultado incierto?
-> - ¿Qué actualizaciones de UML, TP3, requisitos y trazabilidad son obligatorias y cuáles son mejoras opcionales?
+> - Does E2-7 A-E cover the minimum functions of TP and contracts E2-1..E2-6 without unduly extending MVP?
+> - Does the REAL/DEMO design allow you to take advantage of all current UX without mixing data or falsifying persistence?
+> - Are a simple HTTP client, memory session status and Vite proxy reasonable before adding libraries? What specific risks and alternatives exist?
+> - How should authentication after F5 be treated if there is no refresh endpoint? Is an additional technical session decision needed?
+> - Are there problems with RBAC, tenant leaks, idempotency, company change runs or double deeds between demoStore/API?
+> - What specific discrepancies are there between UI DTOs and schemas/backend? Contrast real names and enum, extra prohibited fields and exact URLs.
+> - Is it essential to create `GET /sales` paged to integrate the history screen or can you reduce the range academically correctly? What tests would that endpoint require?
+> - How to treat IndexedDB photos, simulated invitations, day/account associated with sale, stock batch and QR without promising they are real?
+> - Are sub-increment B0–B3, C1–C3, D and E well sorted? Would you change dependencies or size of PR?
+> - What is missing in actual E2E tests, IC tests, token security, network tests and recovery of operations with uncertain results?
+> - What updates to UML, TP3, requirements and traceability are mandatory and what are optional improvements?
 >
-> **Para cada observación registrá:** ID `ASTRA-E27-XXX`, prioridad (bloqueante/alta/media/baja), clase (defecto del plan, brecha de contrato, riesgo plausible, mejora opcional), archivo(s)/líneas que la fundamentan, qué consecuencia real tendría, alternativa propuesta, impacto de compatibilidad con E2-1..E2-6 y un criterio de aceptación o test concreto.
+> **For each observation, it shall record:** ID `ASTRA-E27-XXX`, priority (blocker/high/medium/low), class (plan defect, contract gap, plausible risk, optional improvement), file(s)/lines that support it, what actual consequence would have, alternative proposed, compatibility impact with E2-1..E2-6 and a specific acceptance criterion or test.
 >
-> **No apruebes automáticamente el plan por tener documentos detallados.** Evitá rediseñar la aplicación o agregar librerías, backend financiero o infraestructura innecesaria sin justificación reproducible.
+> **Do not automatically approve the plan because you have detailed documents.** Avoid redesigning the application or adding libraries, financial backends or unnecessary infrastructure without reproducible justification.
 >
-> Entregá estos cinco Markdown separados, sin modificar el repositorio:
+> Deliver these five separate Markdowns, without modifying the repository:
 >
 > - `ASTRA-E27-00_RESUMEN_Y_VEREDICTO.md`
 > - `ASTRA-E27-01_MATRIZ_COBERTURA_Y_BRECHAS.md`
@@ -54,23 +54,23 @@
 > - `ASTRA-E27-03_PLAN_REVISADO_PROPUESTO.md`
 > - `ASTRA-E27-04_EVIDENCIA_ACCESOS_Y_LIMITES.md`
 >
-> El plan revisado es **una propuesta**, no un permiso automático de ejecución. Quiero decidir con el responsable cuáles cambios aceptar, ajustar, diferir o rechazar; después actualizaré los documentos y recién comenzaremos E2-7 B0.
+> The revised plan is **a proposal**I want to decide with the responsible which changes to accept, adjust, defer or reject; then I will update the documents and we will just start E2-7 B0.
 
-## Checklist para el equipo que recibirá la revisión
+## Checklist for the team that will receive the review
 
-- [ ] Astra confirmó repositorio, SHA base, SHA plan y acceso real a React/Backend.
-- [ ] Informó qué documentos y archivos no pudo leer.
-- [ ] Contrastó al menos auth/tenant, catálogo, compras/recepción, inventario y ventas con sus rutas reales.
-- [ ] Cuestionó y resolvió explícitamente las decisiones de sesión, proxy, DEMO/REAL e historial de ventas.
-- [ ] Separó riesgos potenciales de defectos demostrados.
-- [ ] Justificó cambios con impacto/alternativas y pruebas, no con gusto de arquitectura.
-- [ ] Entregó cinco archivos y dejó la decisión final en manos del equipo.
-- [ ] No editó ni abrió PR ni alteró datos externos.
+- [ ] Astra confirmed repository, SHA base, SHA plan and real access to React/Backend.
+- [ ] He reported which documents and files he could not read.
+- [ ] It contrasted at least auth/tenant, catalog, purchases/reception, inventory and sales with its actual routes.
+- [ ] It explicitly questioned and resolved sessional, proxy, DEMO/REAL decisions and sales history.
+- [ ] It separated potential risks of proven defects.
+- [ ] He justified changes with impact/alternatives and tests, not with a taste of architecture.
+- [ ] He handed over five files and left the final decision to the team.
+- [ ] It did not edit or open PR or alter external data.
 
-## Matriz de adopción selectiva (llenar después)
+## Selective adoption matrix (fill after)
 
-| ID Astra | Prioridad | Evidencia | Recomendación | Decisión equipo | Justificación | Documento/sección ajustada |
+| ID Astra | Priority | Evidence | Recommendation | Team decision | Justification | Adjusted document/section |
 |---|---|---|---|---|---|---|
-| ASTRA-E27-001 | Pendiente | Pendiente | Pendiente | **Sin decidir** | — | — |
+| ASTRA-E27-001 | Pending | Pending | Pending | **Undecided** | — | — |
 
-**Secuencia convenida:** plan propuesto → revisión Astra → decisión selectiva → plan E2-7 A corregido → PR documental → B0 técnico. No mezclar la auditoría de E2-1..E2-6 que lleva el compañero con la revisión estratégica de E2-7.
+**Agreed sequence:** proposed plan → review Astra → selective decision → plan E2-7 A corrected → PR documentary → Technical B0. Do not mix the audit of E2-1..E2-6 that the companion carries with the strategic review of E2-7.

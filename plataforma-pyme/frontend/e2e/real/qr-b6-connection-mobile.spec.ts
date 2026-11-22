@@ -9,7 +9,7 @@ test.beforeAll(()=>{
 
 test('B6: cuenta DEMO y cuenta oficial TEST separadas, móvil 390px, sin POST a MP',async({request,page})=>{
   const email='b6-qa-'+randomUUID()+'@example.com'
-  const password='B6 prueba QA segura sin credenciales!'
+  const password='Orbit-1-' + globalThis.crypto.randomUUID()
   const registered=await request.post(api+'/auth/register',{
     data:{email,password,display_name:'B6 QA UX'},
   })
@@ -29,16 +29,16 @@ test('B6: cuenta DEMO y cuenta oficial TEST separadas, móvil 390px, sin POST a 
   })
   await page.setViewportSize({width:390,height:844})
   await page.goto('/real/empresas/'+bid+'/medios-de-cobro')
-  await page.getByLabel('Correo electrónico',{exact:true}).fill(email)
-  await page.getByLabel('Contraseña',{exact:true}).fill(password)
+  await page.getByLabel('Email',{exact:true}).fill(email)
+  await page.getByLabel('Password',{exact:true}).fill(password)
   await page.getByRole('button',{name:'Ingresar',exact:true}).click()
-  await expect(page.getByRole('heading',{name:'Medios de cobro',exact:true})).toBeVisible()
-  const official=page.getByLabel('Mercado Pago oficial TEST')
+  await expect(page.getByRole('heading',{name:'Payment methods',exact:true})).toBeVisible()
+  const official=page.getByLabel('Market Official payment TEST')
   await expect(official).toBeVisible()
   await expect(official).toContainText('Integración B6')
   await expect(official).toContainText('NO PRODUCCIÓN')
-  await expect(official).toContainText('Sin cuenta asociada')
-  await expect(official.getByRole('button',{name:'Vincular vendedor TEST por OAuth'})).toHaveCount(0)
+  await expect(official).toContainText('No Associated Account')
+  await expect(official.getByRole('button',{name:'Link TEST seller by OAuth'})).toHaveCount(0)
   await expect(page.getByRole('heading',{name:'Mercado Pago'}).first()).toBeVisible()
   const width=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth))
   expect(width,'La pantalla de cuenta/caja TEST no debe desbordar 390px').toBeLessThanOrEqual(391)

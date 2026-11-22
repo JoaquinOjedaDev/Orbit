@@ -18,15 +18,15 @@ router = APIRouter(prefix="/businesses/{business_id}/inventory", tags=["inventar
 
 def read_error(exc: Exception) -> HTTPException:
     if isinstance(exc, PurchaseBusinessUnavailable):
-        return HTTPException(404, detail="Empresa no disponible")
+        return HTTPException(404, detail="Company not available")
     if isinstance(exc, PurchasePermissionDenied):
-        return HTTPException(403, detail="Operacion no permitida")
+        return HTTPException(403, detail="Operation not permitted")
     raise TypeError("Error sin mapeo HTTP")
 
 
 @router.get(
     "/balances", response_model=list[StockBalanceView],
-    summary="Consultar saldos confirmados por empresa, ubicacion y articulo",
+    summary="Check confirmed balances by company, location and article",
 )
 def get_balances(
     business_id: UUID,
@@ -51,7 +51,7 @@ def get_balances(
 
 @router.get(
     "/movements", response_model=list[InventoryMovementView], response_model_exclude_none=True,
-    summary="Consultar ledger firmado de recepciones y traslados",
+    summary="Consult signed ledger of receptions and transfers",
 )
 def get_movements(
     business_id: UUID,

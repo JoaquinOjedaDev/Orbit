@@ -27,21 +27,21 @@ router = APIRouter(
 
 def receipt_error(exc: Exception) -> HTTPException:
     if isinstance(exc, (PurchaseBusinessUnavailable, ReceiptNotFound, ReceiptLocationUnavailable)):
-        return HTTPException(404, detail="Compra, empresa o ubicacion no disponible")
+        return HTTPException(404, detail="Purchase, company or location not available")
     if isinstance(exc, (PurchasePermissionDenied, ReceiptPermissionDenied)):
-        return HTTPException(403, detail="Sin permiso para operar en esta ubicacion")
+        return HTTPException(403, detail="No permission to operate in this location")
     if isinstance(exc, ReceiptBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(exc, ReceiptLocationIncompatible):
-        return HTTPException(409, detail="Ubicacion pausada o no habilitada para almacenamiento")
+        return HTTPException(409, detail="Pause or unenabled location for storage")
     if isinstance(exc, ReceiptAlreadyProcessed):
-        return HTTPException(409, detail="Compra ya recibida, cancelada o sin bienes fisicos recepcionables")
+        return HTTPException(409, detail="Purchase already received, cancelled or without physical goods receptionable")
     if isinstance(exc, ReceiptIdempotencyConflict):
-        return HTTPException(409, detail="Clave de recepcion reutilizada para otra operacion")
+        return HTTPException(409, detail="Reused reception key for another operation")
     if isinstance(exc, ReceiptCatalogIncompatible):
-        return HTTPException(409, detail="Articulo historico inactivo o con tipo/unidad incompatible")
+        return HTTPException(409, detail="Inactive or incompatible type/unit historical article")
     if isinstance(exc, ReceiptBalanceOverflow):
-        return HTTPException(409, detail="Cantidad de inventario excede el limite permitido")
+        return HTTPException(409, detail="Inventory quantity exceeds the allowed limit")
     raise TypeError("Error sin mapeo HTTP")
 
 
@@ -55,7 +55,7 @@ def receipt_error(exc: Exception) -> HTTPException:
         409: {"description": "Compra cerrada, destino invalido, clave distinta o conflicto de stock"},
         422: {"description": "Cuerpo o encabezado invalido"},
     },
-    summary="Recibir compra completa en una ubicacion y confirmar entradas de stock atomicas",
+    summary="Receive complete purchase at a location and confirm atom stock tickets",
 )
 def receive_purchase(
     business_id: UUID, purchase_id: UUID,
@@ -87,7 +87,7 @@ def receive_purchase(
         403: {"description": "Sin permiso de lectura"},
         404: {"description": "Recepcion ausente o de otro tenant"},
     },
-    summary="Consultar comprobante y movimientos de recepcion historicos",
+    summary="Check historical receipts and movements",
 )
 def get_receipt(
     business_id: UUID, purchase_id: UUID,

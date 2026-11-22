@@ -1,39 +1,39 @@
-# E1-A1.1 — Menú lateral adaptable
+# E1-A1.1 — Adaptable side menu
 
-**Estado:** Implementado en código y publicado en main; compilación/lint y comportamiento visual de esta revisión pendientes de ejecutar en el equipo.
+**Status:** Implemented in code and published in main; compilation/lint and visual behavior of this revision pending to be executed on the computer.
 
-**Objetivo:** mejorar el shell validado con capturas, sin alterar el tablero ni iniciar los módulos funcionales.
+**Objective:** improve the validated shell with captures, without altering the board or initiating functional modules.
 
-## Comportamiento
+## Behavior
 
-| Entorno | Estado inicial | Acción | Resultado |
+| Environment | Initial State | Action | Outcome |
 |---|---|---|---|
-| Escritorio (>900 px) | Expandido | Botón de panel en la barra superior | Compacto: sólo íconos |
-| Escritorio (>900 px) | Compacto | Botón de panel | Expandido: íconos y textos |
-| Escritorio (>900 px) | Expandido o compacto | Botón «Ocultar menú lateral» en la barra superior | Oculto: panel central utiliza el espacio libre |
-| Escritorio (>900 px) | Oculto | Botón «Mostrar menú lateral» | Expandido |
-| Móvil (≤900 px) | Cerrado | Botón de hamburguesa | Drawer superpuesto |
-| Móvil (≤900 px) | Abierto | Botón, fondo, Escape o navegación | Cierra el drawer |
+| Desktop (>900 px) | Expanded | Panel button on the top bar | Compact: icons only |
+| Desktop (>900 px) | Compacto | Panel button | Expanded: icons and texts |
+| Desktop (>900 px) | Expanded or compact | Hide Side Menu button on the top bar | Hidden: Central panel uses free space |
+| Desktop (>900 px) | Hidden | Show side menu button | Expanded |
+| Mobile (≤900 px) | Closed | Burger button | Overlay Drawer |
+| Mobile (≤900 px) | Open | Button, background, Escape or navigation | Cierra el drawer |
 
-La preferencia **de escritorio** se guarda en localStorage con clave asistente-pyme.sidebar-mode.v1. Es una preferencia global **sólo visual**; no depende de la empresa elegida. Si localStorage está bloqueado se usa el modo expandido durante la sesión. El menú móvil no cambia esa preferencia: es un drawer temporal.
+Preference **desktop** is saved in localStorage with key assistant-pyme.sidebar-mode.v1. It is a global preference **visual only**; it does not depend on the chosen company. If localStorage is blocked, expanded mode is used during the session. The mobile menu does not change that preference: it is a temporary drawer.
 
-En el modo compacto los enlaces siguen siendo reales, accesibles con teclado, con aria-label, aria-current para la ruta activa y title para mostrar nombres al pasar el cursor.
+In compact mode the links remain real, accessible with keyboard, aria-label, aria-current for active route and title to display names when passing cursor.
 
-## Archivos modificados
+## Modified Files
 
-- frontend/src/App.tsx: controlador de estados, persistencia y Escape.
-- frontend/src/app/shell/sidebarPreference.ts: validación y almacenamiento local del modo.
-- frontend/src/app/shell/TopBar.tsx: controles de modo para escritorio y drawer móvil.
+- frontend/src/App.tsx: Status controller, persistence and Escape.
+- frontend/src/app/shell/sidebarPreference.ts: local mode validation and storage.
+- frontend/src/app/shell/TopBar.tsx: desktop mode controls and mobile drawer.
 - frontend/src/app/shell/SideMenu.tsx: clases y etiquetas accesibles.
-- frontend/src/app/AppLink.tsx: title y aria-current opcionales.
-- frontend/src/app/navigation.ts y frontend/src/app/Icon.tsx: dos íconos de panel.
-- frontend/src/App.css: reglas de compacto/oculto y visibilidad móvil.
+- frontend/src/app/AppLink.tsx: optional title and aria-current.
+- frontend/src/app/navigation.ts and frontend/src/app/Icon.tsx: two panel icons.
+- frontend/src/App.css: rules of compact/hidden and mobile visibility.
 
-El dashboard y sus tarjetas se mantienen sin cambios funcionales. «Todas las secciones» había sido retirado previamente por duplicar el menú lateral.
+The dashboard and its cards remain functionally unchanged. "All sections" had been removed previously by duplicating the side menu.
 
-## Validación pendiente
+## Pending validation
 
-Ejecutar desde plataforma-pyme/frontend:
+Run from platform-pyme/frontend:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -42,20 +42,20 @@ npm.cmd run lint
 npm.cmd run dev
 ~~~
 
-**Matriz de pruebas a registrar:**
+**Test matrix to be recorded:**
 
-| ID | Verificación | Resultado esperado | Estado |
+| ID | Verification | Expected outcome | Status |
 |---|---|---|---|
-| MENU-01 | Escritorio, botón de panel dos veces | Expandido → compacto → expandido | No ejecutada |
-| MENU-02 | Escritorio, ocultar y mostrar | Área de trabajo se amplía y menú vuelve | No ejecutada |
-| MENU-03 | Guardar compacto/oculto y actualizar F5 | Conserva el modo de escritorio | No ejecutada |
-| MENU-04 | Cambiar WALOS ↔ otra demo | Preferencia visual igual; menú activo cambia | No ejecutada |
-| MENU-05 | 390 px: abrir, cerrar con fondo, Escape y enlaces | Drawer temporal y sin superposición persistente | No ejecutada |
-| MENU-06 | Pasar de 390 px a escritorio con drawer abierto | Drawer se cierra; respeta preferencia escritorio | No ejecutada |
-| MENU-07 | Teclado Tab sobre enlaces compactos | Foco visible y destino accesible | No ejecutada |
-| MENU-08 | npm.cmd run build | TypeScript y Vite sin errores | No ejecutada |
-| MENU-09 | npm.cmd run lint | Cero advertencias/errores | No ejecutada |
+| MENU-01 | Desktop, panel button twice | Expanded → compact → expanded | Not executed |
+| MENU-02 | Desktop, Hide and Show | Work area expands and menu returns | Not executed |
+| MENU-03 | Save compact/hidden and upgrade F5 | Keeps desktop mode | Not executed |
+| MENU-04 | Change WALOS ↔ another demo | Visual preference equal; active menu changes | Not executed |
+| MENU-05 | 390 px: open, close with background, Escape and links | Temporary Drawer and Without Persistent Overlay | Not executed |
+| MENU-06 | Switch from 390 px to desktop with open drawer | Drawer closes; respects desktop preference | Not executed |
+| MENU-07 | Tab keyboard on compact links | Visible focus and accessible destination | Not executed |
+| MENU-08 | npm.cmd run build | TypeScript and Vite without errors | Not executed |
+| MENU-09 | npm.cmd run lint | Zero warnings/errors | Not executed |
 
-**Límite:** el estado local de visibilidad NO es gestión de usuarios ni aislamiento multitenant; React Router, perfil, creación de empresa y estado real por tenant siguen previstos en E1-A2/E2-E3.
+**Limit:** Local visibility status is NOT user management or multitenant isolation; React Router, profile, company creation and real state by tenant are still provided for in E1-A2/E2-E3.
 
-**Fuente:** E0-A Z003/Z014; 01_ARQUITECTURA_FRONTEND.md y 02_DECISIONES_Y_BACKLOG.md.
+**Source:** E0-A Z003/Z014; 01_ARQUITECTURA_FRONTEND.md y 02_DECISIONES_Y_BACKLOG.md.

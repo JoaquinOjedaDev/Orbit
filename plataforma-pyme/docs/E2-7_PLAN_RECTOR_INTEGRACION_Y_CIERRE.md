@@ -1,165 +1,165 @@
-# E2-7 — Plan rector de integración React–FastAPI, validación integral y cierre académico
+# E2-7 — React–FastAPI integration master plan, comprehensive validation and academic closure
 
-**Estado:** plan de referencia previo a la revisión externa; las decisiones T00 vigentes para la planificación están en [E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md](E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md). La integración todavía no está implementada.  
-**Fecha de preparación:** 2026-11-09.  
-**Proyecto:** Plataforma PyME, TP Final Programación 2, UNSAM 2C2026; sistema generalista multiempresa/multirrubro (WALOS solo ejemplo).  
-**Referencia inmutable de análisis:** `main` `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068` (incluye PR #28 de cierre E2-6).  
-**Rama documental:** `docs/e2-7a-plan-integracion`. **No escribir código productivo en esta rama.**  
-**Scope:** `plataforma-pyme/`, E2-7 = integración frontend/backend, QA integral y cierre académico, **no Gastos/Caja como nuevo bloque**.
+**Status:** reference plan prior to external review; existing T00 planning decisions are in place [E2-7_T00_ DECISIONS_Y_ORDEN_DE_EXECUTION.md](E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md). Integration is not yet implemented.  
+**Date of preparation:** 2026-11-09.  
+**Project:** Platform PyME, TP Final Programming 2, UNSAM 2C2026; multi-company/multi-branch generalist system (WALOS example only).  
+**Unchangeable analysis reference:** `main` `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068` (includes PR #28 closure E2-6).  
+**Rama documental:** `docs/e2-7a-plan-integracion`. **Do not write productive code on this branch.**  
+**Scope:** `plataforma-pyme/`, E2-7 = frontend/backend integration, comprehensive QA and academic closure, **no Expenses/Box as new block**.
 
-> Este documento es una propuesta técnica construida leyendo código y documentos del repositorio. No sustituye la auditoría independiente de E2-1 a E2-6, ni certifica que el frontend existente funcione contra PostgreSQL. La revisión con Astra debe cuestionar las decisiones antes de implementar.
+> This document is a technical proposal built by reading code and documents from the repository. It does not replace the independent audit of E2-1 to E2-6, nor does it certify that the existing frontend works against PostgreSQL. The review with Astra should question decisions before implementing.
 
-## 1. Propósito y criterios de éxito
+## 1. Purpose and criteria for success
 
-Integrar la SPA React/TypeScript E1-D2 (hoy DEMO local) con los contratos FastAPI/PostgreSQL reales de E2-1 a E2-6, **preservando la estética, navegación y capacidades UI útiles**, habilitando de manera incremental el flujo real identidad → empresa → ubicación → catálogo → proveedores → compra → recepción → inventario → venta. Conservar las capacidades de RF-08–RF-10 (gastos/caja, cuentas, QR) explícitamente en modalidad DEMO o diferidas, sin insinuar acreditación, persistencia remota ni integración monetaria que no existe.
+Integrate SPA React/TypeScript E1-D2 (today local DEMO) with actual FastAPI/PostgreSQL contracts from E2-1 to E2-6, **preserving aesthetics, navigation and useful UI capabilities**, enabling incrementally the real flow identity → company → location → catalog → suppliers → purchase → receipt → inventory → sale. Keeping the capabilities of RF-08–RF-10 (expenditure/box, accounts, QR) explicitly in DEMO or deferred mode, without hinting at accreditation, remote persistence or monetary integration that does not exist.
 
-**Cierre verificable:** un usuario puede registrarse, autenticarse, crear una empresa, gestionar sus recursos autorizados, recibir stock, realizar venta física/mixta, consultar saldo y comprobante luego de recargar, y cambiar de empresa sin mezclar datos. Las pruebas de integración del navegador, backend y CI deben acreditar el flujo en un SHA preciso y con base PostgreSQL temporal.
+**Verifiable closure:** a user can register, authenticate, create a company, manage his authorized resources, receive stock, make physical/mixed sale, check balance and voucher after reloading, and change business without mixing data. The integration tests of the browser, backend and IC must credit the flow in a precise SHA and with temporary PostgreSQL base.
 
-## 2. Línea de base y alcance comprobado
+## 2. Baseline and proven scope
 
-### 2.1 Estado Git y backend
+### 2.1 Git and backend status
 
-- `main` analizado: `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`; PR #26 persistencia E2-6, PR #27 ventas, PR #28 cierre documental fusionados.
-- Migraciones versionadas hasta `20261109_0017_sales_foundation.py` / `e26a_sales_foundation`; no introducir otra migración sin necesidad demostrada.
-- Módulos backend presentes: `auth`, `businesses`, `locations`, `catalog`, `suppliers`, `purchases` y `sales`; inventario/recepción/traslado/ajustes están organizados bajo `modules/purchases`.
-- HTTP v1 protegido con Bearer opaco (token aleatorio de sesión, NO JWT) para recursos privados; `POST /sales` usa `Idempotency-Key` UUID4; el servidor decide autorización, stock, conflictos y respuesta.
-- CI del merge #27 sobre `6336152`: run #42696474777, tres trabajos exitosos. El merge documental PR #28 no implica nueva ejecución backend. Regresión Windows anterior reportada: `879 passed`. **No se han ejecutado nuevas pruebas como parte de este plan.**
+- `main` analyzed: `9a7a66394daf5a96b18b9ce796a2fe9ec92a4068`; PR #26 persistence E2-6, PR #27 sales, PR #28 merged documentary closure.
+- Migrations up to `20261109_0017_sales_foundation.py` / `e26a_sales_foundation`; not introduce another migration without proven need.
+- Backend modules present: `auth`, `businesses`, `locations`, `catalog`, `suppliers`, `purchases` y `sales`; inventory/reception/transfer/adjustments are organized under `modules/purchases`.
+- HTTP v1 protected with Opaque Bearer (no JWT session random token) for private resources; `POST /sales` usa `Idempotency-Key` UUID4; the server decides authorization, stock, conflicts and response.
+- IC of the Merge #27 about `6336152`: run #42696474777, three successful works. The documentary merit PR #28 does not imply new backend execution. Windows regression previously reported: `879 passed`. **No new evidence has been carried out as part of this plan.**
 
-### 2.2 Estado frontend
+### 2.2 Frontend State
 
-- `frontend/src/App.tsx` construye la UI desde `useDemoSnapshot()`, `findDemoBusiness()` y listas `listDemo*`; el controlador de navegación usa `window.history.pushState`, no React Router.
-- `frontend/src/data/demo/demoStore.ts` expone `demoGateway` y persiste datos en `window.localStorage`; el propio código advierte que no es autenticación ni aislamiento seguro.
-- Las páginas de negocio consumen entidades `Demo*` y no hay cliente HTTP real reutilizable en `src` en el corte analizado.
-- `frontend/vite.config.ts` no configura proxy; `backend/app/main.py` no configura CORS. **Decidir topología de red primero**.
-- El frontend E1 ya tiene vistas de perfil, creación de empresa, ubicaciones, equipo, catálogo, proveedores, compras, inventario, ventas, gastos, jornadas, cuentas y QR visual.
-- El workflow `.github/workflows/plataforma-pyme-frontend.yml` tiene jobs build/lint/tests y Playwright del prototipo DEMO. La ejecución de backend por sí sola no certifica esos jobs ni un E2E contra API real.
+- `frontend/src/App.tsx` constructs the IU from `useDemoSnapshot()`, `findDemoBusiness()` and lists `listDemo*`; navigation controller uses `window.history.pushState`, no React Router.
+- `frontend/src/data/demo/demoStore.ts` exposes `demoGateway` and data persists in `window.localStorage`; the code itself warns that it is not authentication or secure isolation.
+- Business pages consume entities `Demo*` and no real HTTP client reusable in `src` in the cut analyzed.
+- `frontend/vite.config.ts` does not configure proxy; `backend/app/main.py` does not configure CORS. **Decide Network Topology First**.
+- The frontend E1 already has profile views, company creation, locations, equipment, catalog, suppliers, purchases, inventory, sales, expenses, days, accounts and visual QR.
+- El workflow `.github/workflows/plataforma-pyme-frontend.yml` has jobs build/lint/tests and Playwright from the DEMO prototype. Running backend alone does not certify those jobs or an E2E against real API.
 
-### 2.3 Reglas de alcance
+### 2.3 Rules of scope
 
-**Dentro de E2-7:** conectar RF-01 a RF-07 a la API existente; contratos/adaptadores, estados remotos, permisos UX, error handling, pruebas, actualización documental final. **Fuera:** backend de gastos/jornadas, cuentas financieras reales, Mercado Pago QR real/OAuth/webhook, reservas, devoluciones, producción por recetas, migración automática de datos locales DEMO, fiscalidad, fotografía alojada en servidor, analítica avanzada.
+**Dentro de E2-7:** connect RF-01 to RF-07 to the existing API; contracts/adapters, remote states, UX permissions, handling error, testing, final documentary update. **Out:** backend of expenses/days, real financial accounts, Market Real QR Payment/OAuth/webhook, reservations, returns, recipe production, automatic migration of local DEMO data, taxation, server hosted photography, advanced analytics.
 
-**No falsear alcance:** un formulario visual puede existir en modo DEMO, pero eso no convierte sus operaciones en hechos de PostgreSQL. No mezclar datos DEMO con datos de empresa REAL, ni mostrarlos agregados en un mismo KPI.
+**No falsear alcance:** a visual form may exist in DEMO mode, but that does not convert your operations into PostgreSQL facts. Do not mix DEMO data with REAL company data, nor display them added to the same KPI.
 
-## 3. Hallazgos de compatibilidad más importantes (no equivalen a bugs de E2-6)
+## 3. More important compatibility findings (not equivalent to E2-6) bugs
 
-| ID | Evidencia | Consecuencia en integración | Solución candidata |
+| ID | Evidence | Integration impact | Candidate solution |
 |---|---|---|---|
-| INT-01 | `App.tsx` consulta solo `demoStore`; las mutaciones de páginas llaman `demoGateway` | El backend no es fuente de verdad en la UI | Adaptador/repositorio remoto explícito, no reemplazo global ciego |
-| INT-02 | Los IDs DEMO `demo-catalog-UUID`, `demo-location-UUID` no son UUID compatibles con FastAPI | Requests 422, confusión de entidad y tenant | DTOs API separados; no convertir ID DEMO a ID API por stripping; crear recursos reales |
-| INT-03 | Sin Vite proxy ni CORS en la configuración existente | Requests cross-origin bloqueados en navegador | Preferir proxy Vite `/api` en desarrollo; producción mismo origen o CORS allowlist explícito |
-| INT-04 | `App.tsx` toma `DemoBusiness` y fixtures; no hay estado de sesión autenticada | Acceso visual sin autoridad real | App bootstrap: sesión autenticada, empresas remotas y guards basados en API |
-| INT-05 | `SalesPage.tsx` usa cuentas, jornadas y QR DEMO; `POST /sales` no acepta `financial_account_id` ni `cash_session_id` | Requests inválidos o falsa imputación financiera | Nunca enviar campos ajenos; ocultar/deshabilitar asociaciones en REAL, dejar DEMO separado |
-| INT-06 | `POST /sales` y `GET /sales/{id}`, sin `GET /sales` en E2-6 | Historial global de ventas no se puede reconstruir desde la API | Para E2-7 evaluar `GET /sales` mínimo y paginado **mediante propuesta contractual y autorización**; alternativa UI: comprobante recién creado o por ID |
-| INT-07 | E1 admite fotos en IndexedDB local, backend de catálogo no tiene carga de imágenes | Imágenes no portables entre dispositivos | Fallback local marcado; no tratar como foto remota ni inventar endpoint |
-| INT-08 | E1 calcula movimientos demo y saldo a partir de eventos locales | Riesgo de duplicar saldo al combinar API y demo | En REAL `GET /inventory/balances` es autoridad; `GET /inventory/movements` es ledger |
-| INT-09 | E1 incluye invitaciones simuladas, cancelación/aprobación local | Contrato API solo emisión nominativa/aceptación real y equipo; no hay paridad completa | Mostrar solo capacidades disponibles; prohibir aceptación simulada en REAL |
-| INT-10 | `backend/app/main.py` mantiene descripción de E2-0.3; README y matriz API guardan estados históricos | Documentación no refleja integración final | Actualizar metadatos y trazabilidad en cierre E2-7 E |
+| INT-01 | `App.tsx` consultation only `demoStore`; page mutations call `demoGateway` | Backend is not a real source in the IU | Explicit Remote Adapter/Repository, not Global Blind Replacement |
+| INT-02 | Los IDs DEMO `demo-catalog-UUID`, `demo-location-UUID` no son UUID compatibles con FastAPI | Requirements 422, entity and tenant confusion | Separated DTOs APIs; not converting DEMO ID to API ID by stripping; creating real resources |
+| INT-03 | No Vite proxy or CORS in existing configuration | Cross-origin requirements locked in browser | Prefer proxy Vite `/api` developing; production same origin or explicit CORS allowlist |
+| INT-04 | `App.tsx` Take `DemoBusiness` and fixes; no authenticated session status | Visual access without real authority | App bootstrap: Authenticated session, remote companies and API-based guards |
+| INT-05 | `SalesPage.tsx` use accounts, days and QR DEMO; `POST /sales` does not accept `financial_account_id` ni `cash_session_id` | Invalid or false financial imputation claims | Never send other fields; hide/disable associations in REAL, leave DEMO separate |
+| INT-06 | `POST /sales` y `GET /sales/{id}`, sin `GET /sales` en E2-6 | Global sales history cannot be rebuilt from API | For E2-7 evaluation `GET /sales` minimum and paged **by contractual proposal and authorisation**; alternative UI: voucher newly created or by ID |
+| INT-07 | E1 supports photos in IndexedDB local, backend catalog has no image upload | Images not portable between devices | Local failure marked; not treat as remote photo or invent endpoint |
+| INT-08 | E1 calculates demo and balance movements from local events | Risk of doubling balance when combining API and demo | In REAL `GET /inventory/balances` is authority; `GET /inventory/movements` es ledger |
+| INT-09 | E1 includes simulated invitations, cancellation/local approval | API contract only nominative issue/real acceptance and equipment; no full parity | Show only available capabilities; ban simulated Real acceptance |
+| INT-10 | `backend/app/main.py` maintains E2-0.3 description; README and API matrix store historical states | Documentation does not reflect final integration | Update metadata and traceability in closing E2-7 E |
 
-## 4. Decisiones arquitectónicas propuestas (ADRs a ratificar)
+## 4. Proposed architectural decisions (ADRs to be ratified)
 
-### ADR E27-01 — Dos modos, aislados de extremo a extremo
+### ADR E27-01 — Two modes, end-to-end isolated
 
-- **Propuesta:** modo `REAL` para la plataforma conectada a PostgreSQL y modo `DEMO` claramente identificado solo para visualizaciones/funciones no conectadas. Preferencia: entrar en modo REAL tras login, sin mezclar carritos, selector de empresas ni datos de DEMO. La DEMO existente se mantiene aislada para preservar UX y evaluación académica; no hay migración ni importación de `localStorage` implícita.
-- El modo no se determina por la mera existencia de un ID que empieza con `demo-`, sino por el contexto de aplicación/proveedor de datos. El servidor nunca confía en el modo declarado por la UI.
-- Guardas UX y cachés deben incluir `userId + businessId + mode` como clave de identidad; jamás mezclar result sets.
-- Evitar mantener por accidente dos saldos mutables del mismo artículo en modo REAL.
+- **Proposal:** mode `REAL` for the platform connected to PostgreSQL and Mode `DEMO` clearly identified only for unconnected visualizations/functions. Preference: enter REAL mode after login, without mixing carts, business selector or DEMO data. The existing DEMO is kept isolated to preserve UX and academic evaluation; there is no migration or import of `localStorage` implied.
+- The mode is not determined by the mere existence of an ID that starts with `demo-`, but by the application/data provider context. The server never relies on the mode declared by the UI.
+- UX saves and caches must include `userId + businessId + mode` as an identity key; never mix result sets.
+- Avoid accidentally keeping two mutable balances of the same item in REAL mode.
 
-### ADR E27-02 — Cliente API tipado, centralizado y reemplazable
+### ADR E27-02 — Typed, centralized and replaceable API Client
 
-- `frontend/src/api/httpClient.ts`: `baseURL` relativa, timeouts o cancelación, JSON tipado, `Authorization: Bearer` en memoria y mapeo de errores 401/403/404/409/422/5xx.
-- `frontend/src/api/contracts/*.ts`: DTOs en `snake_case` que coincidan con OpenAPI, sin reciclar los `Demo*`.
-- `frontend/src/api/adapters/*.ts`: transforman DTOs hacia view models de React y inputs hacia comandos de backend, sin inventar datos o alterar IDs.
+- `frontend/src/api/httpClient.ts`: `baseURL` relative, timing or cancellation, JSON typed, `Authorization: Bearer` en memoria y mapeo de errores 401/403/404/409/422/5xx.
+- `frontend/src/api/contracts/*.ts`: DTOs in `snake_case` that match OpenAPI, without recycling the `Demo*`.
+- `frontend/src/api/adapters/*.ts`: transform DTOs into React view models and inputs to backend commands, without inventing data or altering IDs.
 - `frontend/src/api/repositories/*.ts`: auth, businesses, locations, catalog, suppliers, purchases, inventory, sales.
-- `frontend/src/app/session/` y `businessContext/`: sesión, selección tenant y solicitudes en curso. No es obligatorio incorporar React Router, Zustand o React Query en la primera etapa; decidir solo si reduce complejidad demostrablemente.
-- **No generar cliente o código desde OpenAPI sin revisar límites y convenciones**; generación tipada es opción posterior si resulta útil.
+- `frontend/src/app/session/` y `businessContext/`: session, tenant selection and ongoing applications. React Router, Zustand or React Query are not required to be incorporated in the first stage; decide only if it reduces complexity demonstrably.
+- **Do not generate client or code from OpenAPI without reviewing limits and conventions**; typed generation is a later option if useful.
 
-### ADR E27-03 — Transporte y sesión
+### ADR E27-03 — Transport and session
 
-- **Desarrollo:** configurar Vite proxy para `/api`, `/health` o `/ready` si corresponde; navegador llama ruta relativa. En producción preferir mismo origen con reverse proxy. Si es inevitable origen cruzado, allowlist CORS explícita, sin wildcard con credenciales.
-- Token Bearer opaco de acceso solo en estado de memoria, sin persistencia en `localStorage`. El backend expone `/auth/login`, `/auth/me`, `/auth/logout`, **no refresh token** en el contrato actual; tras F5 o expiración, un reinicio de sesión puede ser necesario. Eso debe quedar claro en UX.
-- Proteger `/perfil`, `/empresas/nueva` y rutas `/b/:businessId/*` en modo REAL con sesión; verificar GET de empresa/membresía sin inferir permisos por datos DEMO.
-- 401 => invalidar credenciales y volver a login; 403 => pantalla de falta de permiso; 404 tenant ajeno => no revelar información; 409 => mensaje contextual/reload; 422 => errores de formulario; 5xx/network => reintentar con seguridad.
-- Token no debe aparecer en logs, URL, artefactos E2E, screenshots ni errores mostrados.
+- **Development:** configure Vite proxy for `/api`, `/health` o `/ready` if applicable; browser calls relative path. In production prefer same origin with reverse proxy. If it is inevitable cross origin, allowlist CORS explicit, without wildcard with credentials.
+- Token Bearer opaque access only in memory state, without persistence in `localStorage`. El backend expone `/auth/login`, `/auth/me`, `/auth/logout`, **no refresh token** in the current contract; after F5 or expiration, a re-start of session may be necessary. That should be made clear in UX.
+- Proteger `/perfil`, `/empresas/nueva` and routes `/b/:businessId/*` in REAL mode with session; verify company/membership GET without infer permissions for DEMO data.
+- 401 • invalidate credentials and re-login; 403 • screen of lack of permission; 404 foreign tenant • do not disclose information; 409 • context message/read; 422 • form errors; 5xx/network • try again safely.
+- Token should not appear in logs, URLs, E2E artifacts, screenshots or errors shown.
 
-### ADR E27-04 — Comandos, idempotencia y actualizaciones
+### ADR E27-04 — Commands, Idempotency and updates
 
-- Para cada operación idempotente, usar UUID4 generado **una vez por intento lógico**, conservado con el cuerpo inmutable durante reintentos. Cuando el resultado de una mutación pueda quedar incierto tras F5, el registro local durable acotado se definirá en T06 según la política de privacidad/retención documentada en T00; no crear una clave nueva cuando se pierda la respuesta.
-- En ventas, compras, recepciones, transferencias, ajustes, creación empresarial: comprobar ruta/cabecera exacta contra router; no asumir misma política de todos los POST.
-- Después de cada commit exitoso, recargar saldo/ledger y las proyecciones dependientes, usando solo lo devuelto por API; ante timeout conservar clave/cuerpo y ofrecer «Verificar/reintentar» en lugar de enviar nuevo comando.
-- `409` de versión obsoleta en ajuste obliga relectura de `StockBalance.version` antes de preparar un **nuevo** comando. No auto-repetir una modificación con parámetros obsoletos.
-- Estados de formulario: `idle/loading/success/error/unknown-outcome`; botones de submit deshabilitados mientras se espera, sin prometer «no se registró» tras timeout incierto.
+- For each idempotent operation, use generated UUID4 **once for logical intent**, preserved with the body unchangeable during retrying. When the result of a mutation may be uncertain after F5, the confined durable local record will be defined in T06 according to the privacy/retention policy documented in T00; do not create a new key when the response is lost.
+- In sales, purchases, receptions, transfers, adjustments, business creation: check exact route/header against router; not assume the same policy of all POSTs.
+- After each successful commit, reload balance/ledger and dependent projections using only API returned; before timeout retain key/body and offer "Check/retry" instead of sending new command.
+- `409` version in adjustment requires rereading of `StockBalance.version` before preparing a **new** command. Do not auto-repeat a modification with obsolete parameters.
+- Form States: `idle/loading/success/error/unknown-outcome`; submit buttons disabled while waiting, without promising "not registered" after uncertain timing.
 
-### ADR E27-05 — No ampliar backend sin necesidad validada
+### ADR E27-05 — Do not extend backend without validation
 
-- La ausencia de `GET /sales` imposibilita replicar el historial existente. **Decisión formal previa:** aceptar UI de consulta parcial o abrir sub-PR de endpoint paginado `GET /sales` con tenant, permisos, filtros, orden y pruebas de integridad; es una extensión mínima de E2-6, **no garantía de alcance ya aprobado**.
-- Similar criterio para invitaciones pendientes o atributos UI sin equivalente: degradar con transparencia u ofrecer un endpoint pequeño si hay justificación por flujo de aceptación, nunca generar respuestas ficticias.
-- Nuevos endpoints no deben cambiar migraciones históricas ni ampliar RF-08–RF-10.
-- Los contratos del backend tienen precedencia; ajustar UI para no enviar campos extras prohibidos (`extra=forbid`).
+- La ausencia de `GET /sales` It is impossible to replicate the existing history. **Previous formal decision:** accept partial query IU or open paged endpoint sub-PR `GET /sales` with tenant, permissions, filters, order and integrity tests; it is a minimum extension of E2-6, **no guarantee of scope already approved**.
+- Similar criteria for pending invitations or unequivalent UI attributes: degrade with transparency or offer a small endpoint if there is justification by acceptance flow, never generate fictitious responses.
+- New endpoints should not change historical migrations or expand RF-08–RF-10.
+- Backend contracts take precedence; adjust UI to not send prohibited extra fields (`extra=forbid`).
 
-### ADR E27-06 — Diseño estable, datos reemplazables
+### ADR E27-06 — Stable design, replaceable data
 
-- Conservar `AppShell`, sidebar/drawer, tarjetas, estilos y responsive.
-- Usar páginas conectadas gradualmente y componentes presentacionales reutilizables; no importar `demoGateway` dentro de un componente REAL.
-- El cambio de empresa remonta/invalida vistas y solicitudes anteriores; uso de `AbortController` y chequeo del contexto en respuesta.
-- React no decide autorización efectiva, solo representa capacidades del servidor y oculta/deshabilita acciones sin permiso.
+- Store `AppShell`, sidebar/drawer, cards, styles and responsive.
+- Use gradually connected pages and reusable presentational components; not import `demoGateway` within a REAL component.
+- The change of company goes back/invalidates previous views and requests; use of `AbortController` and context check in response.
+- React does not decide effective authorization, it only represents server capabilities and hides/disables actions without permission.
 
-## 5. Plan incremental propuesto y puertas de calidad
+## 5. Proposed incremental plan and quality doors
 
-### E2-7 A — Plan y contratos (esta entrega, solo docs)
+### E2-7 A — Plan and contracts (this delivery, docs only)
 
-1. Congelar referencia `main` y lista de archivos.
-2. Inventariar página → acción UI → endpoint real → DTO → rol → dependencia.
-3. Clasificar `REAL`/`DEMO`/`DIFERIDO` y brechas; tomar decisiones pendientes con Astra.
-4. Definir forma de capa API, sesión, red, errores, idempotencia y tests.
-5. Aprobar matriz y ADRs **antes de modificar React o FastAPI**.
+1. Freeze reference `main` and file list.
+2. Invent page → action UI → real endpoint → DTO → role → dependence.
+3. Sort `REAL`/`DEMO`/`DIFERIDO` and gaps; making pending decisions with Astra.
+4. Define form of API layer, session, network, errors, idempotence and tests.
+5. Approve matrix and ADRs **before modifying React or FastAPI**.
 
-**Salida A:** este plan, matriz detallada, matriz de riesgos/QA, feedback de Astra con decisiones sobre cambios. Puede fusionarse PR documental independiente solo después de esa revisión.
+**Output A:** This plan, detailed matrix, risk matrix/QA, Astra feedback with decisions on changes. It can be merged PR independent documentary only after that review.
 
-### E2-7 B — Acceso real, empresas, ubicaciones, catálogo
+### E2-7 B — Real access, companies, locations, catalogue
 
-Dividir si conviene en B0–B3:
+Divide if appropriate in B0–B3:
 
-- **B0 infraestructura de integración:** Vite proxy/URLs, cliente HTTP, DTOs, manejo de error, config de modo DEMO/REAL, unit tests con mocks. Mantener `npm run build` y lint verdes.
-- **B1 auth y tenant:** pantalla de registro/login/logout y `GET /auth/me`; listado/creación/edición de empresas; rutas privadas; selección de empresa, ausencia de negocios y estados de sesión.
-- **B2 ubicaciones/equipo:** listado/creación/edición/estado/primaria, asignaciones, membresías e invitación nominativa real. Solo operaciones expuestas por API.
-- **B3 catálogo:** listado, detalle, alta/edición/activación, SKU/estado, bien vs servicio, foto local opcional no autoritativa.
+- **B0 integration infrastructure:** Vite proxy/URLs, HTTP client, DTOs, error handling, config mode DEMO/REAL, unit tests with mocks. `npm run build` And green lint.
+- **B1 auth y tenant:** log/login/logout screen and `GET /auth/me`; listing/creation/editing of companies; private routes; selection of company, absence of business and session states.
+- **B2 locations/equipment:** list/creation/editing/state/primary, assignments, memberships and actual nomination invitation. Only operations displayed by API.
+- **B3 catalogue:** list, detail, high/editing/activation, SKU/state, well vs service, optional non-authoritative local photo.
 
-**Puerta B:** tras F5 del navegador la empresa y el catálogo se recuperan desde PostgreSQL; empresa A y B sin fuga; controles no autorizados no ejecutan comandos. CI frontend y backend que corresponda.
+**Gate B:** After F5 of the browser the company and catalog are recovered from PostgreSQL; company A and B without leak; unauthorized controls do not execute commands. CI frontend and backend as appropriate.
 
-### E2-7 C — Proveedores, compras, inventario, ventas
+### E2-7 C — Suppliers, purchases, inventory, sales
 
-Dividir para contener riesgo:
+Divide to contain risk:
 
-- **C1 proveedores/compras:** CRUD disponible de proveedores; compras con snapshots y concept libre; registrar no recibe; recepción se confirma con `POST /purchases/{id}/receive` en una ubicación STORE válida, clave idempotente.
-- **C2 inventario:** saldos reales, movimientos firmados, transferencia entre ubicaciones y `STOCK_INICIAL`/`AJUSTE_*` con versión. El frontend deja de usar el ledger DEMO como autoridad en modo REAL.
-- **C3 ventas:** POS real con líneas físicas/servicio, pagos exactos, ubicación SELL/STORE, `Idempotency-Key`; consultar recibo por ID; evaluar historial paginado como brecha contratada antes del desarrollo.
-- Desactivar expresamente en REAL controles de cuenta/caja/QR de la DEMO si no están respaldados. La intención QR visual nunca debe disparar una venta real ni simular acreditación real.
+- **C1 suppliers/purchases:** CRUD available from suppliers; purchases with snapshots and free concept; registration does not receive; receipt is confirmed with `POST /purchases/{id}/receive` in a valid STORE location, key idempotent.
+- **C2 inventory:** actual balances, signed movements, transfer between locations and `STOCK_INICIAL`/`AJUSTE_*` The frontend stops using the DEMO leader as an authority in REAL mode.
+- **C3 sales:** Real POS with physical lines/service, exact payments, location SELL/STORE, `Idempotency-Key`; consult receipt by ID; evaluate pagated history as a pre-development gap.
+- Expressly disable DEMO account/box/QR controls in REAL if they are not backed up. The visual QR intent should never trigger a real sale or simulate actual accreditation.
 
-**Puerta C:** flujo de extremo a extremo ejecutado con una base aislada y preservación de stock, sin movimientos duplicados tras replay; balance y ledger concilian.
+**Door C:** end to end flow executed with an isolated base and stock preservation, without duplicate movements after replay; balance and leadger reconcile.
 
 ### E2-7 D — QA integral y hardening
 
 - Backend: pytest con PostgreSQL real en DB temporal, `alembic current/check`, concurrencia/rollback/tenancy.
-- Frontend: build, lint, tests de adaptadores, estados de red, navegación, sesión, permisos, idempotencia.
-- E2E Playwright con API/PostgreSQL reales, Chromium desktop y móvil; datos de test aislados por ejecución; reproducir reintento y cambio tenant, sin archivos secretos.
-- CI: jobs backend, frontend y un job de integración e2e real (con servicios), con estado del mismo SHA, rutas tocadas y fallos trazables.
-- QA manual guiada en navegador + comprobación cruzada Swagger/PostgreSQL.
-- Contrastar hallazgos externos de E2-1 a E2-6 y no introducir correcciones transversales no aprobadas.
+- Frontend: build, lint, adapter tests, network states, navigation, session, permissions, power.
+- E2E Playwright with real API/PostgreSQL, Chromium desktop and mobile; test data isolated by execution; play retrying and change tenant, without secret files.
+- IC: jobs backend, frontend and a real e2e integration job (with services), with the same SHA status, touchable routes and traceable failures.
+- QA manual guided in browser + Swagger/PostgreSQL cross check.
+- Contrast external findings from E2-1 to E2-6 and not introduce unapproved cross-sectional corrections.
 
-**Puerta D:** ninguna falla crítica/alta aceptada sin resolver, suite verde y evidencia escrita del alcance que se probó.
+**Door D:** no critical/high faults accepted unsolved, green suite and written evidence of the scope that was tested.
 
-### E2-7 E — Cierre académico y entrega final
+### E2-7 E — Academic closure and final delivery
 
-- Actualizar `plataforma-pyme/entrega-programacion-2/01..05`, diagramas PlantUML/UML 03A/03B/03C cuando corresponda, ADRs, README frontend/backend, CHANGELOG y matriz trazabilidad RF/CU → API → UI → test.
-- Documentar instalación y modo de ejecución local sin credenciales, Docker y URLs; definir qué hace un usuario sin empresa, un miembro limitado y un empresario con múltiples tenants.
-- Registrar estado REAL/DEMO/DIFERIDO por pantalla, pendientes y evidencia manual/automatizada real.
-- Publicar informe final del TP, criterios de aceptación y manifiesto de SHAs/CI; no confundir auditoría pendiente con cerrada.
+- Update `plataforma-pyme/entrega-programacion-2/01..05`, PlantUML/UML 03A/03B/03C diagrams where applicable, ADRs, README frontend/backend, CHANGELOG and traceability matrix RF/CU → API → IU → test.
+- Document local installation and execution mode without credentials, Docker and URLs; define what a non-company user, limited member and entrepreneur with multiple tenants do.
+- Register REAL/DEMO/DIFFERED status per screen, earrings and real manual/automated evidence.
+- Publish final TW report, acceptance criteria and SHAs/CI manifest; do not confuse pending audit with closed.
 
-**Puerta E:** documentos coherentes con el último SHA realmente integrado y demostración reproducible del flujo completo.
+**Gate E:** documents consistent with the latest actually integrated SHA and reproducible full flow demonstration.
 
-## 6. Organización de trabajo y ramas
+## 6. Organization of work and branches
 
-**Regla:** rama por incremento desde el `main` vigente **tras el merge del anterior**; PR aislado con diff acotado, descripción de comportamiento y pruebas. Nombre sugerido:
+**Rule:** branch by increase from `main` Current **after the previous one**; PR isolated with narrowed diff, description of behavior and tests. Name suggested:
 
 ```text
 docs/e2-7a-plan-integracion       (solo documentos; revisión Astra)
@@ -174,39 +174,39 @@ feature/e2-7d-e2e-qa-integral
 docs/e2-7e-cierre-final
 ```
 
-Los nombres son **propuestos, no ramas ya creadas**, excepto la rama documental indicada al principio. E2-7 puede conservar las cinco macroentregas A–E aunque B/C tengan micro-PRs.
+The names are **proposed, not already created branches**E2-7 can retain the five A-E macrodeliveries even if B/C has micro-PRs.
 
-Si tu compañero abre revisiones E2-1..E2-6 en paralelo, no mezclar su trabajo con estas ramas sin decisión explícita. Rebasar o fusionar correcciones de `main` luego de aprobarlas, y repetir pruebas del flujo integrado tras cada cambio relevante.
+If your partner opens revisions E2-1..E2-6 in parallel, do not mix their work with these branches without explicit decision. `main` after approving them, and repeat integrated flow tests after each relevant change.
 
-## 7. Riesgos y mitigaciones
+## 7. Risks and mitigations
 
-| Riesgo | Severidad orientativa | Mitigación / prueba |
+| Risk | Guidance Severity | Mitigation/test |
 |---|---|---|
-| Confusión DEMO ↔ REAL y operaciones falsas | Alta | Etiqueta inequívoca, separación de estado, E2E no mezcla |
-| Fuga de datos de empresa A a B | Bloqueante | Cache keys scoped, abort + guard, E2E con dos tenants |
-| Pérdida de respuesta tras POST confirmado | Alta | Persistir clave/cuerpo en vida del intento, replay y comprobación |
-| Tokens expuestos por storage, URL o logs | Alta | Solo memoria, mascarado de errores/logs, tests |
-| Pérdida de precisión monetaria | Alta | Cents/milli como enteros, paridad con Python HALF_UP, tests |
-| Venta ajusta stock en browser y servidor | Bloqueante | Solo backend escribe saldo REAL, verificar ledger |
-| Campos DEMO extra causan 422 | Media | DTOs estrictos, adaptadores testeados |
-| Falta historial global de ventas | Media | Decisión previa GET /sales o UI acotada, sin inventar |
-| Un nuevo formulario activa función RF-08–10 no implementada | Alta | Modo DEMO y deshabilitar rutas REAL |
-| Regresiones de E1 UX o bloque anterior | Media/Alta | Capturas/Playwright escritorio y móvil, CI por PR |
+| • Confusion DEMO ↔ REAL and false operations | High | Unmistakable label, state separation, E2E does not mix |
+| Company data leak A to B | Blocking | Cache keys scoped, abort + guard, E2E con dos tenants |
+| Loss of response after confirmed POST | High | Persistent key/body in life of attempt, replay and check |
+| Tokens displayed by storage, URL or logs | High | Memory only, bug chewing/logs, tests |
+| Loss of monetary precision | High | Cents/milli as integers, Python parity HALF_UP, tests |
+| Sale adjusts stock in browser and server | Blocking | Solo backend escribe saldo REAL, verificar ledger |
+| Extra DEMO fields cause 422 | Average | Strict DTOs, tested adapters |
+| Lack of global sales history | Average | Previous decision GET/sales or IU limited, not invented |
+| A new form active function RF-08–10 not implemented | High | DEMO mode and disable REAL routes |
+| E1 UX regressions or previous block | Average/High | Captures/Playwright desktop and mobile, IC by PR |
 
-## 8. Criterios globales de aceptación
+## 8. Overall acceptance criteria
 
-**Funcionales:** registro/login/logout; creación y selector de empresas; ubicaciones/roles; catálogo; proveedores/compras; recepción; balances/movimientos; ajuste/traslado; venta física/mixta; replay correcto; recarga y persistencia real.
+**Functional:** log/login/logout; business creation and selector; locations/roles; catalog; suppliers/purchases; reception; balance sheets/movements; adjustment/transfer; physical sale/mixture; correct replay; actual recharge and persistence.
 
-**Seguridad:** aislamiento entre dos empresas y usuarios; 401/403/404 manejados; roles/ubicaciones respetados por servidor; no token en almacenamiento persistente o logs; no uso de IDs DEMO como UUID de recursos reales.
+**Security:** isolation between two companies and users; 401/403/404 managed; roles/locations respected by server; no token in persistent storage or logs; no use of DEMO IDs as UUID real resources.
 
-**Integridad:** ventas y compras conservan snapshots, importes HALF_UP y suma de pagos; ajuste con versión; idempotencia en comandos; stock no negativo y ledger consistente.
+**Integrity:** sales and purchases retain snapshots, HALF_UP amounts and sum of payments; version adjustment; command idempotence; non-negative stock and consistent leadger.
 
-**UX:** mantener diseño profesional y responsive del prototipo; estados vacíos, permisos, loading, error y éxito precisos; función diferida marcada; acceso con teclado.
+**UX:** maintain professional and responsive prototype design; empty states, permissions, loading, error and precise success; marked deferred function; keyboard access.
 
-**Técnicos:** tests frontend/backend/e2e, Alembic y Docker en SHA final, documentación académica actualizada, datos de prueba aislados, sin credenciales versionadas.
+**Technicians:** frontend/backend/e2e, Alembic and Docker tests in final SHA, updated academic documentation, isolated test data, no validated credentials.
 
-## 9. Condiciones antes de implementar y revisión externa
+## 9. Conditions before implementation and external review
 
-La IA Astra debe revisar este plan **sin modificar el repositorio** y producir una propuesta de ajustes con evidencia del código, matriz de cobertura y decisiones. Antes de abrir E2-7 B, el equipo define explícitamente: (1) modelo de modos; (2) UX de sesión después de F5; (3) topología proxy/CORS; (4) si ampliar listado de ventas; (5) alcance de invitaciones; (6) política de imágenes; (7) cobertura E2E y compatibilidad QA.
+The Astra AI must review this plan **without modifying the repository** and produce a proposal for settings with evidence of code, coverage matrix and decisions. Before opening E2-7 B, the team explicitly defines: (1) mode model; (2) UX session after F5; (3) proxy/CORS topology; (4) whether to expand sales list; (5) invitation range; (6) image policy; (7) E2E coverage and QA compatibility.
 
-**Regla de salida E2-7 A:** aprobar/rechazar cada recomendación, actualizar solo el plan aceptado, y fusionar este PR documental. Hasta ese punto no implementar backend/frontend en E2-7 A.
+**Exit rule E2-7 A:** approve/reject each recommendation, update only the accepted plan, and merge this documentary PR. To that extent do not implement backend/frontend in E2-7 A.

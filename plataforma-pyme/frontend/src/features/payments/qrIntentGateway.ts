@@ -105,13 +105,13 @@ export function makeQrIntentCommand(
   locationId: string | null, cart: readonly PosCartLine[],
   discountCents: number, notes: string,
 ): QrIntentCommand {
-  if (locationId !== null && !UUID_PATTERN.test(locationId)) throw new TypeError('Sede inválida')
+  if (locationId !== null && !UUID_PATTERN.test(locationId)) throw new TypeError('Invalid Headquarters')
   const totals = calculateSaleTotals(cart, discountCents)
-  if (typeof notes !== 'string') throw new TypeError('Notas inválidas')
+  if (typeof notes !== 'string') throw new TypeError('Invalid notes')
   const cleaned = notes.normalize('NFKC').trim().replace(/\s+/gu, ' ')
-  if (cleaned.length > 500 || /\p{C}/u.test(cleaned)) throw new RangeError('Notas inválidas')
+  if (cleaned.length > 500 || /\p{C}/u.test(cleaned)) throw new RangeError('Invalid notes')
   if (totals.total_cents <= 0 || new Set(cart.map(line => line.catalog_item_id)).size !== cart.length)
-    throw new RangeError('Detalle de cobro inválido')
+    throw new RangeError('Invalid collection detail')
   return { location_id: locationId, lines: cart.map(row => ({ ...row })),
     discount_cents: discountCents, notes: cleaned }
 }
@@ -154,14 +154,14 @@ export function parseQrIntent(raw: unknown, businessId: string): QrIntent {
 }
 
 export function createQrIntentGateway(token: string, businessId: string, transport?: typeof fetch) {
-  if (!token || !UUID_PATTERN.test(businessId)) throw new TypeError('Token/empresa no válidos')
+  if (!token || !UUID_PATTERN.test(businessId)) throw new TypeError('Token/Unvalid company')
   const api = createApiClient({ getAccessToken: () => token, fetchImpl: transport })
   const path = '/businesses/' + businessId + '/qr-payment-intents'
   return {
     list(offset=0, limit=QR_HISTORY_PAGE_SIZE, signal?: AbortSignal): Promise<QrIntentSummary[]> {
       if (!Number.isSafeInteger(offset) || offset < 0 || offset > 10_000_000 ||
           !Number.isSafeInteger(limit) || limit < 1 || limit > 50)
-        throw new RangeError('Paginación QR inválida')
+        throw new RangeError('Invalid QR Pagination')
       return api.request<unknown>(path + '?offset=' + offset + '&limit=' + limit, { signal })
         .then(raw => {
           if (!Array.isArray(raw) || raw.length > limit)
@@ -173,23 +173,23 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
         })
     },
     create(body: QrIntentCommand, requestId: string): Promise<QrIntent> {
-      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Solicitud UUID4 inválida')
+      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Invalid UUID4 application')
       return api.request<unknown>(path, {
         method: 'POST', body, idempotencyKey: requestId,
       }).then(raw => parseQrIntent(raw, businessId))
     },
     get(intentId: string, signal?: AbortSignal): Promise<QrIntent> {
-      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Intento inválido')
+      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Invalid attempt')
       return api.request<unknown>(path + '/' + intentId, { signal })
         .then(raw => parseQrIntent(raw, businessId))
     },
     byRequest(requestId: string, signal?: AbortSignal): Promise<QrIntent> {
-      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Solicitud inválida')
+      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Invalid application')
       return api.request<unknown>(path + '/by-request/' + requestId, { signal })
         .then(raw => parseQrIntent(raw, businessId))
     },
     events(intentId: string, signal?: AbortSignal): Promise<QrPaymentEvent[]> {
-      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Intento inválido')
+      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Invalid attempt')
       return api.request<unknown>(path + '/' + intentId + '/events', { signal }).then(raw => {
         if (!Array.isArray(raw) || raw.length > 1000) throw new ApiTransportError('invalid-response', false)
         return raw.map((entry, i) => {
@@ -209,7 +209,7 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
     simulate(intentId: string, action: QrSimAction, eventKey: string): Promise<QrIntent> {
       if (!UUID_PATTERN.test(intentId) || !UUID_V4_PATTERN.test(eventKey) ||
           !['APROBAR','RECHAZAR','EXPIRAR','INDETERMINAR'].includes(action))
-        throw new TypeError('Acción de laboratorio inválida')
+        throw new TypeError('Invalid laboratory action')
       return api.request<unknown>(path + '/' + intentId + '/simulate', {
         method: 'POST', body: { action }, idempotencyKey: eventKey,
       }).then(raw => parseQrIntent(raw, businessId))
@@ -218,20 +218,20 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
       eventKey: string): Promise<{ intent: QrIntent; sale: SaleReceipt | null; replayed: boolean }> {
       if (!UUID_PATTERN.test(intentId) || !UUID_V4_PATTERN.test(eventKey) ||
           !['ACEPTAR','RECHAZAR'].includes(action))
-        throw new TypeError('Decisión QR ficticia inválida')
+        throw new TypeError('Invalid fictional QR decision')
       const raw = await api.request<unknown>(
         path + '/' + intentId + '/exhibition-decision', {
           method: 'POST', body: { action }, idempotencyKey: eventKey,
         })
       try {
         if (!isObject(raw) || typeof raw.replayed !== 'boolean')
-          throw Error('Respuesta de decisión inválida')
+          throw Error('Invalid decision response')
         const intent = parseQrIntent(raw.intent, businessId)
         const sale = raw.sale === null ? null : parseSaleReceipt(raw.sale, businessId)
         if (intent.id !== intentId) throw Error('QR incompatible')
         if (action === 'RECHAZAR') {
           if (intent.status !== 'RECHAZADA' || sale !== null || intent.sale_id != null)
-            throw Error('Rechazo QR incompatible')
+            throw Error('Rejection of incompatible QR')
         } else if (intent.status !== 'FINALIZADA' || !sale ||
                    intent.sale_id !== sale.id ||
                    intent.total_cents !== sale.total_cents ||
@@ -250,19 +250,19 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
                      line.quantity_milli !== intent.lines[i].quantity_milli ||
                      line.unit_price_cents !== intent.lines[i].unit_price_cents ||
                      line.line_total_cents !== intent.lines[i].line_total_cents)) {
-          throw Error('Venta ficticia incompatible con el QR')
+          throw Error('Fictifical sale incompatible with QR')
         }
         return { intent, sale, replayed: raw.replayed }
       } catch { throw new ApiTransportError('invalid-response', true) }
     },
     async finalize(intentId: string): Promise<QrFinalized> {
-      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Intento inválido')
+      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Invalid attempt')
       // El servidor usa el ID del QR como identidad idempotente: no generar una venta nueva al reintentar.
       const raw = await api.request<unknown>(path + '/' + intentId + '/finalize-demo', {
         method: 'POST',
       })
       try {
-        if (!isObject(raw) || typeof raw.replayed !== 'boolean') throw Error('Respuesta de cierre inválida')
+        if (!isObject(raw) || typeof raw.replayed !== 'boolean') throw Error('Invalid closure response')
         const intent = parseQrIntent(raw.intent, businessId)
         const sale = parseSaleReceipt(raw.sale, businessId)
         if (intent.id !== intentId || intent.status !== 'FINALIZADA' ||
@@ -280,12 +280,12 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
               l.quantity_milli !== intent.lines[i].quantity_milli ||
               l.unit_price_cents !== intent.lines[i].unit_price_cents ||
               l.line_total_cents !== intent.lines[i].line_total_cents))
-          throw Error('Comprobante distinto del QR original')
+          throw Error('Checker other than the original QR')
         return { intent, sale, replayed: raw.replayed }
       } catch { throw new ApiTransportError('invalid-response', true) }
     },
     receipt(intentId: string, signal?: AbortSignal): Promise<SaleReceipt> {
-      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Intento inválido')
+      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Invalid attempt')
       return api.request<unknown>(path + '/' + intentId + '/receipt', {signal})
         .then(raw => {
           const sale = parseSaleReceipt(raw, businessId)
@@ -296,7 +296,7 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
         })
     },
     cancel(intentId: string): Promise<QrIntent> {
-      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Intento inválido')
+      if (!UUID_PATTERN.test(intentId)) throw new TypeError('Invalid attempt')
       return api.request<unknown>(path + '/' + intentId + '/cancel', { method: 'POST' })
         .then(raw => parseQrIntent(raw, businessId))
     },
@@ -305,13 +305,13 @@ export function createQrIntentGateway(token: string, businessId: string, transpo
 
 export function qrIntentError(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'La sesión venció. Iniciá sesión nuevamente.'
-    if (error.status === 403) return 'No tenés permiso para cobrar en la sede o cambiar precios.'
-    if (error.status === 404) return 'El QR no está disponible para tu empresa o usuario.'
-    if (error.status === 409) return 'No se pudo generar el QR: vinculá una cuenta DEMO, revisá el stock y la vigencia del intento.'
-    if (error.status === 422) return 'El backend rechazó los datos del carrito. Revisá artículos y cantidades.'
+    if (error.status === 401) return 'The session expired. It began again.'
+    if (error.status === 403) return 'You don\'t have permission to charge at headquarters or change prices.'
+    if (error.status === 404) return 'QR is not available for your company or user.'
+    if (error.status === 409) return 'Could not generate QR: link a DEMO account, check the stock and the validity of the attempt.'
+    if (error.status === 422) return 'Backend rejected the cart data. Check items and quantities.'
   }
-  if (error instanceof ApiTransportError) return 'No se pudo confirmar la respuesta de la API (' +
-    error.reason + '). Recuperá el intento original sin generar una clave nueva.'
-  return error instanceof Error ? error.message : 'No se pudo completar la operación QR.'
+  if (error instanceof ApiTransportError) return 'Could not confirm API response (' +
+    error.reason + '). Regain the original attempt without generating a new key.'
+  return error instanceof Error ? error.message : 'Could not complete QR operation.'
 }

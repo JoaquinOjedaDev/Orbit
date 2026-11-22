@@ -1,98 +1,98 @@
-# E2-7 · T11-A — Matriz inicial de cobertura transversal (corte parcial)
+# E2-7 · T11-A — Initial cross-sectional matrix (partial cut)
 
-**Fecha:** 11/11/2026. **Base:** `main` `bc91c1ee`; **rama:** `feature/e2-7-t11-qa-integral-hardening`; **PR:** #45 DRAFT.
+**Date:** 11/11/2026. **Base:** `main` `bc91c1ee`; **rama:** `feature/e2-7-t11-qa-integral-hardening`; **PR:** #45 DRAFT.
 
-## Metodología y límite
+## Methodology and limit
 
-Esta matriz coteja los **26 escenarios E27-*** exigidos por `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md` contra pruebas de las que se inspeccionó el contenido directamente en este corte: `frontend/e2e/real/pos-draft.spec.ts`, `inventory.spec.ts`, `sales.spec.ts`, `backend/tests/test_sales_api_integration.py` y `test_sales_price_policy_integration.py`, y el workflow full-stack. Se consideran además las evidencias de CI del acta T10-F. **No es una enumeración exhaustiva de todos los archivos de tests**: aún deben inventariarse los e2e de autenticación, empresas, catálogo, proveedores y compras. No confundir ausencia de evidencia consultada con ausencia definitiva de tests.
+This matrix compares the **26 scenarios E27-*** required by `E2-7_QA_CRITERIOS_ACEPTACION_Y_RIESGOS.md` against evidence of which the content was inspected directly in this court: `frontend/e2e/real/pos-draft.spec.ts`, `inventory.spec.ts`, `sales.spec.ts`, `backend/tests/test_sales_api_integration.py` y `test_sales_price_policy_integration.py`The workflow full-stack is also considered the IC evidence of the T10-F act. **Not an exhaustive enumeration of all test files**: still to be inventoryed the authentication e2e, companies, catalog, suppliers and purchases. Do not confuse absence of evidence consulted with definitive absence of tests.
 
-**Leyenda:** CUBIERTO = prueba directa identificada del comportamiento completo; PARCIAL = existen pruebas de una parte pero no del escenario transversal completo; POR VERIFICAR = no se ha localizado ni inspeccionado evidencia suficiente en este corte.
+**Legend:** COVER = identified direct evidence of complete behavior; PARTIAL = there is evidence of a part but not of the entire cross-sectional scenario; VERIFY = insufficient evidence has been located or inspected in this cut.
 
-| Escenario | Estado inicial | Evidencia o brecha concreta |
+| Scenario | Initial State | Evidence or specific gap |
 |---|---|---|
-| E27-AUTH-01 registro/login/GET me | POR VERIFICAR | Fixtures POS se registran y autentican, pero no se verificó prueba de pantalla + GET /me |
-| E27-AUTH-02 logout/protección | POR VERIFICAR | Revisar tests e2e auth |
-| E27-AUTH-03 F5/reautenticación | PARCIAL | `sales.spec.ts` y `pos-draft.spec.ts` hacen F5/re-login; falta validar ausencia de contaminación DEMO |
-| E27-TEN-01 selector A/B | POR VERIFICAR | Revisar tests e2e empresas y flujo UI |
-| E27-TEN-02 respuesta tardía A→B | POR VERIFICAR | Riesgo alto; test de red específico |
-| E27-TEN-03 URL empresa ajena | PARCIAL | Backend ventas comprueba aislamiento de tenant; falta verificar vista de navegación |
-| E27-PERM-01 SELL/STORE sin asignación | PARCIAL | `test_sales_price_policy_integration.py` prueba 403 sin asignación; falta UI integral |
-| E27-LOC-01 sede pausar/reactivar y F5 | POR VERIFICAR | Revisar pruebas de operaciones/sedes |
-| E27-CAT-01 bien+servicio/inactivación | PARCIAL | POS E2E crea ambos tipos, pero no verifica inactivación persistida |
-| E27-SUP-01 proveedor CRUD | POR VERIFICAR | Revisar e2e proveedores |
-| E27-PUR-01 compra mixta sin stock | POR VERIFICAR | No existe escenario de compra en el listado de **19 Playwright REAL** certificado; se debe verificar cobertura backend/frontend aparte |
-| E27-REC-01 recibir compra con stock | POR VERIFICAR | Ninguno de los **19 casos navegador REAL** del workflow final T10 prueba compra→recepción→saldo; inventariar backend y tests frontend unitarios antes de crear el transversal |
-| E27-REC-02 recepción replay | POR VERIFICAR | Revisar e2e recepción y API idempotente |
-| E27-INV-01 saldo/version/ledger | CUBIERTO | `inventory.spec.ts` verifica saldos, historial y versiones; `pos-draft.spec.ts` consulta saldo y ledger postventa |
-| E27-INV-02 traslado entre sedes | PARCIAL | `inventory.spec.ts`: traslado, saldos en origen/destino y replay sin duplicados; ampliar aserción explícita de los dos movimientos de signos opuestos y neto cero en un único escenario |
-| E27-INV-03 ajuste con versión válida | CUBIERTO | `inventory.spec.ts` opera ajustes con `expected_version` y saldo final |
-| E27-INV-04 versión obsoleta/409 | CUBIERTO | `inventory.spec.ts` valida 409 sin movimiento/reintento automático |
-| E27-SAL-01 venta física y débito | CUBIERTO | `pos-draft.spec.ts` prueba 5→3, un movimiento VENTA_SALIDA y comprobante |
-| E27-SAL-02 mixta bien+servicio+2 pagos | PARCIAL | `pos-draft.spec.ts` prueba dos pagos/descuento y venta física por separado; backend `test_sales_api_integration.py` prueba físico+servicio; falta **combinación en un mismo flujo navegador** |
-| E27-SAL-03 respuesta perdida y replay 200 | CUBIERTO | `sales-recovery.spec.ts`: casos físico y servicio, 201 perdido después de COMMIT, F5, GET, replay HTTP 200, misma clave/cuerpo, sin movimiento duplicado; además `pos-draft.spec.ts` cubre GET 404 y reenvío manual |
-| E27-SAL-04 insuficiencia/409 | CUBIERTO | `pos-draft.spec.ts` comprueba 409, F5, GET 404, cero ventas; `test_sales_api_integration.py` prueba rollback de ledger y saldo |
-| E27-SAL-05 precio/descuento y pagos incoherentes | PARCIAL | `sales-real-checkout.test.mjs` y `test_sales_price_policy_integration.py` rechazan montos/permisos; verificar error mostrado por navegador |
-| E27-PRES-01 F5 post compra/venta | PARCIAL | `sales.spec.ts`, `sales-read.spec.ts` y `sales-recovery.spec.ts` consultan historial/recuperación tras F5; falta el mismo recorrido desde compra y recepción |
-| E27-MODE-01 aislamiento DEMO/REAL | POR VERIFICAR | El workflow ejecuta suites DEMO y REAL separadas; no equivale a probar cambio entre ambos modos |
-| E27-MODE-02 QR/caja/cuentas DEMO sin writes REAL | POR VERIFICAR | Requiere navegación y comprobación de efectos |
-| E27-RESP-01 desktop/móvil/teclado REAL | PARCIAL | `sales-read.spec.ts` incluye viewport REAL 390×844 y F5; el proyecto Playwright REAL usa Desktop Chrome y todavía falta matriz móvil/teclado integral de módulos; DEMO sí tiene suite aparte |
+| E27-AUTH-01 registro/login/GET me | TO BE VERIFIED | Fixtures POS are recorded and authenticated, but no screen test + GET /me was verified |
+| E27-AUTH-02 logout/protection | TO BE VERIFIED | Revisar tests e2e auth |
+| E27-AUTH-03 F5/reautification | PARTIAL | `sales.spec.ts` y `pos-draft.spec.ts` F5/re-login; no DEMO contamination is validated |
+| E27-TEN-01 selector A/B | TO BE VERIFIED | Review e2e company tests and flow IU |
+| E27-TEN-02 late response A→B | TO BE VERIFIED | High risk; specific network test |
+| E27-TEN-03 URL company other | PARTIAL | Backend sales checks tenant isolation; navigation view is missing |
+| E27-PERM-01 SELL/STORE no allocation | PARTIAL | `test_sales_price_policy_integration.py` 403 test without assignment; comprehensive IU missing |
+| E27-LOC-01 sede pausar/reactivar y F5 | TO BE VERIFIED | Reviewing evidence of operations/headquarters |
+| E27-CAT-01 good+service/inactivation | PARTIAL | POS E2E creates both types, but does not verify persistent inactivation |
+| E27-SUP-01 CRUD supplier | TO BE VERIFIED | Review e2e suppliers |
+| E27-PUR-01 mixed purchase without stock | TO BE VERIFIED | There is no buying scenario in the list of **19 Playwright REAL** certificate; separate backend/frontend coverage must be verified |
+| E27-REC-01 receive purchase with stock | TO BE VERIFIED | None of the **19 cases Real browser** final workflow T10 test purchase→reception→sald; inventory backend and unit frontend tests before creating the crossover |
+| E27-REC-02 Replay reception | TO BE VERIFIED | Check e2e reception and API idempotente |
+| E27-INV-01 saldo/version/ledger | COVER | `inventory.spec.ts` checks balances, history and versions; `pos-draft.spec.ts` check balance and post-sales leader |
+| E27-INV-02 transfer between headquarters | PARTIAL | `inventory.spec.ts`: transfer, balances in origin/destiny and replay without duplicates; extend explicit assertion of the two movements of opposite signs and net zero in a single scenario |
+| E27-INV-03 Fit with valid version | COVER | `inventory.spec.ts` operates settings with `expected_version` and final balance |
+| E27-INV-04 obsolete version/409 | COVER | `inventory.spec.ts` valid 409 without movement/automatic re-entry |
+| E27-SAL-01 physical and debit sales | COVER | `pos-draft.spec.ts` test 5→3, a SALE_SALIDA movement and proof |
+| E27-SAL-02 mixed well+service+2 payments | PARTIAL | `pos-draft.spec.ts` test two separate payments/discount and physical sale; backend `test_sales_api_integration.py` physical test + service; missing **combination in the same browser flow** |
+| E27-SAL-03 lost response and replay 200 | COVER | `sales-recovery.spec.ts`: physical cases and service, 201 lost after COMMIT, F5, GET, HTTP replay 200, same key/body, no duplicate movement; plus `pos-draft.spec.ts` covers GET 404 and manual forwarding |
+| E27-SAL-04 insufficiency/409 | COVER | `pos-draft.spec.ts` checks 409, F5, GET 404, zero sales; `test_sales_api_integration.py` prueba rollback de ledger y saldo |
+| E27-SAL-05 price/discount and inconsistent payments | PARTIAL | `sales-real-checkout.test.mjs` y `test_sales_price_policy_integration.py` refuse amounts/permits; verify error displayed by browser |
+| E27-PRES-01 F5 post purchase/sale | PARTIAL | `sales.spec.ts`, `sales-read.spec.ts` y `sales-recovery.spec.ts` check history/recovery after F5; same route is missing from purchase and receipt |
+| E27-MODE-01 DEMO/REAL insulation | TO BE VERIFIED | The workflow runs separate DEMO and REAL suites; it does not amount to testing change between both modes |
+| E27-MODE-02 QR/box/DEMO accounts without REAL spells | TO BE VERIFIED | Requires navigation and effect checking |
+| E27-RESP-01 desktop/mobile/real keyboard | PARTIAL | `sales-read.spec.ts` includes realistic 390×844 and F5 viewport; Playwright REAL project uses Desktop Chrome and still lacks mobile matrix/comprehensive module keyboard; DEMO does have separate suite |
 
-## Priorización de trabajo T11
+## Work priority T11
 
-**P0 (primero):** escenario continuo **bien físico + servicio → compra/recepción → stock → venta mixta con dos pagos → comprobante + ledger + F5** sobre **una sola empresa PostgreSQL efímera**. Debe usar los contratos existentes, sin habilitar ventas en el entorno local del usuario.
+**P0 (first):** continuous scenario **bien physic + service → purchase/reception → stock → mixed sale with two payments → voucher + leadger + F5** on **a single company PostgreSQL ephemera**You must use existing contracts, without enabling sales in the local user environment.
 
-**P1:** concurrencia/aislamiento tenant A/B, respuesta tardía al cambiar empresa, navegación de URL ajena y permisos de trabajador sin asignación.
+**P1:** Tenant A/B attendance/isolation, late response when changing company, other people's URL navigation and unallocated worker permissions.
 
-**P2:** recorrido móvil REAL y teclado; cambios DEMO↔REAL sin contaminación, acciones de QR/caja/cuentas que no generan escrituras REALES.
+**P2:** Real mobile route and keyboard; non-contaminated DEMO∫REAL changes, QR/box actions/accounts that do not generate REAL scripts.
 
-## Próxima acción
+## Next action
 
-Completar el inventario de archivos e2e y tests backend relevantes antes de declarar cobertura definitiva, convertir esta tabla en matriz trazable con rutas y nombre de prueba exacto, y añadir solo los escenarios faltantes. Mantener PR #45 DRAFT y exigir CI en el mismo commit para cada cambio. **La matriz inicial no da por aprobada la puerta T11-D.**
+Complete the inventory of relevant e2e files and backend tests before declaring definitive coverage, convert this table into traceable matrix with exact path and test name, and add only missing scenarios. Keep PR #45 DRAFT and require CI in the same commit for each change. **The initial matrix does not approve the T11-D door.**
 
-## 4. T11-A — Contraste reproducible de la suite browser REAL
+## 4. T11-A — Reproducible Contrast of the REAL browser suite
 
-**Fuente directa de ejecución:** GitHub Actions full-stack T10 último commit documental, run 42982898458, job `inventory-real` **SUCCESS**, registro de Pytest **892 passed (2 warnings)**, Playwright **19 passed** REAL y **6 passed** DEMO. El run pertenece a T10 antes de iniciar T11; **no** declara aún QA T11 aprobada.
+**Direct source of execution:** GitHub Actions full-stack T10 latest documentary commit, run 42982898458, job `inventory-real` **SUCCESS**, Pytest log **892 passed (2 warnings)**, Playwright **19 passed** REAL and **6 passed** DEMO. Run belongs to T10 before starting T11; **no** states QA T11 still approved.
 
-El listado de tests ejecutados por Playwright REAL consta de cinco archivos, sin suites de autenticación, navegación multiempresa, proveedores, compras o recepción:
+The list of tests performed by Playwright REAL consists of five files, without authentication suites, multi-company browsing, suppliers, purchases or reception:
 
-| Archivo browser REAL | Casos reales del run | Cobertura constatable |
+| REAL Browser File | Real Run Cases | Remarkable coverage |
 |---|---:|---|
-| `e2e/real/inventory.spec.ts` | 4 | ajuste y traslado con pérdida de respuesta/replay, 409 de versión, historial paginado |
-| `e2e/real/pos-draft.spec.ts` | 8 | carrito, 501 fichas, servicio, dos pagos, venta física, stock 409, POST perdido antes de API y 201 perdido después de COMMIT |
-| `e2e/real/sales-read.spec.ts` | 3 | historial/filtro/comprobante y by-request, F5 en viewport móvil, 503 y retry de GET |
-| `e2e/real/sales-recovery.spec.ts` | 3 | respuesta 201 perdida y replay 200 para bien/servicio, GET 404 de solicitud no enviada, sin duplicados |
-| `e2e/real/sales.spec.ts` | 1 | historial, comprobante por ID, recovery tras F5 y solo GET |
-| **Total** | **19** | **Cubre fuertemente inventario y ventas; no el encadenamiento completo del resto de módulos** |
+| `e2e/real/inventory.spec.ts` | 4 | Setup and move with response/replay loss, 409 version, paged history |
+| `e2e/real/pos-draft.spec.ts` | 8 | cart, 501 tokens, service, two payments, physical sale, stock 409, POST lost before API and 201 lost after COMMIT |
+| `e2e/real/sales-read.spec.ts` | 3 | history/filter/comprobant and by-request, F5 in mobile viewport, 503 and retry of GET |
+| `e2e/real/sales-recovery.spec.ts` | 3 | 201 lost response and replay 200 for good/service, GET 404 unsending request, no duplicates |
+| `e2e/real/sales.spec.ts` | 1 | history, ID proof, recovery after F5 and only GET |
+| **Total** | **19** | **Strongly covers inventory and sales; not the full chaining of other modules** |
 
-**Ajustes respecto de la matriz inicial:**
+**Adjustments to the initial matrix:**
 
-- `E27-SAL-03` se reclasifica **CUBIERTO**: `sales-recovery.spec.ts` ejecuta el replay 200 real que faltaba identificar (incluye 201 perdido, F5 y comparación de saldos/ledger sin duplicados). No crear una tercera prueba idéntica en T11.
-- `E27-RESP-01` sigue **PARCIAL**: ya existe un caso REAL en ancho 390 px; no hay una matriz móvil/teclado para todos los módulos.
-- `E27-INV-02` queda **PARCIAL en su criterio estricto** de dos movimientos de signos opuestos: la suite visible comprueba saldo y reintento, pero falta aserción explícita del par de movimientos en el mismo recorrido.
-- Registro/login se usan extensamente como *fixtures* de otras pruebas, pero **no equivalen a pruebas dedicadas** de usuario sin empresa, cambio de tenant y rutas ajenas.
-- Los **892 Pytest** confirman una regresión backend verde, no implican por sí mismos que todos los 26 escenarios de interfaz estén cubiertos. Sus casos deben trazarse por nombre en una segunda pasada documental.
+- `E27-SAL-03` reclassifieda **COVER**: `sales-recovery.spec.ts` Runs the real 200 replay that was missing to identify (includes 201 lost, F5 and comparison of balances/ledger without duplicates). Do not create an identical third test in T11.
+- `E27-RESP-01` Go on. **PARTIAL**: There is already a REAL case in width 390 px; there is no mobile/keyboard matrix for all modules.
+- `E27-INV-02` left **PARTIAL in its strict discretion** two movements of opposite signs: the visible suite checks balance and retry, but there is no explicit assertion of the pair of movements in the same route.
+- Registration/login are widely used as *fixtures* of other tests, but **does not amount to dedicated testing** user without company, change of tenant and routes from others.
+- Los **892 Pytest** confirm a green backend regression, do not imply by themselves that all 26 interface scenarios are covered. Your cases should be plotted by name in a second documentary pass.
 
-## 5. Decisión T11-A para comenzar T11-B
+## 5. Decision T11-A to start T11-B
 
-**Brecha transversal confirmada por la ejecución:** ninguno de los 19 E2E REAL une *creación de compra → recepción → saldo → venta mixta* dentro de una misma empresa QA. Ese será el **primer escenario T11-B**, reutilizando DTO y rutas que existan efectivamente en FastAPI, sin añadir endpoints imaginarios ni realizar POST en bases persistentes.
+**Cross-sectional gap confirmed by execution:** none of the 19 E2E REAL joins *creation of purchase → receipt → balance → mixed sale* within the same company QA. That will be the **first scenario T11-B**, reusing DTO and routes that effectively exist in FastAPI, without adding imaginary endpoints or performing POST on persistent bases.
 
-**Antes de escribir ese test:** inspeccionar fuentes reales de compra/recepción y su contrato, los helpers/fixtures de QA y los scripts CI, y enumerar pruebas backend ya existentes para no replicarlas. Después agregar un E2E integral con guardas `PYME_DISPOSABLE_QA=1`, API fija al PostgreSQL efímero y seguimiento de balances/versiones/movimientos. Mantener PR #45 DRAFT, sin merge; `main` y TEST Empresa A permanecen intactos.
+**Before writing that test:** inspect real source of purchase/reception and your contract, QA helpers/fixtures and IC scripts, and list existing backend tests to avoid replicating them. Then add a comprehensive E2E with saves `PYME_DISPOSABLE_QA=1`, API fixes the ephemeral PostgreSQL and balance/version/movement tracking. Keep PR #45 DRAFT, no merit; `main` and TEST Company A remain intact.
 
-**Estado de T11-A:** evidencia de suite REAL inventariada y matriz reclasificada; el inventario nominativo de todos los tests backend/front-end de proveedores y compras aún está **pendiente**, por lo que esta matriz no debe presentarse como cobertura exhaustiva de todo el repositorio.
+**State of T11-A:** evidence of inventoryed REAL suite and reclassified matrix; the nominative inventory of all vendor backend/front end tests and purchases is still **outstanding**, so this matrix should not be presented as exhaustive coverage of the entire repository.
 
-## 6. T11-A — Cobertura backend adicional verificada por nombre de test
+## 6. T11-A — Additional backend coverage verified by test name
 
-Se abrieron los archivos de pruebas integradas con PostgreSQL y se verificaron las funciones de test existentes. Las pruebas de los siguientes archivos tienen guarda `RUN_DB_INTEGRATION=1` y son parte de la regresión Pytest, pero **no prueban por sí solas la navegación React de un flujo de usuario completo**.
+The test files integrated with PostgreSQL were opened and the existing test functions were verified. The tests of the following files have saved `RUN_DB_INTEGRATION=1` and are part of the Pytest regression, but **not test for themselves the React navigation of a full user flow**.
 
-| Componente y archivo existente | Evidencia comprobada en código | Criterios que mejor soporta |
+| Existing Component and Archive | Evidence verified in code | Criteria that you best support |
 |---|---|---|
-| `backend/tests/test_location_api_integration.py` | `test_pause_primary_releases_primary_and_resume_does_not_restore_it`, `test_member_of_two_companies_does_not_mix_records`, permisos, sedes cross-tenant | LOC-01, TEN-01/03, PERM-01 **a nivel API** |
-| `backend/tests/test_catalog_api_integration.py` | `test_deactivate_reactivate_and_idempotent_status_does_not_delete`, `test_create_list_get_edit_persisted_and_no_stock_created`, paginación y tenant | CAT-01 **a nivel API** |
+| `backend/tests/test_location_api_integration.py` | `test_pause_primary_releases_primary_and_resume_does_not_restore_it`, `test_member_of_two_companies_does_not_mix_records`, permissions, cross-tenant headquarters | LOC-01, TEN-01/03, PERM-01 **a nivel API** |
+| `backend/tests/test_catalog_api_integration.py` | `test_deactivate_reactivate_and_idempotent_status_does_not_delete`, `test_create_list_get_edit_persisted_and_no_stock_created`, pagination and tenant | CAT-01 **a nivel API** |
 | `backend/tests/test_supplier_api_integration.py` | `test_create_get_list_update_full_contact_and_no_inventory`, rollback, accesos y cross-tenant | SUP-01 **a nivel API** |
 | `backend/tests/test_purchase_api_integration.py` | `test_mixed_purchase_and_snapshots_survive_catalog_supplier_edits`, `test_retries_return_same_purchase_and_reused_key_with_new_data_conflicts`, rollback y aislamiento | PUR-01 y parte de PRES-01 **a nivel API** |
-| `backend/tests/test_receipt_api_integration.py` | `test_receive_first_stock_atomic_and_replay_exact`, `test_balance_after_snapshot_on_replay_does_not_follow_later_entries`, `test_assigned_employee_can_store_and_unassigned_employee_cannot` | REC-01/02, INV-01 y PERM-01 **a nivel API** |
-| `backend/tests/test_sales_api_integration.py` y `test_sales_price_policy_integration.py` | venta mixta, ledger, rollback por stock insuficiente y políticas P01 de cuatro roles | SAL-01/02/04/05 y PERM-01 **a nivel API** |
+| `backend/tests/test_receipt_api_integration.py` | `test_receive_first_stock_atomic_and_replay_exact`, `test_balance_after_snapshot_on_replay_does_not_follow_later_entries`, `test_assigned_employee_can_store_and_unassigned_employee_cannot` | REC-01/02, INV-01 and PERM-01 **a nivel API** |
+| `backend/tests/test_sales_api_integration.py` y `test_sales_price_policy_integration.py` | mixed sale, ledger, rollback by stock insufficient and four-part P01 policies | SAL-01/02/04/05 and PERM-01 **a nivel API** |
 
-**Corrección del diagnóstico:** proveedores, compras y recepción **sí** tienen regresión de integración FastAPI/PostgreSQL identificable; lo que no está cubierto por los 19 tests REAL del navegador es una ejecución **continua de esos módulos desde la UI**. Por tanto, no hace falta reconstruir backend ni inventar contratos en T11-B: hay que enlazar flujos existentes en un E2E transversal y verificar el estado de la base.
+**Diagnosis correction:** suppliers, purchases and reception **sí** have FastAPI/PostgreSQL integration regression identifiable; what is not covered by the 19 REAL tests of the browser is an execution **continuous use of these modules from the IU**. Therefore, there is no need to rebuild backend or invent contracts in T11-B: existing flows must be linked into a cross-sectional E2E and the status of the base verified.
 
-**Pendiente para completar exhaustividad T11-A:** inventario nominativo del resto de archivos backend de autenticación/equipo, y pruebas unitarias frontend de proveedores/compras/recepción. Esta limitación no bloquea la preparación del primer escenario T11-B, pero sí impide declarar auditados todos los tests del repositorio.
+**Earrings to complete fullness T11-A:** Nominative inventory of the remaining authentication/equipment backend files, and unitary frontend vendor/purchase/reception tests. This limitation does not block preparation of the first T11-B scenario, but it does prevent all repository tests from being audited.

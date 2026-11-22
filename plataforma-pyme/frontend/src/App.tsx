@@ -96,7 +96,7 @@ function DemoApp() {
     if (sameContext) window.history.back()
     else navigate(business ? businessHref(business.id, 'inicio') : '/inicio')
   }
-  const pageTitle = business ? (selectedPage?.label ?? 'Sección desconocida') : pathname === '/perfil' ? 'Mi perfil' : pathname === '/empresas/nueva' ? 'Crear empresa' : 'Inicio'
+  const pageTitle = business ? (selectedPage?.label ?? 'Unknown section') : pathname === '/perfil' ? 'My profile' : pathname === '/empresas/nueva' ? 'Create company' : 'Home'
 
   useEffect(() => { document.title = pageTitle + ' · Orbit Demo' }, [pageTitle])
 
@@ -153,7 +153,7 @@ function DemoApp() {
     <div className="main-column" inert={menuOpen}>
       <Topbar business={business} businesses={businesses} profile={snapshot.profile} title={pageTitle} navigate={navigate} sidebarMode={sidebarMode} menuOpen={menuOpen} showBack={showBack} onBack={goBack} onToggleSidebar={toggleDesktopSidebar} onHideSidebar={() => setSidebarMode('hidden')} onToggleMenu={() => setMenuOpen((open) => !open)} />
       <main id="main-content" className="main-content">{content}</main>
-      <footer className="app-footer"><span>Orbit Demo</span><span>Sin autenticación ni pagos reales · Datos locales DEMO{!isPublicDemo && <> · <a href="/real/login">Acceso a Orbit</a></>}</span></footer>
+      <footer className="app-footer"><span>Orbit Demo</span><span>Sample data · No real payments{!isPublicDemo && <> · <a href="/real/login">Sign in to Orbit</a></>}</span></footer>
     </div>
   </div>
 }

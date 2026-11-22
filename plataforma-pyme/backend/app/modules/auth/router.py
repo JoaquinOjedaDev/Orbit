@@ -18,7 +18,7 @@ def register(payload: RegisterRequest, db: Session = Depends(get_db)) -> UserPub
     try:
         user = RegistrationService(db).register(payload)
     except DuplicateIdentityError:
-        raise HTTPException(status_code=409, detail="No se pudo completar el registro") from None
+        raise HTTPException(status_code=409, detail="Could not complete registration") from None
     return UserPublic.from_user(user)
 
 

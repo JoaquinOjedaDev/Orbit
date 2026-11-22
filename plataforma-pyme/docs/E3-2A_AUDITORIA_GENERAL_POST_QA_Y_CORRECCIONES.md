@@ -1,105 +1,105 @@
-# E3-2A — Auditoría general posterior a las pruebas manuales y correcciones
+# E3-2A — Post-test general audit and corrections
 
-**Fecha:** 12 de noviembre de 2026.  
-**Proyecto:** Orbit, plataforma generalista multiempresa/multirrubro, UNSAM Programación 2. WALOS no es el producto.  
-**Base inalterada:** main en 0f1b1ca569605e18f9207520f1d4e0e5a563688e.  
-**Rama funcional auditada:** feature/e3-2a-imagenes-real-backend, último commit funcional validado c60a0eb21ef764c03af9795744a1ebabdb811849. PR #65 en DRAFT.  
-**Alcance:** auditoría de integración transversal y regresión de E3-2A con identidad, empresas, equipo, catálogo, proveedores, compras, inventario, POS, CI y documentación del cierre E2-7/T12. **No equivale** a pentest, certificación de producción, auditoría exhaustiva de cada línea o aprobación final del diseño.
+**Date:** November 12, 2026.  
+**Project:** Orbit, multi-company/multi-rub generalist platform, UNSAM Programming 2. WALOS is not the product.  
+**Unaltered base:** main en 0f1b1ca569605e18f9207520f1d4e0e5a563688e.  
+**Functional branch audited:** feature/e3-2a-images-real-backend, last functional commit validated c60a0eb21ef764c03af9795744a1ebabdb811849. PR #65 in DRAFT.  
+**Scope:** cross-sectional integration and regression audit of E3-2A with identity, companies, equipment, catalog, suppliers, purchases, inventory, POS, IC and closure documentation E2-7/T12. **Not equivalent** a pentest, production certification, comprehensive audit of each line or final approval of the design.
 
-## 1. Resumen ejecutivo
+## 1. Executive summary
 
-La funcionalidad de fotografías probada manualmente es operativa y está aislada por empresa. Los hallazgos realizados por el usuario se concentraron en la ubicación de los controles y en pantallas donde la miniatura no estaba integrada. Se corrigieron sobre la rama del PR, sin merge ni cambios en la base local.
+The functionality of manually tested photographs is operational and isolated by company. User findings were concentrated on the location of controls and screens where the thumbnail was not integrated. They were corrected over the PR branch, without any merit or changes to the local base.
 
-**Dictamen técnico post-regresión: APTO PARA REVISIÓN VISUAL DE LAS CORRECCIONES.** Los tres workflows del último commit de código finalizaron aprobados; falta exclusivamente la aprobación humana de los cambios de UX y las pruebas manuales suspendidas por decisión del usuario. No existe autorización de merge.
+**Post-regression technical opinion: APPOINTMENT FOR VISITIONAL REVIEW OF CORRECTIONS.** The three workflows of the last code commit were approved; human approval of UX changes and manual tests suspended by user decision is not required. No merge authorization exists.
 
-## 2. Resultado de QA manual declarado por el usuario
+## 2. Results of QA manual declared by the user
 
-| Grupo | Resultado manual registrado |
+| Group | Manual result recorded |
 |---|---|
-| M01 y M02 — Perfil: carga, sustitución, avatar, F5 y login | Aprobado por el usuario |
-| M03 y M04 — Empresa: logo, sustitución y eliminación | Aprobado por el usuario; detectado flujo fuera de Editar |
-| M05 — Catálogo: tres fotografías, portada, persistencia | Funciona; observación sobre alta/edición |
-| M06 y M07 — Ocho fotos, rechazo de novena, huecos y portada | Aprobado por el usuario |
-| M08 — Servicios con fotos sin stock | Aprobado por el usuario |
-| M09 y M10 — Proveedores: foto, reemplazo, borrado | Aprobado por el usuario; mejora de alta/edición |
-| M11 — Portada visible en POS | Aprobado con captura; detectadas faltantes en Compras, Existencias y revisión final |
-| M12 — Lectura por empleado y ausencia de controles de edición | Aprobado por el usuario; captura mostró Encargado, backend también verifica Trabajador |
-| M13 — Separación entre dos empresas | Aprobado por el usuario |
-| M14 — Archivo inválido, SVG, >5 MB | **No ejecutado**: solamente se prepararon dos archivos locales |
-| M15–M18 — Navegación adicional, móvil, accesibilidad, fallo de red | **No ejecutadas** por decisión del usuario |
+| M01 and M02 — Profile: load, replacement, avatar, F5 and login | Approved by the user |
+| M03 and M04 — Company: logo, replacement and disposal | User-approved; detected flow out of Edit |
+| M05 — Catalogue: three photographs, cover, persistence | Works; observation on high/editing |
+| M06 and M07 — Eight photos, rejection of ninth, hollows and cover | Approved by the user |
+| M08 — Services with unstocked photos | Approved by the user |
+| M09 and M10 — Suppliers: photo, replacement, deleted | User-approved; upgrade/editing |
+| M11 — Cover visible on POS | Approved with capture; detected missing in Purchases, Stocks and final review |
+| M12 — Reading per employee and absence of editing controls | User-approved; capture showed Maintainer, backend also checks Worker |
+| M13 — Separation between two undertakings | Approved by the user |
+| M14 — Invalid file, SVG, >5 MB | **Not executed**: only two local archives were prepared |
+| M15–M18 — Additional navigation, mobile, accessibility, network failure | **Not executed** by the user’s decision |
 
-Estas son declaraciones de pruebas del usuario, no ejecución independiente de navegador sobre su máquina. Los cambios posteriores a esas capturas todavía requieren aceptación visual.
+These are user testing statements, not independent browser execution on your machine. Changes after those screenshots still require visual acceptance.
 
-## 3. Correcciones implementadas en la rama
+## 3. Corrections implemented in the branch
 
-| Área | Corrección | Invariante conservado |
+| Area | Corrigendum | Invariant preserved |
 |---|---|---|
-| Creación de artículos y servicios | Selector de hasta 8 fotos opcionales durante alta; primero se crea la ficha REAL y luego se suben al ID devuelto | Nunca se generan fotos huérfanas deliberadamente; no se crea stock ni venta |
-| Edición de catálogo | Gestor de imágenes accesible también desde Editar | Se mantiene galería en Ver ficha y permiso de escritura original |
-| Creación y edición de proveedores | Selección opcional de una foto durante alta; gestor en Editar | La foto no es obligatoria y no afecta compras ni promociones |
-| Edición de empresa | Modificación del logo integrada en Editar datos; fuera de edición, solo visualización | El backend continúa exigiendo business.profile.edit |
-| Compras y recepciones, listado | Miniatura visual por renglón vinculado a catálogo | El importe, descripción y cantidad siguen siendo snapshots inmutables |
-| Inventario, Existencias | Portada visual de la ficha del catálogo | El saldo, su versión y el ledger son exclusivamente de PostgreSQL |
-| POS, revisión final | Portada actual como referencia en cada renglón | No modifica totales, descuentos, pagos ni la política de habilitación de ventas |
-| Equipo | Avatar personal por ruta dedicada de consulta, autenticada y ligada a empresa | Sin recurso público, solo members.read, miembro destino ACTIVO, datos privados fuera del token URL |
-| Avisos de galería | Evita conservar un aviso de éxito al intentar exceder ocho fotos | Sin cambios en autorización o almacenamiento |
-| CI plataforma PyME | Workflows de la plataforma fijados a ubuntu-24.04 | Evita incompatibilidad Playwright/Chromium con runner ubuntu26.04; WALOS CI no se modifica |
-| QA | Caso Playwright ampliado a selección de imágenes en alta y edición | Nunca activa ventas ni usa base no descartable |
+| Creation of articles and services | Selector of up to 8 optional photos during discharge; first the REAL tab is created and then uploaded to the returned ID | Orphan photos are never deliberately generated; no stock or sale is created |
+| Catalogue edition | Image Manager also accessible from Edit | Gallery maintained in See original tab and writing permission |
+| Creation and editing of suppliers | Optional photo selection during discharge; manager in Edit | Photo is not mandatory and does not affect purchases or promotions |
+| Enterprise Edition | Change the integrated logo in Edit data; out of editing, display only | The backend continues to demand business.profile.edit |
+| Shopping and receptions, list | Visual miniature by line linked to catalog | The amount, description and quantity remain immutable snapshots |
+| Inventory, Stocks | Visual cover of the catalogue sheet | The balance, its version and the ledger are exclusively PostgreSQL |
+| POS, final review | Current cover as reference in each row | Does not modify totals, discounts, payments or sales rating policy |
+| Equipment | Avatar staff by dedicated route of consultation, authenticated and linked to company | No public resource, only members.read, target member ACTIVE, private data outside the token URL |
+| Gallery Notices | Avoid keeping a successful notice when trying to exceed eight photos | No change in authorisation or storage |
+| CI platform PyME | Platform workflows set to ubuntu-24.04 | Evita incompatibilidad Playwright/Chromium con runner ubuntu26.04; WALOS CI no se modifica |
+| QA | Playwright case expanded to high image selection and editing | Never activates sales or uses base not disposable |
 
-Si la carga de fotos falla **después** de crear un artículo o proveedor, la ficha comercial permanece creada; se muestra advertencia y el operador debe inspeccionar la galería antes de volver a intentar. No existe transacción distribuida que vuelva atómica la creación del artículo y todos sus POST de fotos. Este límite es explícito, no se simula rollback comercial.
+If uploading photos fails **after** to create an item or supplier, the trade sheet remains created; warning is displayed and the operator must inspect the gallery before attempting again. There is no distributed transaction that will turn the creation of the article atomic and all its photo POSTs. This limit is explicit, it does not simulate commercial rollback.
 
-## 4. Auditoría de seguridad y aislamiento
+## 4. Security and isolation audit
 
-- Autenticación mediante Bearer, sesiones reales; imágenes privadas normalizadas a WebP. No se incorpora URL con token ni almacenamiento de fotos en localStorage.
-- Las operaciones de escritura verifican membresía activa y permiso de edición en empresa ACTIVA, antes de decodificar, y vuelven a comprobar antes de guardar. Los roles Trabajador y Encargado no obtienen permisos por ocultar o mostrar botones.
-- Las fotos de perfil siguen siendo accesibles por su dueño mediante /photos/me; en Equipo hay ruta **de solo lectura** para un colega activo del mismo tenant, condicionada al permiso members.read. Usuarios externos y trabajadores sin lectura de equipo reciben rechazo sin entrega de bytes.
-- Las consultas de portada de Compras/Existencias/POS emplean el business_id del contexto actual; las referencias del catálogo se validan contra ese tenant.
-- Imagen de un producto en comprobante histórico: **foto actual orientativa**, no parte del documento inmutable. No se manipulan snapshots contables.
-- Migración existente e32a_photo_assets, 21 tablas verificado en QA manual. Las correcciones posteriores no añaden migraciones ni modifican claves del modelo comercial.
-- El sistema limita formato real, resolución y tamaño antes del almacenamiento. M14 manual quedó pendiente; las pruebas unitarias previas de formatos inválidos permanecen en la suite.
+- Authentication using Bearer, real sessions; private images standardized to WebP. No URL is incorporated with token or localStorage photo storage.
+- Writing operations verify active membership and editing permission in an ACTIVA company, before decoding, and recheck before saving. Worker and Maintainer roles do not get permission to hide or display buttons.
+- Profile photos are still accessible by their owner via /photos/me; on Team there is route **read-only** for an active colleague of the same tenant, conditioned to permission members.read. External users and workers without reading equipment receive rejection without delivery of bytes.
+- The front page queries of Purchases/Existences/POS use the business_id of the current context; the references in the catalog are validated against that tenant.
+- Image of a product in historical proof: **current orientative photo**, not part of the immutable document. Accounting snapshots are not manipulated.
+- Existing migration e32a_photo_assets, 21 tables verified in manual QA. Subsequent corrections do not add migrations or modify commercial model keys.
+- The system limits real format, resolution and size before storage. M14 manual was left pending; previous unitary tests of invalid formats remain in the suite.
 
-## 5. Revisión integral por subsistema
+## 5. Comprehensive revision by subsystem
 
-| Subsistema | Observación auditoría | Estado de evidencia |
+| Subsistema | Audit observation | State of evidence |
 |---|---|---|
-| Autenticación y perfil | Avatar propio persistente; sesión REAL en memoria; F5 puede requerir nueva autenticación | M01–M02 manual + tests |
-| Empresas y membresías | ACL por tenant; logos visibles y edición explícita; invitación no concede acceso hasta aceptarse | M03–M04, M12–M13 + tests |
-| Equipo | Avatar bajo permiso de lectura y solo para miembros activos; endpoint nuevo requiere regresión | Tests nuevos; revalidación visual pendiente |
-| Catálogo y proveedores | Fichas persistentes y fotos opcionales durante el alta/editar | M05–M10 para flujo anterior; nueva UX pendiente de revalidación |
-| Compras | Foto de referencia en listado; ninguna escritura comercial nueva | Revisión de JSX y CI; pantalla nueva pendiente |
-| Recepciones | No hay cambio del contrato de recepción única, stock ni comprobante | Regresión E2/E3 vía CI |
-| Inventario | Foto de portada no forma parte del cálculo de saldos | Regresión vía CI; nueva miniatura pendiente de aprobación visual |
-| POS / Ventas | Se añade portada en revisión, sin cambiar el comando de venta ni cálculos | M11 y CI; revisión final pendiente visual |
-| Gastos / Caja / cuentas / QR | Capacidades REAL no se agregan en E3-2A; DEMO o futuras según cierre T12 | No son defectos del incremento fotográfico |
-| Documentación académica | T12 E2-7 conserva límites RF-01 a RF-07 y distingue RF-08 a RF-10 | Revisado contra acta T12; no es nueva auditoría de consigna original |
+| Authentication and profile | Persistent own Avatar; REAL session in memory; F5 may require new authentication | M01–M02 manual + tests |
+| Companies and memberships | ACL per tenant; visible logos and explicit editing; invitation does not grant access until accepted | M03–M04, M12–M13 + tests |
+| Equipment | Avatar under read permission and for active members only; new endpoint requires regression | New tests; visual revalidation pending |
+| Catalogue and suppliers | Persistent sheets and optional photos during discharge/edit | M05–M10 for previous flow; new UX pending revalidation |
+| Purchases | Reference photo in list; no new commercial deed | JSX and IC revision; new pending screen |
+| Receptions | No change in single reception contract, stock or voucher | Regression E2/E3 via CI |
+| Inventory | Cover photo is not part of the balance calculation | IC-powered regression; new thumbnail pending visual approval |
+| POS / Sales | Cover added under revision, without changing the sales command or calculations | M11 and IC; final visual pending review |
+| Expenditure / Cash / Accounts / QR | REAL Capabilities are not added to E3-2A; DEMO or future according to T12 closure | They are not defects of the photographic increment |
+| Academic documentation | T12 E2-7 retains RF-01 to RF-07 limits and distinguishes RF-08 from RF-10 | Revised against T12 Act; not new original record audit |
 
-## 6. Riesgos y trabajo pendiente
+## 6. Risks and work to be done
 
-**Prioridad alta para un lanzamiento público, no bloqueante de prototipo aislado:** revisar cuotas/rate-limit de subidas, escaneo de archivos en perímetro, autorización de acceso entre tenants en escenarios concurrentes, política de consentimiento de avatar compartido con equipo y respaldo/restauración de imágenes BYTEA.
+**High priority for a public launch, not isolated prototype blocker:** review uploads/rate-limit, perimeter file scanning, access authorization between tenants in concurrent scenarios, avatar consent policy shared with equipment and support/restore BYTEA images.
 
-**Prioridad media para producto:** N+1 solicitudes de miniaturas en listados extensos, ausencia de idempotency-key en POST de fotos, selección manual y reordenamiento de portada, UX de error tras creación con carga parcial, persistencia de sesión, accesibilidad WCAG y visualización en teléfono físico.
+**Average priority for product:** N+1 thumbnail requests in extensive listings, absence of photo idempotency-key in POST, manual selection and cover rearrangement, error UX after creation with partial load, session persistence, WCAG accessibility and physical phone display.
 
-**Prioridad de aceptación E3-2A:** completar la CI en el último SHA, revisar visualmente las correcciones introducidas después de M13 y decidir si el prototipo requiere repetir M14–M18. No declarar estas pruebas realizadas. No habilitar escrituras de venta REAL ni usar dinero/credenciales reales para QA.
+**Acceptance priority E3-2A:** complete the IC in the latest SHA, visually review the corrections made after M13 and decide if the prototype requires repeating M14–M18. Do not declare these tests performed. Do not enable REAL sales deeds or use real money/credentials for QA.
 
-## 7. Evidencia y estado de CI
+## 7. Evidence and status of IC
 
-La base anterior a las correcciones pasó 908 Pytest, 54 Playwright REAL y 6 DEMO sobre el SHA anterior de E3-2A. **Es evidencia histórica, no prueba de este cambio.**
+The pre-correction basis passed 908 Pytest, 54 Playwright REAL and 6 DEMO over the previous SHA of E3-2A. **It is historical evidence, not proof of this change.**
 
-La primera ejecución de los nuevos commits detectó un problema externo reproducible: Playwright rechazó Chromium en el runner ubuntu26.04-x64. Se fijaron los tres YAML exclusivos de PyME a ubuntu-24.04. Después la suite integral encontró dos regresiones de navegación: altas de artículo/proveedor que abrían ficha en lugar de regresar al listado. Se preservó el retorno al listado y se corrigió el Playwright nuevo para abrir «Ver ficha» de forma explícita.
+The first execution of the new commit detected a reproducible external problem: Playwright rejected Chromium in the runner ubuntu26.04-x64. The three unique YAMLs from PyME were fixed to ubuntu-24.04. Then the integral suite found two navigation regressions: article/supplier heights opening tab instead of returning to list. Return to listing was preserved and the new Playwright was corrected to open "View tab" explicitly.
 
-**CI COMPLETA, aprobada sobre el último commit de código `c60a0eb21ef764c03af9795744a1ebabdb811849` (12/11/2026):**
+**CI COMPLETE, approved on the last commit of code `c60a0eb21ef764c03af9795744a1ebabdb811849` (12/11/2026):**
 - Backend FastAPI, Python 3.12/3.14 y Docker: **SUCCESS**.
 - Frontend build/lint/tests/Chromium: **SUCCESS**.
 - Fullstack PostgreSQL/Alembic/REAL/DEMO: **SUCCESS**; **908 Pytest aprobados, 54 Playwright REAL y 6 DEMO**; Alembic `e32a_photo_assets (head)`, `No new upgrade operations detected`.
 
-La presente actualización documental es posterior a ese SHA de código; debe verificarse que los workflows del commit documental también terminen antes de declarar verde el HEAD final. La aprobación automática no equivale a conformidad visual ni autoriza merge.
+This documentary update is subsequent to that code SHA; it should be verified that the workflows of the document commit also end before declaring final HEAD green. Automatic approval does not amount to visual conformity or authorize merge.
 
-## 8. Puertas de cierre
+## 8. Closing doors
 
-1. CI Backend Python 3.12 y 3.14 + PostgreSQL, imagen Docker, Alembic HEAD/check: **APROBADO en código c60a0eb2**; revisar nuevamente SHA documental final.
-2. CI frontend build, lint y tests del contrato: **APROBADO en código c60a0eb2**; revisar nuevamente SHA documental final.
-3. Full-stack Playwright REAL y DEMO en PostgreSQL descartable: **APROBADO en código c60a0eb2**; revisar nuevamente SHA documental final.
-4. Revisión humana de nuevas pantallas: altas de artículo/proveedor, edición, Compras, Existencias, equipo y revisión POS.
-5. Aprobación explícita del usuario antes de convertir PR #65 a READY o hacer merge a main.
+1. CI Backend Python 3.12 y 3.14 + PostgreSQL, imagen Docker, Alembic HEAD/check: **APPROVED under code c60a0eb2**; review again SHA final documentary.
+2. CI frontend build, lint y tests del contrato: **APPROVED under code c60a0eb2**; review again SHA final documentary.
+3. Full-stack Playwright REAL y DEMO en PostgreSQL descartable: **APPROVED under code c60a0eb2**; review again SHA final documentary.
+4. Human review of new screens: article/supplier highs, editing, Shopping, Stocks, equipment and POS revision.
+5. Explicit user approval before converting PR #65 to READY or merge to main.
 
-**Estado de este documento:** auditoría transversal realizada con CI de código completamente aprobada; aceptación manual de las nuevas pantallas pendiente. No se modificó la base local del usuario y no existe autorización de merge.
+**Status of this document:** cross-sectional audit performed with IC code completely approved; manual acceptance of the new screens pending. No change was made to the local user base and no authorization for merge.

@@ -1,43 +1,43 @@
-# E2-4 — Observaciones de la revisión recibida y decisiones documentales
+# E2-4 — Comments on the review received and documentary decisions
 
-**Tipo:** evaluación de observaciones externas aportadas por el desarrollador el 09/11/2026. **No es una auditoría independiente exhaustiva realizada sobre todos los archivos**. Se comprobaron expresamente contratos, migraciones, tests, CI y el bloqueo de Catálogo que se señalan abajo. Las opiniones sobre diseño futuro quedan clasificadas como propuestas, no errores reproducidos.
+**Type:** evaluation of external observations provided by the developer on 11/9/2026. **Not a comprehensive independent audit of all archives**. Contracts, migrations, tests, IC and the catalogue block listed below were expressly checked. Opinions on future design are classified as proposals, not reproduced errors.
 
-## 1. Informe y calidad de evidencias
+## 1. Report and quality of evidence
 
-| ID | Observación recibida | Comprobación y decisión |
+| ID | Comment received | Verification and decision |
 |---|---|---|
-| REV-E24-001 | Falta bitácora manual CRUD Proveedores | **Confirmado como brecha de documentación de uso**: se dispone de proveedor QA como referencia histórica y de tests HTTP/SQL/CI, pero no de la transcripción manual de POST/lista/PATCH/status. No se inventan resultados. Pendiente de QA adicional si se exige. |
-| REV-E24-002 | Imposible reproducir replay histórico sin publicar clave | **Confirmado como limitación deliberada de sanitización**. El evaluador generará nuevos UUID4 privados en un tenant de prueba y repetirá la misma operación; los GET originales sí permiten verificar recursos pasados. Se agrega colección `requests/E2-4_QA.http` con placeholders. |
-| REV-E24-003 | Suite local sobre base de desarrollo con datos | **Confirmado como deuda de aislamiento físico**. PR #18 corrigió la contaminación de aserciones SQL y se confirmó 797/797 con datos previos; **no creó DB efímera ni bloqueó URLs de producción**. Se propone trabajo de infraestructura en bloque separado. |
-| REV-E24-004 | Duplicidad de PDF y Markdown en Git | **Aceptado**. Solo Markdown/JSON/colección HTTP/manifiesto de checksums se versionan. El PDF/ZIP académico anterior queda fuera de Git para evitar duplicación binaria; puede regenerarse para entregar. |
-| REV-E24-005 | Falta frontmatter | **Aceptado**. El informe rector tiene frontmatter con corte, commit, alcance, estado y CI. |
-| REV-E24-006 | Seeder de QA para terceros | **Parcialmente aceptado**. No se agregará un seeder que muta recursos al ejecutarse automáticamente y requiera tokens. Se incluye colección .http parametrizada; un seeder opt-in aislado con claves privadas y limpieza segura queda como mejora posterior. |
-| REV-E24-007 | Checksums del manifiesto | **Aceptado**. Archivo de `sha256sum` regenerado contra textos finales que queden en la rama, con instrucciones de verificación local y sin líneas extra no compatibles con `-c`. |
+| REV-E24-001 | CRUD Manual Log Missing Suppliers | **Confirmed as a documentation usage gap**: QA is available as a historical reference and HTTP/SQL/CI tests, but not the manual transcription of POST/list/PATCH/status. No results are invented. Additional QA pending if required. |
+| REV-E24-002 | Unable to play historical replay without publishing key | **Confirmed as deliberate limitation of sanitization**. The evaluator will generate new private UUID4 in a test tenant and repeat the same operation; the original GETs do allow verification of past resources. Collection added `requests/E2-4_QA.http` con placeholders. |
+| REV-E24-003 | Local Suite based on data development | **Confirmed as physical isolation debt**. PR #18 corrected the contamination of SQL assertions and 797/797 was confirmed with previous data; **did not create ephemeral DB or block production URLs**. Separate block infrastructure work is proposed. |
+| REV-E24-004 | Duplicidad de PDF y Markdown en Git | **Accepted**. Only Markdown/JSON/ HTTP collection/checksums manifest is versioned. The previous academic PDF/ZIP is out of Git to avoid binary duplication; it can regenerate to deliver. |
+| REV-E24-005 | Falta frontmatter | **Accepted**The report has frontmatter with cut, commit, scope, status and IC. |
+| REV-E24-006 | Seeder of QA for third parties | **Partially accepted**. No seeder will be added that switches resources when running automatically and requires tokens. .http parameterized collection is included; an isolated finder opt-in with private keys and secure cleaning is left as later improvement. |
+| REV-E24-007 | Checksums del manifiesto | **Accepted**. Archive of `sha256sum` regenerated against final texts left on the branch, with local verification instructions and no extra lines not compatible with `-c`. |
 
-## 2. Arquitectura y operación
+## 2. Architecture and operation
 
-| ID | Tema | Situación AS-IMPLEMENTED y tratamiento |
+| ID | Item | AS-IMPLEMENTED SITUATION AND |
 |---|---|---|
-| REV-E24-008 | Recepción parcial / multidestino | **Diferida por alcance explícito**. Actualmente 1:1 compra/recibo y una sola ubicación, operación atómica 100%. Evolución futura 1:N exigirá diseño y migración aditiva con control de cantidades restantes; no se cambia 0015 retrospectivamente. |
-| REV-E24-009 | Estado `CANCELADA` inalcanzable por API | **Brecha funcional documentada**. Estado presente en dominio, sin POST/PATCH de cancelación comercial. Definir permiso, transición, compensación y mensajes de error en futuro incremento. |
-| REV-E24-010 | No se puede deshacer la recepción | **Brecha funcional documentada**. Proponer operación compensatoria/ajuste auditable que no borre el movimiento original y respete stock no negativo. |
-| REV-E24-011 | Sin divisa ni tipo de cambio en compra | **Limitación comercial real** para multimoneda; centavos enteros sin ISO 4217 explícita. No asumir que importes están siempre en ARS por pruebas expresadas en pesos. |
-| REV-E24-012 | Desvío por HALF_UP por renglón | **Decisión numérica explícita y probada**. La suma de líneas puede diferir de comprobante externo por redondeos; futura conciliación fiscal/impuestos/descuentos debe ser explícita y auditada. |
-| REV-E24-013 | Tope de 30 líneas | **Límite funcional vigente**; evaluar altas/importaciones masivas con garantías de atomicidad y límite de tamaño. |
-| REV-E24-014 | Historial inmutable solo REST | **Riesgo de hardening confirmado por diseño:** no existen UPDATE/DELETE REST, pero tampoco disparadores que bloqueen sentencias SQL con privilegios. Priorizar rol SQL restringido, auditoría y evaluación de triggers antes de producción. |
-| REV-E24-015 | Supuesta falta de FOR SHARE en Catálogo | **No aplicable**: `backend/app/modules/purchases/receipt_service.py` obtiene artículos con `.with_for_update(read=True)` (bloqueo compartido al usar PostgreSQL). La revisión externa debe corregir este punto. Se preserva como deuda probar una carrera específica en la que alguien intenta cambiar tipo/unidad mientras se recibe. |
+| REV-E24-008 | Partial reception / multidestiny | **Deferred by explicit scope**. Currently 1:1 purchase/receive and one location, 100% atomic operation. Future evolution 1:N will require additive design and migration with control of remaining quantities; no change 0015 retrospectively. |
+| REV-E24-009 | Status `CANCELADA` unattainable by API | **Documented functional gap**. State present in domain, without POST/PATCH of commercial cancellation. Define permission, transition, compensation and error messages in future increase. |
+| REV-E24-010 | Cannot undo reception | **Documented functional gap**. Propose compensatory operation/auditable adjustment that does not erase the original movement and respects non-negative stock. |
+| REV-E24-011 | No currency or exchange rate on purchase | **Actual business limitation** For multicurrency; whole cents without ISO 4217 explicit. Do not assume that amounts are always in ARS for tests expressed in weights. |
+| REV-E24-012 | Detour by HALF_UP by line | **Explicit and proven numerical decision**The sum of lines may differ from external vouchers for rounding; future fiscal reconciliation/taxes/discounts should be explicit and audited. |
+| REV-E24-013 | 30 line stopper | **Functional limit in force**; evaluate high/mass imports with guarantees of atomity and size limit. |
+| REV-E24-014 | Unchangeable history only REST | **Hardening risk confirmed by design:** There is no UPDATE/DELETE REST, but there are no triggers that block SQL statements with privileges. Prioritize restricted SQL role, audit and evaluation of triggers before production. |
+| REV-E24-015 | Alleged lack of FOR SHARE in Catalogue | **Not applicable**: `backend/app/modules/purchases/receipt_service.py` Get articles with `.with_for_update(read=True)` (Shared block when using PostgreSQL). External review should correct this point. It is preserved as debt to try a specific race in which someone tries to change type/unit while receiving. |
 
-## 3. Decisiones de edición efectuadas en este PR documental
+## 3. Editorial decisions made in this documentary PR
 
-- **Editado** el encabezado del informe rector con metadatos YAML y aclaración del origen de las evidencias.
-- **Conservada** la bitácora manual con los 17 casos reportados y agregada nota de ausencia del CRUD manual de Proveedores.
-- **Conciliadas** las notas técnicas de CI, arquitectura, trazabilidad, ficha QA y reproducción, explicitando el bug del test, la deuda de DB compartida y el bloqueo SQL existente.
-- **Añadidos** un JSON saneado para máquinas, ejemplos HTTP parametrizados, una hoja de entrega para una eventual revisión independiente y un manifiesto de checksums.
-- **Actualizados** los índices de documentación académica y técnica con nota de corte vigente; los párrafos antiguos quedan como historial.
-- **No modificados** código backend/frontend, migraciones, archivos UML, tablas, entornos, datos QA o secretos.
+- **Edited** the header of the steering report with YAML metadata and clarification of the origin of evidence.
+- **Preserved** the manual logbook with the 17 reported cases and added note of absence from the CRUD Suppliers Manual.
+- **Conciliated** technical notes of IC, architecture, traceability, QA tab and reproduction, specifying the bug test, shared DB debt and existing SQL lock.
+- **Added** a JSON tuned for machines, parameterized HTTP examples, a delivery sheet for an eventual independent review and a checksums manifest.
+- **Updated** The indexes of academic and technical documentation with current cut-off note; the old paragraphs remain as history.
+- **Not modified** backend/frontend code, migrations, UML files, tables, environments, QA data or secrets.
 
-## 4. Límites de la decisión
+## 4. Limits of the decision
 
-El cierre funcional E2-4 no certifica un MVP productivo ni significa que los pendientes estén aprobados para implementar. Cada cambio futuro debe empezar con decisión de alcance, ADR si altera el dominio, migración compatible y tests de regresión. Si se realiza una auditoría independiente posterior, debe partir de SHA fijado y producir su propio informe, distinto del presente documento de **respuesta a observaciones**.
+The functional closure E2-4 does not certify a productive MVP nor does it mean that the pending ones are approved to implement. Each future change must start with reach decision, ADR if it alters the domain, compatible migration and regression tests. If an independent subsequent audit is carried out, it must start from fixed SHA and produce its own report, other than this document. **response to comments**.
 
-**Fuentes de verificación:** PR #12–#15, #17–#18; CI 42530739959; rutas de `suppliers`, `purchases`, `receipt_service.py`, migraciones 0012–0015 y respuestas de Swagger descritas en la bitácora.
+**Sources of verification:** PR #12–#15, #17–#18; CI 42530739959; routes of `suppliers`, `purchases`, `receipt_service.py`, migrations 0012–0015 and Swagger responses described in the logbook.

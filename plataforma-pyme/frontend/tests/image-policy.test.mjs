@@ -21,9 +21,9 @@ test('fotos de catálogo, proveedor y ubicación tienen claves diferentes por em
 })
 
 test('fichas nuevas sin ID no pueden asociar imágenes', () => {
-  assert.throws(() => demoImageKey('catalog', 'walos-demo', ''), /ficha existente/)
-  assert.throws(() => demoImageKey('supplier', '', 'demo-supplier-1'), /ficha existente/)
-  assert.throws(() => demoImageKey('location', 'walos/demo', 'loc-1'), /ficha existente/)
+  assert.throws(() => demoImageKey('catalog', 'walos-demo', ''), /existing file/i)
+  assert.throws(() => demoImageKey('supplier', '', 'demo-supplier-1'), /existing file/i)
+  assert.throws(() => demoImageKey('location', 'walos/demo', 'loc-1'), /existing file/i)
 })
 
 test('acepta únicamente JPG, PNG y WebP con tamaño limitado', () => {
@@ -31,7 +31,7 @@ test('acepta únicamente JPG, PNG y WebP con tamaño limitado', () => {
     assert.doesNotThrow(() => validateDemoImageFile({ type, size: 124_000 }))
   }
   for (const type of ['image/svg+xml', 'image/gif', 'application/pdf', 'text/html', '']) {
-    assert.throws(() => validateDemoImageFile({ type, size: 2000 }), /JPG, PNG o WebP/)
+    assert.throws(() => validateDemoImageFile({ type, size: 2000 }), /JPG, PNG or WebP/i)
   }
 })
 
@@ -45,8 +45,8 @@ test('dimensiona fotos horizontales y verticales sin estirarlas', () => {
   assert.deepEqual(scaledImageSize(2048, 1024), { width: MAX_IMAGE_SIDE, height: MAX_IMAGE_SIDE / 2 })
   assert.deepEqual(scaledImageSize(1024, 2048), { width: MAX_IMAGE_SIDE / 2, height: MAX_IMAGE_SIDE })
   assert.deepEqual(scaledImageSize(256, 128), { width: 256, height: 128 })
-  assert.throws(() => scaledImageSize(0, 500), /dimensiones inválidas/)
-  assert.throws(() => scaledImageSize(40_000, 10), /dimensiones inválidas/)
+  assert.throws(() => scaledImageSize(0, 500), /invalid.*dimensions/i)
+  assert.throws(() => scaledImageSize(40_000, 10), /invalid.*dimensions/i)
 })
 
 

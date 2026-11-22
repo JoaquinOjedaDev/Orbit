@@ -1,58 +1,58 @@
-# E2-6 — Pendientes expresos y transición hacia E2-7
+# E2-6 — Express earrings and transition to E2-7
 
-**Corte de cierre:** `main` `6336152e8dd095ca91363566beddd2b622432a5e` (PR #27 fusionado).  
-**Propósito:** evitar que completar E2-6 implique silenciar deuda o expandir E2-7.
+**Closing cut:** `main` `6336152e8dd095ca91363566beddd2b622432a5e` (PR #27 merged).  
+**Purpose:** avoid that completing E2-6 involves silencing debt or expanding E2-7.
 
-## 1. Auditorías externas por bloque
+## 1. External audits by block
 
-Las hojas de E2-1, E2-2, E2-3, E2-4 y E2-5 entregan instrucciones o evidencias de cierre, pero no prueban que el compañero haya completado todas las auditorías y correcciones. El paquete `docs/E2-6_AUDITORIA_IA_*.md` es **solo protocolo**; no hay en este cierre un informe independiente final de E2-6.
+The E2-1, E2-2, E2-3, E2-4 and E2-5 sheets provide instructions or evidence of closure, but do not prove that the companion has completed all audits and corrections. `docs/E2-6_AUDITORIA_IA_*.md` es **protocol only**; there is no final independent E2-6 report in this closure.
 
-Toda corrección identificada por el compañero debe nacer de un hallazgo rastreable y decisión del responsable. Para integración posterior: rama independiente desde SHA real de `main`, PR individual, tests que reproduzcan el fallo, revisión explícita de compatibilidad y CI final. No modificar migraciones históricas aplicadas ni afectar empresas QA sin necesidad.
+Any correction identified by the partner must be born from a traceable finding and decision of the responsible. For subsequent integration: independent branch from real SHA of `main`, individual PR, tests that reproduce the failure, explicit compatibility review and final CI. Do not modify applied historical migrations or affect QA companies without need.
 
-## 2. Riesgos funcionales que deben permanecer visibles
+## 2. Functional risks that must remain visible
 
-| Tema | Alcance o incertidumbre |
+| Item | Scope or uncertainty |
 |---|---|
-| Replay histórico tras pausar ubicación | `SaleService` comprueba autorización/aptitud de ubicación antes del replay. Validar política de recuperación de respuestas históricas. No hay fallo confirmado solo por el escenario potencial. |
-| Concurrencia cruzada | Más intercalaciones PostgreSQL simultáneas entre ventas, recepciones, traslados y ajustes pueden mejorar la cobertura de orden de locks y deadlocks. |
-| Permisos con revocación simultánea | Justifica pruebas específicas de asignación/rol frente a confirmación de venta. |
-| Contrato OpenAPI | `SaleView.balances_after` se tipa como `list` genérica; la respuesta concreta conserva `catalog_item_id`, `quantity_milli`, `version`. |
-| Política de precios/descuentos | El cliente informa `unit_price_cents`; catalogo se usa para identidad y snapshots. Definir qué roles pueden alterar importes en integración UI/API. |
-| Pagos | Declaraciones, no confirmaciones de entidades externas; no afectan caja/cuentas. |
-| Devoluciones | No se implementan anulación, compensación o reembolso en E2-6. |
-| Stock y manufactura | Una venta de bien elaborado no rebaja insumos de receta ni tiene reservas de stock. |
+| Historical Replay after Pausing Location | `SaleService` checks authorization/location fitness before replay. Validate historical response recovery policy. No failure confirmed only by potential scenario. |
+| Cross-recurrence | More simultaneous PostgreSQL intervals between sales, receptions, transfers and adjustments can improve the order coverage of locks and deadlocks. |
+| Permissions with simultaneous revocation | Justify specific assignment/role tests versus sales confirmation. |
+| OpenAPI Contract | `SaleView.balances_after` it's like `list` generic; the specific response retains `catalog_item_id`, `quantity_milli`, `version`. |
+| Price/Discount policy | Client reports `unit_price_cents`; catalog used for identity and snapshots. Define which roles can alter amounts in UI/API integration. |
+| Payments | Declarations, not confirmations by external entities; no cash/accounts. |
+| Returns | No cancellation, compensation or reimbursement is implemented in E2-6. |
+| Stock y manufactura | A well-made sale does not reduce recipe inputs or stock reserves. |
 
-No convertir estas incertidumbres en hallazgos confirmados sin test o causalidad reproducible.
+Do not convert these uncertainties into confirmed findings without reproducible test or causality.
 
-## 3. Documentación transversal pendiente de actualizar
+## 3. Cross-sectional documentation pending updating
 
-- `plataforma-pyme/entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md` conserva filas históricas que señalan RF-05/RF-06/RF-07 como planificados. Al cerrar la integración E2-7 debe actualizarse con endpoints, pruebas y SHA vigentes.
-- `plataforma-pyme/entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md` aún mezcla estados de implementación anteriores con el recorte inicial. Distinguir propuesta histórica y estado real sin reescribir requisitos arbitrariamente.
-- `plataforma-pyme/CHANGELOG.md` se concentra en E1 DEMO y no incorpora todos los incrementos reales E2.
-- Los encabezados antiguos de `E2-6_DOCUMENTACION_INTEGRAL.md` y `E2-6_E_ENTREGA_TECNICA_Y_VALIDACION.md` dicen «merge pendiente», correctamente para su fecha de redacción, pero **son superados** por el cierre posterior al PR #27.
+- `plataforma-pyme/entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md` retains historical rows that indicate RF-05/RF-06/RF-07 as planned. When closing the E2-7 integration it should be updated with existing endpoints, tests and SHA.
+- `plataforma-pyme/entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md` still mixes previous implementation states with the initial cut. Distinguish historical proposal and actual status without rewriting requirements arbitrarily.
+- `plataforma-pyme/CHANGELOG.md` concentrates on E1 DEMO and does not incorporate all actual increases E2.
+- The old headers of `E2-6_DOCUMENTACION_INTEGRAL.md` y `E2-6_E_ENTREGA_TECNICA_Y_VALIDACION.md` say ‘merge pending’, correctly for your writing date, but **are outnumbered** by the post-PR #27 closure.
 
-## 4. Plan acordado y límites de E2-7
+## 4. Agreed plan and E2-7 limits
 
-**E2-7 = Integración frontend/backend, QA integral y cierre académico.** No debe renombrarse como «Gastos y Caja».
+**E2-7 = Frontend/backend integration, comprehensive QA and academic closure.** It should not be renamed as "Expenditure and Box".
 
-| Subetapa sugerida | Definición verificable |
+| Subtapa suggested | Verifiable definition |
 |---|---|
-| **A** | Inventariar React E1 DEMO versus rutas reales E2-1..E2-6; matriz pantalla → endpoint → dependencias → criterio de aceptación, seleccionar límites de integración |
-| **B** | Gateway/API tipado, login/sesión reales, selección de tenant, habilitación progresiva de vistas respaldadas por servidor; no migrar datos DEMO silenciosamente |
-| **C** | E2E de procesos reales: cuenta → empresa → ubicación → catálogo → proveedor/compra/recepción → inventario → venta; aislar tenant y validar persistencia |
-| **D** | Regresión automática, pruebas de seguridad y permisos, Docker/CI, QA manual focalizada y compatibilidad entre módulos |
-| **E** | Matriz API y documentación académica 01–05, UML/ADRs cuando corresponda, README/Changelog y cierre final de TP |
+| **A** | Invent React E1 DEMO versus real routes E2-1..E2-6; screen matrix → endpoint → dependencies → acceptance criteria, select integration limits |
+| **B** | Gateway/API typed, real login/session, tenant selection, progressive server-backed view habilitation; do not migrate DEMO data quietly |
+| **C** | Real Process E2E: account → company → location → catalog → supplier/buyer/reception → inventory → sale; insulate tenant and validate persistence |
+| **D** | Automatic regression, security testing and permissions, Docker/CI, QA manual focused and compatibility between modules |
+| **E** | API matrix and academic documentation 01–05, UML/ADRs where applicable, README/Changelog and final closure of TP |
 
-**RF-08 gastos/caja, RF-09 cuentas financieras, RF-10 QR** siguen descritos como post-MVP en la consigna. Sus pantallas DEMO pueden permanecer con aviso visible; no presentarlas como operaciones API ni acreditación real.
+**RF-08 expenditure/box, RF-09 financial accounts, RF-10 QR** are described as post-MVP in the slogan. Your DEMO screens can remain with visible notice; not present them as API operations or actual accreditation.
 
-## 5. Condiciones antes de declarar finalizada E2-7
+## 5. Conditions before declaring completed E2-7
 
-1. Definir qué pantallas consumen datos reales y cuáles permanecen DEMO sin confusión.
-2. Probar aislamiento por `business_id` tanto en backend como en selector y estado de frontend.
-3. Alinear permisos UX con autorización real de API (backend fuente de verdad).
-4. No representar pagos `MERCADO_PAGO_DECLARADO` como acreditados.
-5. Verificar que el flujo real de recepción y venta produce ledger y balances consistentes.
-6. Publicar pruebas en SHA preciso, actualizar documentos académicos y registrar auditorías externas/correcciones efectivamente recibidas.
-7. Cualquier nuevo bloque funcional ajeno al alcance debe acordarse por separado.
+1. Define which screens consume real data and which ones remain DEMO without confusion.
+2. Test isolation by `business_id` both in backend and selector and frontend status.
+3. Align UX permissions with real API authorization (true source backend).
+4. Not representing payments `MERCADO_PAGO_DECLARADO` as accredited.
+5. Verify that the actual flow of receipt and sale produces ledger and consistent balances.
+6. Publish evidence in precise SHA, update academic documents and record external audits/corrections actually received.
+7. Any new functional block beyond reach should be agreed separately.
 
-**Decisión:** cierre técnico de E2-6 asentado; el desarrollo de E2-7 puede prepararse sin declarar resueltas las auditorías independientes de E2-1 a E2-6.
+**Decision:** Technical closure of E2-6 settled; development of E2-7 can be prepared without declaring the independent audits of E2-1 to E2-6 resolved.

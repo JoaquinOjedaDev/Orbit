@@ -10,7 +10,7 @@ test.beforeAll(() => {
 
 async function user(request: APIRequestContext, label: string) {
   const email = 't11-assign-' + randomUUID() + '@example.com'
-  const password = 'T11 asignaciones QA aislado 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registration = await request.post(api + '/auth/register', {
     data: { email, password, display_name: label },
   })
@@ -30,8 +30,8 @@ async function post(request: APIRequestContext, path: string, token: { Authoriza
 }
 
 async function signIn(page: Page, actor: { email: string, password: string }) {
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(actor.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(actor.password)
+  await page.getByLabel('Email', { exact: true }).fill(actor.email)
+  await page.getByLabel('Password', { exact: true }).fill(actor.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
 }
 
@@ -81,26 +81,26 @@ test('T11-E: trabajador solo ve sus sedes SELL y STORE, revocación efectiva tra
   })
   await page.goto('/real/empresas/' + business.id + '/pos')
   await signIn(page, worker)
-  await expect(page.getByRole('heading', { name: 'Punto de venta' })).toBeVisible()
-  const pos = page.getByLabel('Sede del punto de venta')
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible()
+  const pos = page.getByLabel('Place of sale')
   await expect(pos.locator('option[value="' + allowed.id + '"]')).toHaveCount(1)
   await expect(pos.locator('option[value="' + forbidden.id + '"]')).toHaveCount(0)
   await expect(pos).toContainText('Sede ASIGNADA T11')
   await expect(pos).not.toContainText('Sede NO ASIGNADA T11')
 
-  await page.getByRole('button', { name: 'Empresa', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Datos de la empresa' })).toBeVisible()
+  await page.getByRole('button', { name: 'Company', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Company details' })).toBeVisible()
   await page.getByRole('button', { name: 'Abrir Inventario' }).click()
-  await expect(page.getByRole('heading', { name: 'Inventario' })).toBeVisible()
-  await page.getByRole('button', { name: 'Transferir entre ubicaciones' }).click()
-  await expect(page.getByRole('heading', { name: 'Trasladar stock entre ubicaciones' })).toBeVisible()
-  const origin = page.getByLabel('Ubicación de origen')
-  const destination = page.getByLabel('Ubicación de destino')
+  await expect(page.getByRole('heading', { name: 'Inventory' })).toBeVisible()
+  await page.getByRole('button', { name: 'Transfer between locations' }).click()
+  await expect(page.getByRole('heading', { name: 'Transfer stock between locations' })).toBeVisible()
+  const origin = page.getByLabel('Origin location')
+  const destination = page.getByLabel('Destination location')
   for (const select of [origin, destination]) {
     await expect(select.locator('option[value="' + allowed.id + '"]')).toHaveCount(1)
     await expect(select.locator('option[value="' + forbidden.id + '"]')).toHaveCount(0)
   }
-  await expect(page.getByRole('button', { name: 'Confirmar transferencia REAL' })).toBeDisabled()
+  await expect(page.getByRole('button', { name: 'Confirm Real Transfer' })).toBeDisabled()
   expect(uiWrites).toBe(0)
 
   // Revoking the only assignment must be reflected on a new session.
@@ -111,9 +111,9 @@ test('T11-E: trabajador solo ve sus sedes SELL y STORE, revocación efectiva tra
   expect(await own()).toEqual([])
   await page.goto('/real/empresas/' + business.id + '/pos')
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
   await signIn(page, worker)
-  await expect(page.getByRole('heading', { name: 'Punto de venta' })).toBeVisible()
-  await expect(page.getByLabel('Sede del punto de venta').locator('option')).toHaveCount(1)
+  await expect(page.getByRole('heading', { name: 'Point of sale' })).toBeVisible()
+  await expect(page.getByLabel('Place of sale').locator('option')).toHaveCount(1)
   expect(uiWrites).toBe(0)
 })

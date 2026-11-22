@@ -29,8 +29,8 @@ const expenses = [
 
 test('apertura de caja admite cero y rechazo de centavos inválidos', () => {
   assert.equal(cashCents(0, 'Fondo', true), 0)
-  assert.throws(() => cashCents(0, 'Gasto'), /válido/)
-  assert.throws(() => cashCents(12.5, 'Fondo', true), /válido/)
+  assert.throws(() => cashCents(0, 'Gasto'), /valid/i)
+  assert.throws(() => cashCents(12.5, 'Fondo', true), /valid/i)
 })
 
 test('efectivo esperado = apertura + sólo cobros cash ligados − sólo gastos cash ligados', () => {
@@ -76,7 +76,7 @@ test('snapshot conserva apertura, esperado, contado, actor y referencias', () =>
 
 test('cierre con diferencia requiere motivo; diferencia positiva y negativa permitidas con razón', () => {
   assert.throws(() => makeCloseSnapshot(session, sales, expenses,
-    { countedCashCents: 14000, notes: '' }, '2026-11-06T20:00:00.000Z'), /Explicá/)
+    { countedCashCents: 14000, notes: '' }, '2026-11-06T20:00:00.000Z'), /Explain/i)
   assert.equal(makeCloseSnapshot(session, sales, expenses, {
     countedCashCents: 14000, notes: 'Faltante de efectivo',
   }, '2026-11-06T20:00:00.000Z').differenceCents, -1250)
@@ -90,7 +90,7 @@ test('nunca se puede generar un segundo snapshot de jornada ya cerrada', () => {
     closeSnapshot: makeCloseSnapshot(session, [], [], { countedCashCents: 10000, notes: '' },
       '2026-11-06T20:00:00.000Z') }
   assert.throws(() => makeCloseSnapshot(alreadyClosed, [], [],
-    { countedCashCents: 10000, notes: '' }, '2026-11-06T21:00:00.000Z'), /cerrada/)
+    { countedCashCents: 10000, notes: '' }, '2026-11-06T21:00:00.000Z'), /closed/i)
 })
 
 test('gastos aceptan categorías y medios declarados, sin inventar cuentas bancarias', () => {
@@ -111,28 +111,28 @@ test('fecha calendario válida y no se aceptan fechas ni categorías inexistente
   assert.throws(() => normalizeExpense({
     paidOn: '2026-11-06', locationId: null, category: 'CRYPTO',
     description: 'Prueba', amountCents: 1000, paymentMethod: 'EFECTIVO', notes: '',
-  }), /categoría/)
+  }), /category/i)
 })
 
 test('importe de gasto, medio de pago y concepto no pueden ser arbitrarios', () => {
   const good = { paidOn: '2026-11-06', locationId: null, category: 'OTROS',
     description: 'Movilidad', amountCents: 1000, paymentMethod: 'EFECTIVO', notes: '' }
-  assert.throws(() => normalizeExpense({ ...good, amountCents: -100 }), /válido/)
-  assert.throws(() => normalizeExpense({ ...good, paymentMethod: 'OTRO_FALSO' }), /Medio/)
-  assert.throws(() => normalizeExpense({ ...good, description: ' ' }), /Concepto/)
+  assert.throws(() => normalizeExpense({ ...good, amountCents: -100 }), /valid/i)
+  assert.throws(() => normalizeExpense({ ...good, paymentMethod: 'OTRO_FALSO' }), /payment/i)
+  assert.throws(() => normalizeExpense({ ...good, description: ' ' }), /expense description/i)
 })
 
 test('un gasto en efectivo mayor que la disponibilidad no deja proyectar saldo negativo', () => {
   assert.throws(() => cashSessionTotals(session, [], [
     { id: 'too-much', businessId: 'walos-demo', cashSessionId: session.id,
       paymentMethod: 'EFECTIVO', amountCents: 10001 },
-  ]), /negativo/)
+  ]), /negative/i)
 })
 
 test('normalización de arqueo: motivo opcional sólo cuando coincide', () => {
   assert.deepEqual(normalizeClose({ countedCashCents: 0, notes: ' Sin efectivo ' }),
     { countedCashCents: 0, notes: 'Sin efectivo' })
-  assert.throws(() => normalizeClose({ countedCashCents: -1, notes: '' }), /válido/)
+  assert.throws(() => normalizeClose({ countedCashCents: -1, notes: '' }), /valid/i)
 })
 
 test('gasto conserva cuenta opcional y rechaza referencias con formato inválido', () => {
@@ -143,5 +143,5 @@ test('gasto conserva cuenta opcional y rechaza referencias con formato inválido
   }
   assert.equal(normalizeExpense(valid).financialAccountId, 'demo-financial-account-11111111-1111-4111-8111-111111111111')
   assert.equal(normalizeExpense({ ...valid, financialAccountId: null }).financialAccountId, null)
-  assert.throws(() => normalizeExpense({ ...valid, financialAccountId: 'otro-negocio' }), /cuenta de origen/)
+  assert.throws(() => normalizeExpense({ ...valid, financialAccountId: 'otro-negocio' }), /source account/i)
 })

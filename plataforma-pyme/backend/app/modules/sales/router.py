@@ -23,23 +23,23 @@ router = APIRouter(prefix="/businesses/{business_id}/sales", tags=["ventas"])
 
 def _http(error: Exception) -> HTTPException:
     if isinstance(error, (PurchaseBusinessUnavailable, SaleNotFound)):
-        return HTTPException(404, detail="Empresa o venta no disponible")
+        return HTTPException(404, detail="Company or sale not available")
     if isinstance(error, (PurchasePermissionDenied, SalePermissionDenied)):
-        return HTTPException(403, detail="Sin permiso de venta en esta empresa")
+        return HTTPException(403, detail="No sales permit for this company")
     if isinstance(error, SalePricePolicyDenied):
-        return HTTPException(403, detail="Tu rol no puede cambiar precios ni aplicar descuentos")
+        return HTTPException(403, detail="Your role cannot change prices or apply discounts")
     if isinstance(error, SaleMissingCatalogPrice):
-        return HTTPException(422, detail="El articulo debe tener precio de catalogo para este rol")
+        return HTTPException(422, detail="The article must have catalog price for this role")
     if isinstance(error, SaleBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, SaleIdempotencyConflict):
-        return HTTPException(409, detail="Clave de venta reutilizada con otro contenido o actor")
+        return HTTPException(409, detail="Sales key reused with other content or actor")
     if isinstance(error, SaleLocationNotEnabled):
-        return HTTPException(409, detail="Ubicacion inexistente o no habilitada para la venta")
+        return HTTPException(409, detail="Location non-existent or not enabled for sale")
     if isinstance(error, SaleInsufficientStock):
-        return HTTPException(409, detail="Stock insuficiente para confirmar la venta")
+        return HTTPException(409, detail="Stock insufficient to confirm sale")
     if isinstance(error, SaleInvalidReference):
-        return HTTPException(422, detail="Articulo no disponible, no vendible o cantidad invalida")
+        return HTTPException(422, detail="Unavailable, not sold or invalid quantity")
     raise TypeError("Excepcion de ventas sin mapeo HTTP")
 
 
@@ -53,7 +53,7 @@ def _http(error: Exception) -> HTTPException:
         409: {"description": "Clave en conflicto, empresa o ubicacion suspendida, stock insuficiente"},
         422: {"description": "Campos, pagos, importe o articulo invalidos"},
     },
-    summary="Registrar ventas de bienes, servicios o mixtas con stock atomico",
+    summary="Register sales of goods, services or mixed with atomic stock",
 )
 def create_sale(
     business_id: UUID, command: CreateSaleRequest, response: Response,
@@ -85,7 +85,7 @@ def create_sale(
         403: {"description": "Rol sin permiso de lectura"},
         404: {"description": "Empresa no disponible para la cuenta"},
     },
-    summary="Consultar listado paginado de ventas historicas visibles",
+    summary="See paged list of visible historical sales",
 )
 def list_sales(
     business_id: UUID,
@@ -114,7 +114,7 @@ def list_sales(
         403: {"description": "Rol sin permiso de lectura"},
         404: {"description": "Venta inexistente, de otro negocio o no visible"},
     },
-    summary="Recuperar comprobante historico por Idempotency-Key original",
+    summary="Recover historical proof by original Idempotency-Key",
 )
 def get_sale_by_request(
     business_id: UUID, request_id: UUID4,
@@ -139,7 +139,7 @@ def get_sale_by_request(
         403: {"description": "Sin lectura"},
         404: {"description": "Venta inexistente o de otra empresa"},
     },
-    summary="Consultar comprobante historico de venta",
+    summary="Check historical proof of sale",
 )
 def get_sale(
     business_id: UUID, sale_id: UUID,

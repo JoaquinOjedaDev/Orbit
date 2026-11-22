@@ -1,49 +1,49 @@
-# E0-B — Arquitectura del frontend y navegación integrada
+# E0-B — Frontend architecture and integrated navigation
 
-**Proyecto:** Plataforma generalista de gestión para PyMEs (multinegocio, multirrubro).  
-**Repositorio:** `JoaquinOjedaDev/Orbit`.  
-**Ubicación canónica:** `plataforma-pyme/docs/01_ARQUITECTURA_FRONTEND.md`.  
-**Fecha:** 2026-11-06.  
-**Estado:** **PROPUESTA TÉCNICA E0-B, documentación elaborada; implementación NO iniciada; revisión del equipo pendiente**.  
-**Alcance:** arquitectura de prototipo React + TypeScript, shell, navegación, estado compartido por empresa, contratos internos DEMO/API, estructura de directorios y puerta de entrada a E1. **No** cambiar el TP existente, crear componentes, ejecutar tests ni integrar pagos reales.
+**Project:** Generalistic management platform for SMEs (multi-, multi-rub).  
+**Repository:** `JoaquinOjedaDev/Orbit`.  
+**Canonical location:** `plataforma-pyme/docs/01_ARQUITECTURA_FRONTEND.md`.  
+**Date:** 2026-11-06.  
+**Status:** **Technical proposal E0-B, documentation prepared; implementation not initiated; review of pending equipment**.  
+**Scope:** React + TypeScript prototype architecture, shell, navigation, company-shared status, internal DEMO/API contracts, directory structure and gateway to E1. **No** change the existing TP, create components, run tests or integrate real payments.
 
-> **Regla de trabajo:** esta carpeta coexiste con `Proyecto-3-AppAdmin-Mascotas/` y `Proyecto-3-Extendido-Generico/`. Ambos árboles actuales quedan **intactos**. Trabajamos dentro del mismo repositorio Git y sobre `main` por decisión del equipo; los cambios de cada corte deben limitarse a `plataforma-pyme/` salvo acuerdo explícito.
+> **Working rule:** this folder coexists with `Proyecto-3-AppAdmin-Mascotas/` y `Proyecto-3-Extendido-Generico/`. Both current trees remain **intact**. We work within the same repository Git and about `main` by decision of the team; changes in each cut should be limited to `plataforma-pyme/` except for explicit agreement.
 
-## 1. Fuentes y criterios de precedencia
+## 1. Sources and criteria of precedence
 
-1. **E0-A (fuente inmediata):** `docs/00_MATRIZ_INTEGRACION_HTML.md`; 19 rutas HTML, 17 contenidos distintos, candidatos Z001–Z093 y hallazgos Hxx/Dxx. E0-A es una selección estática, no una validación E2E.
-2. **Plan de integración v4:** `01_PLAN_RECTOR_Y_SECUENCIA(1).md`, `02_BACKLOG_VERTICAL_Y_PRUEBAS(1).md` y `03_MERCADO_PAGO_QR(1).md`, recibidos como fuentes de planificación.
-3. **Auditoría previa:** `Auditoria_PyME_Integracion_2026-11-06(1).zip`, particularmente diagnóstico H01–H26, UX, invariantes, trazabilidad y decisiones D01–D15.
-4. **Decisiones de producto multinegocio v3:** persona global, empresas opcionales, WALOS como fixture, permisos por membresía, dashboard y menú integrado.
+1. **E0-A (immediate source):** `docs/00_MATRIZ_INTEGRACION_HTML.md`; 19 HTML paths, 17 different content, Z001–Z093 candidates and Hxx/Dxx findings. E0-A is a static selection, not an E2E validation.
+2. **Integration plan v4:** `01_PLAN_RECTOR_Y_SECUENCIA(1).md`, `02_BACKLOG_VERTICAL_Y_PRUEBAS(1).md` y `03_MERCADO_PAGO_QR(1).md`received as planning sources.
+3. **Prior audit:** `Auditoria_PyME_Integracion_2026-11-06(1).zip`, particularly diagnosis H01–H26, UX, invariants, traceability and D01–D15 decisions.
+4. **Multi-business product decisions v3:** global person, optional companies, WALOS like fixture, membership permissions, dashboard and integrated menu.
 
-**Precedencia de conflictos:** decisión explícita de producto v3/v4 → regla provisional documentada en E0-A/E0-B → diseño heredado del HTML → código heredado. Ninguna propuesta de arquitectura se eleva implícitamente a ADR aprobado.
+**Conflict precedence:** explicit product decision v3/v4 → provisional rule documented in E0-A/E0-B → legacy design from HTML → inherited code. No architecture proposal is implicitly raised to approved ADR.
 
-**Hechos del producto ya establecidos:** varios negocios y rubros; usuario personal con cero o más membresías; datos separados por empresa; rol por empresa; bienes y servicios; acceso a funciones por Inicio y menú lateral; caja/depósito opcionales según operación. **Decisiones técnicas aquí propuestas:** Vite/React/TypeScript, rutas concretas, Zustand, puertos de datos y disposición de carpetas.
+**Product facts already established:** multiple businesses and items; personal user with zero or more memberships; separate data per company; role per company; goods and services; access to functions by Start and side menu; optional box/deposit depending on operation. **Technical decisions proposed here:** Vite/React/TypeScript, specific routes, Zustand, data ports and folder layout.
 
-## 2. Decisión arquitectónica y alternativas
+## 2. Architectural decision and alternatives
 
-### 2.1 Elección propuesta
+### 2.1 Proposed election
 
-- **SPA React + TypeScript + Vite**: un árbol de componentes, sistema de rutas y tipado comunes. Vite simplifica el primer arranque, no impone restricciones al backend académico.
-- **React Router** para rutas declarativas, parámetros `businessId`, vistas de acceso y «Próximamente». Una sola definición de navegación alimenta menú y tarjetas.
-- **Zustand** (propuesto) para estado de sesión DEMO, borradores y snapshot de datos DEMO por empresa. **Una sola autoridad de estado de negocio**, sin stores separados para M1/M2/M3.
-- **Servicios/casos de uso tipados + adaptador de persistencia:** la UI no altera arrays/contadores directamente; emite comandos a un `DemoGateway` y, posteriormente, a un `ApiGateway`.
-- **CSS modular + tokens de diseño** (propuesto; CSS Modules o equivalente liviano): conservar los patrones visuales elegidos en E0-A sin copiar hojas de estilo globales incompatibles.
-- **Pruebas futuras:** Vitest + Testing Library para unidades/componentes, Playwright para recorridos navegador y viewport. En este corte no se ejecutó ninguna suite.
+- **SPA React + TypeScript + Vite**: a tree of components, common route system and type. Vite simplifies the first start, does not impose restrictions on academic backend.
+- **React Router** for declarative routes, parameters `businessId`, access views and "Next". A single navigation definition feeds menu and cards.
+- **Zustand** (proposed) for DEMO session status, drafts and snapshots of DEMO data by company. **One single state of business authority**, without separate stores for M1/M2/M3.
+- **Services/cases of typical use + persistence adapter:** UI does not alter arrays/counters directly; it emits commands to a `DemoGateway` y, posteriormente, a un `ApiGateway`.
+- **CSS modular + design tokens** (proposed; CSS Modules or lightweight equivalent): keep the visual patterns chosen in E0-A without copying incompatible global style sheets.
+- **Future tests:** Vitest + Testing Library for units/components, Playwright for browser and viewport tours. No suite was executed in this cut.
 
-### 2.2 Alternativas que no adoptamos para E1
+### 2.2 Alternatives that we do not adopt for E1
 
-| Alternativa | Por qué no |
+| Alternativa | Why not? |
 |---|---|
-| Un HTML gigante, `iframe` o 19 scripts heredados unidos | Colisiones de funciones globales, navegación no coherente, `localStorage` aislado por módulo, H08/H09/H15/H17. |
-| Tres miniproductos M1/M2/M3 | Duplica catálogo, stock, ventas, menú y permisos; contradice el Inicio y menú empresarial únicos. |
-| Backend FastAPI obligatorio antes de mostrar el shell | El plan v4 exige primero prototipo verificable; se diseñan interfaces sustituibles para no descartar el frontend después. |
-| Microservicios, Redux/Query/SSE/WebSocket desde el día uno | Coste y complejidad prematuros para un prototipo funcional de un equipo académico. |
-| Tratar Zustand, memoria o `localStorage` como seguridad transaccional real | No hay aislamiento de procesos, autorización de servidor ni atomicidad multiusuario. Sólo DEMO. |
+| A giant HTML, `iframe` or 19 inherited scripts joined together | Collisions of global functions, non-coherent navigation, `localStorage` Insulated by module, H08/H09/H15/H17. |
+| Three mini-products M1/M2/M3 | Duplicate catalog, stock, sales, menu and permissions; contradict the unique Business Start and Menu. |
+| FastAPI backend required before displaying shell | The v4 plan requires first verifiable prototype; replaceable interfaces are designed to avoid discarding the frontend afterwards. |
+| Microservices, Redux/Query/SSE/WebSocket from day one | Premature cost and complexity for a functional prototype of an academic team. |
+| Tratar Zustand, memoria o `localStorage` as real transactional security | There is no process isolation, server authorization or multi-user atomization. |
 
-**Criterio de revisión en E1-A:** reconsiderar librerías sólo si aparece una limitación reproducible, no por preferencias estéticas.
+**Review criterion in E1-A:** Rethink libraries only if a reproducible limitation appears, not for aesthetic preferences.
 
-## 3. Arquitectura lógica
+## 3. Logical architecture
 
 ```text
 [Navegador / React Router]
@@ -63,23 +63,23 @@
                                Mercado Pago por vendedor [FASE POSTERIOR]
 ```
 
-**Límite esencial:** cambiar de adaptador **no** debe alterar el comportamiento visual ni producir una segunda fuente de saldo. En DEMO las validaciones ayudan a mostrar reglas; en producción el servidor las **repite y hace cumplir**.
+**Essential limit:** change adapter **no** must alter visual behavior or produce a second source of balance. In DEMO validations help to show rules; in production the server **repeat and enforce**.
 
-### 3.1 Capas
+### 3.1 Layers
 
-| Capa | Responsabilidad | Prohibiciones |
+| Layer | Liability | Prohibitions |
 |---|---|---|
-| `app` | Provider, router, layout, configuración, rutas y fallback | No generar stock, saldos ni aceptar pagos. |
-| `features` | Pantallas y componentes por capacidad; formularios y mensajes | No leer/escribir `localStorage` ni conocer `fetch` directamente. |
-| `domain` | Tipos, reglas puras, transición de estado, validadores, permisos declarativos | No depender de DOM, JSX, React o infraestructura de servidor. |
-| `application` | Comandos y consultas, coordinación de operaciones, resultados tipados | No usar `alert()` como único canal de errores ni mutar un módulo aislado. |
-| `data/demo` | Fuente única DEMO, fixtures, reloj/IDs y transacciones simuladas | No fingir atomicidad entre dispositivos ni cobro real. |
-| `data/api` | Cliente REST futuro, serialización, autenticación, errores | No ser fuente de verdad de stock o caja una vez activa la API. |
-| `shared/ui` | Componentes reutilizables, accesibilidad y estilos | No esconder reglas críticas de negocio en componentes visuales. |
+| `app` | Provider, router, layout, configuration, paths and failback | Do not generate stock, balances or accept payments. |
+| `features` | Displays and components by capacity; forms and messages | Do not read/write `localStorage` or know `fetch` directly. |
+| `domain` | Types, Pure Rules, Status Transition, Validators, Declarative Permits | Do not rely on DOM, JSX, React or server infrastructure. |
+| `application` | Commands and queries, coordination of operations, typified results | Do not use `alert()` as the only channel of errors or mutate an isolated module. |
+| `data/demo` | DEMO unique source, fixtures, clock/IDs and simulated transactions | Do not fake atomism between devices or actual charge. |
+| `data/api` | Future REST Client, Serialization, Authentication, Errors | Not to be a real stock or box source once you activate the API. |
+| `shared/ui` | Reusable components, accessibility and styles | Do not hide critical business rules in visual components. |
 
-## 4. Estructura de carpetas propuesta (no creada todavía)
+## 4. Proposed folder structure (not yet created)
 
-Todo lo que sigue se ubica en `plataforma-pyme/`. La creación de código corresponde a **E1-A**, no a E0-B.
+Everything that follows is located in `plataforma-pyme/`. Code creation corresponds to **E1-A**, no a E0-B.
 
 ```text
 plataforma-pyme/
@@ -155,79 +155,79 @@ plataforma-pyme/
 └── backend/                          # SOLO si E2/E3 lo justifican; no crearlo hoy
 ```
 
-**No duplicar:** `Proyecto-3-Extendido-Generico/backend/` ya existe como trabajo local ajeno a este corte en el equipo; se analizará su relación con el backend futuro **antes** de copiar, conectar, sustituir o mover archivos. Tampoco se modifica `Proyecto-3-AppAdmin-Mascotas/`. No abrir ni fusionar historias Git ajenas por efecto de este documento.
+**Do not duplicate:** `Proyecto-3-Extendido-Generico/backend/` already exists as local work outside this cut on the team; will analyze its relationship with future backend **before** copy, connect, replace or move files. It is also not modified `Proyecto-3-AppAdmin-Mascotas/`. Do not open or merge other Git stories by effect of this document.
 
-## 5. Un único mapa de navegación
+## 5. A single navigation map
 
-El registro `navigation.ts` será fuente de verdad de **id, título, ícono, ruta, grupo, requisito de empresa, permiso visible y estado (ACTIVA / PROXIMAMENTE)**. El menú y las tarjetas de Inicio usan el mismo registro; ningún botón tiene una ruta oculta o inerte.
+The registry `navigation.ts` will be a source of truth **id, title, icon, path, group, company requirement, visible permission and status (ACTIVE / PROXIMATELY)**. The menu and Start cards use the same record; no button has a hidden or inert path.
 
-### 5.1 Rutas públicas y personales
+### 5.1 Public and personal routes
 
-| Ruta | Vista | Condición | Estado inicial E1 |
+| Path | View | Condition | Initial status E1 |
 |---|---|---|---|
-| `/acceso` | Identificación e ingreso **DEMO** | Sin sesión demo | E1-A |
-| `/inicio` | Inicio personal sin empresa + selector | Usuario DEMO | E1-A |
-| `/perfil` | Perfil personal global | Usuario DEMO | E1-A |
-| `/empresas/nueva` | Crear empresa | Usuario DEMO | E1-A |
-| `/invitacion/:token` | Invitación nominada / enlace de solicitud (flujos diferenciados) | Según token DEMO | E1-B / placeholder hasta implementar |
-| `/` | Redirect controlado | Sesión + elección de empresa | E1-A |
-| `*` | No encontrado con regreso visible | Todos | E1-A |
+| `/acceso` | Identification and income **DEMO** | No demo session | E1-A |
+| `/inicio` | Home personal without company + selector | Demo user | E1-A |
+| `/perfil` | Global personal profile | Demo user | E1-A |
+| `/empresas/nueva` | Create company | Demo user | E1-A |
+| `/invitacion/:token` | Nominated invitation/application link (differentiated flows) | According to token DEMO | E1-B / placeholder hasta implementar |
+| `/` | Redirect controlled | Session + choice of company | E1-A |
+| `*` | Not found with visible return | All | E1-A |
 
-### 5.2 Rutas empresariales propuestas
+### 5.2 Proposed business routes
 
-Todas usan prefijo `/b/:businessId`; la ruta jamás concede acceso por sí misma.
+They all use prefix. `/b/:businessId`; the route never grants access by itself.
 
-| Ruta bajo `/b/:businessId` | Título de menú / vista | Pantalla principal de E0-A | Corte |
+| Low path `/b/:businessId` | Menu Title / View | E0-A main screen | Cut |
 |---|---|---|---|
-| `/inicio` | Inicio del negocio | Z003 + Z014 | E1-A |
-| `/empresa` | Datos de la Empresa | Z001 | E1-B |
-| `/ubicaciones` | Ubicaciones | Z004 | E1-B |
-| `/equipo` | Equipo de trabajo | Z002 + Z014 | E1-B |
-| `/cuentas` | Cuentas y medios | Z042 | E1-B |
-| `/catalogo` | Catálogo | Z069 + Z050 | E1-B |
-| `/catalogo/nuevo` | Nuevo artículo/servicio | Z069 | E1-B |
-| `/catalogo/:itemId` | Ficha artículo/servicio | Z069 | E1-B |
-| `/proveedores` | Proveedores | Z073 | E1-B |
-| `/compras` | Compras | Z070 + Z050 | E1-B |
-| `/inventario` | Inventario | Z050 + Z072 | E1-B |
-| `/inventario/conteo` | Conteo de stock | Z072 | E1-B (después de movimientos) |
-| `/movimientos` | Movimientos | Z050 | E1-B |
-| `/ventas` | Ventas | Z074 diseño + Z075 comportamiento | E1-C |
-| `/ventas/nueva` | Cargar venta | Z074 + Z075 | E1-C |
-| `/ventas/:saleId` | Detalle de venta | Z075 | E1-C |
-| `/gastos` | Gastos | Z070 + Z075 | E1-C |
-| `/jornadas` | Apertura/Cierre | Z092/Z093/Z075 | E1-C |
-| `/jornadas/:sessionId` | Jornada activa | Z075 + Z093 | E1-C |
-| `/jornadas/:sessionId/cierre` | Arqueo y revisión | Z093 visual + Z092 | E1-C |
-| `/jornadas/:sessionId/informe` | Snapshot histórico | Z075 + Z092 | E1-C |
-| `/historial` | Historial unificado | Z075 + Z050 | E1-C |
-| `/guias` | Guías de apoyo | Z071 | «Próximamente» |
-| `/pedidos` | Pedidos/Reservas | Referencias parciales Z075 | «Próximamente» |
-| `/analisis` | Análisis del negocio | Sin pantalla completa | «Próximamente» |
+| `/inicio` | Start of business | Z003 + Z014 | E1-A |
+| `/empresa` | Company Data | Z001 | E1-B |
+| `/ubicaciones` | Locations | Z004 | E1-B |
+| `/equipo` | Team | Z002 + Z014 | E1-B |
+| `/cuentas` | Accounts and payment methods | Z042 | E1-B |
+| `/catalogo` | Catalog | Z069 + Z050 | E1-B |
+| `/catalogo/nuevo` | New article/service | Z069 | E1-B |
+| `/catalogo/:itemId` | Article/service sheet | Z069 | E1-B |
+| `/proveedores` | Suppliers | Z073 | E1-B |
+| `/compras` | Purchases | Z070 + Z050 | E1-B |
+| `/inventario` | Inventory | Z050 + Z072 | E1-B |
+| `/inventario/conteo` | Stock count | Z072 | E1-B (after movements) |
+| `/movimientos` | Stock movements | Z050 | E1-B |
+| `/ventas` | Sales | Z074 design + Z075 behavior | E1-C |
+| `/ventas/nueva` | Load sale | Z074 + Z075 | E1-C |
+| `/ventas/:saleId` | Sales details | Z075 | E1-C |
+| `/gastos` | Expenses | Z070 + Z075 | E1-C |
+| `/jornadas` | Opening/closing | Z092/Z093/Z075 | E1-C |
+| `/jornadas/:sessionId` | Active day | Z075 + Z093 | E1-C |
+| `/jornadas/:sessionId/cierre` | Arching and revision | Visual Z093 + Z092 | E1-C |
+| `/jornadas/:sessionId/informe` | Historical Snapshot | Z075 + Z092 | E1-C |
+| `/historial` | Unified history | Z075 + Z050 | E1-C |
+| `/guias` | Help guides | Z071 | ‘Next’ |
+| `/pedidos` | Orders/Reserves | Partial references Z075 | ‘Next’ |
+| `/analisis` | Business analysis | No full screen | ‘Next’ |
 
-**Regla UX:** las rutas hijas de creación, detalle y cierre pueden quedar fuera del menú principal, pero son alcanzables desde su pantalla padre. `QR DEMO` es un diálogo/flujo del checkout y **no** una pestaña separada del menú. QR de ficha de catálogo es un flujo distinto, aplazado.
+**Rule UX:** the routes daughters of creation, detail and closure may be left off the main menu, but are achievable from their parent screen. `QR DEMO` is a checkout dialog/flow and **no** a separate tab from the menu. QR catalog tab is a different, postponed flow.
 
-### 5.3 Shell y comportamiento responsive
+### 5.3 Shell and responsible behaviour
 
-- **Escritorio:** barra superior con empresa activa, menú lateral izquierdo colapsable, contenido principal, perfil/acceso.
-- **Móvil:** menú drawer accesible desde el borde izquierdo; contenido en una columna, tablas que se transforman en tarjetas o permiten desplazamiento horizontal anunciado, no botones inaccesibles.
-- **Inicio:** tarjetas por capacidad, no por «M1/M2/M3»; muestran estado «Próximamente» o navegan a ruta real.
-- **Sin empresas:** Inicio personal permite crear empresa e incorporarse por invitación; sin pantalla vacía simulando que WALOS pertenece a todo usuario.
-- **Permisos:** acciones visibles/deshabilitadas u ocultas según regla UX, pero todo resultado DEMO se etiqueta como tal y el backend futuro repite la validación. Mensaje explicativo cuando el rol no autoriza.
-- **Accesibilidad mínima E1:** foco visible, etiquetas en inputs, teclado en drawer/modal, errores asociados al campo, confirmaciones distinguibles de éxito simulado.
+- **Desktop:** top bar with active company, collapsed left side menu, main content, profile/access.
+- **Mobile:** Drawer menu accessible from the left edge; contained in a column, tables that are transformed into cards or allow announced horizontal scrolling, not inaccessible buttons.
+- **Home:** ‘M1/M2/M3’ means a capacity card showing ‘nextly’ status or sailing on a real route.
+- **Without companies:** Personal start-up allows you to create a company and join by invitation; without an empty screen pretending that WALOS belongs to every user.
+- **Permissions:** visible/disabled or hidden actions according to UX rule, but all DEMO results are labeled as such and future backend repeats validation. Explanatory message when the role does not authorize.
+- **Minimum accessibility E1:** visible focus, input tags, drawer/modal keyboard, field associated errors, simulated success distinguishable confirmations.
 
-## 6. Estado global, empresa activa y aislamiento de datos
+## 6. Global state, active company and data isolation
 
-### 6.1 Separar cuatro ámbitos (sin duplicación)
+### 6.1 Separate four areas (without duplication)
 
-| Ámbito | Contenido | Clave de identidad | Conservación |
+| Scope | Content | Identity key | Conservation |
 |---|---|---|---|
-| **Identidad personal DEMO** | `activeUserId`, User, preferencias globales, lista de membresías disponibles | `user_id` | Sesión demo; no contiene contraseña ni tokens. |
-| **Contexto empresarial** | `activeBusinessId`, `activeMembershipId`, rol efectivo, ubicación/caja opcional | `business_id` | Se resuelve al entrar a cada ruta. |
-| **Datos empresariales** | Empresa, equipo, ubicaciones, catálogo, movimientos, compras, ventas, caja, cuentas, gastos y auditoría demo | `business_id` **obligatorio** | Un único `byBusinessId` con repositorio de operaciones; ningún slice paralelo M1/M2/M3. |
-| **UI / borradores** | Filtros, modal abierto, formulario, carrito, conteo de cierre | `user_id + business_id + feature (+ location_id)` | Se destruyen o rehidratan solamente para la misma empresa al cambiar contexto. |
+| **Personal identity DEMO** | `activeUserId`User, Global preferences, list of memberships available | `user_id` | Demo session; no password or tokens. |
+| **Business context** | `activeBusinessId`, `activeMembershipId`, effective role, optional location/box | `business_id` | It resolves when entering each route. |
+| **Business data** | Company, equipment, locations, catalog, movements, purchases, sales, cashier, accounts, expenses and demo audit | `business_id` **Compulsory** | One single `byBusinessId` with operations repository; no parallel M1/M2/M3 slice. |
+| **IU/drafts** | Filters, open modal, form, cart, closing count | `user_id + business_id + feature (+ location_id)` | They are destroyed or rehydrated only for the same company when changing context. |
 
-Forma conceptual del estado (NO implementación):
+Conceptual form of the state (NO implementation):
 
 ```ts
 type DemoState = {
@@ -257,30 +257,30 @@ type BusinessData = {
 };
 ```
 
-Los `Record` son una propuesta de shape para DEMO, no entidades SQL ni contratos OpenAPI congelados. IDs arbitrarios del navegador no conceden acceso. Cada entidad empresarial que lo requiera incluirá explícitamente `businessId` (o estará inequívocamente contenida en un agregado validado), y cada comando comprobará coincidencia entre contexto, agregados referidos y pertenencia.
+Los `Record` are a shape proposal for DEMO, not frozen SQL entities or OpenAPI contracts. Arbitrary browser IDs do not grant access. Each business entity that requires it will explicitly include `businessId` (or it will be unequivocally contained in a validated aggregate), and each command will check context, referred aggregates and membership.
 
-### 6.2 Cambio A → B: algoritmo visible y precondiciones
+### 6.2 Change A → B: visible algorithm and preconditions
 
-1. Usuario elige negocio B desde selector; verificar membresía DEMO habilitada para B.
-2. Cerrar diálogos, cancelar consultas dependientes de A, desasociar selección de ubicación/caja de A y desactivar datos de A en pantalla.
-3. Guardar o descartar borradores de A según política visible y específica; **nunca** trasladar carrito ni totales a B.
-4. Actualizar `activeBusinessId`, resolver rol/membresía B y navegar a `/b/B/inicio`.
-5. Consultar solamente `businessesById[B]`; mostrar vacío si no hay datos, aunque A tenga registros.
-6. Si usuario escribe directamente URL `/b/A/catalogo` sin permiso, mostrar acceso denegado o no encontrado **sin filtrar atributos de A**.
-7. Probar además usuario que pertenece a A y B con roles distintos; cambiar rol efectivo al cambiar empresa.
+1. User chooses business B from selector; verify DEMO membership enabled for B.
+2. Close dialogs, cancel A-dependent queries, unlink A location/box selection and disable A data on screen.
+3. Save or discard draft A according to visible and specific policy; **Never** move cart or totals to B.
+4. Update `activeBusinessId`, solve role/membership B and navigate to `/b/B/inicio`.
+5. Consult only `businessesById[B]`; show empty if no data, even if A has records.
+6. If user types directly URL `/b/A/catalogo` without permission, showing denied or not found access **unfiltered A attributes**.
+7. Also prove that user belongs to A and B with different roles; change effective role when changing company.
 
-**Caso límite:** una pestaña o refresco no puede reclamar que existe seguridad multiusuario; la protección de datos es **simulación UX**. El backend real exigirá contexto autorizado por cada recurso y operación.
+**Case limit:** a tab or refresh cannot claim that there is multi-user security; data protection is **UX simulation**. The real backend will require context authorized by each resource and operation.
 
-### 6.3 Persistencia DEMO
+### 6.3 DEMO Persistence
 
-- **Primera etapa:** almacenar estado DEMO **en memoria** (Zustand) y fixtures determinísticos; mostrar «Los datos de prueba se reinician al recargar» si ese es el comportamiento elegido para E1-A.
-- **Extensión opcional, si hace falta conservar demos:** introducir un `DemoPersistenceAdapter` versionado, validación de esquema, exportación/importación de fixtures y claves con ámbito de usuario/empresa. `localStorage` sería sólo un detalle de infraestructura **no seguro**, jamás la fuente jurídica/financiera ni un medio de login real.
-- No copiar `walos_demo_m1_v12`, `walos_demo_mod2_v5` ni claves M3 del legado. No almacenar contraseñas, OAuth, tokens o cobros reales en frontend.
-- No afirmar sincronización entre navegadores/dispositivos: con API futura, la fuente de verdad será servidor PostgreSQL.
+- **Stage one:** store DEMO status **en memoria** (Zustand) and deterministic fixtures; show "Test data restarted when reloading" if that is the behavior chosen for E1-A.
+- **Optional extension, if necessary to keep demos:** enter a `DemoPersistenceAdapter` versioning, schema validation, export/import of fixes and passwords with user/company scope. `localStorage` would be just a detail of infrastructure **not sure**never the legal/financial source or a real login medium.
+- Do not copy `walos_demo_m1_v12`, `walos_demo_mod2_v5` no legacy M3 keys. Do not store passwords, OAuth, tokens or actual collections on frontend.
+- Do not affirm synchronization between browsers/devices: with future API, the source of truth will be PostgreSQL server.
 
-## 7. Contrato interno de operaciones (puertos DEMO/API)
+## 7. Internal contract of operations (DEMO/API ports)
 
-La UI consume operaciones a través de un puerto común. Especificaciones conceptuales, **no archivos .ts ya creados**:
+The UI consumes operations through a common port. Conceptual specifications, **no already created .ts files**:
 
 ```ts
 type BusinessContext = {
@@ -317,175 +317,175 @@ type Result<T> =
 // createQrDemoIntent(ctx, saleId)
 ```
 
-**Reglas de implementación propuestas:**
+**Proposed implementation rules:**
 
-- Un comando conoce `businessId`, actor y `commandId`; acciones idempotentes consultan registro por contexto, y repetición con misma clave y distinto payload devuelve `CONFLICT`.
-- Los errores son tipados, se muestran con acciones útiles; no se reporta «Guardado» cuando falló una validación.
-- Cada comando lógico toma **una** instantánea DEMO, valida todas las precondiciones y confirma **todo o nada en el mismo store**. Esto simula consistencia de una pestaña, **no** transacciones concurrentes entre dispositivos.
-- Todas las lecturas (dashboard, historial, stock, caja) derivan del mismo estado; no mantienen copias reescribibles de saldos en cada pantalla.
-- `ApiGateway` conservará semántica y tipos de dominio; backend verificará permisos, dinero, stock, versión y transacción. Las rutas REST se definirán en E2, no aquí.
+- A command knows `businessId`actor and `commandId`; Idepotent actions query context log, and repeat with same key and different payload returns `CONFLICT`.
+- Errors are typed, displayed with useful actions; no "Saved" is reported when a validation failed.
+- Every logical command takes **una** DEMO snapshot, validates all preconditions and confirms **all or nothing in the same store**. This simulates the consistency of a tab, **no** Concurrent transactions between devices.
+- All readings (dashboard, history, stock, box) are derived from the same state; they do not keep rewritten copies of balances on each screen.
+- `ApiGateway` will retain semantics and domain types; backend will verify permissions, money, stock, version and transaction. REST routes will be defined in E2, not here.
 
-## 8. Invariantes de negocio para reconstruir en E1
+## 8. Business invariants to rebuild in E1
 
-### 8.1 Persona, empresa y permisos (H01/H02/H12/H14)
+### 8.1 Person, company and permits (H01/H02/H12/H14)
 
-- `User` global existe con cero empresas; `Business` pertenece a contexto de `Membership`, no a un singleton.
-- Fundador es un dato **histórico**; titular administrativo inicial es único y activo; no inferir propietario legal ni permitir cero responsables. Su política final exige ADR E0-C.
-- Matriz mínima de roles propuesta: `TITULAR_ADMIN`, `ADMINISTRADOR`, `ENCARGADO`, `COLABORADOR`. No hay permiso implícito por renderizar un botón.
-- Invitación por email dirigida a persona y enlace/QR para **solicitar acceso** son máquinas distintas; solicitud no crea membresía automáticamente.
-- `Location` distingue `vende`, `almacena` y otros atributos; ubicación de almacenamiento **no** es obligatoria en servicios.
-- Toda acción que requiera negocio valida contexto y pertenencia antes de leer o modificar.
+- `User` There are no global companies; `Business` belongs to the context of `Membership`, no a un singleton.
+- Founder is a data **history**; initial administrative holder is unique and active; not to infer legal owner or allow zero responsible. Its final policy requires ADR E0-C.
+- Minimum role matrix proposed: `TITULAR_ADMIN`, `ADMINISTRADOR`, `ENCARGADO`, `COLABORADOR`. There is no implicit permission to render a button.
+- Email invitation to person and link/QR for **request access** are different machines; request does not automatically create membership.
+- `Location` differentiate `vende`, `almacena` and other attributes; storage location **no** is mandatory in services.
+- Any action that requires business validates context and membership before reading or modifying.
 
-### 8.2 Catálogo y medidas (H07/H16/H22/H26)
+### 8.2 Catalogue and measurements (H07/H16/H22/H26)
 
-- `CatalogItem` = `GOOD` o `SERVICE`. Reventa, insumo y elaborado son capacidades de bien, no rubros globales; WALOS vive en fixtures.
-- SKU único dentro de negocio (homónimos y generación de SKU pendientes de ADR); un servicio no tiene `StockBalance` ni depósito.
-- Precios en **centavos enteros** para ARS y unidad monetaria definida por negocio; no usar `number` flotante para suma monetaria.
-- Cantidades admiten escalas por unidad. **No** usar `parseInt` ni truncar 1,5 kg a 1; parsear texto de forma estricta y normalizar a unidades menores enteras o representación decimal exacta según política de unidad (ADR E0-C).
-- Precio «a cotizar» no equivale a $0. Comandos rechazan formatos inválidos y explican el campo.
+- `CatalogItem` = `GOOD` o `SERVICE`. Resale, input and elaborate are good capabilities, not global ones; WALOS lives in fixtures.
+- Unique SKU within business (same names and generation of SKU pending ADR); a service does not have `StockBalance` No deposit.
+- Prices in **whole cents** for ARS and business defined monetary unit; not to use `number` floating for monetary sum.
+- Numbers support scales per unit. **No** use `parseInt` or truncate 1.5 kg to 1; parse text strictly and normalize to smaller whole units or exact decimal representation according to unit policy (ADR E0-C).
+- Price "to be quoted" does not amount to $0. Commands reject invalid formats and explain the field.
 
-### 8.3 Compras, recepciones, stock y traslados (H09/H18/H19/H25)
+### 8.3 Purchases, receptions, stock and shipments (H09/H18/H19/H25)
 
-- Registrar compra **no** recibe automáticamente ni paga. `Purchase`, `Receipt` y `Expense/Payment` son hechos separados.
-- Recepción de 10 crea un único registro de recepción y movimientos de +10 una vez, con clave de idempotencia; un segundo clic no duplica.
-- Todo saldo de stock se obtiene de `StockMovement` (o de una proyección reproducible, nunca de una variable editable en paralelo).
-- Traslado de 3 de origen 10 hacia destino 0 confirma salida -3 y entrada +3 en **una** operación: 7/3. Rechazar 11 sin movimiento parcial; no negativos.
-- Conteo de inventario registra diferencia y ajuste con motivo; no pisa venta nueva. Fecha de operación se obtiene del reloj, no literal heredado.
-- Retorno de feria requiere movimiento explícito, no se genera al cerrar caja; la diferencia esperada/recibida queda pendiente o documentada, **nunca desaparece** (H25).
-- Versionado DEMO y locks simulados sirven para UX; el backend deberá probar concurrencia real en PostgreSQL.
+- Register purchase **no** automatically receives and pays. `Purchase`, `Receipt` y `Expense/Payment` They're separate facts.
+- 10 reception creates a single +10 reception and movement log once, with idempotency key; a second click does not duplicate.
+- Any stock balance is obtained from `StockMovement` (or a reproducible projection, never of a parallel editable variable).
+- Transfer of 3 of origin 10 to destination 0 confirms departure -3 and entry +3 in **una** operation: 7/3. Refuse 11 without partial movement; not negative.
+- Inventory count records difference and adjustment with motive; does not step on new sale. Operation date is obtained from the clock, not literal inherited.
+- Return of fair requires explicit movement, not generated when closing box; the expected/received difference is pending or documented, **never disappears** (H25).
+- Versioned DEMO and simulated locks are used for UX; the backend must prove actual attendance in PostgreSQL.
 
-### 8.4 Ventas, pagos, gastos y cierre (H06/H09/H10/H13)
+### 8.4 Sales, payments, expenses and closure (H06/H09/H10/H13)
 
-- La venta puede incluir bienes (con ubicación de stock válida) y servicios (sin stock); descuento aplicado antes de fijar importe final.
-- Aplicaciones de pago de 1..n medios; **suma exacta** de centavos igual al total. No cerrar si excede o falta dinero, salvo modalidad pendiente/crédito aprobada posteriormente.
-- Venta confirmada provoca salida de stock **una sola vez**; no crear otra salida al imprimir o reabrir ticket. Deshabilitar acciones concurrentes duplicadas con idempotencia.
-- «Pago declarado» significa registrado en la venta, **no** acreditación verificada por banco/MP.
-- Gasto operativo pagado identifica cuenta o fondo de origen; compras, gastos fijos programados y pagos efectivos son hechos distintos.
-- `CashSession` (cuando aplique) pertenece a empresa, ubicación y caja; efectivo de jornada no es saldo global de CVU/CBU/MP compartida.
-- Cierre contado por defecto: reunir movimientos hasta corte, arqueo, diferencias, actor, fecha, motivo y snapshot **inmutable** antes de marcar cerrado. Reintento no crea segundo cierre ni reabre jornada.
-- Cierre «sin verificar» queda **DESHABILITADO** hasta decisión explícita. No portar el `commitFinalClosure` de Z093.
-- Historial correlaciona venta, pago, movimientos, gasto y cierre por IDs; no combina tres logs locales divergentes.
+- The sale may include goods (with valid stock location) and services (without stock); discount applied before setting final amount.
+- Payment applications of 1..n means; **exact sum** not close if money exceeds or is missing, except pending/credit approved later.
+- Confirmed sale causes stock out **once only**; do not create another output when printing or re-opening ticket. Disable concurrent duplicate actions with idempotence.
+- ‘declared payment’ means registered on sale, **no** bank/MP verified accreditation.
+- Operating expenditure paid identifies account or fund of origin; purchases, scheduled fixed expenses and actual payments are made differently.
+- `CashSession` (when applicable) belongs to company, location and cash; day cash is not a global balance of CVU/CBU/MP shared.
+- Default count: collect movements until cut, arching, differences, actor, date, motive and snapshot **immutable** Retry not to create second closure or reopen day.
+- Unverified closure remains **DESHABILITADO** until explicit decision. `commitFinalClosure` de Z093.
+- History correlates sales, payment, movements, expenditure and closure by IDs; does not combine three divergent local logs.
 
-### 8.5 Mercado Pago: QR ficha ≠ QR de cobro
+### 8.5 Market Payment: QR card
 
-- **QR de artículo:** acceso a ficha/añadir a venta, funcionalidad futura.
-- **QR de cobro:** se inicia desde checkout, asociado a una venta y a la cuenta vendedora de **esa empresa**.
-- **En E1:** sólo mock de cobro **DEMO**, mostrando importe, empresa, estado `PENDIENTE/SIMULADO_APROBADO/CANCELADO`, sin transferir dinero. No afirmar pago confirmado por un botón «Ya pagué».
-- **En backend posterior:** `BusinessPaymentConnection` por vendedor con OAuth; sucursal/POS por seller; Orders API con idempotencia; webhook firmado, consulta al proveedor, reconciliación, reservas temporales de stock y pagos tardíos. El token nunca va a frontend ni repositorio. La compatibilidad con modalidades y cuenta integradora se verificará antes de implementar MP real.
-- Intento de QR y `PaymentApplication` son entidades distintas. Crear QR no reduce stock definitivo ni acredita cobro. Estado pendiente no suma a caja como pagado.
+- **Article QR:** access to tab/add for sale, future functionality.
+- **QR of collection:** starts from checkout, associated with a sale and to the sales account of **that company**.
+- **En E1:** only mock collection **DEMO**, showing amount, company, state `PENDIENTE/SIMULADO_APROBADO/CANCELADO`, without transferring money. Do not affirm payment confirmed by a button "I already paid".
+- **En backend posterior:** `BusinessPaymentConnection` by seller with OAuth; branch/POS per seller; Orders API with idempotence; signed webhook, vendor consultation, reconciliation, temporary stock reserves and late payments. Token never goes to frontend or repository. Compatibility with modalities and integrative account will be verified before implementing real MP.
+- Attempted QR and `PaymentApplication` creating QR does not reduce definitive stock or credit collection. pending state does not add to cash as paid.
 
-## 9. Inventario de componentes reutilizables: de HTML a React (sin copiar JS heredado)
+## 9. Inventory of reusable components: from HTML to React (without copying JS inherited)
 
-| Feature/componente futuro | Fuente E0-A | Reutilizar | Rediseñar/descartar |
+| Feature/componente futuro | Source E0-A | Reuse | Redesign/Discard |
 |---|---|---|---|
-| `AppShell` y `BusinessDashboard` | Z003/Z014 | Panel, tarjetas, estilo, drawer | Menús M1/M2/M3 y WALOS global. |
-| `BusinessForm` | Z001, Z014 | Campos, jerarquía, imagen | Identidad personal mezclada con empresa, singleton. |
-| `LocationsList` y `LocationForm` | Z004 | Alta, edición, pausa, principal | Depósito obligatorio; permisos sólo visuales. |
-| `TeamList`, `MemberSheet`, `InviteFlow` | Z002/Z014 | Ficha, revisión y solicitudes | Fusión de invitación nominada con solicitud abierta. |
-| `AccountsList` | Z042 | Alias/CBU/CVU informativos | QR de datos como cobro acreditado. |
-| `CatalogList` y `CatalogForm` | Z069/Z050 | Galería, tipos, edición y estados | Catálogo canino global y stock de servicios. |
-| `SuppliersList` | Z073 | Ficha rica y alta contextual | Proveedor ficticio obligatorio. |
-| `PurchasesList`, `ReceivePurchase` | Z070/Z050 | Líneas, borrador, recibir | Compra=recepción=pago. |
-| `InventoryList`, `StockCountWizard` | Z050/Z072 | Filtros, revisión, diferencias | Ledger propio M2 y bloqueo falso de concurrencia. |
-| `TransferStockForm` | Z050 | Origen/destino y resumen | Salidas parciales y retorno con pérdida H25. |
-| `PosCheckout` y `PaymentSplit` | Z074/Z075 | POS dos pasos y pagos divididos | Medio único visual, precio float y stock local de M3. |
-| `ExpenseForm` | Z070/Z075 | Formulario y clasificación | Sumar egreso no asociado a fondo. |
-| `CashClosureWizard` | Z093/Z092/Z075 | Checklist, arqueo, diferencias, reporte | Descartar `commitFinalClosure` y cierre sin evidencia. |
-| `BusinessHistory` | Z075/Z050 | Historial y filtros | Logs fragmentados sin correlación. |
-| `QrPaymentDemo` | Z074 + plan MP v4 | Espera, estados y visual | QR real/OAuth/pago simulado como confirmado. |
-| `GuidesEditor` (posterior) | Z071 | Pasos y borradores | Editor M2 simplificado que pierde estructura. |
+| `AppShell` y `BusinessDashboard` | Z003/Z014 | Panel, cards, style, drawer | M1/M2/M3 and WALOS global menus. |
+| `BusinessForm` | Z001, Z014 | Fields, hierarchy, image | Personal identity mixed with company, singleton. |
+| `LocationsList` y `LocationForm` | Z004 | High, editing, pause, main | Mandatory deposit; visual permissions only. |
+| `TeamList`, `MemberSheet`, `InviteFlow` | Z002/Z014 | Profile, review and applications | Nominated invitation fusion with open application. |
+| `AccountsList` | Z042 | Information alias/CBU/CVU | QR data as credited collection. |
+| `CatalogList` y `CatalogForm` | Z069/Z050 | Gallery, types, editing and states | Global canine catalogue and service stock. |
+| `SuppliersList` | Z073 | Rich and high contextual profile | Mandatory dummy supplier. |
+| `PurchasesList`, `ReceivePurchase` | Z070/Z050 | Lines, draft, receive | Purchase=reception=payment. |
+| `InventoryList`, `StockCountWizard` | Z050/Z072 | Filters, revision, differences | Ledger own M2 and false blocking of continuance. |
+| `TransferStockForm` | Z050 | Origin/destiny and summary | Partial exits and return with H25 loss. |
+| `PosCheckout` y `PaymentSplit` | Z074/Z075 | POS two steps and split payments | Unique visual medium, float price and local stock of M3. |
+| `ExpenseForm` | Z070/Z075 | Form and classification | Adding out non-associated in depth. |
+| `CashClosureWizard` | Z093/Z092/Z075 | Checklist, arching, differences, report | Discard `commitFinalClosure` and closing without evidence. |
+| `BusinessHistory` | Z075/Z050 | History and filters | Fragmented logs without correlation. |
+| `QrPaymentDemo` | Z074 + plan MP v4 | Wait, status and visual | Real QR/OAuth/payment simulated as confirmed. |
+| `GuidesEditor` (posterior) | Z071 | Steps and drafts | Simplified M2 editor losing structure. |
 
-## 10. Fixtures y escenarios de verificación
+## 10. Fixtures and verification scenarios
 
-**Fixtures mínimos, inventados como datos sintéticos de DEMO:**
+**Minimum Fixtures, invented as synthetic DEMO data:**
 
-1. **WALOS:** empresa ejemplo con bienes elaborados, stock por ubicaciones y caja. Nunca marca/rubro por defecto para otras empresas.
-2. **Comercio de reventa:** artículos físicos, proveedor, recepción y traslados.
-3. **Empresa de servicios:** servicios sin depósito, sin lote y sin caja física obligatoria.
-4. **Dos empresas A/B y un mismo usuario:** permisos diferentes para verificar scoping; otro usuario sin membresía de A para probar acceso denegado.
+1. **WALOS:** example company with processed goods, stock by location and box. Never brand/rub by default for other companies.
+2. **Re-selling trade:** physical items, supplier, reception and transfers.
+3. **Service company:** services without deposit, without lot and without compulsory physical box.
+4. **Two A/B companies and one user:** different permissions to check scoping; another user without A membership to test denied access.
 
-**Guion de prueba de E1 integrado (todavía NO ejecutado):**
+**Integrated E1 test script (not yet executed):**
 
-1. Usuario sin empresas entra a `/inicio`, crea una empresa, queda con responsable inicial único.
-2. Crea bien A (SKU) y un servicio; dos ubicaciones y un proveedor.
-3. Registra compra, recibe 10 una sola vez; doble clic no duplica; saldo 10.
-4. Traslada 3 → saldos origen 7, destino 3; intentar mover 11 → error y saldos intactos.
-5. Abre jornada donde corresponde; vende 2 bienes desde destino + un servicio con descuento y dos pagos exactos → saldo destino 1.
-6. Registra un gasto desde fondo explícito; el dinero de cuenta digital compartida no se confunde con efectivo de jornada.
-7. Arquea y cierra; consulta snapshot e historial, actor y diferencias; no se permite reabrir mediante clic repetido.
-8. Cambia de A a B → ningún listado, borrador, permiso ni cifra de A visible en B.
-9. En negocio de servicios sin local completa venta sin pedir depósito; entra a QR demo y verifica pendiente ≠ cobro real.
-10. Prueba pantallas en desktop y móvil, menú, foco, validaciones y «Próximamente».
+1. User without companies enters `/inicio`, creates a company, remains with sole initial responsibility.
+2. Create well A (SKU) and one service; two locations and one provider.
+3. Register purchase, receive 10 once; double click does not duplicate; balance 10.
+4. Move 3 → balances origin 7, destination 3; try to move 11 → error and balances intact.
+5. Opens day where it corresponds; sells 2 goods from destination + one service with discount and two exact payments → balance destination 1.
+6. Register an explicit fund expense; the shared digital account money is not confused with day cash.
+7. Arch and close; snapshot and history, actor and differences query; not allowed to reopen by repeated click.
+8. Change from A to B → no list, draft, permission or figure of A visible in B.
+9. In business services without full local sale without asking for deposit; enter QR demo and verify pending
+10. Test desktop and mobile screens, menu, focus, validations and "Next".
 
-### 10.1 Mínimos de pruebas a implementar por corte
+### 10.1 Minimum tests to be implemented by cut
 
-| ID | Prueba | Tipo futuro | Aceptación |
+| ID | Test | Future type | Acceptance |
 |---|---|---|---|
-| `DEMO-TEN-01` | Empresa A→B y URL directa a A sin membresía | Unit + E2E | Sin fugas de datos, roles ni borradores. |
-| `DEMO-NAV-01` | Menú/tarjetas comparten rutas | Component + E2E | Ningún botón operativo inerte. |
-| `DEMO-CAT-01` | Servicio sin stock/depósito | Unit + E2E | Alta/venta independientes de ubicación física. |
-| `DEMO-STK-01` | Recibir 10 dos veces | Unit | Se aplica una sola entrada. |
-| `DEMO-STK-02` | Trasladar 3 de 10 y rechazar 11 | Unit | 7/3 y rechazo atómico. |
-| `DEMO-MON-01` | Descuento + pagos mixtos | Unit | Concilia al centavo; formato inválido rechazado. |
-| `DEMO-JOR-01` | Cierre, snapshot y reintento | Unit + E2E | Snapshot inmutable con conteo, actor y diferencias. |
-| `DEMO-MP-01` | QR pendiente/cancelado/aprobado simulado | Component | Etiqueta DEMO y sin acreditación real. |
-| `DEMO-UX-01` | Desktop/móvil/teclado | E2E | Navegación accesible, errores legibles. |
+| `DEMO-TEN-01` | Company A→B and URL direct to A without membership | Unit + E2E | No data leaks, roles, or drafts. |
+| `DEMO-NAV-01` | Menu/cards share routes | Component + E2E | No inert operating button. |
+| `DEMO-CAT-01` | Stockless/deposit service | Unit + E2E | High/sale independent physical location. |
+| `DEMO-STK-01` | Receive 10 twice | Unit | Only one entry applies. |
+| `DEMO-STK-02` | Move 3 out of 10 and reject 11 | Unit | 7/3 and atomic rejection. |
+| `DEMO-MON-01` | Discount + mixed payments | Unit | It reconciles to the penny; invalid format rejected. |
+| `DEMO-JOR-01` | Cierre, snapshot y reintento | Unit + E2E | Unchangeable snapshot with count, actor and differences. |
+| `DEMO-MP-01` | QR pending/cancelled/simulated approval | Component | DEMO label and no real accreditation. |
+| `DEMO-UX-01` | Desktop/mobile/keyboard | E2E | Accessible navigation, readable errors. |
 
-**Correspondencia con backend futuro:** QA-TEN-01/02, QA-STK-01/02/03, QA-MON-01, QA-JOR-01/02, QA-MP-01/02/03 del backlog v4 son **especificaciones**, no ejecuciones. La concurrencia de dos ventas, OAuth y webhooks sólo se verifican cuando exista backend y entorno apropiado. **TP3 exige ≥10 tests unitarios reales**; los casos DEMO listados no reemplazan esa exigencia.
+**Correspondence with future backend:** QA-TEN-01/02, QA-STK-01/02/03, QA-MON-01, QA-JOR-01/02, QA-MP-01/02/03 del backlog v4 son **specifications**The attendance of two sales, OAuth and webhooks are only verified when there is a backend and appropriate environment. **TP3 requires ≥10 actual unit tests**; the DEMO cases listed do not replace this requirement.
 
-## 11. Cortes de implementación aprobables tras E0-C
+## 11. A probable implementation cuts after E0-C
 
-| Orden | Corte | Entrega concreta en E1 | Puerta de salida observable |
+| Orden | Cut | Specific delivery in E1 | Observable exit door |
 |---|---|---|---|
-| 1 | **E1-A1 / DEMO-01** | Vite/React TS, shell, menú, router, Inicio, placeholders y responsive | Cada tarjeta navega a pantalla o «Próximamente»; `npm run dev` funciona. |
-| 2 | **E1-A2 / DEMO-02** | Usuario/demo, perfil, empresa nueva, selector y scoping + pruebas | A→B no mezcla datos ni borradores; usuario sin empresa válido. |
-| 3 | **E1-B1 / DEMO-03** | Empresa, ubicaciones opcionales, equipo, cuentas; permisos DEMO | Empresa de servicios sin depósito y miembros con permisos distintos. |
-| 4 | **E1-B2 / DEMO-04** | Catálogo (bien/servicio), proveedores, compra/recepción | Registro 10 unidades una sola vez; SKU único por empresa. |
-| 5 | **E1-B3 / DEMO-05** | Inventario, movimientos, conteo y ledger | Traslado 3 deja 7/3; no permite sobretraslado. |
-| 6 | **E1-C1 / DEMO-06** | Ventas, descuentos, múltiples pagos y gastos | Cobros exactos, stock impactado una vez y fondos explícitos. |
-| 7 | **E1-C2 / DEMO-07** | Jornadas, arqueo, cierre, snapshot e historial | Cierre consulta datos inmutables y diferencias, sin doble cierre. |
-| 8 | **E1-D1 / DEMO-08** | UI QR de cobro claramente DEMO | Pendiente no se presenta como pagado; empresa vendedora visible. |
-| 9 | **E1-D2 / DEMO-09** | Tests de recorridos desktop/móvil; accesibilidad y errores | Evidencia reproducible; fallos y limitaciones documentados. |
+| 1 | **E1-A1 / DEMO-01** | Vite/React TS, shell, menu, router, Start, placeholders and responsive | Each card is screen-navigated or ‘Next’; `npm run dev` It works. |
+| 2 | **E1-A2 / DEMO-02** | User/demo, profile, new company, selector and scoping + tests | A→B does not mix data or drafts; user without a valid company. |
+| 3 | **E1-B1 / DEMO-03** | Company, optional locations, equipment, accounts; DEMO permissions | Company of services without deposit and members with different permits. |
+| 4 | **E1-B2 / DEMO-04** | Catalogue (good/service), suppliers, purchase/reception | Registration 10 units once; SKU only per company. |
+| 5 | **E1-B3 / DEMO-05** | Inventory, movements, counting and leadger | Transfer 3 leaves 7/3; does not allow overtransfer. |
+| 6 | **E1-C1 / DEMO-06** | Sales, discounts, multiple payments and expenses | Exact collections, once impacted stock and explicit funds. |
+| 7 | **E1-C2 / DEMO-07** | Days, arching, closing, snapshots and history | Close consults immutable data and differences, without double closing. |
+| 8 | **E1-D1 / DEMO-08** | UI QR of clearly collection DEMO | Pending is not presented as paid; company sales visible. |
+| 9 | **E1-D2 / DEMO-09** | Desktop/mobile travel tests; accessibility and errors | Reproducible evidence; documented failures and limitations. |
 
-**Criterio de no-bloqueo:** mantener Guías, elaboración avanzada, Pedidos/Reservas, Análisis y QR de ficha visibles como «Próximamente» cuando corresponda. No crear repositorios de negocio para módulos todavía no implementados.
+**Non-blocking criterion:** maintain Guides, advanced processing, Ordering/Reservations, Analysis and QR of visible tab like "Next" when applicable. Do not create business repositories for modules that have not yet been implemented.
 
-## 12. Decisiones para formalizar en E0-C (NO aprobadas por este documento)
+## 12. Decisions to formalize in E0-C (NOT adopted by this document)
 
-| ADR propuesto | Estado | Variante segura para poder construir |
+| Proposed ADR | Status | Safe variant to build |
 |---|---|---|
-| ADR-001 Tenant y membresía | **PROPUESTO** | Persona global + empresas + membresía scoped, autorización UX en demo y obligatoria en API. |
-| ADR-002 Titular administrativo | **PROPUESTO** | Fundador histórico; exactamente un titular administrativo activo inicial; transferencia formal posterior. |
-| ADR-003 Invitaciones | **PENDIENTE** | Dos flujos distintos; primero nominada, solicitud por enlace/QR diferible sin mezclar estados. |
-| ADR-004 Stock, cantidades y SKU | **PROPUESTO** | Ledger único, no negativos, unidad exacta; SKU único en tenant; sin truncamiento. |
-| ADR-005 Jornada y cierre | **PROPUESTO** | Conteo + snapshot inmutable; «sin verificar» deshabilitado; retorno físico separado. |
-| ADR-006 Pagos / QR | **PROPUESTO** | 1..n pagos exactos; QR de venta DEMO, QR ficha futuro, OAuth por seller real después. |
-| ADR-007 UI/estado y persistencia | **PROPUESTO** | React TS/Router/Zustand; estado en memoria y gateway sustituible; sin `localStorage` directo en vistas. |
-| ADR-008 Integración con TP académico | **PENDIENTE** | No tocar backends históricos; contrastar contrato y modelo en E2 antes de adaptar. |
+| ADR-001 Tenant and membership | **PROPOSAL** | Global person + companies + scoped membership, UX authorization in demo and mandatory in API. |
+| ADR-002 Administrative holder | **PROPOSAL** | Historical Founder; exactly an initial active administrative holder; later formal transfer. |
+| ADR-003 Invitations | **PENDING** | Two separate flows; first nominated, request per link/QR deferred without mixing states. |
+| ADR-004 Stock, quantities and SKU | **PROPOSAL** | Unique Ledger, not negative, exact unit; SKU unique in tenant; no truncation. |
+| ADR-005 Meeting and closing | **PROPOSAL** | Count + snapshot immutable; disabled "unverified"; separate physical return. |
+| ADR-006 Payments / QR | **PROPOSAL** | 1..n exact payments; QR sale DEMO, QR future tab, OAuth by actual seller after. |
+| ADR-007 IU/state and persistence | **PROPOSAL** | React TS/Router/Zustand; estado en memoria y gateway sustituible; sin `localStorage` Directly in view. |
+| ADR-008 Integration with academic TP | **PENDING** | Do not touch historical backends; contract and model in E2 before adapting. |
 
-El archivo de ADR tendrá fecha, responsables, fuente, alternativas, impacto, pruebas y decisión **APROBADO/PROPUESTO/DIFERIDO**. Ningún ADR aparece aprobado sólo por estar en esta tabla.
+The ADR file will have date, responsible, source, alternatives, impact, evidence and decision **APPROVED/PROPOSED/DIFFERED**. No ADR is approved just because it is in this table.
 
-## 13. Condiciones de terminado y traspaso E0-B → E0-C / E1
+## 13. Terms of completion and transfer E0-B → E0-C / E1
 
-### Entregado en E0-B
+### Delivered in E0-B
 
-- [x] Framework/arquitectura propuestos y descartes justificados.
-- [x] Árbol de carpetas futura y límites con el repositorio académico existente.
-- [x] Mapa completo de navegación, shell y estados «Próximamente».
-- [x] Estado empresarial scoped, borradores y transición A→B.
-- [x] Contrato conceptual de gateway DEMO/API y comandos compartidos.
-- [x] Invariantes de compras, stock, ventas, caja y QR; escenarios y criterios de aceptación.
-- [x] Orden de cortes E1 y lista ADR pendiente para E0-C.
+- [x] Proposed framework/architecture and justified discards.
+- [x] Future folder tree and boundaries with existing academic repository.
+- [x] Full navigation map, shell and next states.
+- [x] Business state scoped, drafts and transition A→B.
+- [x] Conceptual DEMO/API gateway contract and shared commands.
+- [x] Invariants of purchases, stock, sales, cash and QR; scenarios and acceptance criteria.
+- [x] Order of E1 cuts and ADR list pending for E0-C.
 
-### No realizado (deliberadamente)
+### Not performed (deliberately)
 
-- [ ] Creación de `frontend/`, código React, dependencias y componentes reales.
-- [ ] Tests unitarios, navegador, E2E, CI, capturas o verificaciones multiusuario.
-- [ ] Backend/REST/OpenAPI/UML final, PostgreSQL o integración real Mercado Pago.
-- [ ] Cambios en `Proyecto-3-AppAdmin-Mascotas/`, `Proyecto-3-Extendido-Generico/` o ramas del TP.
-- [ ] Aprobación del equipo a todas las alternativas/ADRs propuestos.
+- [ ] Establishment of `frontend/`, React code, dependencies and real components.
+- [ ] Unit tests, browser, E2E, IC, multi-user captures or verifications.
+- [ ] Backend/REST/OpenAPI/UML final, PostgreSQL or real integration Market Payment.
+- [ ] Changes in `Proyecto-3-AppAdmin-Mascotas/`, `Proyecto-3-Extendido-Generico/` or branches of the TP.
+- [ ] Approval of the team to all proposed alternatives/ADRs.
 
-### Próximo corte exacto — E0-C
+### Next exact cut — E0-C
 
-Crear `plataforma-pyme/docs/02_DECISIONES_Y_BACKLOG.md` y los ADRs mínimos con sus estados explícitos, matriz trazabilidad `requisito → HTML Zxxx / Hxx → pantalla → comando → prueba` y checklist de arranque E1-A. **No reauditar los 19 HTML ni debatir todos los casos futuros.**
+Create `plataforma-pyme/docs/02_DECISIONES_Y_BACKLOG.md` and minimum ADRs with their explicit states, matrix traceability `requisito → HTML Zxxx / Hxx → pantalla → comando → prueba` and start checklist E1-A. **Do not re-audiate the 19 HTMLs or discuss all future cases.**
 
-**Acta de verificación E0-B:** elaboración documental y cotejo con E0-A/v4; **ningún flujo implementado ni test ejecutado en este corte**. El equipo deberá aprobar o modificar las propuestas técnicas al abrir E1.
+**Verification Act E0-B:** documentary processing and comparison with E0-A/v4; **no implemented flow or test executed in this cut**. The team shall approve or modify technical proposals when opening E1.

@@ -11,7 +11,7 @@ test.beforeAll(() => {
 
 test('E3-1B: selector multiempresa real y drawer accesible no filtran DEMO', async ({ page, request }) => {
   const email = 'e31b-shell-' + randomUUID() + '@example.com'
-  const password = 'E3 1B disposable QA only 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const register = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'QA E3-1B' },
   })
@@ -37,15 +37,15 @@ test('E3-1B: selector multiempresa real y drawer accesible no filtran DEMO', asy
   })
 
   await page.goto('/real/empresas/' + a.id)
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(password)
+  await page.getByLabel('Email', { exact: true }).fill(email)
+  await page.getByLabel('Password', { exact: true }).fill(password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Datos de la empresa', exact: true })).toBeVisible()
-  const selector = page.getByLabel('Cambiar de empresa REAL')
+  await expect(page.getByRole('heading', { name: 'Company details', exact: true })).toBeVisible()
+  const selector = page.getByLabel('Change of company REAL')
   await expect(selector).toHaveValue(a.id)
   await selector.selectOption(b.id)
   await expect(page).toHaveURL(new RegExp('/real/empresas/' + b.id + '$'))
-  await expect(page.getByRole('heading', { name: 'Datos de la empresa', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Company details', exact: true })).toBeVisible()
   await expect(selector).toHaveValue(b.id)
   const menu = page.locator('#real-workspace-nav')
   for (const forbidden of ['Caja', 'Cuentas', 'Gastos', 'QR Mercado Pago', 'Guías de apoyo']) {
@@ -53,9 +53,9 @@ test('E3-1B: selector multiempresa real y drawer accesible no filtran DEMO', asy
   }
 
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.getByRole('button', { name: 'Abrir menú' }).click()
+  await page.getByRole('button', { name: 'Open Menu' }).click()
   await expect(menu).toHaveClass(/rw-sidebar-open/)
-  await expect(menu.getByRole('button', { name: 'Punto de venta', exact: true })).toBeVisible()
+  await expect(menu.getByRole('button', { name: 'Point of sale', exact: true })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(menu).not.toHaveClass(/rw-sidebar-open/)
   const docWidth = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth))

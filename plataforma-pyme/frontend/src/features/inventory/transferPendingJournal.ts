@@ -13,13 +13,13 @@ export type TransferPendingPort={
  remove(scope:string,key:string):Promise<void>
 }
 export class TransferPendingUnavailable extends Error{
- constructor(){super('IndexedDB no está disponible; no se enviará un traslado sin identidad recuperable.')}
+ constructor(){super('IndexedDB is not available; no transfer without recoverable identity will be sent.')}
 }
 export class TransferPendingConflict extends Error{
- constructor(){super('Existe un traslado pendiente diferente para esta cuenta y empresa; no se sobrescribe.')}
+ constructor(){super('There is a different pending transfer for this account and company; it is not overwritten.')}
 }
 export function transferPendingScope(actorId:string,businessId:string):string {
- if(!UUID_PATTERN.test(actorId)||!UUID_PATTERN.test(businessId))throw new TypeError('Cuenta o empresa inválidas.')
+ if(!UUID_PATTERN.test(actorId)||!UUID_PATTERN.test(businessId))throw new TypeError('Invalid account or company.')
  return [actorId,businessId,'inventory.transfer'].join(':')
 }
 export function parsePendingTransfer(value:unknown,scope:string):PendingTransfer{
@@ -60,12 +60,12 @@ export function createTransferJournal(port:TransferPendingPort){
      return checked
    },
    async discard(scope:string,key:string):Promise<void>{
-     if(!UUID_V4_PATTERN.test(key))throw new TypeError('Clave inválida')
+     if(!UUID_V4_PATTERN.test(key))throw new TypeError('Invalid key')
      await port.remove(scope,key)
    },
  }
 }
-const DB='asistente-pyme-inventory-transfer-v1',STORE='intents',MAX=40
+const DB='assistant-pyme-inventory-transfer-v1',STORE='intents',MAX=40
 function openDb():Promise<IDBDatabase>{
  if(typeof indexedDB==='undefined')return Promise.reject(new TransferPendingUnavailable())
  return new Promise((resolve,reject)=>{

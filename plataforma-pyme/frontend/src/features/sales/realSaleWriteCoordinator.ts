@@ -30,7 +30,7 @@ export function createSaleWriteCoordinator(
   fetchImpl?: typeof fetch,
 ) {
   if (!token || !UUID_PATTERN.test(actorId) || !UUID_PATTERN.test(businessId))
-    throw new TypeError('Se necesitan sesión, actor y empresa REAL válidos.')
+    throw new TypeError('Valid session, actor and company are needed.')
   const scope = salePendingScope(actorId, businessId)
   const api = createApiClient({ getAccessToken: () => token, fetchImpl })
   const reader = createSalesReadGateway(token, businessId, fetchImpl)
@@ -79,7 +79,7 @@ export function createSaleWriteCoordinator(
     async sendApproved(key: string, explicitlyConfirmed: true,
                        signal?: AbortSignal): Promise<ConfirmedSale> {
       if (explicitlyConfirmed !== true) throw new SalePendingConflict()
-      if (!UUID_V4_PATTERN.test(key)) throw new TypeError('Solicitud UUID4 inválida.')
+      if (!UUID_V4_PATTERN.test(key)) throw new TypeError('Invalid UUID4 application.')
       // Read back and re-reserve. If IndexedDB is unavailable, DO NOT POST.
       const pending = await journal.load(scope)
       if (!pending || pending.key !== key) throw new SalePendingConflict()

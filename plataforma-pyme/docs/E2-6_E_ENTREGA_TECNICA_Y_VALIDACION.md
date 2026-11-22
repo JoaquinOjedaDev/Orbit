@@ -1,29 +1,29 @@
-# E2-6 — Ventas integradas: entrega técnica y cierre de implementación
+# E2-6 — Integrated sales: technical delivery and implementation closure
 
-**Proyecto:** Plataforma PyME / TP Programación 2 — UNSAM 2C2026  
-**Directorio:** `plataforma-pyme/`  
-**Rama de trabajo:** `feature/e2-6-ventas-integradas`  
-**Estado:** A, B, C y D implementados y validados; E documental. **No fusionar a `main` antes de la auditoría selectiva y el PR único.**  
-**Código evaluado en Windows:** `a66c180d02bfb5decc583a90a07efcc48d0a2783` (2026-11-09).
+**Project:** PyME/TP Platform Programming 2 — UNSAM 2C2026  
+**Directory:** `plataforma-pyme/`  
+**Workforce:** `feature/e2-6-ventas-integradas`  
+**Status:** A, B, C and D implemented and validated; E documentary. **No fusionar a `main` before the selective audit and the single PR.**  
+**Code evaluated in Windows:** `a66c180d02bfb5decc583a90a07efcc48d0a2783` (2026-11-09).
 
-## 1. Alcance implementado
+## 1. Scope implemented
 
-- Registro de ventas exclusivamente de servicios, bienes físicos y ventas mixtas, vinculadas al negocio autenticado.
-- Persistencia de `Sale`, `SaleLine` y `SalePayment` con importes enteros en centavos y cantidades en milésimas.
-- Snapshots inmutables del nombre, SKU, clase, unidad, precios y totales de cada renglón de venta.
-- Pagos **declarados**: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`. Las sumas declaradas deben coincidir exactamente con el total. **No equivale a cobro efectivamente confirmado**.
-- Descuento físico por ubicación y artículo con `UPDATE stock_balances ... WHERE quantity_milli >= required RETURNING`, versión incremental y rechazo si faltan existencias.
-- Agregación por artículo para el descuento del saldo; un `StockMovement` de tipo `VENTA_SALIDA` por renglón físico con origen `sale_id` + `sale_line_id`.
-- Inserción de comprobante, renglones, pagos, movimientos y cambio de saldo en **una transacción**. Rollback ante cualquier falla antes del commit.
-- Clave `Idempotency-Key` UUID v4 por tenant: creación 201, replay idéntico del mismo actor 200, colisión de contenido/actor 409.
-- Consulta del comprobante histórico por ID y tenant, sin alterar el stock ni pagos.
-- Revalidación de sesión y membresía; empresa y ubicación activas para nuevas operaciones, capacidad de ubicación y asignación según rol.
+- Registration of sales exclusively of services, physical goods and mixed sales, linked to the authenticated business.
+- Persistence of `Sale`, `SaleLine` y `SalePayment` with whole amounts in cents and amounts in thousandths.
+- Unchangeable snapshots of the name, SKU, class, unit, prices and totals of each line of sale.
+- Payments **declared**: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`. The amounts declared must be exactly the same as the total. **It does not amount to a confirmed recovery**.
+- Physical discount by location and item with `UPDATE stock_balances ... WHERE quantity_milli >= required RETURNING`, incremental version and rejection if stocks are missing.
+- Aggregation per item for discounting the balance; a `StockMovement` of a kind `VENTA_SALIDA` by physical line with origin `sale_id` + `sale_line_id`.
+- Insertion of vouchers, lines, payments, movements and change of balance **a transaction**Rollback before any failure before commit.
+- Clave `Idempotency-Key` UUID v4 per tenant: creation 201, identical replay of same actor 200, content collision/actor 409.
+- Check the historical voucher by ID and tenant, without altering the stock or payments.
+- Revalidation of session and membership; active company and location for new operations, location capacity and role assignment.
 
-## 2. API publicada
+## 2. Published API
 
 **POST** `/api/v1/businesses/{business_id}/sales`
 
-Requiere autenticación Bearer y header `Idempotency-Key` (UUID v4). El cuerpo acepta:
+Requires Bearer and header authentication `Idempotency-Key` (UUID v4). The body accepts:
 
 ```json
 {
@@ -39,85 +39,85 @@ Requiere autenticación Bearer y header `Idempotency-Key` (UUID v4). El cuerpo a
 }
 ```
 
-El ejemplo es **ilustrativo**: sustituir UUID válidos antes de usarlo. Para venta de servicios sin ubicación, omitir `location_id` o usar `null` (modalidad administrativa). Para bienes físicos, se requiere una ubicación autorizada con `can_sell = true` y `can_store = true`.
+The example is **illustrative**: replace valid UUID before using it. For sale of services without location, skip `location_id` or use `null` (administrative mode). For physical goods, an authorized location with `can_sell = true` y `can_store = true`.
 
-**GET** `/api/v1/businesses/{business_id}/sales/{sale_id}` devuelve la venta histórica autorizada.
+**GET** `/api/v1/businesses/{business_id}/sales/{sale_id}` returns the authorized historical sale.
 
-**Respuestas relevantes:** 201 creación; 200 replay; 401 sesión ausente/revocada; 403 operación no autorizada; 404 empresa/venta no disponible; 409 idempotencia, empresa/ubicación o stock no aptos; 422 validación de contenido o artículo. La API no ofrece anulación, devolución ni reversión de stock en este bloque.
+**Relevant responses:** 201 creation; 200 replay; 401 absent/revocated session; 403 unauthorized operation; 404 unavailable company/sale; 409 unenforced idempotency, enterprise/location or stock; 422 validation of content or article. API does not offer cancellation, return or reversal of stock in this block.
 
-## 3. Reglas y límites del contrato
+## 3. Rules and limits of contract
 
-- De 1 a 30 líneas; de 1 a 6 pagos declarados; totales positivos y dentro del límite `99_999_999_999` centavos.
-- Redondeo HALF_UP **por renglón**: `floor((quantity_milli * unit_price_cents + 500) / 1000)`.
-- `SERVICIO` exige unidad y cantidades discretas; bienes pueden usar unidades físicas válidas según Catálogo. Las unidades discretas `UNIDAD`, `PAQUETE` y `CAJA` requieren múltiplos de 1000.
-- Tenant validado en catálogo, ubicación, comprobante y referencias SQL con FKs compuestas.
-- Titular/administrador puede operar en ubicaciones habilitadas; encargado/trabajador requiere asignación activa. Para salida de bienes, debe satisfacer `SELL` y `STORE`.
-- Sin ubicación, el comando administrativo solo admite servicios.
-- El hash SHA-256 del payload normalizado permite detectar reintentos incompatibles.
-- `balances_after` es histórico, no la fuente del stock actual.
-- El flujo no asigna fondos a cuentas, no abre caja, no verifica webhooks ni acredita pagos de Mercado Pago.
+- 1 to 30 lines; 1 to 6 declared payments; positive totals and within limit `99_999_999_999` cents.
+- Redondeo HALF_UP **by line**: `floor((quantity_milli * unit_price_cents + 500) / 1000)`.
+- `SERVICIO` requires discrete units and quantities; goods may use valid physical units according to Catalogue. Discreet units `UNIDAD`, `PAQUETE` y `CAJA` require multiples of 1000.
+- Validated Tenant in catalog, location, voucher and SQL references with composite FKs.
+- Owner/Manager can operate in enabled locations; maintainer/worker requires active assignment. To exit goods, you must satisfy `SELL` y `STORE`.
+- Without location, the administrative command only supports services.
+- The standard payload hash SHA-256 allows for the detection of incompatible re-attempts.
+- `balances_after` is historical, not the source of current stock.
+- The flow does not allocate funds to accounts, does not open cash, verifies webhooks or credits payments from Pay Market.
 
-## 4. Compatibilidad con etapas anteriores
+## 4. Compatibility with earlier stages
 
-E2-6 A reutiliza la migración `e26a_sales_foundation`, sin crear una nueva para B/C/D. Las lecturas de inventario muestran también `VENTA_SALIDA`. No se reemplazan ni alteran los orígenes de `COMPRA_RECEPCION`, `TRASLADO_*`, `AJUSTE_*` y `STOCK_INICIAL`.
+E2-6 A reuses migration `e26a_sales_foundation`, without creating a new one for B/C/D. Inventory readings also show `VENTA_SALIDA`. The origins of `COMPRA_RECEPCION`, `TRASLADO_*`, `AJUSTE_*` y `STOCK_INICIAL`.
 
-Los movimientos por venta conservan FK al renglón comercial y no a una compra o inventario manual, preservando la exclusión de orígenes definida en el esquema.
+Sales movements retain FK to the commercial line and not a manual purchase or inventory, preserving the exclusion of origins defined in the scheme.
 
-## 5. Evidencia de validación
+## 5. Evidence of validation
 
-**Entorno local aportado por usuario (Windows, 2026-11-09):**
-- B: `14 passed` focalizadas, migraciones y `alembic check` sin diferencias; regresión previa `864 passed, 1 warning`.
-- C: `17 passed` focalizadas; `10 passed` concurrencia/API; `22 passed` integración cruzada; regresión `872 passed, 1 warning`.
-- Seguridad C: `16 passed`.
-- D: `9 passed` atomicidad/permisos/concurrencia.
-- Regresión posterior a D: **`879 passed in 132.08s`**, sin warnings reportados.
+**Local environment provided by user (Windows, 2026-11-09):**
+- B: `14 passed` and migrations and `alembic check` no differences; previous regression `864 passed, 1 warning`.
+- C: `17 passed` targeted; `10 passed` attendance/IPA; `22 passed` cross-integration; regression `872 passed, 1 warning`.
+- Security C: `16 passed`.
+- D: `9 passed` atomisation/permissions/concurrence.
+- Post-D regression: **`879 passed in 132.08s`**No reported warning.
 - `alembic current`: `e26a_sales_foundation (head)`; `alembic check`: `No new upgrade operations detected.`
-- La base utilizada fue `asistente_pyme_e26b_test_20261109_134652`, independiente de QA habitual.
+- The base used was `asistente_pyme_e26b_test_20261109_134652`, independent of usual QA.
 
-**CI GitHub Actions:** `a66c180` — success (2026-11-09), workflow: historical CI run 42684413403 El CI debe verificarse de nuevo al terminar auditoría y cualquier corrección.
+**CI GitHub Actions:** `a66c180` — success (2026-11-09), workflow: historical CI run 42684413403 The IC must be re-verified upon completion of the audit and any corrections.
 
-## 6. Riesgos, no-objetivos y trabajo futuro
+## 6. Risks, non-targets and future work
 
-- Este bloque no entrega frontend de ventas, caja, cuentas monetarias, comprobantes fiscales, reservas, devoluciones, conciliación ni liquidación de medios de pago.
-- `MERCADO_PAGO_DECLARADO` no debe interpretarse como cobro confirmado; la integración de preferencias, QR, webhooks y cuenta MP por tenant exige flujo y contratos propios.
-- La relación `can_sell` + `can_store` para bienes es una decisión conservadora de la etapa; validar en diseño si un punto de venta solo SELL debe operar sobre depósito externo mediante flujo explícito, nunca implícito.
-- La prueba de carga y la evaluación de interbloqueos bajo diferentes órdenes de solicitudes siguen siendo límites del conjunto actual.
-- La advertencia intermitente de Pydantic sobre alias se observó en regresiones anteriores, pero **no** en la última.
-- Antes del merge: revisión independiente de permisos/tenancy, validación contable por renglón, condiciones de carrera, tratamiento de errores SQL, y compatibilidad con módulos históricos.
+- This block does not deliver frontend sales, cash, monetary accounts, tax vouchers, reserves, returns, reconciliation or settlement of means of payment.
+- `MERCADO_PAGO_DECLARADO` should not be interpreted as confirmed collection; integration of preferences, QR, webhooks and MP account per tenant requires flow and own contracts.
+- The relationship `can_sell` + `can_store` for goods is a conservative decision of the stage; validate in design whether a single SELL point of sale should operate on external deposit by explicit, never implicit flow.
+- The burden test and the evaluation of interlocks under different order requests remain limits to the current set.
+- Pydatic's intermittent warning of aliases was observed in previous regressions, but **no** Last one.
+- Before the Merge: Independent permission/tenancy review, accounting validation by line, race conditions, SQL error treatment, and compatibility with historical modules.
 
-## 7. Criterios de salida E2-6
+## 7. Exit criteria E2-6
 
-1. Código y pruebas integradas aprobados — **cumplido en `a66c180`**.
-2. Documento técnico E2-6 E — **presente**.
-3. Auditoría independiente documentada con hallazgos, severidad, decisión individual e impacto — **pendiente**.
-4. Aplicar **solo** los hallazgos aceptados, con commits y pruebas de regresión — **pendiente**.
-5. Confirmar nueva CI verde y revisión final de PR/diff contra `main` — **pendiente**.
-6. Abrir **un PR** de toda E2-6; fusionar una sola vez después de aprobación — **pendiente**.
+1. Approved code and integrated tests — **completed in `a66c180`**.
+2. Technical document E2-6 E — **present**.
+3. Independent audit documented with findings, severity, individual decision and impact — **outstanding**.
+4. Apply **only** accepted findings, with commit and regression tests — **outstanding**.
+5. Confirm new green IC and final PR/diff review against `main` — **outstanding**.
+6. Open **un PR** of all E2-6; merge only once after approval — **outstanding**.
 
-**Regla:** no usar este documento como evidencia de auditoría externa completada ni de que el PR ya está listo.
+**Rule:** not use this document as evidence of completed external audit or that the PR is ready.
 
-## 8. Validación manual Swagger (2026-11-09)
+## 8. Swagger manual validation (2026-11-09)
 
-**Fuente:** respuestas HTTP reales proporcionadas por el operador desde Swagger local (`127.0.0.1:8000`) sobre la base temporal utilizada para E2-6. Esta evidencia no reemplaza las pruebas de concurrencia con PostgreSQL.
+**Source:** real HTTP responses provided by the operator from local Swagger (`127.0.0.1:8000`) on the time basis used for E2-6. This evidence does not replace evidence of attendance with PostgreSQL.
 
-**Empresa exclusiva de prueba:** `fc37e4ff-9e26-423b-946e-a9cc0b662360`.  
-**Ubicación SELL/STORE:** `013860da-e39b-4028-a080-1ae0638ae482`.  
-**Artículo físico:** `dfbef980-9d7b-4810-9d04-ab0e4f51c86f`.  
-**Servicio:** `740f0ed2-4371-4de3-bd0d-d218f9b53c34`.
+**Exclusive test company:** `fc37e4ff-9e26-423b-946e-a9cc0b662360`.  
+**Location SELL/STORE:** `013860da-e39b-4028-a080-1ae0638ae482`.  
+**Physical article:** `dfbef980-9d7b-4810-9d04-ab0e4f51c86f`.  
+**Service:** `740f0ed2-4371-4de3-bd0d-d218f9b53c34`.
 
-| Operación | HTTP observado | Resultado observado |
+| Operation | Observed HTTP | Observed result |
 |---|---:|---|
-| Registrar usuario y empresa | 201 / 201 | Titular administrativo activo |
-| Crear producto, servicio y ubicación | 201 / 201 / 201 | Ubicación activa con `can_sell` y `can_store` |
-| Registrar `STOCK_INICIAL` | 201 | +10000 milésimas, saldo 10000/version 1 |
-| Consultar inventario del producto | 200 | 10000/version 1 |
-| Crear venta física de 2 unidades | 201 | Venta `def970fc-6b45-48cb-ba65-a5ca994c3fdd`; 1000000 centavos; saldo 8000/version 2 |
-| Crear venta mixta (1 bien + 1 servicio) | 201 | Venta `61108b12-df7e-4da6-8046-ddde75eedba4`; 650000 centavos; dos pagos; saldo 7000/version 3 |
-| Repetir venta mixta con misma clave y cuerpo | 200 | Mismo `sale_id`, fecha, líneas, pagos y snapshot de 7000/version 3 |
-| Intentar vender 10 unidades con stock de 7 | 409 | `Stock insuficiente para confirmar la venta` |
-| Consultar saldo tras rechazo | 200 | 7000/version 3, sin cambios |
-| Consultar ledger con filtro de producto/ubicación | 200 | **Exactamente 3 movimientos:** `STOCK_INICIAL +10000`, `VENTA_SALIDA -2000` y `VENTA_SALIDA -1000` |
+| Register user and company | 201 / 201 | Active administrative holder |
+| Create product, service and location | 201 / 201 / 201 | Active location with `can_sell` y `can_store` |
+| Register `STOCK_INICIAL` | 201 | +10000 thousandths, balance 10000/version 1 |
+| Check Product Inventory | 200 | 10000/version 1 |
+| Create physical sale of 2 units | 201 | Sale `def970fc-6b45-48cb-ba65-a5ca994c3fdd`; 1000000 cents; balance 8000/version 2 |
+| Create mixed sale (1 good + 1 service) | 201 | Sale `61108b12-df7e-4da6-8046-ddde75eedba4`; 650,000 cents; two payments; balance 7000/version 3 |
+| Repeat mixed sale with same key and body | 200 | Same `sale_id`, date, lines, payments and snapshots of 7000/version 3 |
+| Try selling 10 units with stock of 7 | 409 | `Stock insuficiente para confirmar la venta` |
+| Check balance after rejection | 200 | 7000/version 3, unchanged |
+| Consult leader with product filter/location | 200 | **Exactly 3 moves:** `STOCK_INICIAL +10000`, `VENTA_SALIDA -2000` y `VENTA_SALIDA -1000` |
 
-**Conciliación:** `10000 - 2000 - 1000 = 7000` milésimas. Los dos movimientos de venta están ligados a sus respectivos `sale_id` y `sale_line_id`. No aparecen movimientos físicos por el servicio, el replay ni la venta rechazada.
+**Conciliation:** `10000 - 2000 - 1000 = 7000` The two sales movements are linked to their respective `sale_id` y `sale_line_id`. No physical movements for service, replay or sale refused appear.
 
-**Precisión del alcance:** los resultados acreditan el circuito manual principal sobre la empresa de prueba. No constituyen auditoría independiente ni prueba manual exhaustiva de permisos, fraudes, infraestructura o pagos externos. Los medios de pago solo son declarados. Se conserva pendiente la auditoría selectiva y el PR único hacia `main`.
+**Scope accuracy:** The results attest to the main manual circuit on the test company. They do not constitute independent audit or comprehensive manual proof of permits, frauds, infrastructure or external payments. `main`.

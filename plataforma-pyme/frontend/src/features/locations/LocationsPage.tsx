@@ -61,14 +61,14 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
     try {
       if (editor === 'new') {
         await demoGateway.createLocation(business.id, draft)
-        setNotice('Ubicación DEMO creada para «' + business.name + '».')
+        setNotice('DEMO location created for "' + business.name + '».')
       } else {
         await demoGateway.updateLocation(business.id, editor, draft)
-        setNotice('Ubicación DEMO actualizada.')
+        setNotice('DEMO location updated.')
       }
       setEditor(null)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar la ubicación.')
+      setError(err instanceof Error ? err.message : 'Could not close temporary folder: %s')
     } finally {
       setBusy(false)
     }
@@ -80,9 +80,9 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
     setBusy(true)
     try {
       await demoGateway.setPrimaryLocation(business.id, locationId)
-      setNotice('Ubicación principal actualizada en «' + business.name + '».')
+      setNotice('Main location updated under «' + business.name + '».')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo asignar la ubicación principal.')
+      setError(err instanceof Error ? err.message : 'Could not assign main location.')
     } finally {
       setBusy(false)
     }
@@ -97,10 +97,10 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
       await demoGateway.setLocationStatus(business.id, location.id, status)
       setPendingStatusId(null)
       setNotice(status === 'PAUSADA'
-        ? 'Ubicación pausada. Si era principal, el negocio quedó sin ubicación principal.'
-        : 'Ubicación reactivada. Podés designarla como principal cuando corresponda.')
+        ? 'Pause location. If it was main, the business was left without main location.'
+        : 'Reactivated location. You can designate it as the main location when applicable.')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo actualizar el estado.')
+      setError(err instanceof Error ? err.message : 'Could not update status.')
     } finally {
       setBusy(false)
     }
@@ -112,16 +112,16 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
     setManualShare(null)
     const message = locationShareText(business.name, location)
     if (!message) {
-      setError('Para compartir la ubicación primero agregá una dirección o un enlace de Google Maps.')
+      setError('To share the location first add an address or link to Google Maps.')
       return
     }
     try {
       await navigator.clipboard.writeText(message)
-      setNotice('Ubicación copiada. Ya podés pegarla en un mensaje o documento.')
+      setNotice('Copyed location. You can already paste it into a message or document.')
     } catch {
       // En un navegador sin permiso de portapapeles, ofrecer copia manual.
       setManualShare({ locationId: location.id, text: message })
-      setNotice('El navegador bloqueó el portapapeles. Seleccioná y copiá el texto de la tarjeta.')
+      setNotice('The browser blocked the clipboard. Select and copy the text from the card.')
     }
   }
 
@@ -129,19 +129,19 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
 
   return <>
     <div className="page-heading">
-      <div><p className="eyebrow">ADMINISTRACIÓN · EMPRESA DEMO</p><h1>Ubicaciones</h1><p>Locales, depósitos, ferias y espacios de trabajo de «{business.name}».</p></div>
-      {editor === null && <button type="button" className="button button-primary" onClick={startCreate}><Icon name="plus" size={18}/> Nueva ubicación</button>}
+      <div><p className="eyebrow">ADMINISTRATION · DEMO COMPANY</p><h1>Locations</h1><p>Premises, warehouses, fairs and workspaces of «{business.name}».</p></div>
+      {editor === null && <button type="button" className="button button-primary" onClick={startCreate}><Icon name="plus" size={18}/> New location</button>}
     </div>
 
-    <section className="locations-summary" aria-label="Resumen de ubicaciones">
-      <div><span className="feature-icon blue"><Icon name="pin"/></span><small>Ubicaciones totales</small><strong>{locations.length}</strong></div>
+    <section className="locations-summary" aria-label="Summary of locations">
+      <div><span className="feature-icon blue"><Icon name="pin"/></span><small>Total locations</small><strong>{locations.length}</strong></div>
       <div><span className="feature-icon mint"><Icon name="building"/></span><small>Activas</small><strong>{activeCount}</strong></div>
-      <div><span className="feature-icon violet"><Icon name="shield"/></span><small>Principal</small><strong className="location-primary-name">{primary?.name ?? 'Sin asignar'}</strong></div>
+      <div><span className="feature-icon violet"><Icon name="shield"/></span><small>Main</small><strong className="location-primary-name">{primary?.name ?? 'Unallocated'}</strong></div>
     </section>
 
     <div className="informational-note location-info-note">
       <Icon name="shield" size={20}/>
-      <span>Las ubicaciones son opcionales: una empresa de servicios puede funcionar sin local ni depósito. Las capacidades «Vender» y «Almacenar» son independientes. Los registros de esta pantalla son solamente DEMO.</span>
+      <span>Locations are optional: a service company can operate without premises or deposit. Selling and Store capabilities are independent. The records on this screen are DEMO only.</span>
     </div>
 
     {error && <p className="form-message error locations-notice" role="alert">{error}</p>}
@@ -150,53 +150,53 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
     {editor !== null && <section className="form-panel location-editor">
       <div className="form-panel-header">
         <span className="feature-icon blue"><Icon name={editingLocation ? 'pin' : 'plus'}/></span>
-        <div><h2>{editingLocation ? 'Editar ubicación' : 'Nueva ubicación'}</h2><p>Se guardará únicamente dentro de {business.name}.</p></div>
+        <div><h2>{editingLocation ? 'Edit Location' : 'New location'}</h2><p>It will only be stored within {business.name}.</p></div>
       </div>
       <form className="demo-form" onSubmit={submit}>
-        {editingLocation ? <DemoImagePicker imageKey={demoImageKey('location', business.id, editingLocation.id)} label="Foto de la ubicación"/> :
-          <p className="form-hint">Guardá primero la ubicación; después podés añadir una fotografía desde «Editar».</p>}
+        {editingLocation ? <DemoImagePicker imageKey={demoImageKey('location', business.id, editingLocation.id)} label="Location photo"/> :
+          <p className="form-hint">Save the location first; then you can add a photograph from Edit.</p>}
         <div className="locations-form-grid">
-          <label className="form-field"><span>Nombre de la ubicación *</span>
-            <input autoFocus required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft((x) => ({ ...x, name: event.target.value }))} placeholder="Ej.: Local centro / Feria del sábado" />
+          <label className="form-field"><span>Location name *</span>
+            <input autoFocus required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft((x) => ({ ...x, name: event.target.value }))} placeholder="E.g.: Local center / Saturday Fair" />
           </label>
-          <label className="form-field"><span>Tipo de espacio *</span>
+          <label className="form-field"><span>Type of space *</span>
             <select value={draft.kind} onChange={(event) => setDraft((x) => ({ ...x, kind: event.target.value as LocationKind }))}>
               {Object.entries(locationKindLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select>
           </label>
         </div>
-        <label className="form-field"><span>Dirección o referencia (opcional)</span>
-          <input maxLength={160} autoComplete="off" value={draft.address} onChange={(event) => setDraft((x) => ({ ...x, address: event.target.value }))} placeholder="Ej.: Av. Siempreviva 123, Ciudad (datos DEMO)" />
+        <label className="form-field"><span>Address or reference (optional)</span>
+          <input maxLength={160} autoComplete="off" value={draft.address} onChange={(event) => setDraft((x) => ({ ...x, address: event.target.value }))} placeholder="E.g.: Av. Siemviva 123, City (DEMO data)" />
         </label>
         <div className="location-map-form">
-          <label className="form-field"><span>Enlace de Google Maps (opcional)</span>
+          <label className="form-field"><span>Google Maps Link (optional)</span>
             <input type="url" maxLength={2048} autoComplete="off" value={draft.mapUrl} onChange={(event) => setDraft((x) => ({ ...x, mapUrl: event.target.value }))} placeholder="https://maps.app.goo.gl/… o https://www.google.com/maps/…" />
           </label>
-          <p className="form-hint">Para guardar un punto preciso: abrí Maps, seleccioná el lugar y elegí «Compartir → Copiar enlace». Pegá ese enlace arriba. Si solo completás la dirección, ofreceremos una búsqueda, no una ubicación verificada.</p>
+          <p className="form-hint">To save a precise point: open Maps, select the location and choose "Share → Copy Link". Paste that link above. If you just complete the address, we will offer a search, not a verified location.</p>
           <a className="location-map-find" href={mapsSearchUrl(draft.address) ?? 'https://www.google.com/maps'} target="_blank" rel="noopener noreferrer">
-            <Icon name="pin" size={16}/> {draft.address.trim() ? 'Buscar esta dirección en Google Maps' : 'Abrir Google Maps para elegir un punto'}
+            <Icon name="pin" size={16}/> {draft.address.trim() ? 'Search this address in Google Maps' : 'Open Google Maps to choose a point'}
           </a>
         </div>
         <fieldset className="location-capabilities">
-          <legend>¿Para qué se utiliza este espacio?</legend>
-          <label><input type="checkbox" checked={draft.canSell} onChange={(event) => setDraft((x) => ({ ...x, canSell: event.target.checked }))}/><span><strong>Permite vender</strong><small>Punto de atención, venta o prestación de servicios</small></span></label>
-          <label><input type="checkbox" checked={draft.canStore} onChange={(event) => setDraft((x) => ({ ...x, canStore: event.target.checked }))}/><span><strong>Permite almacenar</strong><small>Se puede asociar inventario cuando exista ese módulo</small></span></label>
+          <legend>What is this space used for?</legend>
+          <label><input type="checkbox" checked={draft.canSell} onChange={(event) => setDraft((x) => ({ ...x, canSell: event.target.checked }))}/><span><strong>Allows sale</strong><small>Point of attention, sale or provision of services</small></span></label>
+          <label><input type="checkbox" checked={draft.canStore} onChange={(event) => setDraft((x) => ({ ...x, canStore: event.target.checked }))}/><span><strong>Allows storage</strong><small>Inventory can be associated when this module exists</small></span></label>
         </fieldset>
-        <p className="form-hint">Una ubicación puede tener ambas capacidades o ninguna. No se crea stock ni caja automáticamente.</p>
+        <p className="form-hint">A location can have both or none of these capabilities. No stock or box is created automatically.</p>
         <div className="form-actions">
-          <button type="button" className="button button-secondary" onClick={cancel} disabled={busy}>Cancelar</button>
-          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Guardando…' : editingLocation ? 'Guardar cambios' : 'Crear ubicación DEMO'}</button>
+          <button type="button" className="button button-secondary" onClick={cancel} disabled={busy}>Cancel</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Guardando…' : editingLocation ? 'Guardar cambios' : 'Create DEMO Location'}</button>
         </div>
       </form>
     </section>}
 
-    <div className="section-header locations-section-heading"><div><h2>Espacios registrados</h2><p>Podés editarlos y administrar sus estados sin eliminarlos.</p></div></div>
+    <div className="section-header locations-section-heading"><div><h2>Registered spaces</h2><p>You can edit them and manage their states without deleting them.</p></div></div>
 
     {locations.length === 0 && <section className="empty-state location-empty">
       <div className="empty-icon"><Icon name="pin" size={34}/></div>
-      <h2>Todavía no hay ubicaciones</h2>
-      <p>Es válido no tener establecimientos. Cuando quieras, agregá un local, depósito, feria, oficina u otro espacio.</p>
-      {editor === null && <button type="button" className="button button-primary" onClick={startCreate}><Icon name="plus" size={17}/> Crear primera ubicación</button>}
+      <h2>No locations yet</h2>
+      <p>It is valid not to have establishments. When you want, add a place, warehouse, fair, office or other space.</p>
+      {editor === null && <button type="button" className="button button-primary" onClick={startCreate}><Icon name="plus" size={17}/> Create First Location</button>}
     </section>}
 
     <div className="locations-grid">
@@ -205,45 +205,45 @@ export function LocationsPage({ business, locations }: { business: DemoBusiness;
           <DemoPhoto imageKey={demoImageKey('location', business.id, location.id)} alt={'Foto de ' + location.name}
             fallback={<Icon name={typeIcon(location.kind)} size={22}/>} className="feature-icon blue demo-photo-list"/>
           <div><h3>{location.name}</h3><p>{locationKindLabels[location.kind]}</p></div>
-          <span className={'location-status ' + (location.status === 'ACTIVA' ? 'active' : 'paused')}>{location.status === 'ACTIVA' ? 'Activa' : 'Pausada'}</span>
+          <span className={'location-status ' + (location.status === 'ACTIVA' ? 'active' : 'paused')}>{location.status === 'ACTIVA' ? 'Active' : 'Pausada'}</span>
         </div>
         <div className="location-tags">
-          {location.isPrimary && <span className="small-pill">Principal</span>}
+          {location.isPrimary && <span className="small-pill">Main</span>}
           {location.canSell && <span className="location-tag"><Icon name="shopping" size={14}/> Vender</span>}
           {location.canStore && <span className="location-tag"><Icon name="boxes" size={14}/> Almacenar</span>}
-          {!location.canSell && !location.canStore && <span className="location-tag">Sin capacidades operativas</span>}
+          {!location.canSell && !location.canStore && <span className="location-tag">No operational capabilities</span>}
         </div>
-        <p className="location-address"><Icon name="pin" size={16}/> {location.address || 'Sin dirección o referencia'}</p>
+        <p className="location-address"><Icon name="pin" size={16}/> {location.address || 'No address or reference'}</p>
         <div className="location-map-actions">
           {(() => {
             const mapsLink = getLocationMapsLink(location)
             return mapsLink ? <a className="location-map-link" href={mapsLink.url} target="_blank" rel="noopener noreferrer">
-              <Icon name="pin" size={16}/> {mapsLink.source === 'shared' ? 'Ver ubicación en Google Maps' : 'Buscar dirección en Google Maps'}
-            </a> : <span className="location-map-missing">Sin mapa ni dirección asignados</span>
+              <Icon name="pin" size={16}/> {mapsLink.source === 'shared' ? 'See location in Google Maps' : 'Search address in Google Maps'}
+            </a> : <span className="location-map-missing">No map or address assigned</span>
           })()}
           <button type="button" className="location-copy-link" onClick={() => copyLocation(location)} disabled={!getLocationMapsLink(location)}>
-            <Icon name="book" size={16}/> Copiar ubicación
+            <Icon name="book" size={16}/> Copy Location
           </button>
         </div>
         {manualShare?.locationId === location.id && <div className="location-copy-fallback">
-          <label htmlFor={'share-location-' + location.id}>Texto listo para copiar manualmente</label>
+          <label htmlFor={'share-location-' + location.id}>Text ready to copy manually</label>
           <textarea id={'share-location-' + location.id} value={manualShare.text} readOnly rows={4} onFocus={(event) => event.currentTarget.select()} />
         </div>}
         <div className="location-actions">
-          <button type="button" className="button button-secondary" onClick={() => startEdit(location)} disabled={busy}>Editar</button>
-          {!location.isPrimary && location.status === 'ACTIVA' && <button type="button" className="button button-secondary" onClick={() => markPrimary(location.id)} disabled={busy}>Hacer principal</button>}
+          <button type="button" className="button button-secondary" onClick={() => startEdit(location)} disabled={busy}>Edit</button>
+          {!location.isPrimary && location.status === 'ACTIVA' && <button type="button" className="button button-secondary" onClick={() => markPrimary(location.id)} disabled={busy}>Make Main</button>}
           <button type="button" className="button button-secondary" onClick={() => { setPendingStatusId(location.id); setNotice(''); setError('') }} disabled={busy}>
             {location.status === 'ACTIVA' ? 'Pausar' : 'Reactivar'}
           </button>
         </div>
         {pendingStatusId === location.id && <div className="location-confirm">
           <p>{location.status === 'ACTIVA'
-            ? '¿Pausar esta ubicación? No se eliminará. En esta DEMO todavía no hay operaciones de stock o caja que revisar.'
-            : '¿Reactivar esta ubicación para seguir utilizándola?'}</p>
-          {location.isPrimary && <p>Atención: dejará de ser la ubicación principal.</p>}
+            ? 'Pause this location? It will not be removed. In this DEMO there are no stock or box operations yet to review.'
+            : 'Reactivate this location to continue using it?'}</p>
+          {location.isPrimary && <p>Attention: it will no longer be the main location.</p>}
           <div>
-            <button type="button" className="button button-secondary" onClick={() => setPendingStatusId(null)} disabled={busy}>Cancelar</button>
-            <button type="button" className="button button-primary" onClick={() => changeStatus(location)} disabled={busy}>{busy ? 'Procesando…' : 'Confirmar'}</button>
+            <button type="button" className="button button-secondary" onClick={() => setPendingStatusId(null)} disabled={busy}>Cancel</button>
+            <button type="button" className="button button-primary" onClick={() => changeStatus(location)} disabled={busy}>{busy ? 'Procesando…' : 'Confirm'}</button>
           </div>
         </div>}
       </article>)}

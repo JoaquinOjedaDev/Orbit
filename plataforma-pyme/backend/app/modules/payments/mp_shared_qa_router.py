@@ -42,7 +42,7 @@ class SharedOrderView(BaseModel):
     shared_box: bool
 
 
-@router.get("/connection", summary="Vinculación virtual de empresa a la única caja QA")
+@router.get("/connection", summary="Virtual business link to the only QA box")
 def shared_qa_connection(
     business_id: UUID, context: AuthContext = Depends(current_auth),
     db: Session = Depends(get_db),
@@ -76,7 +76,7 @@ def shared_qa_connection(
 
 
 @router.post("/orders/from-qr/{source_intent_id}", response_model=SharedOrderView,
-             status_code=201, summary="Orden QR static con bloqueo global de caja")
+             status_code=201, summary="QR static command with global box lock")
 def create_shared_order(
     business_id: UUID, source_intent_id: UUID,
     idempotency_key: UUID4 = Header(alias="Idempotency-Key"),
@@ -144,7 +144,7 @@ def cancel_shared_order(
 
 
 @router.post("/orders/{order_id}/settle-qa",
-             summary="Registrar venta QA solo después de GET acreditado")
+             summary="Register QA sale only after accredited GET")
 def settle_shared_order(
     business_id: UUID, order_id: UUID,
     context: AuthContext = Depends(current_auth),

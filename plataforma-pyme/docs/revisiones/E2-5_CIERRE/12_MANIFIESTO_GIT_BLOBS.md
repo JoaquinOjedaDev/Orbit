@@ -1,13 +1,13 @@
-# E2-5 — Manifiesto de integridad Git del paquete documental y auditoría
+# E2-5 — Git integrity statement of the documentary and audit package
 
-**Versión:** v1.2 del cierre publicado en PR #24, commit original `c66df2f8ddaa8179ca12e342bd3099348bc6b155`. Manifiesto actualizado en la fe de erratas documental `docs/e2-5-fijar-sha-auditoria`.  
-**Código funcional de referencia:** `main` `748e69319d8d04900c009d5184168a264a9deeac`.  
-**Fecha:** 09/11/2026.  
-**Carácter:** cierre interno publicado y encargo de auditoría **publicado pero todavía no ejecutado**. La fe de erratas no cambia el código E2-5.  
+**Version:** v1.2 of the closure published in PR #24, original commit `c66df2f8ddaa8179ca12e342bd3099348bc6b155`. Updated Manifesto in the Faith of Documentary Wrongs `docs/e2-5-fijar-sha-auditoria`.  
+**Functional reference code:** `main` `748e69319d8d04900c009d5184168a264a9deeac`.  
+**Date:** 09/11/2026.  
+**Character:** Internal closure published and audit commission **published but not yet executed**. The faith of erratas does not change the code E2-5.  
 
-Este manifiesto enumera OID **Git blob** (SHA del contenido Git) de los **24 archivos de evidencia, documentación e índices**. **No son hashes SHA-256 de archivos sueltos**; el anterior `12_MANIFIESTO_SHA256.txt` del ZIP v1.0 no es válido para el contenido actual. El manifiesto no se incluye a sí mismo para evitar autorreferencia.
+This manifesto lists OID **Git blob** (SHA of Git content) of the **24 files of evidence, documentation and indexes**. **They're not SHA-256 hashes from loose files.**; the previous `12_MANIFIESTO_SHA256.txt` ZIP v1.0 is not valid for the current content. The manifest does not include itself to avoid self-reference.
 
-| Archivo relativo al repositorio | Git blob OID |
+| Repository file | Git blob OID |
 |---|---|
 | `plataforma-pyme/docs/revisiones/E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md` | `b8011c7277828490d947511dbc4bb26a9e95651f` |
 | `plataforma-pyme/docs/revisiones/E2-5_AUDITORIA/01_MATRIZ_AUDITORIA_E_INVARIANTES.md` | `5636b0ead1f0fc972b61587884e0eab92c44d04b` |
@@ -34,9 +34,9 @@ Este manifiesto enumera OID **Git blob** (SHA del contenido Git) de los **24 arc
 | `plataforma-pyme/entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md` | `fab7b8eaeb0b0e8956dbab71d356a07aa7948739` |
 | `plataforma-pyme/entrega-programacion-2/README.md` | `3b2a2b140288b6f861ba746f191d2eaf3e70a99a` |
 
-## Comprobación local
+## Local check
 
-Después de obtener la rama/commit exactos:
+After obtaining the exact branch/committee:
 
 ```powershell
 git rev-parse HEAD
@@ -45,6 +45,6 @@ git hash-object -- plataforma-pyme/docs/revisiones/E2-5_CIERRE/00_LEEME.md
 git diff --name-status 748e69319d8d04900c009d5184168a264a9deeac HEAD
 ```
 
-Repetir `git hash-object -- <ruta>` para cualquier fila y comparar con el OID publicado. En un shell POSIX puede automatizarse por tabla, sin tratar estos OID como SHA-256. Comprobar también `git diff --name-only` y el SHA del commit del PR para demostrar que no se introdujo código. **Si cambia cualquier archivo de la tabla, regenerar el manifiesto en el último commit documental**. El OID propio del manifiesto se verifica al fijar el commit Git de la rama.
+Repeat `git hash-object -- <ruta>` for any row and compare to the published OID. In a POSIX shell you can automate by table, without treating these OIDs as SHA-256. Check also `git diff --name-only` and the RP commit SHA to demonstrate that no code was introduced. **If you change any table file, regenerate the manifest in the last document commit**. The manifest's OID is verified when setting the commit Git of the branch.
 
-**Seguridad:** el paquete no contiene credenciales ni claves de idempotencia reales. Los UUID QA se conservaron por aprobación explícita del responsable. La sesión asociada al token expuesto fue revocada según respuesta `POST /api/v1/auth/logout` `204` aportada por el desarrollador (no es una consulta SQL de todas las sesiones).
+**Security:** the package contains no real credentials or keys of idempotence. UUID QA were retained by explicit approval of the responsible. The session associated with the exposed token was revoked according to response `POST /api/v1/auth/logout` `204` provided by the developer (not an SQL query of all sessions).

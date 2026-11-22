@@ -107,12 +107,12 @@ class SaleService:
         # B4: el QR DEMO de QA gobierna el commit junto al enlace y los eventos.
         # El endpoint público /sales no expone estos parámetros.
         if trusted_qr_demo and trusted_mp_test:
-            raise ValueError('Dos modos QR incompatibles')
+            raise ValueError("Two incompatible QR modes")
         if (trusted_qr_demo or trusted_mp_test) and (
             commit or len(command.payments) != 1
             or command.payments[0].method != "MERCADO_PAGO_DECLARADO"
         ):
-            raise ValueError("Pago QR interno requiere transacción externa y pago único")
+            raise ValueError("Internal QR payment requires external transaction and single payment")
         digest = command.payload_digest()
         try:
             company, member = self._authorize(actor_id, session_id, business_id)

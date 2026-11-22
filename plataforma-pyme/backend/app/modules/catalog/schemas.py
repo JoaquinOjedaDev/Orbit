@@ -31,7 +31,7 @@ def clean_text(value: str, *, minimum: int, maximum: int, label: str) -> str:
 def normalized_name_key(name: str) -> str:
     key = clean_text(name, minimum=2, maximum=90, label="Nombre").casefold()
     if len(key) > 90:
-        raise ValueError("Nombre normalizado supera 90 caracteres")
+        raise ValueError("The normalized name exceeds 90 characters")
     return key
 
 
@@ -40,18 +40,18 @@ def normalized_sku(value: str | None) -> str | None:
     if value is None:
         return None
     if not isinstance(value, str):
-        raise ValueError("El SKU debe ser texto o null")
+        raise ValueError("The SKU must be text or null")
     sku = unicodedata.normalize("NFKC", value).strip().upper()
     if not sku:
         return None
     if not re.fullmatch(r"[A-Z0-9._-]{1,32}", sku):
-        raise ValueError("SKU: máximo 32 caracteres ASCII, letras, números, . _ -")
+        raise ValueError("SKU: maximum 32 ASCII characters, letters, numbers, . _ -")
     return sku
 
 
 def ensure_kind_unit(kind: str, unit: str) -> None:
     if (kind == "SERVICIO") != (unit == "SERVICIO"):
-        raise ValueError("La unidad SERVICIO es exclusiva de los artículos SERVICIO")
+        raise ValueError("The SERVICE unit is exclusive to the SERVICE articles")
 
 
 class CreateCatalogItemRequest(BaseModel):
@@ -125,7 +125,7 @@ class UpdateCatalogItemRequest(BaseModel):
     @model_validator(mode="after")
     def nonempty_no_null_required(self):
         if not self.model_fields_set:
-            raise ValueError("La edición debe tener al menos un campo")
+            raise ValueError("The edit must have at least one field")
         nullable = {"sku", "price_cents", "reference_cost_cents"}
         for field in self.model_fields_set:
             if field not in nullable and getattr(self, field) is None:

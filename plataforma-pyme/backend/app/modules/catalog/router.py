@@ -22,17 +22,17 @@ router = APIRouter(prefix="/businesses/{business_id}/catalog", tags=["catalogo"]
 
 def _as_http(error: Exception) -> HTTPException:
     if isinstance(error, (CatalogBusinessUnavailable, CatalogItemNotFound)):
-        return HTTPException(404, detail="Recurso no disponible")
+        return HTTPException(404, detail="Not available")
     if isinstance(error, CatalogPermissionDenied):
-        return HTTPException(403, detail="Operacion no permitida")
+        return HTTPException(403, detail="Operation not permitted")
     if isinstance(error, CatalogBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, CatalogConflict):
-        return HTTPException(409, detail="Nombre o SKU ya utilizado en esta empresa")
+        return HTTPException(409, detail="Name or SKU already used in this company")
     if isinstance(error, CatalogHistoricalChange):
-        return HTTPException(409, detail="Tipo o unidad protegidos por compras o stock historico")
+        return HTTPException(409, detail="Type or unit protected by purchases or historical stock")
     if isinstance(error, CatalogInvalidChange):
-        return HTTPException(422, detail="Tipo y unidad incompatibles")
+        return HTTPException(422, detail="Type and unit incompatible")
     raise TypeError("Excepción sin mapeo HTTP")
 
 
@@ -44,7 +44,7 @@ def _as_http(error: Exception) -> HTTPException:
         404: {"description": "Empresa inexistente o ajena"},
         422: {"description": "Paginación inválida"},
     },
-    summary="Listar catálogo propio, incluidas fichas inactivas, con paginación",
+    summary="List your own catalogue, including inactive tabs, with pagination",
 )
 def list_catalog(
     business_id: UUID, offset: int = Query(0, ge=0, le=9_223_372_036_854_775_807),
@@ -70,7 +70,7 @@ def list_catalog(
         403: {"description": "Sin permiso de lectura"},
         404: {"description": "Artículo fuera del tenant o inexistente"},
     },
-    summary="Consultar artículo por UUID y empresa",
+    summary="Consult article by UUID and company",
 )
 def get_catalog_item(
     business_id: UUID, item_id: UUID,
@@ -98,7 +98,7 @@ def get_catalog_item(
         409: {"description": "Nombre/SKU duplicado o empresa suspendida"},
         422: {"description": "Valores inválidos o campos protegidos"},
     },
-    summary="Crear bien, insumo o servicio sin stock ni ventas",
+    summary="Create good, input or service without stock or sales",
 )
 def create_catalog_item(
     business_id: UUID, command: CreateCatalogItemRequest,
@@ -127,7 +127,7 @@ def create_catalog_item(
         409: {"description": "Nombre/SKU duplicado o empresa suspendida"},
         422: {"description": "Edición inválida"},
     },
-    summary="Modificar datos de una ficha sin alterar tenant ni estado",
+    summary="Modify data from a tab without altering tenant or status",
 )
 def update_catalog_item(
     business_id: UUID, item_id: UUID, command: UpdateCatalogItemRequest,
@@ -157,7 +157,7 @@ def update_catalog_item(
         409: {"description": "Empresa suspendida"},
         422: {"description": "Estado inválido o campos protegidos"},
     },
-    summary="Desactivar/reactivar ficha sin eliminarla ni liberar nombre o SKU",
+    summary="Disable/reactivate tab without deleting it or releasing name or SKU",
 )
 def change_catalog_status(
     business_id: UUID, item_id: UUID, command: ChangeCatalogStatusRequest,

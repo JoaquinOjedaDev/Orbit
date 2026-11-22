@@ -1,80 +1,80 @@
-# E2-7 · T08-4 — Stock inicial, conteo físico y ajustes versionados REALES
+# E2-7 · T08-4 — Initial stock, physical count and real versional adjustments
 
-**Fecha:** 10/11/2026. **Estado actualizado tras T08-5:** implementación frontend terminada, aceptación manual principal en UI REAL **APROBADA** y suites PostgreSQL/Playwright de integración **APROBADAS** en CI. La evidencia manual no es inspección SQL independiente. Rama: `feature/e2-7-t08-inventario-real`; PR #41 sigue en borrador, **sin merge a main**.
+**Date:** 10/11/2026. **Updated status after T08-5:** end frontend implementation, main manual acceptance in REAL IU **Adopted** and PostgreSQL/Playwright Integration Suites **Adopted** in IC. Manual evidence is not independent SQL inspection. Branch: `feature/e2-7-t08-inventario-real`; PR #41 is still in draft, **sin merge a main**.
 
-## 1. Contrato y reglas reales de FastAPI
+## 1. FastAPI contract and real rules
 
-Revisión directa de `backend/app/modules/purchases/{adjustment_router.py,adjustment_schemas.py,adjustment_service.py}`, tests `test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py` de E2-5 C:
+Direct review of `backend/app/modules/purchases/{adjustment_router.py,adjustment_schemas.py,adjustment_service.py}`, tests `test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py` de E2-5 C:
 
-- `POST /api/v1/businesses/{business_id}/inventory/adjustments`, header `Authorization: Bearer <opaco>` y `Idempotency-Key: <UUID4>`; creación **201**, replay de clave y cuerpo idénticos **200**. No hay reintentos HTTP automáticos.
-- Cuerpo JSON **exactamente** `{kind, catalog_item_id, location_id, quantity_milli, expected_version, reason}`. `kind` = `STOCK_INICIAL`, `AJUSTE_ENTRADA` o `AJUSTE_SALIDA`. Cantidad positiva entera en milésimas 1..999999999, motivo normalizado de 3–500 caracteres, versión >= 0.
-- `GET /api/v1/businesses/{business_id}/inventory/adjustments/{adjustment_id}` consulta histórica **sin mutar stock**.
-- **STOCK_INICIAL** solo para titular/admin, saldo **no existente**, sin historial de movimientos en la sede+artículo, `expected_version=0`, saldo inicial positivo, nueva proyección con versión 1. No habilitar inicialización repetida, ni siquiera tras saldo histórico cero.
-- **AJUSTE_ENTRADA/SALIDA** solo si ya existe saldo: exige su versión positiva exacta; un `expected_version` obsoleto (por traslado, compra, venta u otro ajuste) produce **409** y la API NO altera saldo ni ledger. Salida exige cantidad <= saldo existente.
-- **CONTEO FÍSICO** es solo una comodidad frontend: el usuario introduce **saldo final** (hasta 999999999999999 milésimas); la interfaz calcula diferencia `contado − saldo consultado`, construye `AJUSTE_ENTRADA` o `AJUSTE_SALIDA` con delta positivo y `expected_version` leído. Si diferencia = 0, **no envía POST**. Si la diferencia es mayor que 999999999 milésimas, se rechaza por exceder el máximo de una operación individual: no se trunca ni redondea. Un saldo final contado de cero está permitido en conteo, no en stock inicial.
-- Roles: titular y administrador pueden inicializar y ajustar; encargado puede ajustar si cuenta con asignación STORE activa a la sede; trabajador no puede ajustar ni inicializar. Ubicación activa con `can_store=true`, negocio y membresía activos, artículo `BIEN` y `ACTIVO`. Toda autorización real pertenece al backend.
-- Respuesta contiene exactamente **un movimiento firmado**, con tipo de operación, actor y UUID de operación consistente con el comprobante. No inventar facturas ni cambiar precios del catálogo.
+- `POST /api/v1/businesses/{business_id}/inventory/adjustments`, header `Authorization: Bearer <opaco>` y `Idempotency-Key: <UUID4>`; creation **201**identical key and body replay **200**. No automatic HTTP retryings.
+- JSON Corps **exactly.** `{kind, catalog_item_id, location_id, quantity_milli, expected_version, reason}`. `kind` = `STOCK_INICIAL`, `AJUSTE_ENTRADA` o `AJUSTE_SALIDA`. Whole positive quantity in thousandths 1.999999999, standard motif of 3–500 characters, version >= 0.
+- `GET /api/v1/businesses/{business_id}/inventory/adjustments/{adjustment_id}` historical consultation **sin mutar stock**.
+- **STOCK_INICIAL** only for holder/admin, balance **non-existent**, without history of movements at the headquarters+article, `expected_version=0`, positive starting balance, new projection with version 1. Do not enable repeated initialization, even after zero historical balance.
+- **ADJUSTMENT_INTERPRISE/SALIDE** only if there is already a balance: it requires its exact positive version; a `expected_version` obsolete (by shipment, purchase, sale or other adjustment) produces **409** and API does NOT alter balance or leadger. Output requires quantity $$$ existing balance.
+- **PHYSICAL CONTEE** is just a frontend comfort: user introduces **final balance** (up to 999999999999000ths); interface calculates difference `contado − saldo consultado`, build `AJUSTE_ENTRADA` o `AJUSTE_SALIDA` with positive delta and `expected_version` read. If difference = 0, **does not send POST**. If the difference is greater than 999999999 thousandths, it is rejected for exceeding the maximum of an individual transaction: it is not truncated or rounded. A final balance counted from zero is allowed in counting, not in initial stock.
+- Roles: holder and administrator can initialize and adjust; maintainer can adjust if you have an active STORE assignment to the headquarters; worker cannot adjust or initialize. `can_store=true`active business and membership, article `BIEN` y `ACTIVO`. All actual authorization belongs to the backend.
+- Answer contains exactly **a signed movement**, with type of operation, actor and UUID operation consistent with the voucher. Do not invent invoices or change catalog prices.
 
-## 2. Arquitectura y cambios en frontend
+## 2. Architecture and Frontend changes
 
-- `features/inventory/realAdjustmentGateway.ts`: validación estricta y conversiones milésimas, roles visibles, interpretación de conteo y parsing del único movimiento coherente. Distinción entre HTTP 409, respuesta GET inválida y respuesta POST 201 inválida (potencial confirmación).
-- `features/inventory/adjustmentPendingJournal.ts`: registro IndexedDB por `actorId:businessId:inventory.adjustment`. Guarda clave UUID4, cuerpo exacto, versión, fecha, scope; **sin token ni contraseñas**, pero datos operativos **sin cifrar**. Reserva transaccional previa al POST, verificación tras lectura, scope aislado y prohibición de reemplazar el cuerpo/clave. Si falla IndexedDB, se bloquea la mutación. No borra automáticamente intentos de resultado incierto.
-- `features/inventory/RealAdjustmentPanel.tsx`: interfaz contextual con artículo físico, sede apta, modalidad **conteo físico / ajuste entrada / ajuste salida / stock inicial**, lectura API específica del saldo y versión, vista previa de delta y saldo proyectado, motivo, consentimiento, confirmación humana, mensajes de errores y comprobante con ID. Recuperación en F5 sin reenviar automáticamente. Una operación fallida por 409 **no** se recalcula automáticamente contra la versión nueva.
-- `features/inventory/RealInventoryPage.tsx`: botón independiente **Stock inicial y ajustes** junto a transferencias; las dos operaciones no se montan simultáneamente. Al confirmar se vuelven a consultar saldos y movimientos a FastAPI. El DEMO y sus `demoStore` permanecen intactos.
-- `features/auth/auth.css`: tarjetas responsive del saldo observado, delta y saldo esperado.
+- `features/inventory/realAdjustmentGateway.ts`: strict validation and thousandth conversions, visible roles, counting interpretation and parsing of the only coherent movement. Distinction between HTTP 409, invalid GET response and invalid POST 201 response (potential confirmation).
+- `features/inventory/adjustmentPendingJournal.ts`: IndexedDB registry by `actorId:businessId:inventory.adjustment`. UUID4 key save, exact body, version, date, scope; **no token or password**, but operational data **unencrypted**. Pre- POST transactional reservation, verification after reading, isolated scope and prohibition of replacing body/key. If IndexedDB fails, the mutation is blocked. It does not automatically erase attempts of uncertain result.
+- `features/inventory/RealAdjustmentPanel.tsx`: contextual interface with physical article, suitable venue, modality **physical count/set input/tightness output/start stock**, reading API specific balance and version, preview delta and projected balance, reason, consent, human confirmation, error messages and ID voucher. Recovery in F5 without forwarding automatically. An operation failed by 409 **no** is automatically recalculated against the new version.
+- `features/inventory/RealInventoryPage.tsx`: independent button **Stock inicial y ajustes** The two operations are not mounted simultaneously. When confirming, balances and movements are re-checked to FastAPI. DEMO and its `demoStore` remain intact.
+- `features/auth/auth.css`: cards responsible for the balance observed, delta and expected balance.
 - `tests/adjustment-real-api.test.mjs`, `package.json` (`npm run test:adjustment-real`), GitHub Actions frontend CI.
 
-**Privacidad:** los datos persistentes de la intención no están cifrados ni se sincronizan entre navegadores. No realizar estas pruebas desde equipos compartidos.
+**Privacy:** persistent intent data are not encrypted or synchronized between browsers. Do not perform these tests from shared computers.
 
-## 3. Evidencia automática
+## 3. Automatic evidence
 
-GitHub Actions en rama T08 con el nuevo script `test:adjustment-real` (verificar último run del commit de código, no confundir CI anteriores):
-- Frontend, build y lint: **220/220 pruebas de las suites frontend**, incluidas **15/15 del ajuste**, **14/14 transferencias** y **26/26 inventario**; lint **0 errores, 0 advertencias**.
-- Tests nuevos cubren `201`, replay `200`, GET histórico, UUID4, cantidad exacta, rol, balance inicial v0, ajustes v1+, conteo con diferencia (+,−,cero), HTTP 401/403/404/409/422, firma de movimiento, tenant, respuesta malformada, falla de red incierta, F5 con clave/cuerpo y versión originales, fallo y corrupción de IndexedDB.
-- El backend **ya** tiene pruebas de PostgreSQL específicas de ajustes y concurrencia (`test_adjustment_api_integration.py`, `test_adjustment_concurrency_integration.py`), que no deben confundirse con las nuevas pruebas unitarias de frontend.
-- Aviso Vite por chunk JS >500 kB continúa visible; es un aviso de rendimiento, no un fallo de build.
-- Se encontró y corrigió una divergencia entre el límite de **saldo acumulado** y el de **delta individual**; el conteo final puede superar el máximo de un único ajuste mientras el delta cumpla su tope, conforme a `StockBalance.MAX_BALANCE_MILLI`. Hay prueba específica del saldo grande.
+GitHub Actions in T08 branch with new script `test:adjustment-real` (check last command of code, do not confuse previous ICs):
+- Frontend, build y lint: **220/220 Frontend Suites Trials**including **15/15 del ajuste**, **14/14 transfers** y **26/26 inventory**; lint **0 errors, 0 warnings**.
+- New tests cover `201`, replay `200`, Historical GET, UUID4, exact amount, role, initial balance v0, v1+ settings, count with difference (+,−, zero), HTTP 401/403/404/409/422, motion signature, tenant, malformed response, uncertain network failure, F5 with key/body and original version, failed and indexedDB corruption.
+- El backend **ya** has postgreSQL testing specific adjustments and continuance (`test_adjustment_api_integration.py`, `test_adjustment_concurrency_integration.py`), which should not be confused with new unitary frontend tests.
+- Vite Notice by chunk JS >500 kB remains visible; it is a performance warning, not a build failure.
+- A divergence between the limit of **accumulated balance** y el de **individual delta**; the final count may exceed a single setting as long as the delta meets its cap, according to `StockBalance.MAX_BALANCE_MILLI`. There is specific proof of the large balance.
 
-## 4. QA manual recomendado — minimizar alteración de los datos existentes
+## 4. Recommended manual QA — minimize alteration of existing data
 
-**Punto de partida documentado:** Producto A TEST en TEST Empresa A, Sede A TEST **7 UNIDAD** y Sede A TEST 2 **4 UNIDAD** luego de las transferencias T08-3; no utilizar este artículo para las primeras pruebas T08-4. Los saldos solo representan un estado observado el 10/11; releer la API antes de toda operación.
+**Documented starting point:** Product A TEST in TEST Company A, Headquarters A TEST **7 UNITY** and Headquarters A TEST 2 **4 UNITY** After transfers T08-3; do not use this article for the first tests T08-4. Balances represent only a statement observed on 10/11; reread API before any operation.
 
-1. Actualizar la rama y ejecutar tests locales: `npm.cmd run test:adjustment-real`, `npm.cmd run test:inventory-real`, `npm.cmd run test:transfer-real`, `npm.cmd run build` y `npm.cmd run lint`. Levantar Docker y Vite mediante el proxy `PYME_API_PROXY_TARGET=http://127.0.0.1:18000`.
-2. Con usuario **titular de TEST Empresa A**, en Catálogo REAL crear artículo físico nuevo de prueba **«Producto T08-4 CONTEO»**, de tipo REVENTA y unidad UNIDAD, SKU único. Elegir ubicación activa apta para stock (p.ej. **Sede A TEST 2**), verificando primero que para ese artículo **no hay saldo**.
-3. Inventario REAL → **Stock inicial y ajustes**. Seleccionar artículo nuevo, ubicación, tipo **STOCK_INICIAL**, cantidad `5`, motivo `Conteo inicial de prueba T08-4`, aceptar almacenamiento, confirmar **una sola vez**. Esperado: comprobante `STOCK_INICIAL +5`, stock **5 UNIDAD**, versión **1**, y un movimiento de ledger. Si la API rechaza (p.ej. 409) **no inventar otra operación**; verificar estado/registro.
-4. Volver a abrir, seleccionar el mismo artículo y sede: **AJUSTE_ENTRADA**, cantidad `2`, motivo `Reposición por conteo de prueba`. Esperado saldo **7 UNIDAD**, versión **2**, movimiento `+2`.
-5. Abrir **CONTEO FÍSICO** con saldo consultado 7. Ingresar saldo contado `6`. Debe mostrar **delta −1** y proyección **6**. Confirmar una vez; esperado saldo **6 UNIDAD**, versión **3**, movimiento `AJUSTE_SALIDA −1`.
-6. Verificar que conteo `6` sobre saldo 6 muestre que no hay diferencia y **no** habilite POST. Cambiar de sede/artículo y verificar que la versión se vuelva a consultar; no reutilizar un `expected_version` obsoleto.
-7. Intentar inicializar de nuevo un artículo con saldo existente: debe bloquearse en formulario, y en backend un POST directo similar devolvería **409**. No es necesario enviar una operación insegura para demostrar esta condición si hay test de backend.
-8. **QA de concurrencia (opcional, controlado, T08-5):** dos sesiones leyendo misma versión; una hace ajuste autorizado y la otra intenta comando con la versión anterior: **409**, sin modificar saldo. Revisar ledger, recuperar/descartar identidad anterior luego de verificar; no crear clave nueva automáticamente.
-9. **Permisos:** con Miguel como **TRABAJADOR**, el formulario debe informar solo lectura; con encargado asignado, se permiten ajustes pero no stock inicial. El backend debe revalidar, no crear asignaciones artificiales.
-10. **Aislamiento:** Empresa B no debe ver el artículo/movimientos/saldos de A. DEMO sigue con datos propios. No reiniciar/eliminar volúmenes de PostgreSQL.
+1. Update the branch and run local tests: `npm.cmd run test:adjustment-real`, `npm.cmd run test:inventory-real`, `npm.cmd run test:transfer-real`, `npm.cmd run build` y `npm.cmd run lint`. Lift Docker and Vite by proxy `PYME_API_PROXY_TARGET=http://127.0.0.1:18000`.
+2. With user **TEST holder Company A**, in REAL Catalog create new physical test article **‘Product T08-4 CONTEO’**, of type REVENT and unit UNITY, unique SKU. Choose active location suitable for stock (e.g. **Headquarters A TEST 2**), checking first that for that article **no balance**.
+3. REAL Inventory → **Stock inicial y ajustes**. Select new article, location, type **STOCK_INICIAL**, quantity `5`, motive `Conteo inicial de prueba T08-4`, accept storage, confirm **once only**. Expected: proof `STOCK_INICIAL +5`, stock **5 UNITY**version **1**, and a leader move. If API rejects (e.g. 409) **not invent another operation**; verify status/registration.
+4. Reopen, select the same article and host: **_INTERPRISE**, quantity `2`, motive `Reposición por conteo de prueba`. Expected balance **7 UNITY**version **2**, movement `+2`.
+5. Open **PHYSICAL CONTEE** 7. Enter counted balance `6`You must show **delta −1** and projection **6**. Confirm once; expected balance **6 UNITY**version **3**, movement `AJUSTE_SALIDA −1`.
+6. Verify what count `6` over balance 6 show that there is no difference and **no** enable POST. Change the location/article and check that the version is re-read; do not reuse a `expected_version` obsolete.
+7. Try to initialize an existing item again: it must be blocked in form, and a similar direct POST backend would return **409**. You do not need to send an unsafe operation to prove this condition if there is backend test.
+8. **QA of continuance (optional, controlled, T08-5):** two sessions reading the same version; one makes an authorized setting and the other tries to command with the previous version: **409**, without changing balance. Review leader, recover/discard previous identity after checking; do not create new key automatically.
+9. **Permissions:** with Miguel as **STAFF MEMBER**, the form should report read only; with assigned maintainer, settings are allowed but no initial stock. The backend must revalidate, not create artificial assignments.
+10. **Insulation:** Company B must not view the article/movements/balances of A. DEMO continues with own data. Do not restart/delete PostgreSQL volumes.
 
-## 5. Riesgos y criterios de cierre
+## 5. Risks and closure criteria
 
-- **Concurrencia:** lectura previa no reserva inventario. El backend compara `expected_version` y bloquea operaciones obsoletas en transacción. Ante **409** se conserva el intento y se orienta a consultar saldos e historial antes de descartar o reintentar **la misma** intención. Para cambiar versión es obligatorio resolver la intención anterior y preparar un **nuevo** comando explícito.
-- **Pérdida de respuesta:** aun con HTTP 201 inválido puede haberse confirmado. No hacer reintentos automáticos ni inventar éxito; el registro durable conserva el mismo UUID4.
-- **Registro histórico:** no permitir `STOCK_INICIAL` sobre ubicación+artículo con movimientos anteriores, aunque el saldo histórico sea cero. No usar suma de compras en el navegador.
-- **Datos demo:** no mezclar. **T08-4 quedará funcionalmente aprobado** solo tras las capturas de stock inicial, ajuste positivo/negativo, conservación del historial y control de permisos/tenant o sus evidencias de QA documentadas.
+- **Concurrence:** previous reading does not reserve inventory. Backend compares `expected_version` and blocks obsolete transactions in transaction. **409** the attempt is retained and is oriented to consult balances and history before discarding or retrying **same** intention. To change version it is mandatory to resolve the previous intention and prepare a **new** explicit command.
+- **Loss of response:** Even with HTTP 201 invalid, it may have been confirmed. Do not make automatic retry or invent success; the durable record retains UUID4 itself.
+- **Historical record:** not allow `STOCK_INICIAL` about location+article with previous moves, even if the historical balance is zero. Do not use purchase sum in browser.
+- **Demo data:** Don't mix. **T08-4 will be functionally approved** only after initial stock catches, positive/negative adjustment, record preservation and permit/tenant control or documented QA evidence.
 
-**Estado de cierre histórico:** al redactar este plan faltaba QA manual REAL; **esa pendiente se resolvió el 10/11/2026** y está respaldada a continuación y en [T08-5](E2-7_T08_5_QA_INTEGRAL_Y_CIERRE.md). PR #41 aún no se fusiona.
+**Historical closure state:** In drafting this plan, there was a lack of REAL manual QA; **that pending was resolved on 11/10/2026** and is then supported in [T08-5](E2-7_T08_5_QA_INTEGRAL_Y_CIERRE.md)PR #41 is not yet merged.
 
-## 6. Acta retrospectiva de QA manual T08-4 — resultado final (10/11/2026)
+## 6. Manual QA T08-4 retrospective report — final result (10/11/2026)
 
-**Fuente:** capturas y confirmaciones del usuario sobre la interfaz de Inventario REAL conectada a FastAPI. Esta sección registra lo observado, sin afirmar consultas SQL ni capturas de tráfico HTTP independientes. **Sede efectivamente utilizada: Sede A TEST**, no Sede A TEST 2 como sugería a modo de ejemplo el plan anterior. Artículo: **Producto T08-4 CONTEO**, SKU `TEST-T084-001`, unidad UNIDAD, en **TEST Empresa A**.
+**Source:** captures and user confirmations about the REAL Inventory interface connected to FastAPI. This section records what is observed, without asserting SQL queries or separate HTTP traffic captures. **Headquarters actually used: Headquarters A TEST**See A TEST 2 as suggested by the previous plan. Article: **Product T08-4 CONTEO**, SKU `TEST-T084-001`, unit UNITY, in **TEST Company A**.
 
-| Control | Evidencia manual observada | Resultado |
+| Ctrl | Manual evidence observed | Outcome |
 |---|---|---|
-| Carga inicial | Sin saldo previo, `expected_version=0`; registro `STOCK_INICIAL +5` | Aprobado; 5 UNIDAD / versión 1 |
-| Ajuste de entrada | Sobre 5/v1, `AJUSTE_ENTRADA +2` | Aprobado; 7 UNIDAD / versión 2 |
-| Conteo físico | Saldo leído 7/v2, saldo contado 6; delta `AJUSTE_SALIDA -1` | Aprobado; 6 UNIDAD / versión 3 |
-| Ledger | En artículo/sede aparecen `+5, +2, -1` | Aprobado visualmente, total 6 |
-| Conteo sin diferencia | Conteo 6 con saldo actual 6/v3 | Aprobado: mensaje de coincidencia y botón de confirmar deshabilitado |
-| Inicialización repetida | Mismo artículo y sede con 6/v3, cantidad propuesta, motivo y aceptación completos | Aprobado: operación inicial bloqueada por stock previo |
-| Rol trabajador | Miguel ve aviso de solo lectura y no obtiene formulario de ajustes | Aprobado en UI |
-| Separación de empresas | TEST Empresa B no muestra saldos ni movimientos de A | Aprobado visualmente |
-| Regresión DEMO | DEMO muestra empresas y artículos propios, sin mezclarse con datos TEST | Aprobado visualmente |
+| Initial Load | No prior balance, `expected_version=0`; registration `STOCK_INICIAL +5` | Approved; 5 UNIT / version 1 |
+| Input adjustment | Envelope 5/v1, `AJUSTE_ENTRADA +2` | Approved; 7 UNIT / version 2 |
+| Physical count | Balance read 7/v2, balance counted 6; delta `AJUSTE_SALIDA -1` | Approved; 6 UNIT / version 3 |
+| Ledger | Article/headquarters appear `+5, +2, -1` | Visually approved, total 6 |
+| Counting without difference | Count 6 with current balance 6/v3 | Approved: Match message and confirm button disabled |
+| Repeated initialization | Same article and headquarters with 6/v3, proposed quantity, reason and acceptance complete | Approved: initial operation blocked by pre-stock |
+| Workers' role | Miguel sees read-only notice and does not get adjustment form | Approved in IU |
+| Separation of undertakings | TEST Company B shows no balances or movements of A | Visually Approved |
+| DEMO regression | DEMO shows companies and own items, not mixed with TEST data | Visually Approved |
 
-**Pendientes que NO deben confundirse con pruebas manuales realizadas:** no se verificó manualmente una colisión de dos sesiones con `expected_version` obsoleta; tampoco un rechazo directo al backend de encargado que intenta inicializar stock. Ambos comportamientos se validaron en PostgreSQL aislado, y el 409 se probó también con Playwright REAL.
+**Earrings that should NOT be confused with manual tests carried out:** no two-session collision with `expected_version` The two behaviors were validated in isolated PostgreSQL, and the 409 was also tested with Playwright REAL.
 
-**CI de cierre:** run #42896686337, 879/879 backend, 256/256 frontend, 4/4 Playwright REAL y 6/6 Playwright DEMO, sin fallos. No repetir los movimientos sobre el artículo TEST para reconstruir pruebas. **T08-4 queda funcionalmente aprobado**; el merge requiere autorización posterior del usuario.
+**Closing CI:** run #42896686337, 879/879 backend, 256/256 frontend, 4/4 Playwright REAL and 6/6 Playwright DEMO, no flaws. Do not repeat movements on the TEST article to rebuild tests. **T08-4 functionally approved**; the merge requires further authorization from the user.

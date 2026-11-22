@@ -36,17 +36,17 @@ export function PurchaseDetailDialog({
     setNotice('')
     try {
       await demoGateway.receivePurchase(business.id, purchase.id, locationId)
-      setNotice('Recepción DEMO confirmada una única vez. La compra y los movimientos quedaron guardados.')
+      setNotice('DEMO reception confirmed once. Purchase and movements were saved.')
       setConfirming(false)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No fue posible confirmar la recepción.')
+      setError(err instanceof Error ? err.message : 'It was not possible to confirm the reception.')
     } finally {
       setBusy(false)
     }
   }
 
   const locationName = purchase.receipt
-    ? locations.find((location) => location.id === purchase.receipt?.locationId)?.name ?? 'Ubicación conservada en el historial'
+    ? locations.find((location) => location.id === purchase.receipt?.locationId)?.name ?? 'Location retained in history'
     : null
 
   return <dialog
@@ -58,24 +58,24 @@ export function PurchaseDetailDialog({
   >
     <div className="catalog-detail-body">
       <div className="catalog-detail-topline">
-        <p className="eyebrow">COMPRA REGISTRADA · DEMO</p>
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Cerrar detalle de compra"><Icon name="close" size={20}/></button>
+        <p className="eyebrow">BUY REGISTRADA · DEMO</p>
+        <button type="button" className="icon-button" onClick={onClose} aria-label="Close purchase detail"><Icon name="close" size={20}/></button>
       </div>
       <header className="purchase-detail-head">
         <div>
-          <div className="purchase-title-line"><h2 id="purchase-detail-title">Detalle de compra</h2><span className="catalog-state is-active">Registrada</span></div>
-          <p>{new Date(purchase.purchasedOn + 'T12:00:00').toLocaleDateString('es-AR')} · {purchase.supplierNameSnapshot || 'Sin proveedor asignado'}</p>
-          <p className="purchase-detail-reference">{purchase.reference ? 'Comprobante: ' + purchase.reference : 'Sin número de comprobante'}</p>
+          <div className="purchase-title-line"><h2 id="purchase-detail-title">Purchase details</h2><span className="catalog-state is-active">Registrada</span></div>
+          <p>{new Date(purchase.purchasedOn + 'T12:00:00').toLocaleDateString('es-AR')} · {purchase.supplierNameSnapshot || 'No assigned provider'}</p>
+          <p className="purchase-detail-reference">{purchase.reference ? 'Comprobante: ' + purchase.reference : 'No voucher number'}</p>
         </div>
         <span className="purchase-detail-total">{moneyDisplay(purchase.totalCents)}</span>
       </header>
       <section className="purchase-detail-section">
-        <h3><Icon name="receipt" size={18}/> Renglones guardados</h3>
+        <h3><Icon name="receipt" size={18}/> Lines saved</h3>
         <div className="purchase-table-wrap">
           <table className="purchase-table">
-            <thead><tr><th>Concepto</th><th>Cantidad</th><th>Costo unit.</th><th>Subtotal</th></tr></thead>
+            <thead><tr><th>Concepto</th><th>Quantity</th><th>Costo unit.</th><th>Subtotal</th></tr></thead>
             <tbody>{purchase.lines.map((line) => <tr key={line.id}>
-              <td><strong>{line.description}</strong><small>{line.kind === 'BIEN' ? 'Bien físico del catálogo' : line.kind === 'SERVICIO' ? 'Servicio sin stock' : 'Concepto libre'}{line.sku && ' · SKU ' + line.sku}</small></td>
+              <td><strong>{line.description}</strong><small>{line.kind === 'BIEN' ? 'Physically good catalog' : line.kind === 'SERVICIO' ? 'Servicio sin stock' : 'Concepto libre'}{line.sku && ' · SKU ' + line.sku}</small></td>
               <td>{quantityText(line.quantityMilli, line.unit)}</td>
               <td>{moneyDisplay(line.unitCostCents)}</td>
               <td>{moneyDisplay(line.totalCents)}</td>
@@ -83,43 +83,43 @@ export function PurchaseDetailDialog({
           </table>
         </div>
         {purchase.notes && <div className="purchase-notes"><strong>Observaciones</strong><p>{purchase.notes}</p></div>}
-        <p className="purchase-detail-muted">Los importes, conceptos y el nombre del proveedor son una foto histórica: no cambian al editar luego Catálogo o Proveedores. Registrar esta compra no representa un pago.</p>
+        <p className="purchase-detail-muted">The amounts, concepts and the name of the supplier are a historical photo: they do not change when editing later Catalog or Suppliers. Registering this purchase does not represent a payment.</p>
       </section>
 
       <section className="purchase-detail-section">
-        <h3><Icon name="boxes" size={18}/> Paso 2 · Ubicación y recepción de mercadería</h3>
+        <h3><Icon name="boxes" size={18}/> Step 2 · Location and receipt of goods</h3>
         {purchase.receipt ? <>
-          <div className="purchase-received-banner"><Icon name="shield" size={20}/><span>Recepción confirmada · {locationName} · {new Date(purchase.receipt.createdAt).toLocaleString('es-AR')}</span></div>
+          <div className="purchase-received-banner"><Icon name="shield" size={20}/><span>Receipt confirmed · {locationName} · {new Date(purchase.receipt.createdAt).toLocaleString('es-AR')}</span></div>
           <div className="purchase-received-lines">{purchase.receipt.movements.map((movement) => {
             const line = purchase.lines.find((entry) => entry.id === movement.purchaseLineId)
-            return <div key={movement.id}><span>{line?.description ?? 'Artículo del catálogo'}</span><strong>+ {quantityText(movement.quantityMilli, movement.unit)}</strong></div>
+            return <div key={movement.id}><span>{line?.description ?? 'Catalogue Article'}</span><strong>+ {quantityText(movement.quantityMilli, movement.unit)}</strong></div>
           })}</div>
-          <p className="purchase-detail-muted">Recepción única para esta compra. Volver a consultar o reintentar no duplica los movimientos. Estos eventos alimentarán el Inventario por ubicación.</p>
-        </> : physical.length === 0 ? <p className="purchase-detail-muted">Esta compra contiene sólo servicios o conceptos libres. No hay bienes físicos del Catálogo para ingresar al inventario.</p>
+          <p className="purchase-detail-muted">Unique reception for this purchase. Re-inquire or retry does not duplicate movements. These events will feed the Inventory by location.</p>
+        </> : physical.length === 0 ? <p className="purchase-detail-muted">This purchase contains only services or free concepts. There are no physical goods from the Catalogue to enter the inventory.</p>
           : <>
-            <p className="purchase-location-pending"><Icon name="clock" size={17}/><span><strong>Compra guardada · ubicación por confirmar.</strong> Los artículos todavía no ingresaron al Inventario. Elegí a continuación dónde se recibieron y confirmá su ingreso.</span></p>
-            <p className="purchase-detail-muted">Se recibirán {physical.length} {physical.length === 1 ? 'renglón físico' : 'renglones físicos'} en una única ubicación. Los servicios y los conceptos libres no ingresan a stock. No se realizan conversiones de cajas, paquetes, kilos u otras unidades.</p>
+            <p className="purchase-location-pending"><Icon name="clock" size={17}/><span><strong>Saved purchase · location to be confirmed.</strong> The articles have not yet entered the Inventory. I chose where they were received and confirmed their entry.</span></p>
+            <p className="purchase-detail-muted">Received {physical.length} {physical.length === 1 ? 'physical line' : 'physical lines'} Free services and concepts do not enter stock. No conversions of boxes, packages, kilos or other units are made.</p>
             {availableLocations.length === 0 ? <div className="purchase-warning">
-              Para recibir necesitás una ubicación <strong>activa</strong> que tenga habilitada la capacidad «Puede almacenar». Creala o editala en <strong>Ubicaciones</strong>.
+              To receive a location you need <strong>activa</strong> that has the capacity "Can store" enabled. Create or edit it in <strong>Locations</strong>.
             </div> : <>
               <div className="purchase-receipt-preview">
                 {physical.map((line) => <div key={line.id}><span>{line.description}</span><strong>+ {quantityText(line.quantityMilli, line.unit)}</strong></div>)}
               </div>
-              <label className="form-field purchase-location-select"><span>Ubicación de recepción (pendiente de confirmar) *</span>
+              <label className="form-field purchase-location-select"><span>Reception location (to be confirmed) *</span>
                 <select value={locationId} onChange={(event) => { setLocationId(event.target.value); setConfirming(false) }}>
-                  <option value="">Seleccionar ubicación activa con almacenamiento…</option>
+                  <option value="">Select active location with storage...</option>
                   {availableLocations.map((location) => <option key={location.id} value={location.id}>{location.name} · {location.kind}</option>)}
                 </select>
               </label>
               {!confirming && <button type="button" className="button button-primary" disabled={!locationId || busy} onClick={() => setConfirming(true)}>
-                <Icon name="truck" size={17}/> Revisar ubicación y mercadería
+                <Icon name="truck" size={17}/> Check location and merchandise
               </button>}
               {confirming && <div className="purchase-confirm-receipt">
-                <strong>Confirmación de ingreso</strong>
-                <p>Se registrarán {physical.length} {physical.length === 1 ? 'entrada' : 'entradas'} en «{availableLocations.find((location) => location.id === locationId)?.name}». Esta operación no se puede editar ni repetir; las recepciones parciales se incorporarán en otro incremento.</p>
+                <strong>Confirmation of entry</strong>
+                <p>To be registered {physical.length} {physical.length === 1 ? 'entrada' : 'entradas'} en «{availableLocations.find((location) => location.id === locationId)?.name}». This operation cannot be edited or repeated; partial receptions will be incorporated in another increment.</p>
                 <div>
-                  <button type="button" className="button button-secondary" disabled={busy} onClick={() => setConfirming(false)}>Volver</button>
-                  <button type="button" className="button button-primary" disabled={busy || !locationId} onClick={receive}>{busy ? 'Confirmando…' : 'Confirmar ubicación e ingresar a Inventario'}</button>
+                  <button type="button" className="button button-secondary" disabled={busy} onClick={() => setConfirming(false)}>Back</button>
+                  <button type="button" className="button button-primary" disabled={busy || !locationId} onClick={receive}>{busy ? 'Confirmando…' : 'Confirm location and enter Inventory'}</button>
                 </div>
               </div>}
             </>}
@@ -128,8 +128,8 @@ export function PurchaseDetailDialog({
         {error && <p className="form-message error purchase-inline-feedback" role="alert">{error}</p>}
       </section>
       <footer className="catalog-detail-footer">
-        <div className="catalog-detail-dates"><span>Empresa: {business.name}</span><span>Registrada en DEMO: {new Date(purchase.createdAt).toLocaleString('es-AR')}</span></div>
-        <button type="button" className="button button-secondary" disabled={busy} onClick={onClose}>Cerrar detalle</button>
+        <div className="catalog-detail-dates"><span>Empresa: {business.name}</span><span>Registered in DEMO: {new Date(purchase.createdAt).toLocaleString('es-AR')}</span></div>
+        <button type="button" className="button button-secondary" disabled={busy} onClick={onClose}>Close detail</button>
       </footer>
     </div>
   </dialog>

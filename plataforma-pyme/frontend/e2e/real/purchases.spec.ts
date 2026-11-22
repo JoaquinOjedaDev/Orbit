@@ -8,7 +8,7 @@ test.beforeAll(() => {
 })
 
 async function seed(request: APIRequestContext) {
-  const email = `purchases-${randomUUID()}@example.com`, password = 'Disposable QA password 2026!'
+  const email = `purchases-${randomUUID()}@example.com`, password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registration = await request.post(`${api}/auth/register`, {
     data: { email, password, display_name: 'Compras QA' },
   })
@@ -45,11 +45,11 @@ async function seed(request: APIRequestContext) {
 type Fixture = Awaited<ReturnType<typeof seed>>
 async function open(page: Page, fixture: Fixture) {
   await page.goto(`/real/empresas/${fixture.business.id}/compras`)
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(fixture.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(fixture.password)
+  await page.getByLabel('Email', { exact: true }).fill(fixture.email)
+  await page.getByLabel('Password', { exact: true }).fill(fixture.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Compras y recepción', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Registrar compra REAL', exact: true })).toBeEnabled()
+  await expect(page.getByRole('heading', { name: 'Purchases and reception', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Register Real Purchase', exact: true })).toBeEnabled()
 }
 
 test('Recuperar una recepción bloquea el cambio de compra y conserva la identidad correcta', async ({ page, request }) => {
@@ -91,34 +91,34 @@ test('Recuperar una recepción bloquea el cambio de compra y conserva la identid
     locationId: f.location.id, key: randomUUID() })
 
   const card = (reference: string) => page.locator('article.real-supply-card').filter({ hasText: reference })
-  const receiveA = card('Compra A').getByRole('button', { name: 'Pendiente', exact: false })
-  const receiveB = card('Compra B').getByRole('button', { name: 'Pendiente', exact: false })
+  const receiveA = card('Compra A').getByRole('button', { name: 'Pending', exact: false })
+  const receiveB = card('Compra B').getByRole('button', { name: 'Pending', exact: false })
   await receiveA.click()
   await expect.poll(() => page.evaluate(() => typeof (window as Window & {
     releaseReceiptLookup?: () => void
   }).releaseReceiptLookup)).toBe('function')
   // La recepción ahora ocupa una vista exclusiva: el listado queda oculto.
   await expect(card('Compra B')).toHaveCount(0)
-  await expect(page.getByRole('heading', { name: 'Recepción de compra' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Purchase reception' })).toBeVisible()
   await expect(page.getByRole('button', { name: /^(Procesando|Confirmar recepción REAL)/ })).toBeDisabled()
   await page.evaluate(() => (window as Window & { releaseReceiptLookup?: () => void }).releaseReceiptLookup?.())
-  await expect(page.getByRole('button', { name: 'Reintentar MISMA recepción', exact: true })).toBeEnabled()
-  await page.getByRole('button', { name: 'Volver a compras' }).first().click()
+  await expect(page.getByRole('button', { name: 'Retry Same Reception', exact: true })).toBeEnabled()
+  await page.getByRole('button', { name: 'Back to shopping' }).first().click()
   // La intención de A sigue guardada en IndexedDB, no se elimina al volver.
   await expect(card('Compra A')).toBeVisible()
   await receiveB.click()
   await expect(page.getByRole('heading', { name: 'Recepción completa de compra Compra B', exact: true })).toBeVisible()
-  await page.getByLabel('Destino con almacenamiento activo').selectOption(f.location.id)
+  await page.getByLabel('Destination with active storage').selectOption(f.location.id)
   const posts: string[] = []
   page.on('request', req => {
     if (req.method() === 'POST' && req.url().includes('/receive')) posts.push(req.url())
   })
   page.on('dialog', dialog => dialog.accept())
-  await page.getByRole('button', { name: 'Confirmar recepción REAL', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Comprobante de recepción' })).toBeVisible()
-  await expect(page.getByLabel('Detalle de recepción confirmada')).toBeVisible()
-  await page.getByRole('button', { name: 'Volver a compras' }).first().click()
-  await expect(card('Compra B').getByRole('button', { name: 'Consultar comprobante', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'Confirm Real Reception', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Receipt check' })).toBeVisible()
+  await expect(page.getByLabel('Confirmed reception detail')).toBeVisible()
+  await page.getByRole('button', { name: 'Back to shopping' }).first().click()
+  await expect(card('Compra B').getByRole('button', { name: 'Check voucher', exact: true })).toBeVisible()
   expect(posts).toEqual([`${api}${f.root}/purchases/${f.b.id}/receive`.replace(':18001', ':5173')])
   const original = await request.get(api + f.root + '/purchases/' + f.a.id, { headers: f.headers })
   expect(original.status()).toBe(200)
@@ -129,6 +129,6 @@ test('La fecha sugerida de compra conserva el día local después de las 21 en A
   const f = await seed(request)
   await page.clock.setFixedTime(new Date('2026-11-10T21:30:00-03:00'))
   await open(page, f)
-  await page.getByRole('button', { name: 'Registrar compra REAL', exact: true }).click()
-  await expect(page.getByLabel('Fecha de compra', { exact: true })).toHaveValue('2026-11-10')
+  await page.getByRole('button', { name: 'Register Real Purchase', exact: true }).click()
+  await expect(page.getByLabel('Date of purchase', { exact: true })).toHaveValue('2026-11-10')
 })

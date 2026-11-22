@@ -31,22 +31,22 @@ router = APIRouter(prefix="/businesses/{business_id}/qr-payment-intents", tags=[
 
 def _handle(error: Exception):
     if isinstance(error, QrFinalizationDisabled):
-        raise HTTPException(403, detail="Cierre de venta QR DEMO habilitado solo en PostgreSQL QA descartable") from None
+        raise HTTPException(403, detail="QR DEMO sold closure enabled only in PostgreSQL QA disposable") from None
     if isinstance(error, QrFinalizationNeedsReview):
-        raise HTTPException(409, detail="Pago de prueba aprobado pero venta no registrada: requiere revisión de stock/catálogo") from None
+        raise HTTPException(409, detail="Approved but unregistered trial payment: requires stock/catalogue review") from None
     if isinstance(error, QrLabDisabled):
-        raise HTTPException(403, detail="Laboratorio QR DEMO deshabilitado en este entorno") from None
+        raise HTTPException(403, detail="QR DEMO laboratory disabled in this environment") from None
     if isinstance(error, PurchaseSessionInvalid):
         raise unauthorized() from None
     if isinstance(error, (PurchaseBusinessUnavailable, QrIntentNotFound)):
-        raise HTTPException(404, detail="Intento o empresa no disponible") from None
+        raise HTTPException(404, detail="Attempted or not available") from None
     if isinstance(error, (PurchasePermissionDenied, QrIntentForbidden, SalePermissionDenied)):
-        raise HTTPException(403, detail="Sin permiso de cobro QR") from None
+        raise HTTPException(403, detail="No QR collection permit") from None
     if isinstance(error, (QrIntentNoStock, QrIntentNoConnection, QrIntentConflict,
                           SaleIdempotencyConflict, SaleBusinessSuspended)):
-        raise HTTPException(409, detail="Cuenta, stock o intento no disponible") from None
+        raise HTTPException(409, detail="Account, stock or attempt not available") from None
     if isinstance(error, QrIntentInvalid):
-        raise HTTPException(422, detail="Artículo, cantidad o sede no disponibles") from None
+        raise HTTPException(422, detail="Article, quantity or venue not available") from None
     raise error
 
 
@@ -55,7 +55,7 @@ def _handle(error: Exception):
                401: {"description": "Sesión inválida"}, 403: {"description": "Permiso"},
                404: {"description": "Empresa ajena"}, 409: {"description": "Conflicto"},
                422: {"description": "Datos inválidos"}},
-    summary="Crear intención QR DEMO: snapshot sin venta ni movimiento de stock")
+    summary="Create intention QR DEMO: snapshot without sale or stock movement")
 def create_qr_intent(
     business_id: UUID, command: CreateQrIntentRequest, response: Response,
     idempotency_key: UUID4 = Header(alias="Idempotency-Key"),
@@ -73,7 +73,7 @@ def create_qr_intent(
 @router.get("", response_model=list[QrIntentSummaryView],
     responses={401: {"description": "Sesión inválida"},
                404: {"description": "Empresa no accesible"}},
-    summary="Listar cobros QR DEMO de la empresa, con alcance por rol")
+    summary="List company QR DEMO collections, with role-by-play range")
 def list_qr_intents(
     business_id: UUID, offset: int = Query(0, ge=0, le=10_000_000),
     limit: int = Query(20, ge=1, le=50),
@@ -91,7 +91,7 @@ def list_qr_intents(
 
 @router.get("/by-request/{request_id}", response_model=QrIntentView,
     responses={401: {"description": "Sesión inválida"}, 404: {"description": "No visible"}},
-    summary="Recuperar intento por clave idempotente del creador")
+    summary="Recover attempt by key idempotent creator")
 def get_by_request(
     business_id: UUID, request_id: UUID4, context: AuthContext = Depends(current_auth),
     db: Session = Depends(get_db),
@@ -105,7 +105,7 @@ def get_by_request(
 
 @router.get("/{intent_id}", response_model=QrIntentView,
     responses={401: {"description": "Sesión inválida"}, 404: {"description": "No visible"}},
-    summary="Consultar QR y detalle inmutable desde PostgreSQL")
+    summary="Check QR and immutable detail from PostgreSQL")
 def get_qr_intent(
     business_id: UUID, intent_id: UUID, context: AuthContext = Depends(current_auth),
     db: Session = Depends(get_db),
@@ -120,7 +120,7 @@ def get_qr_intent(
 @router.post("/{intent_id}/cancel", response_model=QrIntentView,
     responses={401: {"description": "Sesión inválida"}, 404: {"description": "No visible"},
                409: {"description": "No cancelable"}},
-    summary="Cancelar QR DEMO sin confirmar venta")
+    summary="Cancel QR DEMO Unconfirmed sale")
 def cancel_qr_intent(
     business_id: UUID, intent_id: UUID, context: AuthContext = Depends(current_auth),
     db: Session = Depends(get_db),
@@ -135,7 +135,7 @@ def cancel_qr_intent(
 @router.get("/{intent_id}/events", response_model=list[QrPaymentEventView],
     responses={401: {"description": "Sesión inválida"},
                404: {"description": "Intención no visible"}},
-    summary="Historial auditable de transiciones QR, sin secretos de pago")
+    summary="Auditable QR transition history, no payment secrets")
 def list_qr_events(
     business_id: UUID, intent_id: UUID,
     context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
@@ -154,7 +154,7 @@ def list_qr_events(
                404: {"description": "Intención ajena o inexistente"},
                409: {"description": "Evento incompatible o intento ya resuelto"},
                422: {"description": "Acción inválida"}},
-    summary="Simular SOLO en QA un resultado de cobro ficticio; NO crear venta")
+    summary="Simulate ONLY in QA a fictitious collection result; DO NOT create sale")
 def simulate_qr_event(
     business_id: UUID, intent_id: UUID, command: QrSimulateRequest, response: Response,
     idempotency_key: UUID4 = Header(alias="Idempotency-Key"),
@@ -178,7 +178,7 @@ def simulate_qr_event(
                403: {"description": "No autorizado o entorno QA no habilitado"},
                404: {"description": "QR no visible"},
                409: {"description": "Pendiente, rechazado, revisión, stock o estado incompatible"}},
-    summary="Cerrar UNA venta REAL de QA después de aprobación ficticia; transacción única")
+    summary="Close A REAL QA sale after fictitious approval; unique transaction")
 def finalize_qr_sale(
     business_id: UUID, intent_id: UUID, response: Response,
     context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
@@ -196,7 +196,7 @@ def finalize_qr_sale(
     responses={401: {"description": "Sesión inválida"},
                403: {"description": "Sin permiso de lectura de venta"},
                404: {"description": "QR sin venta confirmada o no visible"}},
-    summary="Recuperar comprobante de venta QA vinculada a QR, lectura solamente")
+    summary="Recover QA sales voucher linked to QR, read only")
 def qr_sale_receipt(
     business_id: UUID, intent_id: UUID,
     context: AuthContext = Depends(current_auth), db: Session = Depends(get_db),
@@ -215,7 +215,7 @@ def qr_sale_receipt(
                403: {"description": "Rol o simulación no habilitada"},
                404: {"description": "QR de otra empresa o inexistente"},
                409: {"description": "QR vencido, cancelado, stock insuficiente o ya resuelto"}},
-    summary="Aceptar ficticiamente una venta o rechazar QR sintético, sin Mercado Pago")
+    summary="Fictively accept a sale or reject synthetic QR, without Market Payment")
 def exhibition_decision(
     business_id: UUID, intent_id: UUID, command: QrExhibitionDecisionRequest,
     response: Response,

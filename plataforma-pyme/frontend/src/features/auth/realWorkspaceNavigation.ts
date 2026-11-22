@@ -7,24 +7,24 @@ export type RealBusinessSection = '' | 'inicio' | 'ubicaciones' | 'equipo' | 'ca
 export type RealWorkspaceItem = {
   section: RealBusinessSection
   label: string
-  group: 'Administración' | 'Operaciones'
+  group: 'Administration' | 'Operations'
   icon: 'home' | 'building' | 'pin' | 'users' | 'package' | 'briefcase'
     | 'shopping' | 'boxes' | 'receipt' | 'clock' | 'wallet'
 }
 
 export const REAL_WORKSPACE_ITEMS: readonly RealWorkspaceItem[] = [
-  { section: 'inicio', label: 'Inicio', group: 'Administración', icon: 'home' },
-  { section: '', label: 'Mi empresa', group: 'Administración', icon: 'building' },
-  { section: 'ubicaciones', label: 'Ubicaciones', group: 'Administración', icon: 'pin' },
-  { section: 'equipo', label: 'Equipo', group: 'Administración', icon: 'users' },
-  { section: 'medios-de-cobro', label: 'Medios de cobro', group: 'Administración', icon: 'wallet' },
-  { section: 'catalogo', label: 'Catálogo', group: 'Operaciones', icon: 'package' },
-  { section: 'proveedores', label: 'Proveedores', group: 'Operaciones', icon: 'briefcase' },
-  { section: 'compras', label: 'Compras y recepciones', group: 'Operaciones', icon: 'shopping' },
-  { section: 'inventario', label: 'Inventario y movimientos', group: 'Operaciones', icon: 'boxes' },
-  { section: 'pos', label: 'Punto de venta', group: 'Operaciones', icon: 'receipt' },
-  { section: 'cobros-qr', label: 'Cobros QR', group: 'Operaciones', icon: 'wallet' },
-  { section: 'ventas', label: 'Historial de ventas', group: 'Operaciones', icon: 'clock' },
+  { section: 'inicio', label: 'Home', group: 'Administration', icon: 'home' },
+  { section: '', label: 'My company', group: 'Administration', icon: 'building' },
+  { section: 'ubicaciones', label: 'Locations', group: 'Administration', icon: 'pin' },
+  { section: 'equipo', label: 'Team', group: 'Administration', icon: 'users' },
+  { section: 'medios-de-cobro', label: 'Payment methods', group: 'Administration', icon: 'wallet' },
+  { section: 'catalogo', label: 'Catalog', group: 'Operations', icon: 'package' },
+  { section: 'proveedores', label: 'Suppliers', group: 'Operations', icon: 'briefcase' },
+  { section: 'compras', label: 'Purchases and receipts', group: 'Operations', icon: 'shopping' },
+  { section: 'inventario', label: 'Inventory and stock movements', group: 'Operations', icon: 'boxes' },
+  { section: 'pos', label: 'Point of sale', group: 'Operations', icon: 'receipt' },
+  { section: 'cobros-qr', label: 'QR payments', group: 'Operations', icon: 'wallet' },
+  { section: 'ventas', label: 'Sales history', group: 'Operations', icon: 'clock' },
 ] as const
 
 const VALID_SECTIONS = new Set<string>(REAL_WORKSPACE_ITEMS.map((item) => item.section))
@@ -32,7 +32,7 @@ const VALID_SECTIONS = new Set<string>(REAL_WORKSPACE_ITEMS.map((item) => item.s
 /** Never compose arbitrary tenant routes or expose unimplemented DEMO modules. */
 export function realWorkspaceHref(businessId: string, section: RealBusinessSection = ''): string {
   if (!UUID_PATTERN.test(businessId) || !VALID_SECTIONS.has(section)) {
-    throw new TypeError('Empresa o pantalla REAL no permitida')
+    throw new TypeError('Real Company or Display Not Allowed')
   }
   const base = '/real/empresas/' + businessId
   return section ? base + '/' + section : base
@@ -50,15 +50,15 @@ export function realWorkspaceBusinessId(path: string): string | null {
 
 export function realWorkspaceTitle(path: string): string {
   if (/^\/real\/empresas\/[^/]+\/qr-cobros\/[^/]+$/.test(path) && realWorkspaceBusinessId(path))
-    return 'Cobro QR DEMO'
-  if (path === '/real/perfil') return 'Mi perfil'
-  if (path === '/real/invitaciones/aceptar') return 'Ingresar código de invitación'
-  if (path === '/real/empresas/nueva') return 'Crear empresa'
-  if (path === '/real/empresas') return 'Mis empresas'
+    return 'Demo QR payment'
+  if (path === '/real/perfil') return 'My profile'
+  if (path === '/real/invitaciones/aceptar') return 'Enter invitation code'
+  if (path === '/real/empresas/nueva') return 'Create company'
+  if (path === '/real/empresas') return 'My companies'
   const businessId = realWorkspaceBusinessId(path)
   if (businessId) {
     const section = path.slice(realWorkspaceHref(businessId).length).replace(/^\//, '')
-    return REAL_WORKSPACE_ITEMS.find((item) => item.section === section)?.label ?? 'Mi empresa'
+    return REAL_WORKSPACE_ITEMS.find((item) => item.section === section)?.label ?? 'My company'
   }
-  return 'Mi espacio de trabajo'
+  return 'My workspace'
 }

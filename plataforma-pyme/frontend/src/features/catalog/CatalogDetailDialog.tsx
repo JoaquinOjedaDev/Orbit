@@ -61,8 +61,8 @@ export function CatalogDetailDialog({
   >
     <div className="catalog-detail-body">
       <header className="catalog-detail-topline">
-        <div className="catalog-detail-return"><span className="eyebrow">FICHA DEL CATÁLOGO · DEMO</span></div>
-        <button type="button" className="icon-button" aria-label="Cerrar ficha del artículo" onClick={onClose}>
+        <div className="catalog-detail-return"><span className="eyebrow">CATALOGUE SHEET · DEMO</span></div>
+        <button type="button" className="icon-button" aria-label="Close article sheet" onClick={onClose}>
           <Icon name="close" size={21} />
         </button>
       </header>
@@ -74,7 +74,7 @@ export function CatalogDetailDialog({
           <div className="catalog-detail-name-row">
             <h2 id="catalog-detail-heading">{item.name}</h2>
             <span className={'catalog-state ' + (item.status === 'ACTIVO' ? 'is-active' : 'is-inactive')}>
-              {item.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}
+              {item.status === 'ACTIVO' ? 'Active' : 'Inactive'}
             </span>
           </div>
           <p>{catalogKindLabels[item.kind]} · {item.category}</p>
@@ -83,39 +83,39 @@ export function CatalogDetailDialog({
           </div>
         </div>
         <button type="button" className="button button-primary catalog-detail-edit" onClick={() => onEdit(item)}>
-          <Icon name="arrow" size={17} /> Editar ficha
+          <Icon name="arrow" size={17} /> Edit Tab
         </button>
       </div>
 
-      <section className="catalog-detail-metrics" aria-label="Información comercial">
-        <div><small>Precio de lista</small><strong>{item.sellable ? moneyDisplay(item.priceCents) : 'No ofrecido a la venta'}</strong></div>
-        <div><small>Costo de referencia</small><strong>{item.referenceCostCents === null ? 'No informado' : moneyDisplay(item.referenceCostCents)}</strong></div>
-        <div><small>Unidad de control</small><strong>{catalogUnitLabels[item.unit]}</strong></div>
-        <div><small>Condición comercial</small><strong>{item.sellable ? 'Disponible para ofrecer' : 'Uso interno / no vendible'}</strong></div>
+      <section className="catalog-detail-metrics" aria-label="Commercial information">
+        <div><small>List price</small><strong>{item.sellable ? moneyDisplay(item.priceCents) : 'Not offered for sale'}</strong></div>
+        <div><small>Reference cost</small><strong>{item.referenceCostCents === null ? 'No informado' : moneyDisplay(item.referenceCostCents)}</strong></div>
+        <div><small>Control unit</small><strong>{catalogUnitLabels[item.unit]}</strong></div>
+        <div><small>Trade status</small><strong>{item.sellable ? 'Available to offer' : 'Internal / non-soldable use'}</strong></div>
       </section>
 
       <div className="catalog-detail-sections">
         <section className="catalog-detail-section">
-          <h3><Icon name="book" size={18}/> Descripción comercial</h3>
-          <p>{item.description || 'No se ingresó una descripción comercial.'}</p>
+          <h3><Icon name="book" size={18}/> Commercial description</h3>
+          <p>{item.description || 'A commercial description was not entered.'}</p>
         </section>
 
         <section className="catalog-detail-section catalog-detail-private">
-          <h3><Icon name="receipt" size={18}/> Observaciones internas</h3>
-          <p>{item.observations || 'Sin observaciones internas.'}</p>
-          <small>Campo de uso interno en esta DEMO local. Los permisos de lectura se validarán desde el backend.</small>
+          <h3><Icon name="receipt" size={18}/> Internal comments</h3>
+          <p>{item.observations || 'No internal observations.'}</p>
+          <small>Internal field of use in this local DEMO. Reading permissions will be validated from the backend.</small>
         </section>
 
         <section className="catalog-detail-section">
-          <h3><Icon name="boxes" size={18}/> Operaciones relacionadas</h3>
+          <h3><Icon name="boxes" size={18}/> Related operations</h3>
           <p>{item.kind === 'SERVICIO'
-            ? 'Es un servicio: no acumula existencias físicas. Los insumos usados para prestarlo se asociarán posteriormente.'
-            : 'Todavía no hay movimientos, compras, proveedores, lotes ni existencias vinculadas a esta ficha.'}</p>
+            ? 'It is a service: it does not accumulate physical stocks. The inputs used to provide it will be associated later.'
+            : 'There are still no movements, purchases, suppliers, lots or stocks linked to this file.'}</p>
           <div className="catalog-detail-planned">
-            <span>Proveedores: sin integración</span>
-            <span>Imágenes: pendiente</span>
-            {item.kind === 'ELABORADO' && <span>Componentes y guías: pendientes</span>}
-            {item.kind !== 'SERVICIO' && <span>Stock y vencimientos: pendientes</span>}
+            <span>Suppliers: no integration</span>
+            <span>Images: slope</span>
+            {item.kind === 'ELABORADO' && <span>Components and guides: pending</span>}
+            {item.kind !== 'SERVICIO' && <span>Stock and maturities: outstanding</span>}
           </div>
         </section>
       </div>
@@ -123,9 +123,9 @@ export function CatalogDetailDialog({
       <footer className="catalog-detail-footer">
         <div className="catalog-detail-dates">
           <span>Creado: {formatDate(item.createdAt)}</span>
-          <span>Última edición DEMO: {formatDate(item.updatedAt)}</span>
+          <span>Last edition DEMO: {formatDate(item.updatedAt)}</span>
         </div>
-        <button type="button" className="button button-secondary" onClick={onClose}>Cerrar ficha</button>
+        <button type="button" className="button button-secondary" onClick={onClose}>Close tab</button>
       </footer>
     </div>
   </dialog>

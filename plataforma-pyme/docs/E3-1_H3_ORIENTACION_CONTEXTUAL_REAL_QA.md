@@ -1,63 +1,63 @@
-# E3-1H3 — Orientación contextual REAL y cierre gradual de onboarding
+# E3-1H3 — REAL contextual orientation and gradual onboarding closure
 
-**Fecha:** 12/11/2026. **Rama:** `feature/e3-1h3-guia-contextual-onboarding-real`.  
+**Date:** 12/11/2026. **Rama:** `feature/e3-1h3-guia-contextual-onboarding-real`.  
 **Base exacta:** `feature/e3-1h2-navegacion-onboarding-real`, commit `b76b368`, PR #62 (DRAFT).  
-**Stacking:** H3 → H2 #62 → H1 #60 → E3-1G #59 → dependencias previas. **No fusionar a main sin aprobación.**
+**Stacking:** H3 → H2 #62 → H1 #60 → E3-1G #59 → previous dependencies. **Do not merge main without approval.**
 
-## Objetivo
+## Objective
 
-Cerrar la primera experiencia de configuración con orientación **contextual y verificable** en Ubicaciones, Equipo, Catálogo e Inventario, sin modificar operaciones, permisos, modelos de base de datos, contratos o diseño del Inicio H1.
+Close the first configuration experience with orientation **context and verifiable** in Locations, Equipment, Catalog and Inventory, without modification of operations, permits, database models, contracts or design of the H1 Home.
 
-## Qué incorpora
+## What it incorporates
 
-- Un aviso visual reutilizable `RealSetupGuide`, exclusivamente de lectura, con un enlace a una ruta REAL existente y validada por `realWorkspaceHref`.
-- Volver a **Primeros pasos** desde la navegación de listado de los cuatro módulos.
-- **Ubicaciones:** mensaje específico si no hay sedes o si todas están pausadas, condicionado a datos leídos y a permisos de administración. El aviso no reactiva ni crea nada.
-- **Equipo:** la membresía individual verificada permite comenzar sin invitaciones; incorporar colaboradores es opcional. El mensaje solo aparece si la lectura del equipo fue autorizada, completó sin errores y se observó únicamente la membresía propia.
-- **Catálogo:** una lista realmente vacía distingue quién puede crear fichas y quién solo puede consultarlas. En el formulario, al elegir tipo `SERVICIO` aparece una aclaración de que no se deben crear movimientos de stock para servicios.
-- **Inventario:** la orientación prioriza sedes faltantes, catálogo vacío, catálogo completo con solo servicios y ausencia de saldos en la consulta general. No sugiere saldos cero cuando hay filtros, errores, consultas incompletas o páginas desconocidas.
+- Reusable visual warning `RealSetupGuide`, exclusively readable, with a link to an existing REAL route validated by `realWorkspaceHref`.
+- Volver a **First steps** from the list navigation of the four modules.
+- **Locations:** specific message if there are no locations or if all are paused, conditional on read data and management permissions. The notice does not reactivate or create anything.
+- **Equipment:** The verified individual membership allows you to start without invitations; adding contributors is optional. The message only appears if the reading of the team was authorized, completed without errors and only your own membership was observed.
+- **Catalogue:** a really empty list distinguishes who can create chips and who can only consult them. In the form, when choosing type `SERVICIO` a clarification is provided that no stock movements should be created for services.
+- **Inventory:** The orientation prioritizes missing locations, empty catalog, complete catalogue with only services and absence of balances in the general query. It does not suggest zero balances when there are filters, errors, incomplete queries or unknown pages.
 
-## Ajuste menor de experiencia: carga de invitación
+## Minor experience adjustment: invitation load
 
-La acción del perfil que abre la pantalla se denomina **«Ingresar código de invitación»**, igual que el título de la pantalla de ingreso. El botón dentro del formulario conserva **«Aceptar invitación»**, ya que únicamente este último envía el código de 43 caracteres al backend. El secreto sigue en estado React en memoria, no se copia a URLs ni a almacenamiento local. Se añadió una comprobación E2E de navegación sin aceptación accidental en `auth-registration-ui.spec.ts`. No se modifican permisos, token ni contratos de API.
+The action of the profile that opens the screen is called **‘Introduce invitation code’**, like the title of the input screen. The button inside the form retains **‘Accept invitation’**since only the latter sends 43 character code to backend. The secret remains in React status in memory, it is not copied to URLs or local storage. An E2E browsing check was added without accidental acceptance in `auth-registration-ui.spec.ts`. No change in permissions, token or API contracts.
 
-## Ajuste final aprobado: invitaciones plegables
+## Final approved adjustment: folding invitations
 
-En **Equipo → Invitar a un colaborador**, el encabezado funciona como botón accesible y muestra inicialmente el formulario plegado. Al activarlo con clic, Enter o Espacio se despliega el formulario REAL original para ingresar correo y rol y emitir el código de un solo uso. `aria-expanded`, `aria-controls`, indicador de apertura y foco visible permiten usarlo con teclado o lector de pantalla. Plegar el formulario no emite invitaciones, no borra el borrador y no modifica permisos, API, idempotencia, ni datos. Tras emitir, el código sigue visible en el panel abierto hasta ocultarlo manualmente. El encabezado permanece deshabilitado mientras se emite, para evitar ocultar la respuesta por accidente.
+En **Team → Invite a collaborator**, the header works as an accessible button and initially displays the folded form. By clicking it, Enter or Space displays the original REAL form to enter mail and role and issue the code of one use only. `aria-expanded`, `aria-controls`, open indicator and visible focus allow to use it with keyboard or screen reader. Folding the form does not issue invitations, does not delete drafts and does not modify permissions, APIs, idempotence, or data. After issuing, the code remains visible in the open panel until manually hidden. The header remains disabled while it is issued, to avoid hiding the response by accident.
 
-Se amplió la prueba E2E `locations-team-visual.spec.ts` para comprobar panel cerrado inicialmente, apertura por teclado, cierre/reapertura, ningún POST al alternar y ausencia de formulario para roles sin permiso. Se exige CI verde sobre el nuevo commit y revisión de escritorio/móvil.
+The E2E test was extended `locations-team-visual.spec.ts` to check closed panel initially, keyboard opening, closing/reopening, no POST when alternating and absence of role form without permission. Green CI is required on the new commit and desktop/mobile revision.
 
-## Salvaguardas
+## Safeguards
 
-1. No se cambian `FastAPI`, SQL, Alembic, RBAC, autenticación ni endpoints.
-2. Los avisos hacen **cero POST/PATCH/DELETE** y no habilitan capacidades que el rol no tiene.
-3. Se conservan todas las pantallas, rutas, filtros, formularios, estados y políticas comerciales de E2 y E3-1A/G/H1/H2.
-4. Ningún aviso deduce inventario total a partir de una página parcial, filtros o errores HTTP.
-5. No se usa DEMO, `demoStore`, localStorage ni fixture para generar datos visuales.
-6. Las operaciones reales (creación, compras, inventario, invitaciones, ventas) siguen sujetas a sus permisos y solicitudes explícitas. La guía solo navega.
-7. Las empresas permanecen aisladas por `businessId` y sesión; H3 no agrega estado entre tenants.
-8. No se corrigen ni modifican datos de la empresa a raíz de la observación de «Fruta pack»; cualquier verificación debe comparar `business_id` y `catalog_item_id` exactos.
+1. No change `FastAPI`, SQL, Alembic, RBAC, authentication or endpoints.
+2. The notices make **cero POST/PATCH/DELETE** and do not enable capabilities that the role does not have.
+3. All screens, routes, filters, forms, states and trade policies of E2 and E3-1A/G/H1/H2 are retained.
+4. No notice deducts total inventory from a partial page, filters or HTTP errors.
+5. DEMO is not used, `demoStore`, localStorage nor fixture to generate visual data.
+6. Real operations (creation, purchases, inventory, invitations, sales) remain subject to their explicit permissions and requests. The guide only navigates.
+7. Companies remain isolated by `businessId` and session; H3 does not add state between tenants.
+8. No correction or modification of company data following observation of ‘Fruta pack’; any verification must be compared `business_id` y `catalog_item_id` Exactly.
 
 ## QA
 
-- Añadido `tests/real-setup-guidance.test.mjs` a `npm run test:auth`: vacíos válidos, lecturas fallidas, roles sin escritura, directorio privado, catálogos parciales, servicios y filtros de inventario.
-- E2E `e2e/real/e3-onboarding-h3.spec.ts`, obligatoriamente con `PYME_DISPOSABLE_QA=1`: cuenta/empresa QA, Ubicaciones vacías, Catálogo vacío, Equipo solo titular, sede y servicio ingresados desde el runner descartable, Inventario sin stock para servicios, regreso entre secciones, detalle de formulario y móvil 390 px, sin operaciones comerciales emitidas desde el navegador.
-- Regresión requerida: `npm run build`, `npm run lint`, `npm run test:auth`, `npm run test:businesses`, E2E de navegación REAL, servicios y seguridad por tenant.
-- Se requiere que ambos workflows (Frontend e Inventario REAL full-stack) concluyan en `success` **sobre el commit de H3**; una CI anterior no valida cambios nuevos.
+- Added `tests/real-setup-guidance.test.mjs` a `npm run test:auth`: valid gaps, failed readings, unwritten roles, private directory, partial catalogues, services and inventory filters.
+- E2E `e2e/real/e3-onboarding-h3.spec.ts`, mandatory with `PYME_DISPOSABLE_QA=1`: QA account/company, Empty Locations, Empty Catalog, Single-holder equipment, headquarters and service entered from the disposable runner, Inventory without stock for services, return between sections, form detail and mobile 390 px, no commercial transactions issued from browser.
+- Regression required: `npm run build`, `npm run lint`, `npm run test:auth`, `npm run test:businesses`, Real navigation E2E, services and security per tenant.
+- Both workflows (Frontend and REAL full-stack inventory) are required to end in `success` **on the commit of H3**; an earlier IC does not validate new changes.
 
-## Verificación manual sugerida
+## Suggested manual verification
 
-1. Entrar con empresa nueva y rol titular; en Ubicaciones y Catálogo vacíos deben aparecer avisos de primera configuración y el vínculo de regreso a Inicio.
-2. En Equipo, con solo la propia membresía, debe informarse que incorporar colegas es opcional. Comprobar que no se solicita invitar a nadie para completar H1.
-3. Registrar sede activa y un servicio vendible de manera explícita, abrir Inventario: la guía debe indicar que servicios no requieren stock físico; no debe crear movimientos.
-4. En Catálogo, abrir formulario y seleccionar tipo Servicio; debe aparecer la aclaración sin bloquear ni alterar la edición.
-5. Agregar un bien físico; con datos completos y sin saldos, Inventario orienta al circuito de stock explícito sin dar cantidades ficticias.
-6. Aplicar filtros de inventario y provocar lectura restringida en QA descartable: la guía no debe afirmar inventario cero.
-7. Probar rol sin permisos: no ofrecer acciones nuevas de escritura ni filtrar datos del Equipo.
-8. Cambiar A→B, navegación con menú contraído de H2, F5 y viewport 390px. No deben aparecer datos de otra empresa, scroll horizontal, nuevas solicitudes comerciales ni cambios al Inicio H1.
+1. Enter with new company and title role; empty Locations and Catalog must appear first configuration notices and the link back to Start.
+2. In Team, with only the membership itself, it should be informed that incorporating colleagues is optional. Check that no one is asked to invite anyone to complete H1.
+3. Register active headquarters and a service sold explicitly, open Inventory: the guide should indicate that services do not require physical stock; it should not create movements.
+4. In Catalogue, open form and select type Service; the clarification must appear without blocking or altering the edition.
+5. Adding a physical good; with complete data and no balances, Inventory guides the explicit stock circuit without giving fictitious quantities.
+6. Apply inventory filters and cause restricted reading in disposable QA: the guide should not affirm zero inventory.
+7. Test role without permission: do not offer new actions of writing or filter data from the Team.
+8. Change A→B, navigation with contracted menu of H2, F5 and viewport 390px. No data should appear from another company, horizontal scroll, new commercial applications or changes to the H1 Start.
 
-## Exclusiones y etapa siguiente
+## Exclusions and next stage
 
-No incluye caja, cuentas, QR real, Mercado Pago, indicadores financieros, imágenes de catálogo ni optimizaciones de bundles. Son trabajos separados.
+It does not include cash, accounts, real QR, Pay Market, financial indicators, catalog images or bulk optimizations. They are separate jobs.
 
-**Cierre previsto de H:** después de CI verde y aprobación visual de H3, resolver el PR H2 duplicado #61; integrar el stack en orden y realizar una regresión final contra una base QA descartable. El trabajo no se integra automáticamente solo por pasar la CI.
+**Planned closure of H:** After green IC and visual approval of H3, resolve the duplicate PR H2 #61; integrate the stack in order and perform a final regression against a disposable QA base. The work is not automatically integrated just by passing the IC.

@@ -1,50 +1,50 @@
-# E2-7 · T11-C — Seguridad de navegación y aislamiento multiempresa
+# E2-7 · T11-C — Multi-company navigation and isolation safety
 
-**Fecha:** 11/11/2026. **Rama:** `feature/e2-7-t11-qa-integral-hardening`. **PR:** #45 DRAFT, sin merge.
+**Date:** 11/11/2026. **Rama:** `feature/e2-7-t11-qa-integral-hardening`. **PR:** #45 DRAFT, sin merge.
 
-## Objetivo
+## Objective
 
-Ampliar la prueba de seguridad desde los contratos FastAPI existentes hasta la navegación **React REAL** ante usuarios distintos, tenants A/B, respuestas tardías y cierre/recarga de sesión. Todos los datos son cuentas y empresas QA de PostgreSQL efímero; nunca TEST Empresa A ni DEMO.
+Extend the safety test from existing FastAPI contracts to navigation **React REAL** to different users, A/B tenants, late responses and session closing/reloading. All data are PostgreSQL accounts and companies QA ephemeral; never TEST Company A nor DEMO.
 
-## Escenarios implementados
+## Implementation scenarios
 
-Archivo: `frontend/e2e/real/security-navigation.spec.ts`. Commit funcional `19d7b6eb3948d1c8bb7dd06ffde114a353bfa4f7`.
+File: `frontend/e2e/real/security-navigation.spec.ts`. Commit funcional `19d7b6eb3948d1c8bb7dd06ffde114a353bfa4f7`.
 
-| Escenario | Operaciones y aserciones | Resultado |
+| Scenario | Operations and assertions | Outcome |
 |---|---|---|
-| **T11-C-01: A→B con GET demorado** | Crear A/B, un proveedor distinto por empresa, iniciar sesión en B; cambiar a A, interceptar y demorar GET de proveedores A, navegar en la misma SPA a B y liberar GET A; exigir ver solo proveedor B, no A | **PASS**, Playwright real 1,4 s |
-| **T11-C-02: actor externo + logout/F5** | Crear propietario y usuario ajeno, empresa y proveedor privado; API del ajeno devuelve 403/404; abrir URL privada en UI como ajeno sin proveedor ni formulario de alta; listar sus empresas sin la ajena; cerrar sesión, F5 y login del dueño sin contaminación de sesión | **PASS**, Playwright real 1,4 s |
+| **T11-C-01: A→B with delayed GET** | Create A/B, a different provider per company, log in to B; switch to A, intercept and delay GET from A providers, navigate the same SPA to B and release GET A; require only see supplier B, not A | **PASS**, Playwright real 1,4 s |
+| **T11-C-02: external actor + logout/F5** | Create third party owner and user, company and private provider; third party API returns 403/404; open private URL in UI as non-member without supplier or registration form; list your companies without the other person; log out, F5 and login of the owner without session contamination | **PASS**, Playwright real 1,4 s |
 
-**Comportamiento observado:** `RealAuthApp` conserva el token opaco solo en memoria; las páginas de proveedores usan AbortController y descartado de resultados tras desmontaje. El backend sigue siendo la autoridad para pertenencia/permiso.
+**Observed behaviour:** `RealAuthApp` Keeps the opaque token only in memory; provider pages use AbortionController and discarded results after disassembly. Backend remains the authority for membership/permission.
 
 ## Evidencia reproducible de GitHub Actions
 
 - Commit funcional: `19d7b6eb3948d1c8bb7dd06ffde114a353bfa4f7`.
-- Full-stack REAL #42987791317: **SUCCESS**, **892 pytest, 22 Playwright REAL, 6 Playwright DEMO**. Los dos casos T11-C pasaron en Chromium contra API real y PostgreSQL descartable.
+- Full-stack REAL #42987791317: **SUCCESS**, **892 pytest, 22 Playwright REAL, 6 Playwright DEMO**. The two T11-C cases passed in Chromium against real API and PostgreSQL disposable.
 - Frontend #42987791341: **SUCCESS**.
-- 3 warnings Pydantic `UnsupportedFieldAttributeWarning` en suite de concurrencia: no bloquean estas pruebas y siguen registrados como riesgo de hardening.
+- 3 warnings Pydantic `UnsupportedFieldAttributeWarning` en suite of attendance: do not block these tests and are still registered as a risk of having.
 
-## Cobertura y próximos controles T11-C
+## Coverage and upcoming T11-C controls
 
-**Ya comprobado en navegador:** aislamiento visual A/B, descarte de respuesta tardía, impedimento de lectura de tenant ajeno, ausencia de formulario de escritura para actor no miembro y borrado local de sesión tras logout/F5.
+**Already checked in browser:** visual isolation A/B, late response discard, readability of other person's tenant, absence of writing form for non-member actor and deleted session venue after logout/F5.
 
-**Todavía pendiente para cerrar T11-C completo:** escenario UI de trabajador/encargado **miembro** sin asignación SELL/STORE, más respuestas HTTP 401/403/404/409/422 y fallas de red durante navegación/operaciones en pantallas adicionales. Las pruebas backend existentes para esos permisos no sustituyen el recorrido React correspondiente.
+**Still pending to close full T11-C:** UI scenario of worker/manager **member** no SELL/STORE mapping, plus HTTP 401/403/404/409/422 responses and network failures during navigation/operations on additional screens. Existing backend tests for those permissions do not replace the corresponding React path.
 
-**Dictamen:** subbloque **T11-C navegación multiempresa y sesión APROBADO**; T11-C global permanece parcial. PR #45 DRAFT; no habilitar POST REAL en bases persistentes ni fusionar `main` sin aprobación.
+**Opinion:** subbloque **T11-C Multi-company navigation and session ADOPTED**; T11-C global permanece parcial. PR #45 DRAFT; no habilitar POST REAL en bases persistentes ni fusionar `main` without approval.
 
-## Ampliación T11-C — permisos SELL/STORE y matriz de errores, validada
+## Extension T11-C — SELL/STORE permissions and error matrix, validated
 
-**Nuevos escenarios:** `frontend/e2e/real/security-errors.spec.ts`.
+**New scenarios:** `frontend/e2e/real/security-errors.spec.ts`.
 
-| Grupo | Evidencia automatizada | Resultado |
+| Group | Automated evidence | Outcome |
 |---|---|---|
-| `401` React | GET con 401 provoca vuelta a login, desaparecen datos privados, sin POST | PASS |
-| `403`, `404`, `503` React | Rechazo/caída temporal de consulta de proveedores se informa sin éxito falso; actualización recupera GET sin escritura | PASS (3 tests) |
-| `409` y `422` | Proveedor duplicado desde formulario produce rechazo sin segundo registro; compra inválida desde API recibe 422 sin crear compra | PASS |
-| TRABAJADOR miembro sin sede asignada | Invitación/aceptación real, intento de venta directo por API: 403; intento recepción en STORE por API: 403; intento venta desde POS React: aviso de permisos y solicitud conservada, sin comprobante ni movimiento | PASS |
+| `401` React | GET with 401 causes login back, private data disappears, without POST | PASS |
+| `403`, `404`, `503` React | Rejection/Temporary drop of vendor query is reported without false success; update recovers GET without writing | PASS (3 tests) |
+| `409` y `422` | Duplicate provider from form produces rejection without second registration; invalid purchase from API receives 422 without creating purchase | PASS |
+| WORKER member without assigned seat | Invitation/actual acceptance, direct sale attempt by API: 403; attempt receipt in STORE by API: 403; attempted sale from POS React: permission notice and preserved application, no proof or movement | PASS |
 
-**CI funcional final del bloque:** commit `aeab8b9df2497aca515683238a4a91689ce75233`, run full-stack #42990216776: **SUCCESS**, `892 passed` Pytest (**4 warnings**), `28 passed` Playwright REAL y `6 passed` Playwright DEMO. La prueba específica de trabajador `T11-C: trabajador miembro sin sede no puede recibir ni registrar venta desde POS` aprobó en 1,5 s. El commit de frontend independiente debe verificarse en sus propias checks; no inferirlo de esta suite.
+**Functional IC end of block:** commit `aeab8b9df2497aca515683238a4a91689ce75233`, run full-stack #42990216776: **SUCCESS**, `892 passed` Pytest (**4 warnings**), `28 passed` Playwright REAL y `6 passed` Playwright DEMO. The specific worker test `T11-C: trabajador miembro sin sede no puede recibir ni registrar venta desde POS` approved in 1.5 s. The independent frontend commit must be verified at its own checks; do not infer it from this suite.
 
-**Incidente de QA resuelto:** la primera prueba de trabajador en commit `bc0231c` falló por selector Playwright demasiado amplio (`getByRole('alert')` halló tanto la advertencia de solicitud pendiente como la de venta denegada). No fue un fallo de permisos: la API había devuelto 403 y ambos avisos estaban presentes. Commit `aeab8b9` distingue los dos mensajes, elimina una compra de fixture innecesaria y la CI confirmó el escenario.
+**QA incident resolved:** the first test of worker in commit `bc0231c` failed by too wide Playwright selector (`getByRole('alert')` found both the pending request warning and the one for sale denied).It was not a permission failure: the API had returned 403 and both notices were present. `aeab8b9` distinguishes the two messages, eliminates unnecessary fixture purchase and the IC confirmed the scenario.
 
-**Dictamen T11-C:** **APROBADO** para continuar T11-D (responsive, teclado y DEMO/REAL). Los controles reproducibles aquí son los descritos: no se afirma una cobertura exhaustiva de todas las rutas 403/409/422 o todos los módulos. Quedan **4 advertencias no bloqueantes de Pytest** por investigar en T11-E; se preserva el requisito de PR #45 DRAFT, sin merge ni POST en entornos persistentes.
+**Opinion T11-C:** **APPROVED** to continue T11-D (responsive, keyboard and DEMO/REAL). The reproducible controls described here are: not an exhaustive coverage of all routes 403/409/422 or all modules is stated. **4 non-blocking warnings of Pytest** research in T11-E; the requirement of PR #45 DRAFT is preserved, without merge or POST in persistent environments.

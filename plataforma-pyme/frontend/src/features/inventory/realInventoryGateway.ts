@@ -19,13 +19,13 @@ export type InventoryMovement = {
 export type InventoryQuery = { locationId?: string; catalogItemId?: string }
 export const INVENTORY_PAGE_SIZE = 100
 export const INVENTORY_EVENTS: Record<InventoryEvent,string> = {
-  COMPRA_RECEPCION: 'Recepción de compra',
+  COMPRA_RECEPCION: 'Purchase receipt',
   TRASLADO_ENTRADA: 'Traslado recibido',
   TRASLADO_SALIDA: 'Traslado enviado',
-  AJUSTE_ENTRADA: 'Ajuste de entrada',
-  AJUSTE_SALIDA: 'Ajuste de salida',
+  AJUSTE_ENTRADA: 'Input adjustment',
+  AJUSTE_SALIDA: 'Output setting',
   STOCK_INICIAL: 'Stock inicial',
-  VENTA_SALIDA: 'Salida por venta',
+  VENTA_SALIDA: 'Output per sale',
 }
 const events = new Set(Object.keys(INVENTORY_EVENTS))
 const obj = (v: unknown): v is Record<string,unknown> =>
@@ -47,7 +47,7 @@ export function parseMovement(v:unknown,businessId:string):InventoryMovement {
     ||!safeInt(v.delta_milli)||v.delta_milli===0||!validDate(v.occurred_at)) return invalid()
   const positive = ['COMPRA_RECEPCION','TRASLADO_ENTRADA','AJUSTE_ENTRADA','STOCK_INICIAL'].includes(String(v.event_type))
   if ((v.delta_milli>0)!==positive) return invalid()
-  for (const field of ['receipt_id','purchase_line_id','inventory_operation_id','sale_id','sale_line_id']) {
+  for (const field of ['receipt_id','purchase_line_id','inventory_operation_id','sale_id','output_line_id']) {
     if (v[field]!==undefined && v[field]!==null && !uuid(v[field])) return invalid()
   }
   if (v.operation_kind!==undefined&&v.operation_kind!==null&&typeof v.operation_kind!=='string')return invalid()
@@ -60,26 +60,26 @@ function parsePage<T>(raw:unknown,limit:number,parse:(v:unknown)=>T,key:(v:T)=>s
   return records
 }
 export function formatMilli(value:number):string {
-  if(!safeInt(value))throw new RangeError('Cantidad fuera de precisión segura')
+  if(!safeInt(value))throw new RangeError('Safe out-of-precision quantity')
   const sign=value<0?'-':''
   const abs=Math.abs(value)
   return sign+Math.floor(abs/1000).toLocaleString('es-AR')
     +(abs%1000===0?'':','+String(abs%1000).padStart(3,'0').replace(/0+$/,''))
 }
 export function formatDelta(value:number):string {
-  if(!safeInt(value)||value===0)throw new RangeError('Movimiento inválido')
+  if(!safeInt(value)||value===0)throw new RangeError('Invalid movement')
   return (value>0?'+':'')+formatMilli(value)
 }
 export function createInventoryGateway(token:string,businessId:string,fetchImpl?:typeof fetch) {
-  if(!token||!UUID_PATTERN.test(businessId))throw new TypeError('Sesión o empresa inválida')
+  if(!token||!UUID_PATTERN.test(businessId))throw new TypeError('Invalid session or company')
   const api=createApiClient({getAccessToken:()=>token,fetchImpl})
   function url(kind:'balances'|'movements',offset:number,limit:number,query:InventoryQuery) {
     if(!Number.isSafeInteger(offset)||offset<0||!Number.isSafeInteger(limit)||limit<1||limit>500)
-      throw new RangeError('Paginación de inventario inválida')
+      throw new RangeError('Invalid inventory page')
     if(query.locationId!==undefined&&!UUID_PATTERN.test(query.locationId))
-      throw new TypeError('Sede inválida')
+      throw new TypeError('Invalid Headquarters')
     if(query.catalogItemId!==undefined&&!UUID_PATTERN.test(query.catalogItemId))
-      throw new TypeError('Artículo inválido')
+      throw new TypeError('Invalid Article')
     const params=new URLSearchParams({offset:String(offset),limit:String(limit)})
     if(query.locationId)params.set('location_id',query.locationId)
     if(query.catalogItemId)params.set('catalog_item_id',query.catalogItemId)
@@ -104,16 +104,16 @@ export function createInventoryGateway(token:string,businessId:string,fetchImpl?
 }
 export function inventoryErrorMessage(err:unknown):string {
   if(err instanceof ApiHttpError){
-    if(err.status===401)return 'La sesión venció o fue revocada. Volvé a iniciar sesión.'
-    if(err.status===403)return 'No tenés permiso para consultar el inventario de esta empresa.'
-    if(err.status===404)return 'Empresa o inventario no disponible para esta cuenta.'
-    if(err.status===422)return 'La API rechazó los filtros de inventario.'
-    return 'FastAPI no pudo consultar el inventario.'
+    if(err.status===401)return 'The session expired or was revoked. I re-entered.'
+    if(err.status===403)return 'You don\'t have permission to check the inventory of this company.'
+    if(err.status===404)return 'Company or inventory not available for this account.'
+    if(err.status===422)return 'The API rejected the inventory filters.'
+    return 'FastAPI was unable to consult the inventory.'
   }
   if(err instanceof ApiTransportError){
-    if(err.reason==='invalid-response')return 'FastAPI devolvió datos de inventario incompatibles con el contrato.'
-    if(err.reason==='timeout')return 'La consulta de inventario superó el tiempo de espera.'
-    return 'No pudimos consultar FastAPI. Verificá la conexión e intentá otra vez.'
+    if(err.reason==='invalid-response')return 'FastAPI returned inventory data incompatible with the contract.'
+    if(err.reason==='timeout')return 'The inventory consultation exceeded the waiting time.'
+    return 'We couldn\'t consult FastAPI. Check the connection and try again.'
   }
-  return err instanceof Error?err.message:'No se pudo consultar el inventario.'
+  return err instanceof Error?err.message:'Could not close temporary folder: %s'
 }

@@ -1,47 +1,47 @@
-# E3-1H1 — Inicio de empresa y onboarding REAL
+# E3-1H1 — Company start-up and onboarding REAL
 
-**Fecha:** 12/11/2026. **Proyecto:** Orbit multirrubro/multiempresa.  
-**Base de trabajo:** rama `feature/e3-1g-pos-ventas-visual-real`, commit `e52f502`, con PR #59 pendiente de integración.  
-**Rama propia:** `feature/e3-1h1-inicio-onboarding-real`. PR DRAFT contra E3-1G; sin fusionar ni modificar `main`.
+**Date:** 12/11/2026. **Project:** Multi-rubor orbit/multi-enterprise.  
+**Workbase:** rama `feature/e3-1g-pos-ventas-visual-real`, commit `e52f502`, with PR #59 pending integration.  
+**Own branch:** `feature/e3-1h1-inicio-onboarding-real`. PR DRAFT contra E3-1G; sin fusionar ni modificar `main`.
 
-## Objetivo
-Implementar **Inicio REAL** y una guía de primeros pasos apoyada en FastAPI/PostgreSQL sin copiar DEMO, sin inventar ventas, montos, KPIs ni stock, y sin modificar permisos, contratos o procesos de escritura.
+## Objective
+Implement **REAL Home** and a first step guide supported by FastAPI/PostgreSQL without copying DEMO, without inventing sales, amounts, KPIs or stock, and without modifying permissions, contracts or writing processes.
 
-## Alcance funcional
-- Ruta nueva: `/real/empresas/:businessId/inicio`, aceptada por `RealAuthApp`, shell y menú lateral. La ruta `/real/empresas/:businessId` sigue siendo Datos de la empresa para preservar navegación y pruebas existentes.
-- Desde Datos de la empresa hay un botón **Inicio y primeros pasos**; el nuevo menú REAL incluye **Inicio**.
-- Título, nombre, rubro, rol y estado proceden de `GET /businesses/{id}`; toda la página está aislada por empresa, con remount del shell, AbortController y sesión exclusivamente en memoria.
-- La guía verifica en este orden:
-  1. **Ubicación:** hay al menos una ubicación activa, a través de `GET /locations`.
-  2. **Catálogo:** hay al menos un artículo o servicio activo y vendible, a través de `GET /catalog`.
-  3. **Inventario físico:** si existen bienes físicos vendibles, se busca un saldo positivo de uno de ellos en una sede activa con capacidad STORE, a través de `GET /inventory/balances`. Si el catálogo vendible contiene exclusivamente servicios y está completo, se marca **No requiere stock** (no se interpreta como inventario inexistente).
-- Los pasos se determinan en cada consulta, no se pueden marcar manualmente. La barra muestra cuántos pasos han sido verificados como preparados, **no** certifica que todas las operaciones comerciales puedan realizarse.
-- Consultas de catálogo e inventario con páginas de 100 y límite de 5 páginas (500 registros por recurso). Cuando la consulta es incompleta, un faltante nunca se representa como cero. Las respuestas 403 y errores de red dejan el estado **No verificado**; 401 invalida la sesión.
-- Accesos rápidos REAL a Proveedores, Compras y recepciones, POS e Historial; el panel **no** genera compras, ventas, stock inicial o invitaciones. El usuario hace las operaciones desde sus módulos, con autorizaciones existentes.
-- Responsividad de escritorio y móvil; controles de foco y semántica accesible; no imágenes ficticias ni `demoStore`.
+## Functional scope
+- New path: `/real/empresas/:businessId/inicio`accepted by `RealAuthApp`The route, shell and side menu. `/real/empresas/:businessId` remains Company Data to preserve existing navigation and testing.
+- From Company Data there is a button **Start and first steps**; the new REAL menu includes **Home**.
+- Title, name, heading, role and status come from `GET /businesses/{id}`; the entire page is isolated by company, with remount of shell, AbortionController and session exclusively in memory.
+- The guide checks in this order:
+  1. **Location:** there is at least one active location, through `GET /locations`.
+  2. **Catalogue:** there is at least one item or service active and sellable, through `GET /catalog`.
+  3. **Physical inventory:** if there are physical goods sold, a positive balance of one of them is sought in an active headquarters with capacity STORE, through `GET /inventory/balances`. If the catalogue sold is exclusively serviced and complete, it is marked **No requiere stock** (not interpreted as non-existent inventory).
+- The steps are determined in each query, cannot be manually dialed. The bar shows how many steps have been checked as prepared, **no** certifies that all commercial operations can be carried out.
+- Catalogue and inventory queries with 100 pages and 5-page limit (500 records per resource). When the query is incomplete, a missing person is never represented as zero. 403 responses and network errors leave status **Not verified**; 401 invalidates the session.
+- REAL Shortcuts to Suppliers, Purchases and Receptions, POS and History; Panel **no** generates purchases, sales, initial stock or invitations. The user does the operations from his modules, with existing authorizations.
+- Desktop and mobile responsiveness; accessible focus and semantic controls; no fictitious images or `demoStore`.
 
-## Restricciones deliberadas
+## Deliberate restrictions
 - Sin endpoints o migraciones nuevos.
-- Sin panel de indicadores financieros ni estimación de ganancias; no se calcula el saldo a partir de compras.
-- No se introduce Caja/Cuentas/Gastos/Pedidos/Reservas/QR REAL; siguen diferidos.
-- No se agrega ningún atajo para crear `STOCK_INICIAL` sin consultar roles y política de inventario.
-- Un usuario sin permisos de escritura puede consultar los pasos que la API autoriza. Los botones navegan a módulos REAL, no conceden privilegios.
-- No hay almacenamiento de imágenes ni logos empresariales.
-- Se conserva la semántica de F5: sesión solo en memoria; hay que volver a iniciar sesión para consultar nuevamente.
+- No financial indicator panel or profit estimate; no balance is calculated from purchases.
+- No Cash/Accounts/Expenditure/Reservations/Real QR is introduced; they remain deferred.
+- No shortcut to create `STOCK_INICIAL` without consulting roles and inventory policy.
+- A user without writing permission can check the steps that the API authorizes. Buttons navigate to REAL modules, they do not grant privileges.
+- There is no image storage or business logos.
+- The semantics of F5 is preserved: session only in memory; you have to re-enter to consult again.
 
-## QA y aceptación
-1. Empresa recién creada: Inicio muestra 0/3 y los tres pasos en pendiente cuando las consultas son completas y vacías. No se genera ningún POST desde el navegador.
-2. Registrar una ubicación activa y un artículo físico vendible en la DB descartable: tras «Actualizar desde API» muestra 2/3; no supone que haya stock.
-3. Registrar stock inicial de forma explícita por la API en la base descartable: al actualizar se muestran 3/3.
-4. Empresa con solo servicios: 2/2 y **No requiere stock**, sin sugerir depósito.
-5. Empresa B distinta: el selector cambia tenant y vuelve a 0/3; no aparecen recursos de A. El shell desmonta la página y aborta las lecturas antiguas.
-6. Catálogo paginado parcialmente o GET 403: el panel debe indicar **No verificado**, nunca 0 real por inferencia.
-7. Teclado, móvil 390 px, sin scroll horizontal; navegación por URL directa y retorno; tras F5 se requiere login.
-8. `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run test:auth` y suites E2E REAL en PostgreSQL descartable. Nada de pruebas comerciales de escritura contra la base local habitual.
+## QA and acceptance
+1. Newly created company: Start shows 0/3 and the three steps in slope when queries are complete and empty. No POST is generated from browser.
+2. Register an active location and a physical item for sale in the disposable DB: after "Update from API" it shows 2/3; it does not assume that there is stock.
+3. Register initial stock explicitly by API on the disposable base: when updating, 3/3 are displayed.
+4. Company with only services: 2/2 and **No requiere stock**- No, no. No, no, no, no, no, no, no, no, no, no.
+5. Different B Company: the selector changes tenant and returns to 0/3; no A resources appear. The shell removes the page and aborts old readings.
+6. Partially pagulated catalog or GET 403: the panel must indicate **Not verified**Never real 0 by inference.
+7. Keyboard, 390 px mobile, no horizontal scroll; direct URL navigation and return; after F5 login required.
+8. `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run test:auth` and E2E REAL suites in PostgreSQL disposable. No commercial proof of writing against the usual local base.
 
-## Próximos subbloques previstos
-- **E3-1H2:** guía contextual de configuración / navegación por pantallas y estados vacíos mejorados, sin duplicar formularios ni habilitar permisos nuevos.
-- **E3-1H3:** evaluar indicadores REAL adicionales, solamente cuando existan contratos suficientes, KPIs fundados y validación del alcance.
-- Fotografías desde Catálogo, optimización de bundles, Caja y QR REAL quedan fuera de este PR.
+## Next planned subblocks
+- **E3-1H2:** context guide for improved configuration/navigation of screens and empty states, without duplicating forms or enabling new permissions.
+- **E3-1H3:** evaluate additional REAL indicators, only where sufficient contracts exist, well-founded KPIs and validation of scope.
+- Photographs from Catalog, Bound optimization, Box and REAL QR are out of this PR.
 
-**Criterio de integración:** PR en borrador apilado sobre #59. No fusionar antes de CI y revisión humana.
+**Integration criterion:** PR in stacked draft above #59. Do not merge before IC and human revision.

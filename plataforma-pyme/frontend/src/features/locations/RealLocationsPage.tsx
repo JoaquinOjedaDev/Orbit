@@ -99,7 +99,7 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
       if (!active.current.valid) return
       setRows((old) => editingId ? old.map((item) => item.id === saved.id ? saved : item) : [...old, saved])
       setEditingId(null); setCreating(false); setDraft(blank)
-      setNotice('Ubicación confirmada en PostgreSQL.')
+      setNotice('Location confirmed in PostgreSQL.')
     } catch (err) { handleError(err) }
     finally { if (active.current.valid) setBusy(false) }
   }
@@ -107,7 +107,7 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
   async function mutateLocation(row: LocationRecord, command: 'primary' | 'status') {
     if (!authorized || busy || uncertain) return
     if (command === 'status' && !window.confirm(
-      row.status === 'ACTIVA' ? 'Pausar esta ubicación puede impedir operaciones y quitar su condición principal. ¿Continuar?' : '¿Reactivar esta ubicación?'
+      row.status === 'ACTIVA' ? 'Pausing this location can prevent operations and remove your main condition. Continue?' : 'Reactivate this location?'
     )) return
     setError(''); setNotice(''); setBusy(true)
     try {
@@ -118,7 +118,7 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
       const updated = await gateway.locations(businessId)
       if (!active.current.valid) return
       setRows(updated)
-      setNotice(saved.is_primary ? 'Sede principal actualizada.' : 'Estado de la sede actualizado.')
+      setNotice(saved.is_primary ? 'Headquarters updated.' : 'State of the updated headquarters.')
     } catch (err) { handleError(err) }
     finally { if (active.current.valid) setBusy(false) }
   }
@@ -173,7 +173,7 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
       const updated = await gateway.setAssignment(businessId, locationId, member.id, status)
       if (!active.current.valid || generation !== assignmentGeneration.current) return
       setAssignments((old) => [...old.filter((a) => a.membership_id !== updated.membership_id), updated])
-      setNotice(status === 'ACTIVA' ? 'Asignación activada.' : 'Asignación revocada.')
+      setNotice(status === 'ACTIVA' ? 'Assignment activated.' : 'Assignment revoked.')
     } catch (err) { if (generation === assignmentGeneration.current) handleError(err) }
     finally { if (active.current.valid) setBusy(false) }
   }
@@ -198,114 +198,114 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
 
   return <section className="real-auth-card real-business-panel e3-ops-page e3-locations-page e3-location-workspace">
     {locationView === 'list' && <>
-    <nav className="real-business-nav" aria-label="Navegación de empresa">
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId)}>Empresa</button>
+    <nav className="real-business-nav" aria-label="Company navigation">
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId)}>Company</button>
       <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/equipo')}>Equipo</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/inicio')}>Primeros pasos</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>Mis empresas</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/inicio')}>First steps</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>My companies</button>
     </nav>
     </>}
     {locationView !== 'list' && <div className="e3-location-subview-backbar">
       <button ref={backButtonRef} type="button" className="e3-location-back-button" onClick={closeSubview} disabled={busy}>
-        <Icon name="arrow-left" size={19}/>Volver a ubicaciones
+        <Icon name="arrow-left" size={19}/>Back to Locations
       </button>
-      <span className="e3-location-view-badge">{locationView === 'editor' ? 'Edición de sede' : 'Personal y accesos'}</span>
+      <span className="e3-location-view-badge">{locationView === 'editor' ? 'Headquarters edition' : 'Staff and accesses'}</span>
     </div>}
     {locationView === 'list' ? <header className="e3-ops-heading">
       <div className="e3-ops-heading-icon"><Icon name="pin" size={29}/></div>
       <div className="e3-ops-heading-copy">
-        <span className="e3-ops-kicker">Organización · Sedes</span>
-        <h1 ref={listHeadingRef} tabIndex={-1}>Ubicaciones</h1>
-        <p>Administrá los lugares donde vendés y guardás mercadería.</p>
+        <span className="e3-ops-kicker">Organization · Headquarters</span>
+        <h1 ref={listHeadingRef} tabIndex={-1}>Locations</h1>
+        <p>You will manage the places where you sell and store merchandise.</p>
       </div>
-      {authorized && <button className="real-auth-primary e3-ops-heading-cta" type="button" disabled={busy || uncertain} onClick={openCreate}><Icon name="plus" size={17}/>Crear ubicación real</button>}
+      {authorized && <button className="real-auth-primary e3-ops-heading-cta" type="button" disabled={busy || uncertain} onClick={openCreate}><Icon name="plus" size={17}/>Create real location</button>}
     </header> : <header className="e3-ops-heading e3-location-subview-header">
       <div className="e3-ops-heading-icon"><Icon name={locationView === 'editor' ? 'pin' : 'users'} size={29}/></div>
       <div className="e3-ops-heading-copy">
-        <span className="e3-ops-kicker">{business?.name ?? 'Empresa'} · Ubicaciones</span>
-        <h1>{locationView === 'editor' ? (editingId ? 'Editar ubicación' : 'Nueva ubicación') : 'Asignaciones de sede'}</h1>
-        <p>{locationView === 'editor' ? (focusLocation?.name ?? 'Nueva sede') : (selected?.name ?? 'Sede seleccionada')}</p>
+        <span className="e3-ops-kicker">{business?.name ?? 'Company'} · Ubicaciones</span>
+        <h1>{locationView === 'editor' ? (editingId ? 'Edit Location' : 'New location') : 'Headquarters allocations'}</h1>
+        <p>{locationView === 'editor' ? (focusLocation?.name ?? 'New headquarters') : (selected?.name ?? 'Sede seleccionada')}</p>
       </div>
     </header>}
-    {loading && <p role="status">Cargando ubicaciones…</p>}
-    {uncertain && <p className="real-auth-message real-ops-warning" role="alert">Resultado de escritura incierto. Consultá el estado actualizado antes de repetir; no se enviará otra solicitud automáticamente. <button className="real-auth-link" type="button" onClick={() => void refresh()}>Reconsultar ubicaciones</button></p>}
+    {loading && <p role="status">Loading Locations...</p>}
+    {uncertain && <p className="real-auth-message real-ops-warning" role="alert">Uncertain writing result. Consult the updated status before repeating; no other request will be sent automatically. <button className="real-auth-link" type="button" onClick={() => void refresh()}>Check Locations</button></p>}
     {notice && <p className="real-auth-message" role="status">{notice}</p>}
     {error && <p className="real-auth-message real-auth-error" role="alert">{error}</p>}
     {!loading && business && <>
       {locationView === 'list' && <>
       <div className="e3-ops-context">
         <span>Empresa: <strong>{business.name}</strong></span>
-        <button className="real-auth-secondary" type="button" onClick={() => void refresh()} disabled={busy}>Actualizar listado</button>
+        <button className="real-auth-secondary" type="button" onClick={() => void refresh()} disabled={busy}>Update List</button>
       </div>
-      <div className="e3-ops-summary" aria-label="Resumen de ubicaciones">
-        <div className="e3-ops-stat"><span>Total de sedes</span><strong>{rows.length}</strong></div>
+      <div className="e3-ops-summary" aria-label="Summary of locations">
+        <div className="e3-ops-stat"><span>Total headquarters</span><strong>{rows.length}</strong></div>
         <div className="e3-ops-stat"><span>Activas</span><strong>{activeCount}</strong></div>
         <div className="e3-ops-stat"><span>Pausadas</span><strong>{rows.length - activeCount}</strong></div>
-        <div className="e3-ops-stat"><span>Sede principal</span><strong className="e3-ops-stat-name">{rows.find((loc) => loc.is_primary)?.name ?? 'Sin definir'}</strong></div>
+        <div className="e3-ops-stat"><span>Headquarters</span><strong className="e3-ops-stat-name">{rows.find((loc) => loc.is_primary)?.name ?? 'Undefined'}</strong></div>
       </div>
       <RealSetupGuide suggestion={setupSuggestion} businessId={businessId} onNavigate={onNavigate}/>
       {rows.length > 0 && <div className="e3-ops-filterbar">
-        <label className="e3-ops-search"><Icon name="search" size={18}/><span className="e3-ops-visually-hidden">Buscar ubicaciones</span>
-          <input type="search" aria-label="Buscar ubicaciones" placeholder="Buscar por nombre, tipo o dirección" value={search} onChange={(e) => setSearch(e.target.value)}/></label>
-        <label className="e3-ops-filter-label">Estado
-          <select aria-label="Filtrar ubicaciones por estado" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
-            <option value="TODAS">Todas</option><option value="ACTIVA">Activas</option><option value="PAUSADA">Pausadas</option>
+        <label className="e3-ops-search"><Icon name="search" size={18}/><span className="e3-ops-visually-hidden">Find Locations</span>
+          <input type="search" aria-label="Find Locations" placeholder="Search by name, type or address" value={search} onChange={(e) => setSearch(e.target.value)}/></label>
+        <label className="e3-ops-filter-label">Status
+          <select aria-label="Filter Locations by State" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+            <option value="TODAS">All</option><option value="ACTIVA">Activas</option><option value="PAUSADA">Pausadas</option>
           </select>
         </label>
       </div>}
-      {rows.length === 0 && <div className="real-business-empty e3-ops-empty"><Icon name="pin" size={30}/><strong>Tu empresa todavía no tiene ubicaciones</strong><p>Creá una sede para empezar a organizar ventas e inventario, según sus permisos.</p></div>}
-      {rows.length > 0 && visibleRows.length === 0 && <div className="real-business-empty e3-ops-empty"><strong>No encontramos sedes con esos filtros.</strong><p>Probá otra búsqueda o seleccioná «Todas».</p></div>}
+      {rows.length === 0 && <div className="real-business-empty e3-ops-empty"><Icon name="pin" size={30}/><strong>Your company doesn't have locations yet</strong><p>It will create a headquarters to start organizing sales and inventory, according to your permissions.</p></div>}
+      {rows.length > 0 && visibleRows.length === 0 && <div className="real-business-empty e3-ops-empty"><strong>We didn't find headquarters with those filters.</strong><p>Try another search or select "All".</p></div>}
       <div className="real-business-grid e3-ops-card-grid">
         {visibleRows.map((loc) => <article className="real-business-tile real-ops-tile e3-ops-location-card" key={loc.id}>
           <div className="e3-ops-card-top">
             <span className="e3-ops-location-icon"><Icon name="pin" size={21}/></span>
             <div className="e3-ops-card-flags">
-              {loc.is_primary && <span className="e3-ops-pill e3-ops-pill-primary">Principal</span>}
+              {loc.is_primary && <span className="e3-ops-pill e3-ops-pill-primary">Main</span>}
               <span className={'e3-ops-pill ' + (loc.status === 'ACTIVA' ? 'e3-ops-pill-active' : 'e3-ops-pill-paused')}>{loc.status}</span>
             </div>
           </div>
           <div className="e3-ops-card-title"><strong>{loc.name}</strong><span>{loc.kind.replaceAll('_', ' ')}</span></div>
-          <p className="e3-ops-address">{loc.address || 'Dirección sin informar'}</p>
+          <p className="e3-ops-address">{loc.address || 'Unreported address'}</p>
           <div className="e3-ops-capabilities">
-            <span className={loc.can_sell ? 'e3-ops-capability-on' : ''}><Icon name="receipt" size={15}/>{loc.can_sell ? 'Ventas habilitadas' : 'Sin ventas'}</span>
-            <span className={loc.can_store ? 'e3-ops-capability-on' : ''}><Icon name="boxes" size={15}/>{loc.can_store ? 'Inventario habilitado' : 'Sin inventario'}</span>
+            <span className={loc.can_sell ? 'e3-ops-capability-on' : ''}><Icon name="receipt" size={15}/>{loc.can_sell ? 'Enabling sales' : 'No sales'}</span>
+            <span className={loc.can_store ? 'e3-ops-capability-on' : ''}><Icon name="boxes" size={15}/>{loc.can_store ? 'Inventario habilitado' : 'No inventory'}</span>
           </div>
-          {loc.map_url && <a className="e3-ops-map-link" href={loc.map_url} target="_blank" rel="noopener noreferrer">Ver ubicación en Maps</a>}
+          {loc.map_url && <a className="e3-ops-map-link" href={loc.map_url} target="_blank" rel="noopener noreferrer">See Map location</a>}
           {authorized && <div className="real-auth-actions e3-ops-card-actions">
-            <button className="real-auth-secondary" type="button" disabled={busy || uncertain} onClick={() => openEdit(loc)}>Editar</button>
+            <button className="real-auth-secondary" type="button" disabled={busy || uncertain} onClick={() => openEdit(loc)}>Edit</button>
             <button className="real-auth-secondary" type="button" disabled={busy || uncertain} onClick={() => void mutateLocation(loc, 'status')}>{loc.status === 'ACTIVA' ? 'Pausar' : 'Reactivar'}</button>
-            {loc.status === 'ACTIVA' && !loc.is_primary && <button className="real-auth-secondary" type="button" disabled={busy || uncertain} onClick={() => void mutateLocation(loc, 'primary')}>Hacer principal</button>}
+            {loc.status === 'ACTIVA' && !loc.is_primary && <button className="real-auth-secondary" type="button" disabled={busy || uncertain} onClick={() => void mutateLocation(loc, 'primary')}>Make Main</button>}
             <button className="real-auth-secondary" type="button" disabled={busy} onClick={() => void openAssignments(loc)}>Asignaciones</button>
           </div>}
         </article>)}
       </div>
       </>}
       {locationView === 'editor' && authorized && (
-        <section className="e3-ops-editor e3-ops-editor-screen" aria-label="Formulario de ubicación">
-        <div className="e3-ops-section-heading"><h2>Información de la ubicación</h2><p>Completá los datos de esta sede. Los cambios se guardarán únicamente en la empresa seleccionada.</p></div>
+        <section className="e3-ops-editor e3-ops-editor-screen" aria-label="Location Form">
+        <div className="e3-ops-section-heading"><h2>Location information</h2><p>Complete the data for this location. Changes will be saved only to the selected company.</p></div>
         <form className="real-auth-form real-ops-form e3-ops-form" onSubmit={(e) => void save(e)}>
           <div className="e3-ops-form-grid">
-            <label>Nombre<input required minLength={2} maxLength={80} value={draft.name} onChange={(e) => setDraft((old) => ({ ...old, name:e.target.value }))}/></label>
-            <label>Tipo<select value={draft.kind} onChange={(e) => setDraft((old) => ({ ...old, kind:e.target.value as LocationKind }))}>{kinds.map(k=><option value={k} key={k}>{k}</option>)}</select></label>
-            <label className="e3-ops-wide">Dirección<input maxLength={160} value={draft.address} onChange={(e) => setDraft((old) => ({ ...old, address:e.target.value }))}/></label>
-            <label className="e3-ops-wide">Google Maps (URL HTTPS permitida)<input type="url" maxLength={2048} placeholder="https://www.google.com/maps/…" value={draft.map_url} onChange={(e) => setDraft((old) => ({ ...old, map_url:e.target.value }))}/></label>
+            <label>Name<input required minLength={2} maxLength={80} value={draft.name} onChange={(e) => setDraft((old) => ({ ...old, name:e.target.value }))}/></label>
+            <label>Type<select value={draft.kind} onChange={(e) => setDraft((old) => ({ ...old, kind:e.target.value as LocationKind }))}>{kinds.map(k=><option value={k} key={k}>{k}</option>)}</select></label>
+            <label className="e3-ops-wide">Address<input maxLength={160} value={draft.address} onChange={(e) => setDraft((old) => ({ ...old, address:e.target.value }))}/></label>
+            <label className="e3-ops-wide">Google Maps (URL HTTPS allowed)<input type="url" maxLength={2048} placeholder="https://www.google.com/maps/…" value={draft.map_url} onChange={(e) => setDraft((old) => ({ ...old, map_url:e.target.value }))}/></label>
           </div>
-          <div className="e3-ops-toggle-group" aria-label="Capacidades de la sede">
-            <label className="real-ops-check"><input type="checkbox" checked={draft.can_sell} onChange={(e) => setDraft((old) => ({ ...old, can_sell:e.target.checked }))}/> Permitir ventas</label>
-            <label className="real-ops-check"><input type="checkbox" checked={draft.can_store} onChange={(e) => setDraft((old) => ({ ...old, can_store:e.target.checked }))}/> Permitir inventario</label>
+          <div className="e3-ops-toggle-group" aria-label="Headquarters capacities">
+            <label className="real-ops-check"><input type="checkbox" checked={draft.can_sell} onChange={(e) => setDraft((old) => ({ ...old, can_sell:e.target.checked }))}/> Allow sales</label>
+            <label className="real-ops-check"><input type="checkbox" checked={draft.can_store} onChange={(e) => setDraft((old) => ({ ...old, can_store:e.target.checked }))}/> Allow inventory</label>
           </div>
           <div className="real-auth-actions e3-ops-form-actions">
             <button className="real-auth-primary" type="submit" disabled={busy || uncertain}>{busy ? 'Guardando…' : 'Guardar en PostgreSQL'}</button>
-            <button className="real-auth-secondary" type="button" onClick={closeSubview} disabled={busy}>Cancelar</button>
+            <button className="real-auth-secondary" type="button" onClick={closeSubview} disabled={busy}>Cancel</button>
           </div>
         </form>
       </section>
       )}
       {locationView === 'assignments' && authorized && selected && (
-        <section className="real-ops-subpanel e3-ops-assignments e3-ops-assignments-screen" aria-label="Asignaciones de sede">
-        <div className="e3-ops-section-heading"><h2>Personal asignado</h2><p>Solo Encargados y Trabajadores activos pueden asignarse a una sede.</p></div>
-        {loadingAssignments ? <p role="status">Consultando asignaciones…</p> : <>
-          {eligibleMembers.length === 0 && <p>Aún no hay trabajadores disponibles. Podés invitarlos desde Equipo.</p>}
+        <section className="real-ops-subpanel e3-ops-assignments e3-ops-assignments-screen" aria-label="Headquarters allocations">
+        <div className="e3-ops-section-heading"><h2>Staff assigned</h2><p>Only active managers and workers can be assigned to a headquarters.</p></div>
+        {loadingAssignments ? <p role="status">Checking assignments...</p> : <>
+          {eligibleMembers.length === 0 && <p>There are no workers available yet. You can invite them from Team.</p>}
           {eligibleMembers.map((member) => {
             const row = assignments.find((a) => a.membership_id === member.id)
             const activeAssignment = row?.status === 'ACTIVA'
@@ -314,7 +314,7 @@ export function RealLocationsPage({ token, userId, businessId, onNavigate, onUna
                 <span className="e3-ops-avatar" aria-hidden="true">{member.display_name.slice(0, 1).toLocaleUpperCase('es-AR')}</span>
                 <div><strong>{member.display_name}</strong><small>{member.role.replaceAll('_', ' ')} · {activeAssignment ? 'ASIGNADO' : 'NO ASIGNADO'}</small></div>
               </div>
-              <button className="real-auth-secondary" type="button" disabled={busy} onClick={() => void changeAssignment(member, activeAssignment ? 'REVOCADA' : 'ACTIVA')}>{activeAssignment ? 'Revocar asignación' : 'Asignar a sede'}</button>
+              <button className="real-auth-secondary" type="button" disabled={busy} onClick={() => void changeAssignment(member, activeAssignment ? 'REVOCADA' : 'ACTIVA')}>{activeAssignment ? 'Recall Assignment' : 'Assign to headquarters'}</button>
             </div>
           })}
         </>}

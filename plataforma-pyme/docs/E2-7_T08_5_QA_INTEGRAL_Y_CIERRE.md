@@ -1,77 +1,77 @@
-# E2-7 T08-5 — QA integral y cierre de inventario REAL
+# E2-7 T08-5 — Comprehensive QA and REAL inventory closure
 
-Fecha de cierre de QA: 10/11/2026. **Commit validado:** `bdeee364cdc3039faacef444c62d363b28c90c18`. Rama `feature/e2-7-t08-inventario-real`. **Estado: QA integral T08-5 APROBADO, pendiente revisión final del PR #41; sin merge a `main`.** El cierre se fundamenta en evidencia manual histórica y CI full-stack aislado; no equivale a despliegue productivo.
+Closing date of QA: 10/11/2026. **Committee validated:** `bdeee364cdc3039faacef444c62d363b28c90c18`. Rama `feature/e2-7-t08-inventario-real`. **Status: Comprehensive QA T08-5 APPROVED, pending final PR revision #41; no merit to `main`.** The closure is based on historical manual evidence and isolated CI full-stack; it does not amount to productive deployment.
 
-## Aceptación funcional principal de T08-4
+## Main functional acceptance of T08-4
 
-Evidencia: capturas compartidas en la conversación por el usuario. No representa consulta SQL independiente ni inspección de la red del navegador.
+Evidence: Shared catches in the conversation by the user. It does not represent independent SQL query or browser network inspection.
 
-Datos efectivos: TEST Empresa A, **Sede A TEST** (no Sede A TEST 2), **Producto T08-4 CONTEO**, SKU TEST-T084-001, unidad UNIDAD.
+Effective data: TEST Company A, **Headquarters A TEST** (No Headquarters A TEST 2), **Product T08-4 CONTEO**SKU TEST-T084-001, unit UNITY.
 
-| Control | Evidencia observada | Resultado |
+| Ctrl | Evidence observed | Outcome |
 |---|---|---|
-| Stock inicial | Confirmación previa sin saldo, expected_version=0; comprobante STOCK INICIAL +5 y mensaje de verificación GET | Aprobado en UI |
-| Entrada | Confirmación previa saldo 5, expected_version=1; comprobante AJUSTE ENTRADA +2 | Aprobado en UI |
-| Conteo final 6 | Confirmación previa saldo 7, expected_version=2; comprobante AJUSTE SALIDA -1 | Aprobado en UI |
-| Ledger | Tres registros del artículo/sede: +5, +2, -1 | Aprobado visualmente |
-| Saldo final | Filtro por artículo y Sede A TEST: 6 UNIDAD, versión 3 | Aprobado visualmente |
-| Conteo igual al saldo | Cantidad 6, saldo consultado 6/v3, motivo completo y consentimiento marcado; aviso de coincidencia y botón deshabilitado | Aprobado en UI; no se inspeccionó tráfico HTTP |
+| Initial stock | Prior confirmation without balance, specified_version=0; STOCK INITIAL voucher +5 and GET verification message | Approved in IU |
+| Entry | Confirmation prior balance 5, expected_version=1; voucher ADJUST ENTERED +2 | Approved in IU |
+| Final count 6 | Confirmation prior balance 7, specified_version=2; voucher ADJUSTMENT OUTCOME -1 | Approved in IU |
+| Ledger | Three Article/Headquarters records: +5, +2, -1 | Visually Approved |
+| Final balance | Filter by article and Headquarters A TEST: 6 UNIT, version 3 | Visually Approved |
+| Count equals balance | Quantity 6, balance consulted 6/v3, full reason and consent marked; coincidence notice and button disabled | Approved in IU; no HTTP traffic inspected |
 
-La secuencia concilia 5 + 2 - 1 = 6. No repetirla para recrear evidencia. T08-4 tiene aceptación funcional principal; no implica cierre integral de seguridad o concurrencia.
+The sequence reconciles 5 + 2 - 1 = 6. Do not repeat it to recreate evidence. T08-4 has primary functional acceptance; does not imply integral closure of safety or continuance.
 
-## Evidencia automática y alcance real de las pruebas
+## Automatic evidence and actual scope of the tests
 
-**Fuente primaria y commit:** GitHub Actions: Inventario REAL full-stack, run 42895894227, **SUCCESS** en `bdeee364`. Corrió con PostgreSQL 16 efímero `pyme_t085_ephemeral`, FastAPI en puerto 18001, Chromium y cuentas creadas para QA. No utilizó la base local del usuario.
+**Primary source and commit:** GitHub Actions: Inventario REAL full-stack, run 42895894227, **SUCCESS** en `bdeee364`. Run with PostgreSQL 16 ephemeral `pyme_t085_ephemeral`, FastAPI in port 18001, Chromium and accounts created for QA. It did not use the local user base.
 
-| Componente | Evidencia del run completo |
+| Component | Evidencia del run completo |
 |---|---|
-| Migración | `alembic upgrade head`, `current` y `check`: correctos |
-| Backend | `python -m pytest -q --junitxml=/tmp/backend-qa.xml`: **879 aprobadas, 0 fallidas**, con `RUN_DB_INTEGRATION=1` y PostgreSQL real |
-| Frontend | `node --test tests/*.test.mjs`: **256 aprobadas, 0 fallidas**; `npm run build` correcto; lint **0 errores y 0 advertencias** |
-| Navegador REAL | **4/4 Playwright aprobadas**: ajuste/traslado con respuesta perdida + F5 + replay; versión vieja `409`; paginación 105/106 registros, filtros y detección de desplazamiento |
-| Navegador DEMO | **6/6 Playwright aprobadas** en escritorio y móvil; configuración `e2e/playwright.config.ts` con `testDir: ./specs`, separado de `e2e/playwright.real.config.ts` con `testDir: ./real` |
-| Otros workflows en mismo commit | Frontend SUCCESS y Backend FastAPI SUCCESS, incluidos Python 3.12 y 3.14 y comprobación de imagen Docker |
+| Migration | `alembic upgrade head`, `current` y `check`: correct |
+| Backend | `python -m pytest -q --junitxml=/tmp/backend-qa.xml`: **879 approved, 0 failed**, con `RUN_DB_INTEGRATION=1` y PostgreSQL real |
+| Frontend | `node --test tests/*.test.mjs`: **256 approved, 0 failed**; `npm run build` correct; lint **0 errors and 0 warnings** |
+| REAL Browser | **4/4 Playwright aprobadas**: adjustment/transfer with lost response + F5 + replay; old version `409`; pagination 105/106 records, filters and displacement detection |
+| DEMO Browser | **6/6 Playwright aprobadas** desktop and mobile; configuration `e2e/playwright.config.ts` con `testDir: ./specs`, separated from `e2e/playwright.real.config.ts` con `testDir: ./real` |
+| Otros workflows en mismo commit | Frontend SUCCESS and Backend FastAPI SUCCESS, including Python 3.12 and 3.14 and Docker image check |
 
-Las suites PostgreSQL incluyen `test_transfer_api_integration.py`, `test_transfer_concurrency_integration.py`, `test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py`: autorizaciones negativas, versión, atomicidad, idempotencia y conflictos. La validación de navegador REAL comprueba los recorridos de extremo a extremo, no solo mocks. El workflow deshabilita trazas de navegador para no conservar Bearer. Aviso de Vite sobre chunk JS de más de 500 kB: **no bloqueante**, pendiente optimización de rendimiento fuera del cierre funcional T08.
+PostgreSQL Suites include `test_transfer_api_integration.py`, `test_transfer_concurrency_integration.py`, `test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py`: negative authorizations, version, atomity, idempotency and conflicts. REAL browser validation checks end-to-end routes, not just mocks. Workflow disables browser traces to avoid keeping Bearer. Vite notice about chunk JS over 500 kB: **non-blocker**, pending performance optimization outside functional closure T08.
 
-**Fallas previas resueltas:** en `1a23f6b` se aisló `DB_PORT`/`DB_HOST` en `test_db_settings.py` (antes 878/879 por interferencia del entorno CI); en `bdeee36` se añadieron etiquetas accesibles explícitas a los selectores de sede y artículo (antes Playwright no encontraba el filtro y agotaba el tiempo). No se alteraron reglas de stock ni datos reales para resolverlos.
+**Previous failures resolved:** en `1a23f6b` Isolated `DB_PORT`/`DB_HOST` en `test_db_settings.py` (before 878/879 due to interference from the IC environment); `bdeee36` explicit accessible labels were added to the selectors of the site and article (previously Playwright did not find the filter and used up time). No real stock rules or data were altered to resolve them.
 
-## Matriz final de aceptación
+## Final acceptance matrix
 
-| Caso | Procedimiento / evidencia requerida | Estado |
+| Case | Procedure/evidence required | Status |
 |---|---|---|
-| P1 Trabajador sin ajustes | Con Miguel como TRABAJADOR activo, abrir inventario y Stock inicial y ajustes; aviso de solo lectura, sin formulario habilitado | Aprobado en UI, captura de Miguel |
-| P2 Autorización backend | Trabajador sin permiso, STORE en ambas sedes y rechazo sin mutación | Aprobado en suite PostgreSQL de integración |
-| P3 Roles administrativos | Inicialización titular/admin; encargado ajusta con STORE pero no inicializa | Aprobado en suite PostgreSQL de integración |
-| C1 Versión obsoleta | Comando con versión anterior retorna 409; no se agrega movimiento | Aprobado en PostgreSQL + Playwright REAL |
-| C2 Concurrencia e idempotencia | Replay sin duplicado, traslado atómico e inicialización concurrente única | Aprobado en suites PostgreSQL; replay comprobado también en navegador REAL |
-| R1 Recuperación | Respuesta 201 perdida, F5/relogin, misma clave/cuerpo/versión, sin POST automático; replay 200 | Aprobado en Playwright REAL para ajuste y traslado |
-| R2 Inicialización repetida | Bloqueo en UI; backend rechaza saldo previo e historial previo aunque el saldo sea cero | Aprobado en UI manual y suite PostgreSQL |
-| A1 Empresa B | Confirmar ausencia de artículo, saldo y movimientos T08-4 de A en B | Aprobado visualmente: B sin saldos ni movimientos, filtros generales |
-| A2 DEMO | Datos y navegación DEMO propios, sin incorporar datos TEST REAL | Aprobado visualmente y 6/6 Playwright DEMO (escritorio/móvil) |
-| V1 Paginación | 105 movimientos, filtros de sede/artículo, inserción concurrente y refresco hasta 106 sin duplicados | Aprobado 1/1 Playwright REAL |
+| P1 Worker without adjustments | With Miguel as an active LABOUR, open inventory and initial stock and settings; read-only notice, no form enabled | Approved in IU, capture of Miguel |
+| P2 Authorization backend | Unauthorized worker, STORE in both locations and rejection without mutation | Approved in PostgreSQL integration suite |
+| P3 Administrative roles | Starter/admin; maintainer adjusts with STORE but does not initialize | Approved in PostgreSQL integration suite |
+| C1 Outdated version | Command with previous version returns 409; no movement added | Aprobado en PostgreSQL + Playwright REAL |
+| C2 Concurrence and Idempotency | Unduplicated Replay, Atomic Transfer and Single Concurrent Initialization | Approved in PostgreSQL suites; replay also tested in REAL browser |
+| R1 Recovery | Response 201 lost, F5/relogin, same key/body/version, no automatic POST; replay 200 | Aprobado en Playwright REAL para ajuste y traslado |
+| R2 Repeated initialization | UI lock; backend rejects previous balance and history even if the balance is zero | Aprobado en UI manual y suite PostgreSQL |
+| A1 Company B | Confirm absence of item, balance and movements T08-4 of A in B | Visually approved: B without balances or movements, general filters |
+| A2 DEMO | DEMO data and navigation, without incorporating real TEST data | Visually approved and 6/6 Playwright DEMO (scritorio/mobile) |
+| V1 Pagination | 105 movements, seat/article filters, concurrent insertion and soft drink up to 106 without duplicates | Aprobado 1/1 Playwright REAL |
 
-P1 demuestra comportamiento de interfaz, no sustituye P2. No retirar asignaciones reales de Miguel ni enviar traslados potencialmente válidos para intentar obtener un rechazo: verificar permisos negativos en fixtures aislados.
+P1 demonstrates interface behavior, does not replace P2. Do not remove actual Michael assignments or send potentially valid transfers to try to get a rejection: verify negative permissions in isolated fixes.
 
-## Metodología, límites y decisión de cierre
+## Methodology, limits and closure decision
 
-1. La ronda humana comprobó bloqueos de rol, aislamiento entre empresas, datos DEMO y rechazo de inicialización repetida. Son evidencias **visuales**; no se afirma haber inspeccionado tráfico del navegador local ni SQL del negocio TEST.
-2. La suite de backend usó PostgreSQL 16 efímero para permisos, integridad, transacciones y concurrencia. Es evidencia de ejecución, no solo inspección de código.
-3. Playwright REAL ejercitó la API real a través del proxy de Vite y Chromium; la pérdida intencional de la respuesta ocurrió **después** de la confirmación del servidor. No reenvía por sí sola al recargar; el usuario debe elegir el reintento explícito de la misma identidad.
-4. Playwright DEMO confirmó recorridos separados de los flujos REALES. La paginación comprobada cubre 105/106 movimientos y la protección ante deslizamiento de páginas; no constituye ensayo general de carga masiva ni garantiza ausencia de cualquier carrera futura.
-5. El journal durable de intentos utiliza IndexedDB sin cifrado y no sincroniza entre navegadores: riesgo conocido; no usar equipos compartidos. El bundle Vite grande sigue como deuda de rendimiento, sin bloquear el MVP.
+1. The human round showed role blocks, isolation between companies, DEMO data and rejection of repeated initialization. **visual**; it is not alleged that you inspected traffic from the local browser or TEST business SQL.
+2. The backend suite used PostgreSQL 16 ephemeral for permissions, integrity, transactions and continuance. It is evidence of execution, not just code inspection.
+3. Playwright REAL exercised the real API through Vite and Chromium proxy; intentional loss of response occurred **after** server confirmation. It does not forward by itself when reloading; the user must choose the explicit retry of the same identity.
+4. Playwright DEMO confirmed separate paths from REAL flows. The tested page cover 105/106 movements and protection against sliding pages; it does not constitute a general test of mass load nor guarantees absence of any future race.
+5. The durable attempt journal uses IndexedDB without encryption and does not synchronize between browsers: known risk; do not use shared computers. Large Vite bundle remains as performance debt, without blocking the MVP.
 
-**Decisión:** criterios de QA integral T08-5 satisfechos para el alcance previsto. Se habilita la **revisión final del PR #41** y su preparación académica; **no se fusiona a `main` ni se declara despliegue en producción** como parte de este documento. Mantener los datos manuales y la base del usuario intactos.
+**Decision:** criteria of comprehensive QA T08-5 satisfied for the intended scope. **final revision of PR #41** and their academic preparation; **no se fusiona a `main` no deployment declared in production** as part of this document. Keep the user database and manual data intact.
 
-## Ronda manual T08-5 completada — 10/11/2026
+## Manual round T08-5 completed — 10/11/2026
 
-Capturas: Miguel ve el aviso de solo lectura y no recibe formulario de ajustes; Empresa B muestra cero saldos y cero movimientos con filtros generales; DEMO muestra empresas propias y artículos colágeno, crema de enjuague y shampoo, sin productos TEST visibles. Inicialización repetida de Producto T08-4 CONTEO en Sede A TEST bloqueada con saldo 6/v3, cantidad 1, motivo completo y consentimiento marcado. Estas son comprobaciones visuales; no sustituyen los controles API.
+Captures: Miguel sees the read-only notice and does not receive adjustment form; Company B shows zero balances and zero movements with general filters; DEMO displays own companies and collagen, rinse cream and shampoo items, without visible TEST products. Repeated initialization of Product T08-4 CONTEO at Headquarters A TEST locked with balance 6/v3, quantity 1, complete reason and marked consent. These are visual checks; they do not replace API controls.
 
-## Cierre de ejecución automática — 10/11/2026
+## Automatically executed closure — 10/11/2026
 
-- **Run concluyente:** 42895894227, commit `bdeee364`, estado **SUCCESS**, todos los pasos de `inventory-real` correctos, incluido el navegador REAL y la regresión DEMO.
+- **Conclusive Run:** 42895894227, commit `bdeee364`status **SUCCESS**, all steps from `inventory-real` correct, including REAL browser and DEMO regression.
 - **Backend:** 879/879; **frontend:** 256/256, build y lint limpios; **Playwright REAL:** 4/4; **Playwright DEMO:** 6/6.
-- **T08-4 funcional:** Producto T08-4 CONTEO, TEST Empresa A, Sede A TEST, saldo final **6 UNIDAD / versión 3**, historial **+5 +2 −1** confirmado visualmente por el usuario. No recrear estos movimientos.
-- **PR:** #41 debe seguir abierto y en borrador hasta revisión humana, actualización de alcance y decisión de integración a `main`.
+- **Functional T08-4:** Product T08-4 CONTEO, TEST Company A, Headquarters A TEST, final balance **6 UNITY / version 3**history **+5 +2 −1** visually confirmed by the user. Do not recreate these movements.
+- **PR:** #41 should remain open and in draft until human revision, scope update and integration decision to `main`.
 
-**Resultado final:** **T08-5 aprobado en QA**, con los límites descritos. La revisión del PR y el merge son tareas posteriores y explícitas.
+**Final result:** **T08-5 approved in QA**The revision of the PR and the merge are later and explicit tasks.

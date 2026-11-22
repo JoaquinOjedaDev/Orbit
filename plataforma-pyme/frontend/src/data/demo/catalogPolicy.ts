@@ -3,22 +3,22 @@
  * No realiza operaciones de inventario, compras, venta ni autorizaciones reales.
  */
 export const catalogKindLabels = {
-  ELABORADO: 'Elaboración propia',
-  REVENTA: 'Producto de reventa',
+  ELABORADO: 'Own elaboration',
+  REVENTA: 'Re-invented product',
   INSUMO: 'Insumo / material',
-  SERVICIO: 'Servicio',
+  SERVICIO: 'Service',
 } as const
 export type CatalogKind = keyof typeof catalogKindLabels
 
 export const catalogUnitLabels = {
-  UNIDAD: 'Unidad',
+  UNIDAD: 'Unit',
   GRAMO: 'Gramo',
   KILOGRAMO: 'Kilogramo',
   MILILITRO: 'Mililitro',
   LITRO: 'Litro',
   PAQUETE: 'Paquete',
-  CAJA: 'Caja',
-  SERVICIO: 'Servicio',
+  CAJA: 'Cash register',
+  SERVICIO: 'Service',
 } as const
 export type CatalogUnit = keyof typeof catalogUnitLabels
 
@@ -40,10 +40,10 @@ export function catalogNameKey(name: string): string {
 }
 
 function cleanText(value: string, label: string, min: number, max: number): string {
-  if (typeof value !== 'string') throw new Error(label + ': valor inválido.')
+  if (typeof value !== 'string') throw new Error(label + ': invalid value.')
   const result = value.trim().replace(/\s+/g, ' ')
   if (result.length < min || result.length > max) {
-    throw new Error(label + ' debe tener entre ' + min + ' y ' + max + ' caracteres.')
+    throw new Error(label + ' must have between ' + min + ' y ' + max + ' caracteres.')
   }
   return result
 }
@@ -53,11 +53,11 @@ export function parseMoneyCents(input: string): number | null {
   const text = input.trim()
   if (!text) return null // precio a cotizar / costo no informado
   if (!/^(?:0|[1-9]\d{0,8})(?:[.,]\d{1,2})?$/.test(text)) {
-    throw new Error('Ingresá un importe válido, por ejemplo 1250,50. Sin separadores de miles.')
+    throw new Error('Enter a valid amount, for example 1250.50. No separators of thousands.')
   }
   const [whole, fraction = ''] = text.replace(',', '.').split('.')
   const cents = Number(whole) * 100 + Number(fraction.padEnd(2, '0'))
-  if (!Number.isSafeInteger(cents)) throw new Error('Importe fuera de rango.')
+  if (!Number.isSafeInteger(cents)) throw new Error('Out of range amount.')
   return cents
 }
 
@@ -72,27 +72,27 @@ export function moneyDisplay(cents: number | null): string {
 }
 
 export function normalizeCatalogInput(input: CatalogInput): CatalogInput {
-  if (!Object.hasOwn(catalogKindLabels, input.kind)) throw new Error('Seleccioná un tipo de artículo válido.')
-  if (!Object.hasOwn(catalogUnitLabels, input.unit)) throw new Error('Seleccioná una unidad de control válida.')
-  const name = cleanText(input.name, 'El nombre', 2, 90)
-  const category = cleanText(input.category || 'General', 'La categoría', 2, 60)
-  const description = cleanText(input.description, 'La descripción', 0, 450)
+  if (!Object.hasOwn(catalogKindLabels, input.kind)) throw new Error('Select a valid item type.')
+  if (!Object.hasOwn(catalogUnitLabels, input.unit)) throw new Error('Select a valid control unit.')
+  const name = cleanText(input.name, 'The name', 2, 90)
+  const category = cleanText(input.category || 'General', 'Category', 2, 60)
+  const description = cleanText(input.description, 'The description', 0, 450)
   // Compatibilidad con fichas anteriores a E1-B5.1, que no tenían observaciones.
-  const observations = cleanText(input.observations ?? '', 'Las observaciones internas', 0, 600)
+  const observations = cleanText(input.observations ?? '', 'Internal observations', 0, 600)
   const sku = input.sku.trim().toUpperCase()
   if (sku.length > 32 || (sku && !/^[A-Z0-9._-]+$/.test(sku))) {
-    throw new Error('El SKU admite hasta 32 caracteres: letras, números, punto, guion o guion bajo.')
+    throw new Error('The SKU supports up to 32 characters: letters, numbers, point, script or bass script.')
   }
   if (input.kind === 'SERVICIO' && input.unit !== 'SERVICIO') {
-    throw new Error('Los servicios utilizan la unidad Servicio y no generan stock físico.')
+    throw new Error('Services use the Service unit and do not generate physical stock.')
   }
   if (input.kind !== 'SERVICIO' && input.unit === 'SERVICIO') {
-    throw new Error('La unidad Servicio es exclusiva de artículos de tipo Servicio.')
+    throw new Error('The Service unit is exclusive to service-type items.')
   }
-  if (typeof input.sellable !== 'boolean') throw new Error('Indicá explícitamente si se ofrece para la venta.')
+  if (typeof input.sellable !== 'boolean') throw new Error('Please indicate explicitly whether it is offered for sale.')
   for (const [label, cents] of [['precio', input.priceCents], ['costo', input.referenceCostCents]] as const) {
     if (cents !== null && (!Number.isSafeInteger(cents) || cents < 0 || cents > 99999999999)) {
-      throw new Error('El ' + label + ' debe estar expresado en centavos enteros no negativos.')
+      throw new Error('El ' + label + ' must be expressed in whole non-negative cents.')
     }
   }
   return {

@@ -1,30 +1,30 @@
-# E1-B1 — Datos de la Empresa: primera integración de Z001
+# E1-B1 — Company data: first Z001 integration
 
-**Fecha:** 2026-11-06.
-**Estado:** Publicado en GitHub main. Compilación, lint y recorridos de navegador pendientes de ejecución local por el equipo.
+**Date:** 2026-11-06.
+**Status:** Posted in GitHub main. Compilation, lint and browser tours pending local execution by the team.
 
-## Referencias de diseño
+## Design references
 
-- Boton_Editar_Perfil_Empresa.html (Z001): información general, identidad visual, edición contextual, CUIT opcional, eslogan, biografía, documentos y contactos.
-- Menu_Principal(1).html (Z003): panel del negocio, identidad, perfil de usuario y menú.
-- Capturas de React actual y de HTML previos aportadas por el equipo.
+- Buton_Edit_Profil_Company.html (Z001): general information, visual identity, contextual editing, optional CUIT, slogan, biography, documents and contacts.
+- Menu_Principal(1).html (Z003): Business panel, identity, user profile and menu.
+- Current and previous HTML React screenshots provided by the team.
 
-Se reconstruyen los patrones visuales en React. NO se copian scripts globales, innerHTML, datos fijos de WALOS como regla del producto, archivos de ejemplo, métricas inventadas o simulaciones de autorización.
+Visual patterns are reconstructed in React. Global scripts, innerHTML, fixed WALOS data are NOT copied as product rule, example files, invented metrics or authorization simulations.
 
-## Implementado
+## Implemented
 
-1. Vista editable en la ruta empresarial /b/:businessId/empresa, con hero del negocio.
-2. Tarjetas con edición contextual, Cancelar y Guardar para nombre comercial, rubro, eslogan, presentación/biografía y CUIT opcional de prueba.
-3. Único comando demoGateway.updateBusinessDetails(businessId, patch), que actúa exclusivamente sobre la empresa DEMO seleccionada y mantiene actualizado el selector superior y el Inicio.
-4. Empresas creadas siguen persistidas como antes bajo createdBusinesses.
-5. Para editar los tres negocios fixture, se guarda un objeto opcional fixtureEdits en la misma clave versionada asistente-pyme.e1a2.demo.v1; evita borrar el perfil y las empresas creadas que ya estén en ese almacenamiento.
-6. Se incorporan campos slogan y taxId, vacíos por defecto en datos antiguos (compatible con E1-A2).
-7. Borradores de campo se desmontan al cambiar businessId; no se transfieren entre empresas.
-8. Validaciones: nombre entre 2 y 80 caracteres, rubro hasta 120, descripción hasta 350, eslogan hasta 120, CUIT ficticio vacío o formato de once dígitos (con guiones opcionales). El formato no verifica la identidad fiscal.
-9. Documentos y medios de contacto aparecen como Próximamente, sin prometer cargas, redes, cuotas de almacenamiento o autorizaciones.
-10. Carga de logos, programación de cambios, roles, pausa y edición de contactos diferidos a posteriores incrementos con dominio definido.
+1. Editable view on business path /b/:businessId/company, with business hero.
+2. Cards with context editing, Cancel and Save for business name, category, slogan, presentation/biography and optional test CUIT.
+3. Unique command demoGateway.updateBusinessDetails(businessId, patch), which acts exclusively on the selected DEMO company and keeps up to date the top selector and Starter.
+4. Companies created continue to persist as before under createdBusinesses.
+5. To edit the three fixture businesses, an optional fixtureEdits object is saved in the same versioned wizard-pyme.e1a2.demo.v1 key; avoid deleting the profile and created companies that are already in that storage.
+6. The default empty slogan and taxId fields are incorporated in old data (compatible with E1-A2).
+7. Field erasers are dismantled when changing businessId; they are not transferred between companies.
+8. Validations: name between 2 and 80 characters, heading up to 120, description up to 350, slogan up to 120, empty fictional CUIT or eleven digit format (with optional scripts).The format does not verify the fiscal identity.
+9. Documents and means of contact appear as Coming Soon, without promising loads, networks, storage quotas or authorizations.
+10. Logo loading, change scheduling, roles, pause and editing of deferred contacts to later increments with defined domain.
 
-## Código actualizado
+## Updated code
 
 - frontend/src/data/demo/demoStore.ts
 - frontend/src/features/businesses/BusinessDetailsPage.tsx
@@ -32,9 +32,9 @@ Se reconstruyen los patrones visuales en React. NO se copian scripts globales, i
 - frontend/src/App.tsx
 - frontend/src/App.css
 
-## Verificar en VS Code (todavía no ejecutado en esta entrega)
+## Verify in VS Code (not yet executed in this delivery)
 
-Desde plataforma-pyme/frontend:
+From platform-pyme/frontend:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -43,26 +43,26 @@ npm.cmd run lint
 npm.cmd run dev
 ~~~
 
-| ID | Acción | Esperado |
+| ID | Action | Expected |
 |---|---|---|
-| E1B-EDIT-01 | Cambiar nombre de empresa DEMO creada | Hero, selector e Inicio actualizados |
-| E1B-EDIT-02 | Guardar eslogan y biografía, F5 | Persisten en el mismo navegador |
-| E1B-EDIT-03 | Editar rubro de fixture WALOS, F5 | Cambio se conserva |
-| E1B-EDIT-04 | Editar A, cambiar a B y regresar | No se mezclan los datos entre A y B |
-| E1B-EDIT-05 | Guardar nombre vacío o 1 letra | Rechazo, dato anterior intacto |
-| E1B-EDIT-06 | CUIT ficticio de formato incorrecto | Error claro, sin guardar |
-| E1B-EDIT-07 | Cambiar campo y Cancelar | No altera los datos |
-| E1B-EDIT-08 | Cambiar de empresa con edición abierta | No traslada el borrador |
-| E1B-EDIT-09 | Documentos/contactos | Próximamente, sin acciones engañosas |
-| E1B-EDIT-10 | Reducir ancho a 390 px | Campos legibles y menú operativo |
-| E1B-MIG-01 | Perfil y empresa DEMO existentes antes del cambio | Datos previos preservados |
+| E1B-EDIT-01 | Change created DEMO company name | Hero, Selector and Start Updated |
+| E1B-EDIT-02 | Save slogan and biography, F5 | They persist in the same browser |
+| E1B-EDIT-03 | Edit Fixture Header WALOS, F5 | Change is preserved |
+| E1B-EDIT-04 | Edit A, switch to B and return | Data between A and B are not mixed |
+| E1B-EDIT-05 | Save empty name or 1 letter | Rejection, previous data intact |
+| E1B-EDIT-06 | Fictificated format CUIT | Clear error, unsaved |
+| E1B-EDIT-07 | Change Field and Cancel | Do not alter the data |
+| E1B-EDIT-08 | Change your company with open edition | Do not transfer draft |
+| E1B-EDIT-09 | Documents/Contacts | Coming soon, no misleading actions |
+| E1B-EDIT-10 | Reduce width to 390 px | Readable fields and operating menu |
+| E1B-MIG-01 | DEMO profile and company existing before change | Preserved data |
 
-**Nota:** almacenamiento únicamente DEMO, no es backup, sincronización, autenticación ni autorización real. Evitar datos personales/fiscales reales.
+**Nota:** storage only DEMO, is not backup, synchronization, authentication or actual authorization. Avoid real personal/fiscal data.
 
-## Pendiente
+## Pending
 
-- Ejecutar build, lint y las pruebas; luego registrar resultados.
-- Integrar pruebas automatizadas y React Router, como plantea ADR-007.
-- Más adelante enriquecer el perfil global (iniciales, puesto, contacto opcional), basándose en la captura del modal original, sin duplicar perfil por empresa.
-- Modelar documentos, visibilidad de contactos y cambios programados antes de habilitarlos.
-- Integrar Ubicaciones y Equipo de trabajo según E1-B, manteniendo requisitos de TP3.
+- Run build, lint and tests; then record results.
+- Integrate automated tests and React Router, as proposed by ADR-007.
+- Later enrich the global profile (initial, position, optional contact), based on the capture of the original modal, without doubling profile per company.
+- Model documents, contacts visibility and scheduled changes before enabling them.
+- Integrate Locations and Work Equipment according to E1-B, maintaining TP3 requirements.

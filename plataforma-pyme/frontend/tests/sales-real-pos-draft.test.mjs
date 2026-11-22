@@ -53,22 +53,22 @@ test('T10-C solo titular y administrador pueden modificar importes y descuentos'
   }
   for (const role of ['ENCARGADO', 'TRABAJADOR']) {
     assert.throws(() => previewPosCart(role, true, location, catalog,
-      [{ ...cart()[0], unit_price_cents: 2100 }], 0), /precio del catálogo/)
+      [{ ...cart()[0], unit_price_cents: 2100 }], 0), /catalog price/i)
     assert.throws(() => previewPosCart(role, true, location, catalog, cart(), 100),
-      /no puede aplicar descuentos/)
+      /cannot apply discounts/i)
     assert.equal(previewPosCart(role, true, location, catalog, cart(), 0).totals.total_cents, 3500)
   }
 })
 
 test('T10-C trabajadores requieren sede, administradores pueden preparar servicio sin sede', () => {
-  assert.throws(() => previewPosCart('TRABAJADOR', true, null, catalog, cart(), 0), /sede/)
+  assert.throws(() => previewPosCart('TRABAJADOR', true, null, catalog, cart(), 0), /location/i)
   assert.throws(() => previewPosCart('TRABAJADOR', true, location, catalog,
-    [{ catalog_item_id: otherId, quantity_milli: 1000, unit_price_cents: 1500 }], 0), /sin precio/)
+    [{ catalog_item_id: otherId, quantity_milli: 1000, unit_price_cents: 1500 }], 0), /missing item price/i)
   assert.equal(previewPosCart('ADMINISTRADOR', true, null, catalog, [
     { catalog_item_id: otherId, quantity_milli: 1000, unit_price_cents: 1500 },
   ], 0).totals.total_cents, 1500)
   assert.throws(() => previewPosCart('ADMINISTRADOR', true, null, catalog, cart(), 0),
-    /bienes físicos/)
+    /physical goods/i)
 })
 
 test('T10-C solo sedes activas que venden, y con depósito para bienes', () => {
@@ -79,18 +79,18 @@ test('T10-C solo sedes activas que venden, y con depósito para bienes', () => {
     assert.throws(() => previewPosCart('ADMINISTRADOR', true, site, catalog, cart(), 0), RangeError)
   }
   assert.throws(() => previewPosCart('ADMINISTRADOR', true, noStore, catalog, cart(), 0),
-    /gestione stock/)
+    /manages stock/i)
   assert.equal(previewPosCart('ADMINISTRADOR', true, noStore, catalog,
     [{ catalog_item_id: otherId, quantity_milli: 1000, unit_price_cents: 1500 }], 0).totals.total_cents, 1500)
 })
 
 test('T10-C deniega empresa inactiva, artículos no vendibles y líneas repetidas', () => {
   assert.throws(() => previewPosCart('ADMINISTRADOR', false, location, catalog, cart(), 0),
-    /autorización/)
+    /authorization/i)
   assert.throws(() => previewPosCart('NO_MEMBER', true, location, catalog, cart(), 0),
-    /autorización/)
+    /authorization/i)
   assert.throws(() => previewPosCart('ADMINISTRADOR', true, location, catalog,
-    cart().concat(cart()), 0), /dupliques/)
+    cart().concat(cart()), 0), /duplicate/i)
   const disabled = catalog.map(x => ({ ...x, status: 'INACTIVO' }))
   assert.throws(() => previewPosCart('ADMINISTRADOR', true, location, disabled, cart(), 0), RangeError)
   assert.throws(() => previewPosCart('ADMINISTRADOR', true, location, catalog, [
@@ -153,9 +153,9 @@ test('E3-1G: Agregar unidades desde la tarjeta incorpora artículos distintos y 
 test('E3-1G: la acción rápida no supera el stock por sede ni duplica artículos',()=>{
  const original=cart()
  assert.equal(addOnePosCartUnit(original,catalog[0],3000)[0].quantity_milli,3000)
- assert.throws(()=>addOnePosCartUnit(original,catalog[0],2000),/existencias/)
- assert.throws(()=>addOnePosCartUnit([],catalog[0],null),/Consultá las existencias/)
- assert.throws(()=>addOnePosCartUnit([],catalog[0],0),/existencias/)
+ assert.throws(()=>addOnePosCartUnit(original,catalog[0],2000),/stock/i)
+ assert.throws(()=>addOnePosCartUnit([],catalog[0],null),/Check stock/i)
+ assert.throws(()=>addOnePosCartUnit([],catalog[0],0),/stock/i)
 })
 
 test('E3-1G: conserva precio excepcional en carrito y exige precio definido al agregar',()=>{
@@ -163,6 +163,6 @@ test('E3-1G: conserva precio excepcional en carrito y exige precio definido al a
  const updated=addOnePosCartUnit(custom,catalog[0],5000)
  assert.equal(updated[0].unit_price_cents,9900)
  assert.equal(updated[0].quantity_milli,2000)
- assert.throws(()=>addOnePosCartUnit([],catalog[1],null),/precio definido/)
- assert.throws(()=>addOnePosCartUnit([],{...catalog[0],status:'INACTIVO'},1000),/no está habilitado/)
+ assert.throws(()=>addOnePosCartUnit([],catalog[1],null),/no price/i)
+ assert.throws(()=>addOnePosCartUnit([],{...catalog[0],status:'INACTIVO'},1000),/not allowed to sell/i)
 })

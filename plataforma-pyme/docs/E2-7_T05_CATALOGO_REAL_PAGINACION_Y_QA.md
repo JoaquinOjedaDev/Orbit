@@ -1,56 +1,56 @@
-# E2-7 T05 — Catálogo REAL, unidades, centavos y paginación
+# E2-7 T05 — REAL Catalog, units, cents and pagination
 
-**Estado:** implementación en rama, pendiente de pruebas integradas navegador + PostgreSQL; NO fusionada.  
+**Status:** branch implementation, pending integrated browser + PostgreSQL testing; NOT merged.  
 **Rama:** `feature/e2-7-t05-catalogo-real`.  
-**Base:** `main` `e051a8da4c964ddc25fd17783ffd53b57d73d654` (T04 validado y fusionado).
+**Base:** `main` `e051a8da4c964ddc25fd17783ffd53b57d73d654` (T04 validated and merged).
 
-## 1. Alcance y contratos backend
+## 1. Scope and backend contracts
 
-Solo se modifican archivos de `plataforma-pyme/frontend`, el workflow de frontend y este documento. No cambian FastAPI, migraciones, `demoStore`, compras, ventas ni inventario.
+Only files from `plataforma-pyme/frontend`, the frontend workflow and this document. They don't change FastAPI, migrations, `demoStore`shopping, sales, inventory.
 
-| Acción | Endpoint REAL bajo `/api/v1` | Contrato |
+| Action | Endpoint REAL bajo `/api/v1` | Contract |
 |---|---|---|
-| Listado paginado | `GET /businesses/{business_id}/catalog?offset=0&limit=100` | `list[CatalogItemView]`, orden por nombre normalizado e ID |
-| Página siguiente | `GET .../catalog?offset=100&limit=100` | `offset >= 0`, `1 <= limit <= 500` |
-| Detalle | `GET .../catalog/{item_id}` | Ficha del mismo tenant |
-| Crear ficha | `POST .../catalog` | Sin idempotency key; 201, alta sin stock |
-| Editar ficha | `PATCH .../catalog/{item_id}` | Campos editables, sujeto a historia de compras/stock |
-| Activar/desactivar | `PATCH .../catalog/{item_id}/status` | `{ "status": "ACTIVO" | "INACTIVO" }` |
+| Paged list | `GET /businesses/{business_id}/catalog?offset=0&limit=100` | `list[CatalogItemView]`, order by standard name and ID |
+| Next Page | `GET .../catalog?offset=100&limit=100` | `offset >= 0`, `1 <= limit <= 500` |
+| Details | `GET .../catalog/{item_id}` | Same tenant file |
+| Crear ficha | `POST .../catalog` | No idempotency key; 201, high stockless |
+| Edit Tab | `PATCH .../catalog/{item_id}` | Editable fields, subject to purchase history/stock |
+| Enable/disable | `PATCH .../catalog/{item_id}/status` | `{ "status": "ACTIVO" | "INACTIVO" }` |
 
-Tipos: `ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`. Unidades: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`, `SERVICIO`. La unidad `SERVICIO` se usa exclusivamente para el tipo `SERVICIO`, y viceversa.
+Types: `ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`Units: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`, `SERVICIO`. Unity `SERVICIO` is used exclusively for the type `SERVICIO`, y viceversa.
 
-`price_cents` y `reference_cost_cents` admiten centavos enteros no negativos o `null` (sin informar). Nunca convertir a enteros mediante multiplicación directa de un decimal floating-point ingresado.
+`price_cents` y `reference_cost_cents` admit non-negative whole cents or `null` (without reporting). Never convert to integers by direct multiplication of a entered decimal floating-point.
 
-Todos los GET requieren una sesión REAL y pertenencia activa a la empresa; la creación, edición y estado solo quedan habilitados para `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` en empresa `ACTIVA`. FastAPI vuelve a autorizar cada acción. Por ejemplo un `TRABAJADOR` puede consultar, pero no editar.
+All GETs require a REAL session and active membership of the company; creation, editing and status are only enabled to `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` in-company `ACTIVA`. FastAPI reauthorizes each action. For example a `TRABAJADOR` you can consult, but do not edit.
 
-## 2. Nuevas rutas y componentes
+## 2. New routes and components
 
-- `/real/empresas/{uuid}/catalogo`: catálogo REAL, separado del catálogo DEMO.
-- `frontend/src/features/catalog/realCatalogGateway.ts`: DTO, validaciones, conversión de centavos, transporte autorizado por tenant y manejo HTTP.
-- `frontend/src/features/catalog/RealCatalogPage.tsx`: crear, editar, desactivar/reactivar, filtrar entre páginas cargadas, cargar 100 más.
-- `frontend/tests/catalog-real-api.test.mjs`: tests de contrato, dinero, acceso cruzado y errores.
+- `/real/empresas/{uuid}/catalogo`: REAL catalogue, separated from DEMO catalogue.
+- `frontend/src/features/catalog/realCatalogGateway.ts`: DTO, validations, cent conversion, transport authorized by tenant and HTTP handling.
+- `frontend/src/features/catalog/RealCatalogPage.tsx`: create, edit, disable/reactivate, filter between loaded pages, load 100 more.
+- `frontend/tests/catalog-real-api.test.mjs`: contract tests, money, cross access and errors.
 - `frontend/package.json`: `npm run test:catalog-real`.
-- `.github/workflows/plataforma-pyme-frontend.yml`: agrega `npm run test:catalog-real` al CI con los tests anteriores.
-- `frontend/src/features/businesses/RealBusinessesPage.tsx` y `frontend/src/features/auth/RealAuthApp.tsx`: navegación REAL.
-- `frontend/src/features/auth/auth.css`: tarjetas y formularios responsive, sin tocar la DEMO.
+- `.github/workflows/plataforma-pyme-frontend.yml`: adds `npm run test:catalog-real` IQ with the previous tests.
+- `frontend/src/features/businesses/RealBusinessesPage.tsx` y `frontend/src/features/auth/RealAuthApp.tsx`: REAL navigation.
+- `frontend/src/features/auth/auth.css`: cards and forms answer, without touching DEMO.
 
-## 3. Paginación: no afirmar catálogo completo prematuramente
+## 3. Pagination: not to affirm complete catalogue prematurely
 
-El backend devuelve hasta 100 por petición predeterminada y **no provee `total`**. Por eso se hace la primera consulta `offset=0&limit=100`. Si devuelve exactamente 100, la vista indica que potencialmente existen más y habilita **Cargar los siguientes 100**.
+The backend returns up to 100 per default request and **no provee `total`**That's why the first consultation is done. `offset=0&limit=100`. If you return exactly 100, the view indicates that potentially more exist and enables **Load the next 100**.
 
-Al hacer clic se consulta `offset=100&limit=100`, después 200, 300, etc. Solo se presenta la última página como consultada cuando devuelve menos de 100. Si devuelve 100 exactos puede requerirse una llamada adicional vacía para confirmar que no hay más.
+Clicking is consulted `offset=100&limit=100`, then 200, 300 etc. Only the last page is presented as accessed when it returns less than 100. If it returns 100 exacts an additional empty call may be required to confirm that there is no more.
 
-La búsqueda por nombre o SKU y el filtro de estado son **locales entre páginas cargadas** y llevan ese alcance explícito en la interfaz. No representan búsquedas globales en la base. Si cambian los datos del catálogo durante la paginación y se detectan IDs repetidos, se detiene la carga y solicita actualizar desde la primera página. Se usa el orden real de backend (nombre normalizado, ID).
+The search by name or SKU and the status filter are **Locales entre páginas precios** and carry that explicit scope on the interface. They do not represent global searches in the database. If you change the data from the catalog during paging and repeated IDs are detected, the load is stopped and you request to update from the first page. The real backend order (standard name, ID) is used.
 
-Para consultar el catálogo completo, el usuario debe seguir pulsando las siguientes páginas hasta que se complete la secuencia. La integración futura con un buscador en servidor requiere una API nueva o extensión contractual.
+To consult the full catalogue, the user must continue to press the following pages until the sequence is completed. Future integration with a server searcher requires a new API or contractual extension.
 
-## 4. Seguridad de mutaciones y límites
+## 4. Safety of mutations and boundaries
 
-La creación de fichas no tiene idempotency-key ni endpoint para recuperar una petición por request-id. Ante timeout, fallo de red, 5xx o respuesta malformada, el resultado podría ser incierto. La UI muestra una advertencia y bloquea nuevas escrituras hasta **reconsultar el catálogo**; no reintenta automáticamente. T06 tratará comandos durables/reconciliación y sus límites según soporte real del backend.
+The creation of chips does not have idempotency-key or endpoint to recover a request per request-id. Before timeout, network failure, 5xx or malformed response, the result could be uncertain. UI displays a warning and blocks new scriptures up to **Revisit Catalogue**; do not automatically retry. T06 will treat durable/reconciliation commands and their limits according to actual backend support.
 
-No se muestran stocks inventados ni cifras de compras/ventas. El `reference_cost_cents` es un dato del artículo, no costo histórico ni stock valorizado. El módulo de inventario REAL se integrará después.
+No invented stocks or purchase/sales figures are shown. `reference_cost_cents` is a data item, no historical cost or valued stock. The REAL inventory module will be integrated later.
 
-## 5. Comandos de validación PowerShell (desde `plataforma-pyme/frontend`)
+## 5. PowerShell Validation Commands (from `plataforma-pyme/frontend`)
 
 ```powershell
 git pull --ff-only origin feature/e2-7-t05-catalogo-real
@@ -71,7 +71,7 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw 'Falló lint' }
 ```
 
-Si Docker sigue activo:
+If Docker is still active:
 
 ```powershell
 docker compose --profile api up -d --wait
@@ -79,29 +79,29 @@ $env:PYME_API_PROXY_TARGET = 'http://127.0.0.1:18000'
 npm.cmd run dev
 ```
 
-Abrir `http://localhost:5173/real/login` y usar cuentas de prueba. Para un panel REAL, desde `Mis empresas` abrir TEST Empresa A o B y pulsar `Catálogo REAL`.
+Open `http://localhost:5173/real/login` and use test accounts. For a REAL panel, from `Mis empresas` open TEST Company A or B and press `Catálogo REAL`.
 
-## 6. QA funcional
+## 6. Functional QA
 
-| Caso | Operación | Esperado |
+| Case | Operation | Expected |
 |---|---|---|
-| T05-01 | Titular de TEST Empresa A abre Catálogo REAL | Lista vacía inicialmente, sin productos DEMO |
-| T05-02 | Crear `Producto A TEST` tipo REVENTA/UNIDAD, SKU único, precio `1250,55` | Aparece, con precio entero de 125055 centavos en base |
-| T05-03 | Crear `Servicio A TEST` SERVICIO/SERVICIO | Ficha correcta, sin stock ficticio |
-| T05-04 | Intentar tipo SERVICIO con UNIDAD (o viceversa) | Formulario impide combinación; backend también la rechazaría |
-| T05-05 | Editar rubro, SKU o descripción de Producto A | Persistencia tras actualizar, sin cambio de tenant |
-| T05-06 | Desactivar/reactivar Producto A | Estado persistente. El nombre/SKU siguen reservados |
-| T05-07 | Crear artículo con nombre/SKU duplicado | HTTP 409, mensaje claro; no duplicar artículo |
-| T05-08 | Abrir Catálogo de TEST Empresa B | No muestra fichas de Empresa A |
-| T05-09 | Usuario TRABAJADOR de A abre Catálogo A | Lectura permitida, sin botones de creación/edición/estado |
-| T05-10 | Usuario TRABAJADOR de A intenta URL del catálogo de B | 404/no disponible, sin mostrar fichas B |
-| T05-11 | Catálogo con 101+ fichas (preferir pruebas automatizadas y base temporal) | Primeras 100 + botón `Cargar los siguientes 100`, sin inventar totalidad |
-| T05-12 | Nombre/SKU buscado en página todavía no cargada | Mensaje explícito: filtro local, no búsqueda global |
-| T05-13 | Corte de red durante POST en entorno aislado | Sin reintento automático; reconsultar antes de nueva escritura |
-| T05-14 | DEMO `/inicio` | Sin alteraciones en catálogo, imágenes, precios o existencias locales |
+| T05-01 | TEST Holder Company A opens REAL Catalog | Empty list initially, no DEMO products |
+| T05-02 | Create `Producto A TEST` SKU type/UNITY, single SKU, price `1250,55` | Appears, with full price of 125055 cents on base |
+| T05-03 | Create `Servicio A TEST` SERVICE/SERVICE | Correct tab, no fictitious stock |
+| T05-04 | Try SERVICE with UNITY (or vice versa) | Form prevents combination; backend would also reject it |
+| T05-05 | Edit Product A item, SKU or description | Persistence after updating, no change of tenant |
+| T05-06 | Disable/reactivate Product A | Persistent state. Name/SKU is still reserved |
+| T05-07 | Create article with duplicate name/SKU | HTTP 409, clear message; do not duplicate article |
+| T05-08 | Open TEST Catalogue Company B | No Company A tokens shown |
+| T05-09 | User WORKER of A Opens Catalogue A | Reading permitted, no creation/editing/state buttons |
+| T05-10 | User A WORKER tries URL of the B catalog | 404/Not available, not showing B-cards |
+| T05-11 | Catalogue with 101+ tokens (prefer automated testing and time base) | First 100+ button `Cargar los siguientes 100`without inventing wholeness |
+| T05-12 | Name/SKU searched on page not yet loaded | Express message: local filter, no global search |
+| T05-13 | Networking during POST in isolated environment | No automatic retry; consult before rewriting |
+| T05-14 | DEMO `/inicio` | No changes in catalogue, images, prices or local stock |
 
-No crear 101 fichas manualmente solo para validar paginación. Para una prueba real masiva utilizar una base temporal, datos sintéticos y backend configurado explícitamente hacia esa DB. El flujo de paginación se verifica además con tests deterministas de gateway.
+Do not create 101 tabs manually just to validate pagination. For a massive real test use a temporary database, synthetic data and backend explicitly configured towards that DB. Pagination flow is also verified with deterministic gateway tests.
 
-## 7. Criterios de cierre
+## 7. Closing criteria
 
-No fusionar el PR hasta que se verifique CI (incluido Chromium), `test:catalog-real`, build/lint locales y pruebas reales del catálogo A/B, roles, creación, edición y estados contra PostgreSQL. Mantener el warning Vite de chunk mayor a 500 kB visible y no desactivar reglas de lint.
+Do not merge PR until CI is verified (including Chromium), `test:catalog-real`, local build/lint and real testing of A/B catalog, roles, creation, editing and states against PostgreSQL. Keep the warning Vite from chunk greater than 500 kB visible and do not disable Lint rules.

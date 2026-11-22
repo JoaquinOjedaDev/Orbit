@@ -39,7 +39,7 @@ class PhotoView(BaseModel):
 
 
 def _not_found() -> HTTPException:
-    return HTTPException(status_code=404, detail="Fotografía o recurso no disponible")
+    return HTTPException(status_code=404, detail="Photograph or resource not available")
 
 
 class PhotoService:
@@ -58,7 +58,7 @@ class PhotoService:
         )
         if (actor is None or actor.status != "ACTIVO" or session is None
                 or session.revoked_at is not None or session.expires_at <= now_utc()):
-            raise HTTPException(status_code=401, detail="Sesión requerida o vencida")
+            raise HTTPException(status_code=401, detail="Required or expired session")
 
     def _authorize(
         self, ctx: AuthContext, owner_type: str, owner_id: UUID,
@@ -87,12 +87,12 @@ class PhotoService:
             raise _not_found()
         if writing:
             if company.status != "ACTIVA":
-                raise HTTPException(status_code=409, detail="Empresa suspendida")
+                raise HTTPException(status_code=409, detail="Company suspended")
             if not has_business_permission(
                 role=membership.role, membership_status=membership.status,
                 business_status=company.status, permission=BusinessPermission.EDIT_PROFILE,
             ):
-                raise HTTPException(status_code=403, detail="No tenés permiso para gestionar fotografías")
+                raise HTTPException(status_code=403, detail="You don't have permission to manage photographs.")
         if owner_type == "BUSINESS":
             if owner_id != business_id:
                 raise _not_found()
@@ -155,7 +155,7 @@ class PhotoService:
             ).all()
             if owner_type == "CATALOG":
                 if len(rows) >= 8:
-                    raise HTTPException(status_code=409, detail="Máximo de 8 fotos por artículo o servicio")
+                    raise HTTPException(status_code=409, detail="Maximum of 8 photos per article or service")
                 occupied = {position for _, position in rows}
                 slot = next(i for i in range(8) if i not in occupied)
             else:

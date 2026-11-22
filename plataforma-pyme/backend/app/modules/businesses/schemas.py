@@ -17,10 +17,10 @@ class CreateBusinessRequest(BaseModel):
     @classmethod
     def normalize_text(cls, value: str) -> str:
         if "\x00" in value:
-            raise ValueError("El texto no puede contener caracteres nulos")
+            raise ValueError("Text cannot contain null characters")
         value = value.strip()
         if len(value) < 2:
-            raise ValueError("Se necesitan al menos dos caracteres")
+            raise ValueError("At least two characters are required")
         return value
 
 
@@ -79,19 +79,19 @@ class UpdateBusinessProfileRequest(BaseModel):
         if value is None:
             return None
         if "\x00" in value:
-            raise ValueError("El texto no puede contener caracteres nulos")
+            raise ValueError("Text cannot contain null characters")
         result = value.strip()
         if len(result) < 2:
-            raise ValueError("Se necesitan al menos dos caracteres")
+            raise ValueError("At least two characters are required")
         return result
 
     @model_validator(mode="after")
     def require_explicit_non_null_change(self) -> Self:
         if not self.model_fields_set:
-            raise ValueError("Se requiere al menos un campo para actualizar")
+            raise ValueError("At least one field is required to update")
         for field in self.model_fields_set:
             if getattr(self, field) is None:
-                raise ValueError("No se permiten valores null en la edición")
+                raise ValueError("No null values allowed in editing")
         return self
 
 
@@ -112,7 +112,7 @@ class CreateBusinessInvitationRequest(BaseModel):
     def normalize_recipient(cls, value: EmailStr) -> str:
         result = str(value).lower()
         if not result.isascii() or len(result) > 254:
-            raise ValueError("Se requiere un correo ASCII valido")
+            raise ValueError("Valid ASCII mail required")
         return result
 
 
@@ -180,8 +180,8 @@ class UpdateBusinessTeamMemberRequest(BaseModel):
     @model_validator(mode="after")
     def require_update(self) -> Self:
         if not self.model_fields_set:
-            raise ValueError("Se requiere rol o estado para actualizar")
+            raise ValueError("Role or status required to update")
         for key in self.model_fields_set:
             if getattr(self, key) is None:
-                raise ValueError("No se permiten campos null")
+                raise ValueError("No null fields allowed")
         return self

@@ -10,7 +10,7 @@ test.beforeAll(()=>{
 
 test('E3-1E2: recepción en pantalla exclusiva, comprobante, regreso y un solo movimiento',async({request,page})=>{
   const email='e3-1e2-'+randomUUID()+'@example.com'
-  const password='Recepción QA descartable 2026!'
+  const password='Orbit-1-' + globalThis.crypto.randomUUID()
   const registration=await request.post(api+'/auth/register',{
     data:{email,password,display_name:'Titular E3 Recepciones'},
   })
@@ -51,37 +51,37 @@ test('E3-1E2: recepción en pantalla exclusiva, comprobante, regreso y un solo m
   expect(initialMoves).toEqual([])
   await page.setViewportSize({width:390,height:844})
   await page.goto('/real/empresas/'+business.id+'/compras')
-  await page.getByLabel('Correo electrónico',{exact:true}).fill(email)
-  await page.getByLabel('Contraseña',{exact:true}).fill(password)
+  await page.getByLabel('Email',{exact:true}).fill(email)
+  await page.getByLabel('Password',{exact:true}).fill(password)
   await page.getByRole('button',{name:'Ingresar',exact:true}).click()
   const cards=page.locator('article.real-supply-card')
   await expect(cards).toHaveCount(1)
-  await cards.first().getByRole('button',{name:'Pendiente · Confirmar recepción en ubicación'}).click()
-  await expect(page.getByRole('heading',{name:'Recepción de compra',exact:true})).toBeVisible()
+  await cards.first().getByRole('button',{name:'Pending · Confirm reception at location'}).click()
+  await expect(page.getByRole('heading',{name:'Purchase reception',exact:true})).toBeVisible()
   await expect(cards).toHaveCount(0)
-  await expect(page.getByRole('button',{name:'Volver a compras'}).first()).toBeFocused()
-  await expect(page.getByLabel('Resumen de compra a recibir')).toContainText('Importe registrado')
-  await expect(page.getByLabel('Pantalla de recepción')).toContainText('Concepto: no genera stock físico')
+  await expect(page.getByRole('button',{name:'Back to shopping'}).first()).toBeFocused()
+  await expect(page.getByLabel('Summary of purchase to receive')).toContainText('Recorded amount')
+  await expect(page.getByLabel('Reception screen')).toContainText('Concept: does not generate physical stock')
 
   let postCount=0
   page.on('request',req=>{
     if(req.method()==='POST'&&new URL(req.url()).pathname.endsWith(
       '/businesses/'+business.id+'/purchases/'+purchase.id+'/receive'))postCount++
   })
-  await page.getByRole('button',{name:'Volver a compras'}).first().click()
+  await page.getByRole('button',{name:'Back to shopping'}).first().click()
   await expect(cards).toHaveCount(1)
   expect(postCount).toBe(0)
   expect(await get(root+'/inventory/movements')).toEqual([])
 
-  await cards.first().getByRole('button',{name:'Pendiente · Confirmar recepción en ubicación'}).click()
-  await page.getByLabel('Destino con almacenamiento activo').selectOption(location.id)
+  await cards.first().getByRole('button',{name:'Pending · Confirm reception at location'}).click()
+  await page.getByLabel('Destination with active storage').selectOption(location.id)
   page.once('dialog',dialog=>void dialog.accept())
-  await page.getByRole('button',{name:'Confirmar recepción REAL'}).click()
-  await expect(page.getByRole('heading',{name:'Comprobante de recepción',exact:true})).toBeVisible()
+  await page.getByRole('button',{name:'Confirm Real Reception'}).click()
+  await expect(page.getByRole('heading',{name:'Receipt check',exact:true})).toBeVisible()
   await expect(cards).toHaveCount(0)
-  await expect(page.getByLabel('Detalle de recepción confirmada')).toContainText('Insumo E3-1E2')
-  await expect(page.getByLabel('Detalle de recepción confirmada')).toContainText('+3 UNIDAD')
-  await expect(page.getByLabel('Detalle de recepción confirmada')).toContainText('Titular E3 Recepciones')
+  await expect(page.getByLabel('Confirmed reception detail')).toContainText('Insumo E3-1E2')
+  await expect(page.getByLabel('Confirmed reception detail')).toContainText('+3 UNIDAD')
+  await expect(page.getByLabel('Confirmed reception detail')).toContainText('Titular E3 Recepciones')
   expect(postCount,'Solo un POST receive al confirmar').toBe(1)
   const balances=await get(root+'/inventory/balances')
   expect(balances).toHaveLength(1)
@@ -93,18 +93,18 @@ test('E3-1E2: recepción en pantalla exclusiva, comprobante, regreso y un solo m
   expect(movements[0]).toMatchObject({
     catalog_item_id:item.id,delta_milli:3000,event_type:'COMPRA_RECEPCION',
   })
-  await page.getByRole('button',{name:'Volver a compras'}).first().click()
+  await page.getByRole('button',{name:'Back to shopping'}).first().click()
   await expect(cards).toHaveCount(1)
-  await expect(cards.first().getByRole('button',{name:'Consultar comprobante'})).toBeVisible()
-  await cards.first().getByRole('button',{name:'Consultar comprobante'}).click()
-  await expect(page.getByRole('heading',{name:'Comprobante de recepción'})).toBeVisible()
+  await expect(cards.first().getByRole('button',{name:'Check voucher'})).toBeVisible()
+  await cards.first().getByRole('button',{name:'Check voucher'}).click()
+  await expect(page.getByRole('heading',{name:'Receipt check'})).toBeVisible()
   expect(postCount,'Consultar comprobante solo realiza GET').toBe(1)
-  await page.getByRole('button',{name:'Volver a compras'}).first().click()
+  await page.getByRole('button',{name:'Back to shopping'}).first().click()
   await page.reload()
-  await page.getByLabel('Correo electrónico',{exact:true}).fill(email)
-  await page.getByLabel('Contraseña',{exact:true}).fill(password)
+  await page.getByLabel('Email',{exact:true}).fill(email)
+  await page.getByLabel('Password',{exact:true}).fill(password)
   await page.getByRole('button',{name:'Ingresar',exact:true}).click()
-  await expect(page.locator('article.real-supply-card').getByRole('button',{name:'Consultar comprobante'})).toBeVisible()
+  await expect(page.locator('article.real-supply-card').getByRole('button',{name:'Check voucher'})).toBeVisible()
   expect(await get(root+'/inventory/movements')).toEqual(movements)
   const width=await page.evaluate(()=>Math.max(document.body.scrollWidth,document.documentElement.scrollWidth))
   expect(width,'Vista adaptada a 390px').toBeLessThanOrEqual(391)

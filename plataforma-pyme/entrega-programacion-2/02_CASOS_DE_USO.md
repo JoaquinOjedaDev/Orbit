@@ -1,446 +1,446 @@
-# 02 — Especificación de casos de uso
+# 02 — Specification of use cases
 
-**Versión vigente de consulta:** T12-B / E2-7, 11/11/2026 · **Base:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec`.  
-**Estado:** doce casos de uso nucleares con API implementada y evidencia de integración. **Los flujos descriptivos de las versiones antiguas se conservan debajo como historial**; cuando un detalle TO-BE diverja del código, prevalece la tabla vigente y la [matriz de rutas del Documento 05](05_MATRIZ_API_Y_TRAZABILIDAD.md).
+**Current version of query:** T12-B / E2-7, 11/11/2026 · **Base:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec`.  
+**Status:** 12 cases of nuclear use with implemented API and evidence of integration. **The descriptive flows of the old versions are preserved below as history**; when a TO-BE detail diverges from the code, the current table and the [path matrix of Document 05](05_MATRIZ_API_Y_TRAZABILIDAD.md).
 
-## Estado vigente T12-B — CU-01 a CU-12 después de integración REAL
+## Current state T12-B — CU-01 to CU-12 after REAL integration
 
-**Actores reales:** visitante; usuario global autenticado; titular administrativo; administrador; encargado o trabajador con membresía activa y permisos efectivos; invitado con cuenta global cuyo correo coincida con la invitación. Los permisos **no** se deducen de controles visibles en React: los confirma FastAPI por tenant, rol, estado y, cuando corresponde, asignaciones a sedes. Proveedor y cliente **no** son usuarios de plataforma por el solo hecho de figurar en una operación.
+**Real actors:** visitor; global user authenticated; administrative holder; administrator; manager or worker with active membership and effective permits; guest with global account whose mail matches the invitation. **no** are deduced from visible controls in React: FastAPI confirms them by tenant, role, status and, where applicable, headquarters assignments. **no** are platform users for the sole reason that they appear in an operation.
 
-**Rutas:** todas las API de la matriz llevan prefijo `/api/v1`; `B` representa `/api/v1/businesses/{business_id}` y `E` representa `/real/empresas/{business_id}`. Las pantallas React REAL no utilizan el `demoStore` como fuente de verdad.
+**Routes:** all APIs in the array are prefixed `/api/v1`; `B` represents `/api/v1/businesses/{business_id}` y `E` represents `/real/empresas/{business_id}`. React REAL screens do not use the `demoStore` as a source of truth.
 
-### Catálogo de CU vigente con postcondiciones observables
+### CU catalogue with observable postconditions
 
-| CU / RF | Objetivo del actor | API REAL representativa | Pantalla REAL | Postcondición, evidencia y límites |
+| CU / RF | Objective of the actor | REAL API representative | REAL Screen | Postcondition, evidence and boundaries |
 |---|---|---|---|---|
-| **CU-01 / RF-01** | Registrarse | `POST /api/v1/auth/register` | `/real/registro` | Identidad creada; `auth-registration-ui.spec.ts` y pruebas de registro. No implica correo verificado |
-| **CU-02 / RF-01** | Iniciar/cerrar sesión y consultar identidad | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout` | `/real/login`, `/real/perfil` | Sesión Bearer opaca activa o revocada; `auth-registration-ui.spec.ts`, `security-navigation.spec.ts`. Token solo en memoria y F5 exige reingreso |
-| **CU-03 / RF-02** | Crear empresa y administrarla | `POST/GET /businesses`, `GET/PATCH B` | `/real/empresas`, `/real/empresas/nueva`, `E` | Empresa + titular inicial, aislamiento y edición autorizada; `security-navigation.spec.ts` y backend de empresas. El idempotency key evita dos altas con misma solicitud |
-| **CU-04 / RF-03** | Crear y gestionar ubicación | `POST/GET B/locations`, `PATCH B/locations/{location_id}`, `PATCH .../status`, `PUT .../primary`, `GET .../my-assignments` | `E/ubicaciones` | Sede persistida, pausa/reactivación/principal y permisos SELL/STORE; `business-crud-persistence.spec.ts`, `assigned-location-visibility.spec.ts`; una asignación no es permiso sobre todas las sedes |
-| **CU-05 / RF-04** | Crear, editar y desactivar artículo o servicio | `POST/GET B/catalog`, `GET/PATCH B/catalog/{item_id}`, `PATCH .../status` | `E/catalogo` | SKU/nombre por empresa, ficha activa/inactiva y precio opcional; `business-crud-persistence.spec.ts`; crear ficha **no** genera stock |
-| **CU-06 / RF-05** | Registrar compra | `POST/GET B/purchases`, `GET B/purchases/{purchase_id}` | `E/compras` | Compra y snapshots persistentes; puede contener bien físico, servicio o concepto libre; **no** incrementa stock antes de CU-07. `purchase-ui-persistence.spec.ts` |
-| **CU-07 / RF-05+RF-06** | Confirmar recepción completa | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt` | `E/compras` | Entrada física por renglón recepcionable, única transacción y comprobante; replay idempotente sin segundo ingreso. `flow-purchase-to-sale.spec.ts`, `purchase-ui-persistence.spec.ts`; recepción parcial/multidestino **no** es MVP |
-| **CU-08 / RF-06** | Consultar saldos y movimientos | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario` | Saldos por sede/artículo, versión y ledger firmados de servidor; `inventory.spec.ts`. La lectura general incluye sedes de la empresa; **es decisión del MVP**, no derecho de operar allí |
-| **CU-09 / RF-06** | Trasladar stock entre sedes | `POST B/inventory/transfers`, `GET .../transfers/{transfer_id}` | `E/inventario`, panel traslado | Dos movimientos en una operación, salida −/entrada +, suma neta cero y sin stock negativo; `inventory.spec.ts`, `assigned-location-visibility.spec.ts`. Requiere STORE **en ambas sedes**; recepción logística asincrónica entre trabajadores queda diferida |
-| **CU-10 / RF-07** | Registrar venta con pagos declarados | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}` | `E/pos`, `E/ventas` | Ventas de bienes y servicios, descuento/precio autorizado, suma exacta de pagos, comprobante y replay seguro. `pos-draft.spec.ts`, `flow-purchase-to-sale.spec.ts`, `sales-invalid-payment-policy.spec.ts`. **No acredita pagos bancarios**; escritura POS local deshabilitada salvo activación explícita |
-| **CU-11 / RF-06** | Registrar stock inicial o ajuste justificado | `POST B/inventory/adjustments`, `GET .../adjustments/{adjustment_id}` | `E/inventario`, panel ajustes/conteo | Versión `expected_version` y motivo, movimientos firmados, 409 ante versión obsoleta y sin saldo negativo; `inventory.spec.ts`. Stock inicial limitado a administradores y par sede/artículo sin historial |
-| **CU-12 / RF-02** | Invitar, aceptar y administrar colaboración | `POST B/invitations`, `POST /api/v1/invitations/accept`, `GET/PATCH B/memberships...`, `GET/PUT B/locations/{location_id}/assignments...` | `E/equipo`, `/real/invitaciones/aceptar` | Invitación nominativa **no** concede membresía al emitir; aceptación autenticada crea/reactiva membresía del destinatario y rol propuesto; titular gestiona roles no titulares. `test_business_acceptance_*.py`, `test_business_team_*.py` y validación manual de asignaciones. No envío automático de correos/QR público |
+| **CU-01 / RF-01** | Sign up | `POST /api/v1/auth/register` | `/real/registro` | Identity created; `auth-registration-ui.spec.ts` and registration tests. It does not involve verified mail |
+| **CU-02 / RF-01** | Start/Close Session and Consult Identity | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout` | `/real/login`, `/real/perfil` | The session is opaque or revoked; `auth-registration-ui.spec.ts`, `security-navigation.spec.ts`. Token only in memory and F5 demands re-entry |
+| **CU-03 / RF-02** | Create and manage a company | `POST/GET /businesses`, `GET/PATCH B` | `/real/empresas`, `/real/empresas/nueva`, `E` | Company + initial holder, isolation and authorised edition; `security-navigation.spec.ts` and backend of companies. The idempotency key avoids two highs with the same request |
+| **CU-04 / RF-03** | Create and manage location | `POST/GET B/locations`, `PATCH B/locations/{location_id}`, `PATCH .../status`, `PUT .../primary`, `GET .../my-assignments` | `E/ubicaciones` | Persisting Headquarters, Pause/Reactivation/Main and SELL/STORE permissions; `business-crud-persistence.spec.ts`, `assigned-location-visibility.spec.ts`; an assignment is not permission for all locations |
+| **CU-05 / RF-04** | Create, edit and disable article or service | `POST/GET B/catalog`, `GET/PATCH B/catalog/{item_id}`, `PATCH .../status` | `E/catalogo` | SKU/name per company, active/inactive tab and optional price; `business-crud-persistence.spec.ts`; crear ficha **no** generates stock |
+| **CU-06 / RF-05** | Register purchase | `POST/GET B/purchases`, `GET B/purchases/{purchase_id}` | `E/compras` | Purchase and persistent snapshots; may contain either physical, service or free concept; **no** increase stock before CU-07. `purchase-ui-persistence.spec.ts` |
+| **CU-07 / RF-05+RF-06** | Confirm full reception | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt` | `E/compras` | Physical entry by receptionable line, single transaction and voucher; idempotent replay without second income. `flow-purchase-to-sale.spec.ts`, `purchase-ui-persistence.spec.ts`; partial reception/multi-destiny **no** es MVP |
+| **CU-08 / RF-06** | Check balances and movements | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario` | Balances by registered server header/article, version and ledger; `inventory.spec.ts`. General reading includes company headquarters; **is the decision of the MVP**Not right to operate there. |
+| **CU-09 / RF-06** | Transfer stock between headquarters | `POST B/inventory/transfers`, `GET .../transfers/{transfer_id}` | `E/inventario`, Panel Transfer | Two movements in one operation, output −/entry +, zero net sum and no negative stock; `inventory.spec.ts`, `assigned-location-visibility.spec.ts`It requires STORE. **at both headquarters**; asynchronous logistics reception between workers is delayed |
+| **CU-10 / RF-07** | Register sale with declared payments | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}` | `E/pos`, `E/ventas` | Sales of goods and services, authorized discount/price, exact sum of payments, voucher and replay insurance. `pos-draft.spec.ts`, `flow-purchase-to-sale.spec.ts`, `sales-invalid-payment-policy.spec.ts`. **No bank payments credit**; local POS writing disabled unless explicitly activated |
+| **CU-11 / RF-06** | Register initial stock or justified adjustment | `POST B/inventory/adjustments`, `GET .../adjustments/{adjustment_id}` | `E/inventario`, Settings/Counter panel | Version `expected_version` and reason, signed movements, 409 before obsolete version and without negative balance; `inventory.spec.ts`. Initial stock limited to administrators and pair of headquarters/article without history |
+| **CU-12 / RF-02** | Invite, accept and manage collaboration | `POST B/invitations`, `POST /api/v1/invitations/accept`, `GET/PATCH B/memberships...`, `GET/PUT B/locations/{location_id}/assignments...` | `E/equipo`, `/real/invitaciones/aceptar` | Nominative invitation **no** grants membership when issuing; authenticated acceptance creates/reactive recipient membership and proposed role; holder manages non-titled roles. `test_business_acceptance_*.py`, `test_business_team_*.py` and manual validation of assignments. No automatic sending of public mail/QR |
 
-**Todas las rutas abreviadas `/auth`, `/businesses` y `/invitations` en esta tabla se entienden bajo `/api/v1`; `B` ya incluye dicho prefijo.** El inventario exhaustivo de métodos y URLs se encuentra en el Documento 05; los campos y respuestas se rigen por los esquemas realmente montados en `backend/app/modules/*`, no por borradores antiguos.
+**All routes abbreviated `/auth`, `/businesses` y `/invitations` in this table are understood under `/api/v1`; `B` already includes this prefix.** The comprehensive inventory of methods and URLs is found in Document 05; the fields and responses are governed by the schemas actually mounted on `backend/app/modules/*`Not old drafts.
 
-### Flujos transaccionales y alternativas vigentes
+### Current transactional and alternative flows
 
-**Compra → recepción → inventario → venta.** El operador registra una compra y la consulta con sus renglones; no se permite suponer que esté recibida ni incrementar stock desde React. Un operador autorizado de la sede STORE confirma la recepción completa, que genera un movimiento por bien físico. Servicios y conceptos libres no originan entradas físicas. Una venta posterior de bienes exige sede SELL autorizada, stock suficiente y cargo de pagos declarados exactamente igual al total; una venta de servicio no descuenta existencias. El comprobante REAL se recupera por ID y por `request_id`.
+**Purchase → reception → inventory → sale.** The operator records a purchase and the consultation with its lines; it is not allowed to assume that it is received or increase stock from React. An authorized operator of the STORE headquarters confirms the complete receipt, which generates a movement for physical good. Free services and concepts do not originate physical entries. A subsequent sale of goods requires approved SELL headquarters, sufficient stock and payment charge declared exactly equal to the total; a service sale does not discount stocks. REAL voucher is recovered by ID and by `request_id`.
 
-**Transferencia y conteo.** El traslado confirma débito/crédito atómicos entre dos sedes STORE; el trabajador asignado únicamente a una sede **no** puede trasladar a otra. Los ajustes versionados rechazan un `expected_version` obsoleto; un saldo cero con historial no permite duplicar carga inicial. La consulta de existencias por empresa puede incluir ubicaciones sin asignación del trabajador, pero esa consulta **no** le autoriza a mutarlas.
+**Transfer and counting.** The transfer confirms the atomic debit/credit between two STORE headquarters; the worker assigned only to one headquarters **no** can move to another. The versioned settings reject a `expected_version` obsolete; a zero balance with history does not allow doubling initial load. The inventory query per company may include unallocated locations of the worker, but that query **no** He allows you to mutate them.
 
-**Alternativas y errores para cualquier CU que los admita:** `401` token/sesión ausente o revocada; `403` rol o permiso insuficiente; `404` recurso no visible, inexistente o de otro tenant; `409` conflicto de negocio, idempotencia, versión o inventario; `422` solicitud inválida; `5xx`/pérdida de respuesta es **resultado incierto**, no «rechazo confirmado». Para comandos con identidad durable, recuperar primero y nunca duplicar con otro key por una respuesta perdida. Las rutas de `GET` históricas no son instrucciones de reenvío `POST`.
+**Alternatives and errors for any CU that admits them:** `401` token/seat absent or revoked; `403` insufficient role or permission; `404` a non-visible, non-existent or other tenant remedy; `409` conflict of business, idempotency, version or inventory; `422` invalid application; `5xx`/loss of response is **uncertain result**, not "confirmed refusal". For commands with durable identity, recover first and never duplicate with another key for a lost response. `GET` historical are not forwarding instructions `POST`.
 
-### Fuera del alcance de estos CU REAL
+### Out of reach of these CU REAL
 
-RF-08 gastos/caja, RF-09 cuentas financieras y RF-10 QR están **DEMO/diferidos**. Los controles DEMO no generan escrituras en la API REAL, verificado por `demo-money-isolation.spec.ts`. No se implementaron acreditación de Mercado Pago, webhooks, reservas de inventario, pagos efectivamente conciliados, fabricación por receta ni recepción logística en dos tiempos.
+RF-08 expenses/box, RF-09 financial accounts and RF-10 QR are **DEMO/DIFFERENT**. DEMO controls do not generate write in the REAL API, verified by `demo-money-isolation.spec.ts`. No accreditation of Pago Market, webhooks, inventory reserves, effectively reconciled payments, prescription manufacturing and two-stroke logistics reception were implemented.
 
-### Evidencia y nivel de garantía
+### Evidence and level of guarantee
 
-- [Auditoría T11 final](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md): **26/26 escenarios E27 cubiertos en alcance funcional/smoke**, sin afirmación de accesibilidad WCAG completa.
-- Playwright + PostgreSQL CI final: **892 Pytest, 38 REAL y 6 DEMO PASS** (base descartable).
-- [Prueba manual guiada, 39 pasos](../docs/E2-7_T11_D2_ACTA_PRUEBA_MANUAL_REAL.md): dos defectos de permisos de sede corregidos y retesteados; capturas observadas en conversación, no incorporadas como adjuntos Git.
+- [Audit T11 final](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md): **26/26 E27 scenarios covered in functional scope/smoke**, no full WCAG accessibility statement.
+- Playwright + PostgreSQL CI final: **892 Pytest, 38 REAL y 6 DEMO PASS** (base to be discarded).
+- [Guided manual test, 39 steps](../docs/E2-7_T11_D2_ACTA_PRUEBA_MANUAL_REAL.md): two defects of corrected and retested headquarters permits; catches observed in conversation, not incorporated as Git attachments.
 
 ---
 
-## Archivo histórico de especificaciones y cortes previos (conservado)
+## Historical Archive of Pre-Specifications and Cuts (Conserved)
 
-La especificación que sigue contiene **flujos propuestos cuando RF-03–RF-07 todavía se estaban construyendo** y apéndices incrementales E2-1/E2-3. Se mantiene para evaluar la evolución del diseño; expresiones antiguas «backend pendiente», «futuro» o «TO-BE» **no contradicen ni sustituyen** el estado REAL T12-B anterior.
-
-
-**Proyecto:** Orbit — Plataforma de gestión multiempresa y multirrubro  
-**Materia:** Programación 2  
-**Versión:** 1.8 — E2-3 E, catálogo real y 580 pruebas Windows
-**Estado:** **REVISADO PARA ENTREGA — especificación TO-BE, con decisiones de E2 todavía abiertas**  
-**Fecha:** 8 de noviembre de 2026  
-**Documento de referencia:** `01_ANALISIS_DE_REQUERIMIENTOS.md` (v0.8)  
-**Alcance:** casos de uso del **núcleo propuesto** del backend RESTful (TO-BE), contrastados con los comportamientos del frontend DEMO (AS-IS). Las operaciones previstas NO implican endpoints implementados. La lista definitiva de permisos, campos y códigos HTTP se formalizará posteriormente. Esta revisión incorpora CU-12 como soporte para membresías reales, sin ampliar el alcance a envíos de correo o acceso público por QR.
-
-> **Cierre E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y **C.4b (195/195 pruebas locales aprobadas; `195 passed in 23.86s`)**. Alembic `e213c4_acceptance (head)`, `No new upgrade operations detected.`; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready`/`ok`. GitHub Actions **3/3** corresponde al commit funcional `8cd1674`. C.5 es **exclusivamente documental**; no se reejecutaron pruebas ni cambiaron endpoints, modelos SQL o migraciones. React sigue DEMO; RF-03–RF-07 no tienen backend; transferencia de titularidad, verificación de correo y endurecimiento para producción siguen pendientes.
-
-> **Estado vigente E2-2 (08/11/2026):** RF-03/CU-04 y E2-2 A/A.1/B/C/D implementados, con ubicaciones, asignaciones de colaboradores, autorización por tenant y política operacional reutilizable. **371/371 pruebas en Windows (47.57s)**; `e22d_assignments (head)`; Alembic sin operaciones pendientes; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. CI del código E2-2 D: 3/3 y 371 pruebas en Python 3.12 y 3.14. **No** existe todavía integración React–API ni operaciones comerciales de compras/stock/ventas que consuman la política; corresponden a bloques posteriores. Los párrafos de cortes previos que mencionan validaciones o funciones «pendientes» se conservan como **histórico**, no como estado actual. El TP integral no se declara terminado.
+The specification below contains **proposed flows when RF-03–RF-07 were still being built** and incremental appendices E2-1/E2-3. Maintained to assess design evolution; old expressions ‘backend pending’, ‘future’ or ‘TO-BE’ **do not contradict or replace** the previous REAL T12-B status.
 
 
-## 1. Finalidad y metodología
+**Project:** Orbit — Multi-company and multi-strike management platform  
+**Materia:** Programming 2  
+**Version:** 1.8 — E2-3 E, real catalogue and 580 Windows tests
+**Status:** **REVISED FOR DELIVERY — TO-BE specification, with E2 decisions still open**  
+**Date:** 8 November 2026  
+**Reference document:** `01_ANALISIS_DE_REQUERIMIENTOS.md` (v0.8)  
+**Scope:** cases of use of **proposed core** The final list of permissions, fields and HTTP codes will be formalized later. This revision incorporates CU-12 as support for real memberships, without extending the scope to mail or public access by QR.
 
-Este documento describe **qué objetivos realizan los actores**, cómo responde la plataforma y qué debe ocurrir ante datos inválidos, operaciones repetidas o falta de permisos. No describe pantallas, botones específicos, tablas SQL ni implementación de FastAPI.
+> **Closing E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y **C.4b (195/195 approved local tests; `195 passed in 23.86s`)**. Alembic `e213c4_acceptance (head)`, `No new upgrade operations detected.`; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready`/`ok`. GitHub Actions **3/3** corresponde al commit funcional `8cd1674`. C.5 es **documentary only**; no re-execution of evidence or change of endpoints, SQL models or migrations. React follows DEMO; RF-03–RF-07 has no backend; title transfer, mail verification and hardening for production remain pending.
 
-Un **requerimiento funcional** expresa una capacidad del sistema (por ejemplo, RF-07: registrar ventas). Un **caso de uso** especifica un objetivo observable del actor (por ejemplo, CU-10: registrar una venta con pagos declarados). Una **historia de usuario** es una formulación breve de necesidad y beneficio; no sustituye los flujos y excepciones necesarios para evaluar esta API.
+> **State in force E2-2 (08/11/2026):** RF-03/CU-04 and E2-2 A/A.1/B/C/D implemented, with locations, partner assignments, tenant authorization and reusable operational policy. **371/371 tests on Windows (47.57s)**; `e22d_assignments (head)`; Alembic without pending operations; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. IC code E2-2 D: 3/3 and 371 tests in Python 3.12 and 3.14. **No** React–API integration and commercial purchases/stock/sales transactions that consume the policy are still in place; they correspond to later blocks. The previous cut-off paragraphs that mention validations or "pending" functions are retained as **history**, not as current state. The integral TP is not declared finished.
 
-Los flujos de autenticación y autorización aquí descritos son **objetivo de backend**; no están disponibles como seguridad efectiva en la DEMO local. Los escenarios de negocio de Catálogo, Compras, Inventario y Ventas utilizan reglas presentes en el frontend, pero deberán validarse de nuevo en el servidor.
 
-### 1.1 Convenciones
+## 1. Purpose and methodology
 
-- **Flujo principal:** secuencia exitosa y habitual.
-- **Alternativo:** otra forma válida de completar la operación.
-- **Excepción:** situación que impide completarla y produce una respuesta controlada.
-- **Postcondición:** estado observable que debe mantenerse cuando termina la operación.
-- **Idempotencia:** una misma solicitud repetida con la misma clave no produce un segundo efecto comercial.
-- **Cuenta / pago declarado:** referencia interna; no supone movimiento ni acreditación bancaria externa.
-- **Tenant:** empresa sobre la cual se realiza la operación. El usuario puede pertenecer a varias empresas, pero cada petición debe validar su acceso a la empresa concreta.
-- **Moneda:** los importes de esta API se acuerdan y validan en **centavos enteros de ARS** (por ejemplo, ARS 10,50 = `1050` centavos), o se convierten sin pérdida desde un decimal textual en el límite de entrada. No se utilizan números de punto flotante para almacenar dinero. Cantidades físicas se representan según la escala de la unidad aprobada.
-- **Atomicidad:** las validaciones de negocio que dependen de datos cambiantes (stock disponible, estado activo y recepción pendiente) se ejecutan con el control transaccional necesario para que entre la verificación y la escritura no se produzcan decisiones incompatibles.
-- **Respuesta de error:** la futura API emitirá errores estructurados sin trazas internas. Se propone **Problem Details, RFC 9457** (actualización de RFC 7807), con códigos HTTP y `type`, `title`, `status`, `detail` e `instance` según corresponda; el contrato final se define en Documento 05.
-- **Estado implementado:** los flujos CU-01, CU-02 y CU-03 tienen ya endpoints parciales o completos respaldados por pruebas SQL; los CU restantes permanecen TO-BE. La evidencia técnica específica figura en el Documento 05.
-- **Datos persistidos:** cada operación exitosa confirma todas sus escrituras o ninguna; los resultados relevantes conservan identificadores, empresa, actor, fecha/hora y referencias de origen. Los detalles exactos de campos se definirán en Documento 03 y Documento 05.
-- **Reintentos:** la idempotencia exige delimitar empresa, operación, actor/ámbito y clave; una clave repetida con carga equivalente debe devolver el resultado de esa operación y con carga distinta producir conflicto. Debe persistirse en la **misma transacción** que el efecto comercial o implementarse una garantía equivalente. La expiración/retención de claves queda para los contratos.
-- **Concurrencia de stock:** si el stock es una proyección de movimientos, no basta con bloquear filas históricas del ledger. El backend deberá serializar operaciones sobre la **misma pareja empresa–ubicación–artículo** mediante saldo bloqueable, actualización condicional, aislamiento serializable con reintento controlado u otra estrategia probada en PostgreSQL. Las operaciones sobre varios saldos deben mantener un orden estable de bloqueo. El ledger sigue siendo la fuente auditable de movimientos.
-- **Errores y permisos:** la validación del cliente es orientativa; toda lectura/escritura empresarial valida autenticación, membresía vigente y permisos en servidor. Para evitar revelación de información, un recurso ajeno puede responder como inexistente según el contrato. Un error de negocio no debe crear registros parciales.
+This document describes **what objectives the actors are pursuing**, how the platform responds and what should happen to invalid data, repeated operations or lack of permissions. It does not describe screens, specific buttons, SQL tables or FastAPI implementation.
 
-## 2. Actores
+Un **functional requirement** express a system capacity (e.g. RF-07: recording sales). **use case** specifies an observable objective of the actor (e.g. CU-10: registering a sale with declared payments). **user history** is a brief formulation of need and benefit; it does not replace the flows and exceptions needed to evaluate this API.
 
-| Actor | Descripción | Rol en los CU |
+The authentication and authorization flows described herein are **backend target**; they are not available as effective security in the local DEMO. The Business Scenarios of Catalogue, Purchase, Inventory and Sales use rules present on the frontend, but must be validated again on the server.
+
+### 1.1 Conventions
+
+- **Main flow:** successful and usual sequence.
+- **Alternative:** another valid way to complete the operation.
+- **Exception:** This situation prevents completion and produces a controlled response.
+- **Postcondition:** observable state to be maintained when the operation is completed.
+- **Idempotency:** the same repeated request with the same key does not produce a second commercial effect.
+- **Declared account/payment:** internal reference; does not imply external banking movement or accreditation.
+- **Tenant:** The user may belong to several companies, but each request must validate their access to the specific company.
+- **Currency:** the amounts of this API are agreed and validated in **ARS whole cents** (e.g. ARS 10.50 = `1050` cents), or are converted without loss from a textual decimal in the input limit. No floating point numbers are used to store money. Physical quantities are represented according to the approved unit scale.
+- **Atomity:** business validations that depend on changing data (stock available, active status and pending receipt) are executed with the transactional control necessary to ensure that verification and writing do not result in incompatible decisions.
+- **Error response:** the future API will issue structured errors without internal traces. **Problem Details, RFC 9457** (updating RFC 7807), HTTP codes and `type`, `title`, `status`, `detail` e `instance` as appropriate; the final contract is defined in Document 05.
+- **Status implemented:** The CU-01, CU-02 and CU-03 streams already have partial or complete endpoints supported by SQL tests; the remaining CUs remain TO-BE. Specific technical evidence is contained in Document 05.
+- **Persisting data:** each successful operation confirms all or none of its scripts; relevant results retain identifiers, company, actor, date/time and source references. The exact field details will be defined in Document 03 and Document 05.
+- **Reintense:** The Commission has also decided to establish a single system for the protection of the environment, which is based on the principle that the Community's energy policy should be based on the principles of the internal market. **same transaction** the commercial effect or an equivalent guarantee is implemented. The expiration/retention of keys remains for contracts.
+- **Stock Concurrence:** If the stock is a projection of movements, it is not enough to block historical rows of the ledger. The backend should serialize operations on the **same company–location–article pair** By means of locking balance, conditional update, serialised isolation with controlled retry or other strategy tested in PostgreSQL. Operations on several balances must maintain a stable order of lock. The leadger remains the auditable source of movements.
+- **Errors and permissions:** the validation of the client is guidance; any reading/writing of the business validates authentication, current membership and permissions on server. To avoid disclosure of information, a third party resource may respond as non-existent according to the contract. A business error must not create partial records.
+
+## 2. Actors
+
+| Actor | Description | Role in the CUs |
 |---|---|---|
-| Visitante | Persona sin sesión autenticada | Registrarse e iniciar sesión |
-| Usuario autenticado | Persona con identidad propia, global a las empresas | Crear empresa y acceder a empresas autorizadas |
-| Titular administrativo / administrador | Miembro con facultades de configuración y administración, según permisos futuros | Alta de ubicaciones, artículos e invitaciones |
-| Colaborador autorizado | Miembro que ejecuta operaciones según sus permisos en la empresa | Consultar existencias, recibir, trasladar, vender |
-| Usuario invitado | Identidad global destinataria de una invitación empresarial; no es automáticamente miembro | Aceptar invitación autorizada (CU-12) |
+| Visitor | Person without authenticated session | Sign in and sign in |
+| Authenticated user | Individual with a separate identity, global to companies | Create a company and access to licensed companies |
+| Administrative holder/administrator | Member with configuration and management powers, according to future permissions | High number of locations, items and invitations |
+| Authorized Contributor | Member who executes operations according to his permissions in the company | Check inventory, receive, transfer, sell |
+| Guest user | Global identity to be addressed by an enterprise invitation; not automatically member | Accepting Authorized Invitation (CU-12) |
 
 
-**Límite del sistema UML:** la API y la plataforma constituyen el **sistema bajo estudio**, por lo que **no se representan como actores** en el diagrama de casos de uso. Sí pueden aparecer como participantes internos en un diagrama de secuencia. Los actores son quienes interactúan desde afuera con el sistema para alcanzar sus objetivos.
+**UML system boundary:** the API and the platform constitute the **under study system**So **are not represented as actors** In the diagram of use cases. Yes, they can appear as internal participants in a sequence diagram. The actors interact from outside with the system to achieve their objectives.
 
-**Nota de roles:** para E2 se propone un modelo de permisos mínimo. No se presume que todo colaborador pueda ejecutar todas las operaciones; la matriz exacta se aprobará antes de implementar autenticación/autorización. Clientes y proveedores son entidades comerciales de referencia, no actores que deban iniciar sesión en este alcance.
+**Role note:** For E2 a minimum permission model is proposed. It is not presumed that any collaborator can execute all operations; the exact matrix will be approved before implementing authentication/authorization. Customers and suppliers are reference commercial entities, not actors who should log in in in this scope.
 
-## 3. Catálogo de casos de uso y trazabilidad
+## 3. Catalogue of use and traceability cases
 
-| ID | Caso de uso | RF relacionado | Actores principales | Prioridad de primera API |
+| ID | Use case | Related RF | Lead actors | First API Priority |
 |---|---|---|---|---|
-| CU-01 | Registrar cuenta de usuario | RF-01 | Visitante | Núcleo MVP |
-| CU-02 | Iniciar sesión | RF-01 | Visitante | Núcleo MVP |
-| CU-03 | Crear una empresa | RF-02 | Usuario autenticado | Núcleo MVP |
-| CU-04 | Registrar una ubicación | RF-03 | Administrador autorizado | Soporte MVP |
-| CU-05 | Registrar un artículo o servicio | RF-04 | Administrador autorizado | Núcleo MVP |
-| CU-06 | Registrar una compra | RF-05 | Operador autorizado | Núcleo MVP |
-| CU-07 | Confirmar recepción de una compra | RF-05, RF-06 | Operador autorizado | Núcleo MVP |
-| CU-08 | Consultar existencias por ubicación | RF-06 | Miembro autorizado | Núcleo MVP |
-| CU-09 | Trasladar existencias entre ubicaciones | RF-06 | Operador autorizado | Núcleo MVP |
-| CU-10 | Registrar una venta con pagos declarados | RF-07 | Operador de ventas autorizado | Núcleo MVP |
-| CU-11 | Registrar ajuste justificado de inventario | RF-06 | Operador autorizado de inventario | Núcleo MVP (ajuste básico; conteo múltiple diferido) |
-| CU-12 | Invitar y aceptar incorporación de un colaborador | RF-02 | Administrador y usuario invitado | Soporte de membresías propuesto; confirmar para primera API |
+| CU-01 | Register user account | RF-01 | Visitor | MVP core |
+| CU-02 | Sign in | RF-01 | Visitor | MVP core |
+| CU-03 | Create a company | RF-02 | Authenticated user | MVP core |
+| CU-04 | Register a location | RF-03 | Authorized Administrator | MVP support |
+| CU-05 | Register an article or service | RF-04 | Authorized Administrator | MVP core |
+| CU-06 | Register a purchase | RF-05 | Authorized operator | MVP core |
+| CU-07 | Confirm receipt of a purchase | RF-05, RF-06 | Authorized operator | MVP core |
+| CU-08 | Check inventory by location | RF-06 | Authorized Member | MVP core |
+| CU-09 | Transfer stocks between locations | RF-06 | Authorized operator | MVP core |
+| CU-10 | Register a sale with declared payments | RF-07 | Authorized sales operator | MVP core |
+| CU-11 | Register justified inventory adjustment | RF-06 | Authorized inventory operator | MVP core (basic adjustment; multiple count deferred) |
+| CU-12 | Invite and accept incorporation of a collaborator | RF-02 | Administrator and guest user | Proposed membership support; confirm for first API |
 
-**Importante:** los doce CU representan **seis requerimientos funcionales principales** (RF-01, RF-02, RF-04, RF-05, RF-06, RF-07) y una dependencia RF-03; no significan diez módulos completos ni diez requerimientos independientes. RF-08 a RF-10 permanecen fuera de esta primera especificación de backend y podrán documentarse en una ampliación posterior. **CU-12 es una propuesta acotada de soporte para membresías reales**: el envío automático de correos y los enlaces QR de solicitud no forman parte del núcleo acordado.
+**Important:** the twelve CUs represent **six main functional requirements** (RF-01, RF-02, RF-04, RF-05, RF-06, RF-07) and a RF-03 unit; they do not mean ten complete modules or ten independent requirements. RF-08 to RF-10 remain outside this first backend specification and can be documented in a later extension. **CU-12 is a limited proposal of support for real memberships**: Automatic mailing and QR request links are not part of the agreed kernel.
 
-## 4. Especificaciones de casos de uso
+## 4. Specifications of use cases
 
-### CU-01 — Registrar cuenta de usuario
+### CU-01 — Register user account
 
-**Requerimiento:** RF-01. **Actor:** Visitante. **Objetivo:** crear una identidad de usuario para acceder a la plataforma.  
-**Disparador:** el visitante solicita registrarse.  
-**Precondiciones:** no requiere una empresa previa; dispone de los datos mínimos solicitados.  
-**Postcondición de éxito:** existe una cuenta identificable, con credenciales protegidas, sin obligación de pertenecer a una empresa.
+**Requirement:** RF-01. **Actor:** Visitor. **Objective:** create a user identity to access the platform.  
+**Shooter:** the visitor requests to register.  
+**Preconditions:** does not require a prior company; it has the minimum data requested.  
+**Post-success condition:** an identifiable account exists, with protected credentials, without obligation to belong to a company.
 
-**Flujo principal**
+**Main flow**
 
-1. El visitante solicita crear una cuenta e informa identificador de contacto y contraseña, sin seleccionar una empresa.
-2. La API valida formato, límites y política de credenciales, normaliza el identificador según la regla definida y comprueba que no exista otra cuenta equivalente.
-3. El servidor calcula un hash de contraseña apto para autenticación, con parámetros de seguridad configurables; nunca guarda ni devuelve la contraseña original.
-4. La API crea la identidad global sin asignarle empresas automáticamente y confirma la persistencia.
-5. Devuelve un identificador de cuenta y los datos públicos mínimos; no incluye hash, secreto ni token de otra persona.
-6. El nuevo usuario podrá iniciar sesión mediante CU-02 y, después, crear una empresa (CU-03) o incorporarse mediante invitación válida (CU-12).
+1. The visitor requests to create an account and reports contact identifier and password, without selecting a company.
+2. The API validates format, limits and credentials policy, normalizes the identifier according to the defined rule, and checks that there is no other equivalent account.
+3. The server calculates a password hash suitable for authentication, with configurable security parameters; it never saves or returns the original password.
+4. The API creates the global identity without automatically assigning companies to it and confirms persistence.
+5. Returns an account identifier and minimal public data; does not include hash, secret or token from another person.
+6. The new user can log in via CU-02 and then start a business (CU-03) or join by valid invitation (CU-12).
 
-**Alternativos:** registrarse sin asociarse a ninguna empresa; una invitación puede aceptarse posteriormente (CU-12), pero registrarse no acepta invitaciones ni concede acceso automáticamente.  
-**Excepciones:** identidad duplicada, datos inválidos, contraseña fuera de política o fallo de persistencia. No se crea cuenta parcial; el tratamiento de identidad duplicada debe evitar la enumeración abusiva de usuarios.  
-**Criterios de aceptación:** usuario único; contraseña con hash; no exige empresa; sin filtraciones de información sensible en la respuesta.  
-**Pendiente E2:** política exacta de contraseñas, confirmación de correo y comportamiento posterior al registro; no se presupone correo saliente en el primer corte.
+**Alternatives:** Register without association with any company; an invitation may be accepted later (CU-12), but registration does not accept invitations or grant access automatically.  
+**Exceptions:** duplicate identity, invalid data, password out of policy or persistence failure. Partial account is not created; duplicate identity treatment should avoid abusive listing of users.  
+**Acceptance criteria:** single user; password with hash; does not require company; without leaks of sensitive information in the response.  
+**E2 earring:** exact password policy, post-registration confirmation and behavior; no outgoing mail is assumed in the first cut.
 
-### CU-02 — Iniciar sesión
+### CU-02 — Log in
 
-**Requerimiento:** RF-01. **Actor:** Visitante registrado. **Objetivo:** autenticarse de manera segura para utilizar las funciones autorizadas.  
-**Disparador:** el visitante presenta sus credenciales.  
-**Precondiciones:** la cuenta existe y está habilitada.  
-**Postcondición de éxito:** la API emite una credencial de sesión válida para identificar al usuario en peticiones posteriores; no concede acceso automáticamente a empresas ajenas.
+**Requirement:** RF-01. **Actor:** Registered visitor. **Objective:** authenticate safely to use the authorized functions.  
+**Shooter:** the visitor presents his credentials.  
+**Preconditions:** the account exists and is enabled.  
+**Post-success condition:** The API issues a valid session card to identify the user in subsequent requests; it does not automatically grant access to third-party companies.
 
-**Flujo principal**
+**Main flow**
 
-1. La persona registrada envía identificador y contraseña por HTTPS.
-2. La API busca la cuenta y comprueba la contraseña contra su hash con un verificador seguro.
-3. Si la cuenta está habilitada, emite la credencial de acceso según el mecanismo definido en el Documento 05.
-4. El cliente utiliza esa credencial para consultar la identidad autenticada y el listado de empresas asociadas mediante membresías activas.
-5. Si el usuario selecciona una empresa, la API vuelve a validar la membresía y los permisos en **cada solicitud empresarial**, no solo en el inicio de sesión.
-6. Si no existe ninguna membresía, permite funciones personales y CU-03; no muestra empresas ajenas ni crea permisos implícitos.
+1. The registered person sends identifier and password via HTTPS.
+2. The API searches the account and checks your hash password with a secure checker.
+3. If the account is enabled, it issues the access card according to the mechanism defined in Document 05.
+4. The client uses this credential to consult the authenticated identity and list of associated companies through active memberships.
+5. If the user selects a company, the API revalidates membership and permissions in **Each business application**Not just in the log-in.
+6. If there is no membership, it allows for personal functions and CU-03; it does not display outside companies or create implicit permissions.
 
-**Alternativos:** el usuario no pertenece a ninguna empresa y solo puede operar sobre funciones personales, crear empresa o aceptar una invitación válida; cambiar de empresa no modifica la identidad global de la sesión.  
-**Excepciones:** credenciales incorrectas, cuenta deshabilitada, solicitud malformada o credencial vencida/no válida en una petición posterior. Se rechaza el acceso y no se informa innecesariamente qué componente de las credenciales fue incorrecto.  
-**Criterios de aceptación:** acceso anónimo rechazado en recursos protegidos; token o sesión verificable; pertenencia a empresa validada en cada solicitud empresarial.  
-**Pendiente E2:** duración, revocación y almacenamiento seguro de las credenciales de sesión.
+**Alternatives:** the user does not belong to any company and can only operate on personal functions, create a business or accept a valid invitation; changing a business does not change the overall identity of the session.  
+**Exceptions:** incorrect credentials, disabled account, malformed application or expired/unvalid credential in a subsequent request. Access is refused and no unnecessary information is given on which component of the credentials was incorrect.  
+**Acceptance criteria:** anonymous access refused in protected resources; token or verifiable session; membership of a company validated in each business application.  
+**E2 earring:** duration, revocation and safe storage of session credentials.
 
-### CU-03 — Crear una empresa
+### CU-03 — Creating a business
 
-**Requerimiento:** RF-02. **Actor:** Usuario autenticado. **Objetivo:** registrar una nueva empresa y obtener la responsabilidad administrativa inicial.  
-**Disparador:** el usuario solicita crear empresa.  
-**Precondiciones:** identidad autenticada; datos empresariales mínimos válidos.  
-**Postcondición de éxito:** empresa creada, usuario vinculado mediante una membresía activa y un único titular administrativo inicial; el fundador histórico queda identificado.
+**Requirement:** RF-02. **Actor:** Authenticated user. **Objective:** register a new company and obtain initial administrative responsibility.  
+**Shooter:** the user requests to set up a company.  
+**Preconditions:** authenticated identity; minimum valid business data.  
+**Post-success condition:** created company, user linked by an active membership and a single initial administrative holder; the historical founder is identified.
 
-**Flujo principal**
+**Main flow**
 
-1. Un usuario autenticado solicita crear una empresa e informa nombre, rubro/tipo de actividad y campos obligatorios acordados.
-2. La API valida los datos y que el solicitante sigue autenticado; no infiere la nueva empresa a partir de la sesión anterior.
-3. En una sola transacción crea Empresa, registra el identificador inmutable del fundador y crea la Membresía inicial activa con responsabilidad administrativa.
-4. Garantiza que exista exactamente un titular administrativo activo **inicial** y que ninguna escritura parcial quede guardada si falla el alta.
-5. Devuelve el identificador de empresa y la membresía creada, sin modificar la pertenencia del usuario a sus otras empresas.
-6. La empresa queda operativa para su configuración y para servicios, pero **sin ubicaciones ni stock ficticios**. Para recibir o vender bienes físicos, el administrador registra una ubicación apta mediante CU-04.
+1. An authenticated user requests to create a company and reports name, category/type of activity and agreed mandatory fields.
+2. The API validates the data and that the applicant remains authenticated; it does not infer the new company from the previous session.
+3. In a single transaction, create Company, register the unchangeable identifier of the founder and create the initial active Membership with administrative responsibility.
+4. Ensures that there is exactly one active administrative holder **initial** and that no partial writing is saved if discharge fails.
+5. Returns the company identifier and created membership, without modifying user membership to your other companies.
+6. The company is operational for its configuration and services, but **no fictitious locations or stock**. To receive or sell physical goods, the administrator records a suitable location through CU-04.
 
-**Alternativos:** el usuario ya pertenece a otras empresas; la nueva empresa se agrega a su conjunto de membresías. Una empresa puede crearse **sin ninguna ubicación**, especialmente si ofrece sólo servicios. **No se crea automáticamente** una ubicación ficticia, depósito ni stock inicial.  
-**Excepciones:** campos inválidos o error de escritura; la transacción revierte y no quedan empresas sin membresía inicial.  
-**Criterios de aceptación:** usuario global; empresa aislada; fundador histórico; única titularidad administrativa inicial; empresa recién creada sin ubicación puede usar funciones administrativas y vender servicios si cumple los demás requisitos, pero **no puede recibir mercadería ni vender bienes físicos** hasta crear una ubicación habilitada mediante CU-04.  
-**Pendiente E2:** campos obligatorios definitivos y política para empresas homónimas. Transferencia de titularidad y recuperación quedan fuera del MVP.
+**Alternatives:** the user already belongs to other companies; the new company is added to its membership set. A company can be created **no location**especially if it offers only services. **Not automatically created** a fictitious location, deposit or initial stock.  
+**Exceptions:** invalid fields or write error; the transaction reverses and no companies are left without initial membership.  
+**Acceptance criteria:** global user; isolated company; historical founder; sole initial administrative ownership; newly created non-location company may use administrative functions and sell services if it meets other requirements, but **cannot receive goods or sell physical goods** until you create a location enabled by CU-04.  
+**E2 earring:** definitive mandatory fields and policy for homonymous companies. Transfer of ownership and recovery are left outside the MVP.
 
-### CU-04 — Registrar una ubicación
+### CU-04 — Register a location
 
-**Requerimiento:** RF-03 (soporte). **Actor:** Miembro autorizado para administrar ubicaciones. **Objetivo:** habilitar un espacio de operación para registrar recepciones, existencias o ventas físicas.  
-**Disparador:** solicita registrar ubicación dentro de una empresa.  
-**Precondiciones:** usuario autenticado, membresía/permisos válidos y empresa existente.  
-**Postcondición de éxito:** ubicación persistida, vinculada a una sola empresa y con capacidades explícitas de venta y/o almacenamiento.
+**Requirement:** RF-03 (support). **Actor:** Member authorized to manage locations. **Objective:** enable a space for operation to record receptions, stocks or physical sales.  
+**Shooter:** request to register location within a company.  
+**Preconditions:** authenticated user, valid membership/permissions and existing company.  
+**Post-success condition:** continued location, linked to a single company and with explicit sales and/or storage capacities.
 
-**Flujo principal**
+**Main flow**
 
-1. El administrador ingresa al contexto de una empresa donde posee permiso de gestión de ubicaciones.
-2. Informa nombre, tipo y capacidades independientes: almacenar stock y/o realizar ventas.
-3. La API verifica identidad, membresía activa, autorización y validez de los atributos; no confía en que el selector del cliente ofrezca solo datos propios.
-4. Crea la ubicación ligada a esa empresa y registra su estado inicial (por ejemplo, `ACTIVA`).
-5. Devuelve identificador, capacidades y estado; no crea compras, movimientos ni saldos iniciales.
-6. Las operaciones posteriores evalúan las capacidades **vigentes**, no las que tenía la ubicación cuando se creó.
+1. The administrator enters the context of a company where it has location management permission.
+2. Report name, type and independent capabilities: store stock and/or make sales.
+3. The API checks identity, active membership, authorization and validity of attributes; it does not rely on the client selector to provide only its own data.
+4. Creates the location linked to that company and records its initial status (e.g. `ACTIVA`).
+5. Returns identifier, capabilities and status; does not create purchases, movements or opening balances.
+6. Subsequent operations assess capabilities **existing**Not the ones that had the location when it was created.
 
-**Alternativos:** ubicación apta solo para venta, solo para almacenamiento o para ambas; también puede ser un espacio administrativo sin esas capacidades. `CASA` es un tipo válido de domicilio particular sin capacidades automáticas; una empresa exclusivamente de servicios puede operar sin depósito.  
-**Excepciones:** empresa ajena, nombre o capacidad inválidos; en una operación posterior, se rechaza una ubicación pausada/inactiva si se exige actividad.  
-**Criterios de aceptación:** no existe uso cruzado entre empresas; una recepción requiere ubicación apta para almacenamiento; un servicio no exige stock físico.
+**Alternatives:** location suitable only for sale, storage only or both; it can also be an administrative space without those capabilities. `CASA` is a valid type of private address without automatic capacity; a service-only company may operate without deposit.  
+**Exceptions:** other persons, invalid name or capacity; in a subsequent operation, a paused/inactive location is rejected if activity is required.  
+**Acceptance criteria:** there is no cross-use between companies; a reception requires storageable location; a service does not require physical stock.
 
-**Estado histórico CU-04 en E2-2 A:** en ese corte solo existían tabla/migración y restricciones PostgreSQL para ubicaciones, sin poder registrar por API. **Actualización:** E2-2 B sí permite crear, listar y consultar ubicaciones reales; editar, pausar y cambiar principal quedan pendientes. Crear/editar/listar/pausar y designar principal, validar membresías y empresas suspendidas y comprobar permisos por ubicación corresponden a E2-2 B/C. Las futuras recepciones y ventas de bienes deben consultar `can_store`/`can_sell` vigentes; nada de eso se ejecuta en este corte.
+**Historical status CU-04 in E2-2 A:** In that cut only table/migration and PostgreSQL restrictions existed for locations, without being able to register by API. **Update:** E2-2 B does allow you to create, list and view real locations; editing, pause and change main are pending. Create/Edit/list/pause and designate principal, validate memberships and suspended companies and check permissions by location correspond to E2-2 B/C. Future receptions and sales of goods should be consulted `can_store`/`can_sell` In effect; none of that is executed in this court.
 
-### CU-05 — Registrar un artículo o servicio
+### CU-05 — Register an article or service
 
-**Requerimiento:** RF-04. **Actor:** Miembro autorizado para gestionar catálogo. **Objetivo:** incorporar una ficha reutilizable a las operaciones de la empresa.  
-**Disparador:** solicita registrar un artículo.  
-**Precondiciones:** membresía y permisos válidos en la empresa.  
-**Postcondición de éxito:** ficha de catálogo creada con tipo, estado, unidad y datos comerciales aplicables; no se genera stock por el solo registro.
+**Requirement:** RF-04. **Actor:** Member authorized to manage catalogue. **Objective:** incorporate a reusable sheet into the company's operations.  
+**Shooter:** request to register an article.  
+**Preconditions:** valid membership and permits in the company.  
+**Post-success condition:** Catalog tab created with applicable type, status, unit and commercial data; no stock is generated by the register alone.
 
-**Flujo principal**
+**Main flow**
 
-1. Un miembro autorizado abre el contexto de catálogo de una empresa.
-2. Define nombre, clasificación física/servicio, categoría, unidad de control, condición vendible y estado inicial; SKU y precios/costos se informan cuando corresponda.
-3. La API valida identidad, membresía, longitud/formato, unidad compatible y importes exactos en centavos.
-4. Comprueba la unicidad de SKU **dentro de la empresa**; esta garantía deberá sostenerse también con una restricción en la base de datos, no solo con consulta previa.
-5. Persiste la ficha con identificador propio de la empresa y estado inicial activo; una ficha sin precio puede requerir precio explícito al vender.
-6. Devuelve la ficha registrada sin crear saldo de inventario ni movimientos. Una línea de servicio nunca será recepcionable ni descontará existencias.
-7. Cuando una venta o compra se confirma más adelante, guarda el precio/nombre/unidad relevantes como snapshot de operación; editar la ficha no cambia retrospectivamente esos registros.
+1. An authorised member opens the context of a company's catalogue.
+2. Defines name, physical classification/service, category, control unit, sellable condition and initial status; SKU and prices/costs are reported where applicable.
+3. The API validates identity, membership, length/format, compatible unit and exact amounts in cents.
+4. Check the uniqueness of SKU **within the company**; this guarantee must also be supported by a restriction in the database, not only with prior consultation.
+5. The card with the company's own identifier and initial active status persists; a priceless token may require an explicit price when selling.
+6. Returns the registered tab without creating inventory balance or movements. A service line will never be receptionable nor will it deduct stocks.
+7. When a sale or purchase is confirmed later, it saves the relevant price/name/unit as operating snapshot; editing the tab does not retrospectively change those records.
 
-**Alternativos:** servicio sin existencias; bien físico sin stock inicial; SKU ausente si la política lo permite; ficha sin precio de lista, para cotizar al vender. La eventual edición/desactivación requerirá autorización y no reescribirá snapshots históricos.  
-**Excepciones:** SKU duplicado en la misma empresa, unidad incompatible, datos inválidos, usuario no autorizado.  
-**Criterios de aceptación:** mismo SKU en diferentes empresas permitido; servicio sin ledger físico; creación no altera Inventario.  
-**Pendiente E2:** detalle de los tipos elaborados/insumos/reventa y campos mínimos definitivos. La edición/desactivación puede definirse como extensión de este CU durante contratos API.
+**Alternatives:** service without stock; physical without initial stock; SKU absent if policy permits; list without list price, to quote when selling. Any edition/deactivation will require authorization and will not rewrite historical snapshots.  
+**Exceptions:** SKU duplicated in the same company, incompatible unit, invalid data, unauthorized user.  
+**Acceptance criteria:** SKU itself in different companies allowed; service without physical leader; creation does not alter Inventory.  
+**E2 earring:** details of the types worked/inputs/resale and final minimum fields. Editing/deactivation can be defined as extension of this CU during API contracts.
 
-### CU-06 — Registrar una compra
+### CU-06 — Register a purchase
 
-**Requerimiento:** RF-05. **Actor:** Miembro autorizado para gestionar compras. **Objetivo:** documentar una adquisición sin confundirla con la recepción de mercadería.  
-**Disparador:** solicita registrar una compra de bienes y/o conceptos vinculados a un proveedor.  
-**Precondiciones:** empresa y permisos válidos; importes y cantidades compatibles con las reglas comerciales. **No es obligatorio disponer todavía de ubicación de recepción.**  
-**Postcondición de éxito:** compra identificada y persistida con renglones, totales y estado, **sin generar entradas de inventario**.
+**Requirement:** RF-05. **Actor:** Member authorized to manage purchases. **Objective:** documenting an acquisition without confusing it with the receipt of goods.  
+**Shooter:** requests to register a purchase of goods and/or concepts linked to a supplier.  
+**Preconditions:** company and valid permits; amounts and quantities compatible with the commercial rules. **It is not mandatory to have reception location yet.**  
+**Post-success condition:** purchase identified and persisted with lines, totals and status, **without generating inventory entries**.
 
-**Flujo principal**
+**Main flow**
 
-1. El operador autorizado elige una empresa y fecha/referencia de compra, y selecciona un proveedor de esa empresa o indica ausencia de proveedor si el contrato lo permite.
-2. Agrega uno o más renglones: bien físico identificado en catálogo, servicio o concepto libre no inventariable. Informa cantidad, unidad y costo unitario; puede omitir todavía la ubicación de recepción.
-3. La API valida permisos, existencia/pertenencia de los artículos y proveedor, tipo de cada renglón, unidades, cantidades, fechas e importes en centavos exactos.
-4. Calcula los importes de cada línea y total usando una regla explícita de redondeo y conserva un snapshot de descripción, unidad y costo. No asume que registrar compra signifique pagarla.
-5. Si hay al menos un renglón físico recepcionable, crea Compra `REGISTRADA`; si solo existen líneas no físicas, crea `CERRADA_SIN_RECEPCION`.
-6. Confirma compra y renglones como una unidad y devuelve identificador, estado y total. **En ninguno de los dos casos** crea movimientos de inventario.
-7. Para entradas físicas posteriores, el operador debe ejecutar CU-07; una compra sin destino informado puede esperar sin afectar stock.
+1. The authorised operator chooses a company and date/reference of purchase, and selects a supplier for that company or indicates absence of supplier if the contract allows.
+2. Add one or more lines: physical well identified in catalog, service or free concept not inventoryable. Report quantity, unit and unit cost; you can still skip the reception location.
+3. The API validates permissions, existence/membership of items and supplier, type of each line, units, quantities, dates and amounts in exact cents.
+4. Calculates the amounts of each line and total using an explicit rounding rule and retains a snapshot of description, unit and cost. It does not assume that registering purchase means paying for it.
+5. If there is at least one physical line that can be received, create Purchase `REGISTRADA`; if there are only non-physical lines, create `CERRADA_SIN_RECEPCION`.
+6. Confirms purchase and lines as a unit and returns identifier, status and total. **In neither case** creates inventory moves.
+7. For later physical entries, the operator must run CU-07; an uninformed destination purchase can wait without affecting stock.
 
-**Alternativos:** proveedor opcional; registrar sin ubicación de destino; conceptos libres permitidos bajo reglas explícitas. Una compra **sin ningún renglón físico recepcionable** se registra como `CERRADA_SIN_RECEPCION` (estado propuesto de cierre administrativo): **no** genera movimiento de stock y **no** habilita CU-07. No se inventa una recepción vacía.  
-**Excepciones:** proveedor o artículo ajeno, artículo inactivo no permitido, cantidad/precio inválido, fecha o referencia inválida, compra sin líneas o conflicto de solicitud repetida. Ningún rechazo crea stock ni compra parcial.  
-**Criterios de aceptación:** registrar una compra nunca modifica existencias; con bienes físicos queda `REGISTRADA`; sin bienes físicos se identifica inequívocamente que no requiere recepción.  
-**Pendiente E2:** nombres de estados, si la cancelación se expone en API e idempotencia del registro de compra. La primera versión compromete una **única recepción completa en una ubicación por compra**; recepciones parciales/multidestino quedan diferidas.
+**Alternatives:** optional supplier; registering without destination location; free concepts allowed under explicit rules. **without any physical lines of reception** recorded as `CERRADA_SIN_RECEPCION` (proposed administrative closure state): **no** generates stock movement and **no** UC-07. An empty reception is not invented.  
+**Exceptions:** supplier or other person's item, inactive item not allowed, invalid quantity/price, invalid date or reference, purchase without lines or repeated request conflict. No rejection creates stock or partial purchase.  
+**Acceptance criteria:** record a purchase never changes stock; with physical goods remains `REGISTRADA`; without physical goods it is unequivocally identified that does not require reception.  
+**E2 earring:** state names, if the cancellation is displayed in API and purchase registration idempotency. The first version compromises a **single reception complete in a location per purchase**; partial receptions/multidestiny are deferred.
 
-### CU-07 — Confirmar recepción de mercadería
+### CU-07 — Confirm receipt of goods
 
-**Requerimientos:** RF-05 y RF-06. **Actor:** Miembro autorizado a recibir compras. **Objetivo:** registrar la entrada física correspondiente a una compra previa.  
-**Disparador:** solicita confirmar la recepción de una compra.  
-**Precondiciones:** compra de la misma empresa en estado `REGISTRADA`, con al menos un renglón físico recepcionable; ubicación de destino **existente, activa y apta para almacenar**; permisos vigentes.  
-**Postcondición de éxito:** la compra pasa a `RECIBIDA`, queda registrada **una única recepción completa**, y todas las entradas físicas quedan correlacionadas con ella.
+**Requirements:** RF-05 y RF-06. **Actor:** Member authorized to receive purchases. **Objective:** record the physical entry for a previous purchase.  
+**Shooter:** request to confirm receipt of a purchase.  
+**Preconditions:** purchase of the same company in state `REGISTRADA`with at least one physical line; destination location **existing, active and suitable for storage**; valid permits.  
+**Post-success condition:** the purchase goes to `RECIBIDA`, is registered **a single full reception**and all physical inputs are correlated with it.
 
-**Flujo principal**
+**Main flow**
 
-1. El operador autorizado consulta una compra de su empresa y solicita recepcionar sus renglones físicos en una ubicación elegida.
-2. La API valida empresa, permisos, existencia de compra y ubicación, estado activo y capacidad de almacenamiento; las líneas no inventariables no generan entradas.
-3. En una **única transacción**, bloquea la compra o ejecuta una transición condicional equivalente y revalida que siga `REGISTRADA`, sin recepción previa. Determina los renglones físicos desde el snapshot de compra.
-4. Registra una Recepción con identificador propio, referencia a la compra, ubicación y actor; registra una entrada por cada línea física conforme a cantidades y unidades de la compra.
-5. En la **misma transacción**, cambia la compra a `RECIBIDA` y guarda el resultado de idempotencia; no existen compras recibidas sin sus entradas, ni entradas sin recepción.
-6. Confirma y devuelve datos de recepción, estado final y existencias actualizadas por ubicación/artículo.
-7. Si la respuesta de red se pierde después del commit, el cliente reintenta con igual clave y carga: obtiene la recepción anterior sin un segundo efecto.
+1. The authorized operator consults a purchase of your company and requests to receive your physical lines at a chosen location.
+2. The API validates company, permissions, purchase and location existence, active status and storage capacity; non-inventible lines do not generate inputs.
+3. In a **single transaction**, blocks purchase or executes an equivalent conditional transition and revalidates it to continue `REGISTRADA`Determines the physical lines from the snapshot of purchase.
+4. Record a Reception with its own identifier, purchase reference, location and actor; record one entry for each physical line according to quantities and units of the purchase.
+5. En la **same transaction**, change the purchase to `RECIBIDA` and saves the result of idempotence; there are no purchases received without your tickets, or tickets without reception.
+6. Confirms and returns receipt, final status and up-to-date inventory data by location/article.
+7. If the network response is lost after commit, the client retrys with equal key and load: gets the previous reception without a second effect.
 
-**Alternativos:** compra mixta con servicios/conceptos administrativos y bienes físicos: únicamente se reciben los bienes físicos. Compra `CERRADA_SIN_RECEPCION`: no existe CU-07 aplicable; se informa que no requiere recepción.  
-**Excepciones:** compra o ubicación ajena, ubicación no apta, compra ya `RECIBIDA` o `CANCELADA`, cambio concurrente de estado, datos inválidos o solicitud repetida con diferentes claves. Con **la misma clave de idempotencia y carga equivalente**, se recupera el resultado sin una segunda entrada; si se repite la clave con una carga diferente, el servidor rechaza el conflicto. Una segunda recepción con otra clave se rechaza por estado y/o restricción de unicidad.  
-**Criterios de aceptación:** una compra con 10 unidades físicas en ubicación A genera +10 en A y cambia a `RECIBIDA`; la misma petición repetida deja +10; con **dos claves distintas concurrentes** solo una recepción triunfa. Una compra mixta solo ingresa sus bienes físicos. Ante errores no quedan compras `RECIBIDA` sin movimientos ni movimientos sin recepción.  
-**Pendiente E2:** estrategia SQL concreta de unicidad/idempotencia y códigos HTTP. Se mantendrá el límite **0..1 Recepción por Compra** en el modelo MVP; cambiarlo a recepción parcial requerirá revisar estados, endpoints y CU-07.
+**Alternatives:** mixed purchase with administrative services/concepts and physical goods: only physical goods are received. `CERRADA_SIN_RECEPCION`: there is no applicable CU-07; it is reported that no reception is required.  
+**Exceptions:** purchase or location of others, not suitable location, purchase already `RECIBIDA` o `CANCELADA`, concurrent change of status, invalid data or repeated request with different keys. **the same key of idempotence and equivalent charge**, the result is recovered without a second entry; if the key is repeated with a different load, the server rejects the conflict. A second reception with another key is rejected by state and/or restriction of oneness.  
+**Acceptance criteria:** a purchase with 10 physical units in A location generates +10 in A and changes to `RECIBIDA`; same repeated request leaves +10; with **two different concurrent keys** a mixed purchase only enters their physical goods. Faced with errors no purchases are left `RECIBIDA` no movement or movement without reception.  
+**E2 earring:** SQL strategy specific to uniqueness/idempower and HTTP codes. The limit will be maintained **0.1 Reception by Purchase** in the MVP model; switching to partial reception will require reviewing states, endpoints and CU-07.
 
-**Máquina de estados de Compra (propuesta MVP)**
+**Purchase Status Machine (MVP proposal)**
 
-| Estado origen | Evento | Estado destino | Efecto en stock |
+| Origin State | Event | Destination State | Stock effect |
 |---|---|---|---|
-| — | Registrar compra con bienes físicos | `REGISTRADA` | Ninguno |
-| — | Registrar compra sin bienes recepcionables | `CERRADA_SIN_RECEPCION` | Ninguno |
-| `REGISTRADA` | Confirmar recepción completa en **una ubicación**, válida y atómica | `RECIBIDA` | Entradas físicas una sola vez |
-| `REGISTRADA` | Cancelar antes de recibir (si se habilita en API) | `CANCELADA` | Ninguno |
-| `RECIBIDA`, `CANCELADA`, `CERRADA_SIN_RECEPCION` | Intentar nueva recepción | Sin transición | Se rechaza; sin movimientos |
+| — | Register purchase with physical goods | `REGISTRADA` | None |
+| — | Register purchase without receptionable goods | `CERRADA_SIN_RECEPCION` | None |
+| `REGISTRADA` | Confirm full reception in **a location**valid and atomic | `RECIBIDA` | Physical inputs once |
+| `REGISTRADA` | Cancel before receiving (if enabled in API) | `CANCELADA` | None |
+| `RECIBIDA`, `CANCELADA`, `CERRADA_SIN_RECEPCION` | Try new reception | No transition | Refusal; no movement |
 
-`BORRADOR` representa un formulario todavía no confirmado en el frontend y **no necesita convertirse en un estado persistido** del MVP. La cancelación es opcional para el primer corte: si no hay endpoint de cancelación, no se incluirá como operación disponible. Los nombres exactos se cerrarán con Documento 03 y los contratos del Documento 05.
+`BORRADOR` represents a form not yet confirmed on the frontend and **does not need to become a persistent state** The cancellation is optional for the first cut: if there is no cancellation endpoint, it will not be included as a available transaction. The exact names will be closed with Document 03 and the contracts of Document 05.
 
-### CU-08 — Consultar existencias por ubicación
+### CU-08 — Check stock by location
 
-**Requerimiento:** RF-06. **Actor:** Miembro autorizado. **Objetivo:** conocer existencias físicas disponibles por artículo y ubicación de su empresa.  
-**Disparador:** solicita el inventario actual o aplica filtros de consulta.  
-**Precondiciones:** membresía válida; empresa existente.  
-**Postcondición:** se obtiene una proyección consistente sin modificar movimientos ni cantidades.
+**Requirement:** RF-06. **Actor:** Member authorized. **Objective:** know available physical stocks by item and location of your company.  
+**Shooter:** request the current inventory or apply query filters.  
+**Preconditions:** valid membership; existing company.  
+**Postcondition:** a consistent projection is obtained without modifying movements or quantities.
 
-**Flujo principal**
+**Main flow**
 
-1. Un miembro autorizado indica empresa y, si necesita, filtros de ubicación y artículo.
-2. La API comprueba membresía y permisos de lectura, y que cada filtro pertenece a la empresa solicitada.
-3. Lee una proyección consistente de los movimientos confirmados o una proyección de saldos reconciliable con el ledger; nunca suma ventas o recepciones por separado para producir un segundo saldo independiente.
-4. Agrupa por empresa, artículo físico y ubicación, respetando la escala de la unidad del artículo.
-5. Devuelve saldos, identificación de ubicaciones/artículos y unidades. Los bienes sin movimientos pueden mostrar saldo cero según el contrato de consulta.
-6. La consulta no genera ajustes ni movimientos; la corrección de una diferencia detectada se realiza mediante CU-11.
+1. An authorized member indicates company and, if needed, location and article filters.
+2. The API checks membership and read permissions, and that each filter belongs to the requested company.
+3. Read a consistent projection of confirmed movements or a reconciliationable balance projection with the leadger; never add up separate sales or receptions to produce a second independent balance.
+4. Group by company, physical article and location, respecting the scale of the unit of the item.
+5. Returns balances, identification of locations/items and units. Assets without movement can show zero balance according to the query contract.
+6. The query does not generate adjustments or movements; the correction of a detected difference is done by CU-11.
 
-**Alternativos:** empresa sin bienes físicos o artículo sin movimientos: cero/resultado vacío según el contrato; múltiples ubicaciones muestran saldos separados. Las ubicaciones pausadas conservan su historial aunque no sean aptas para nuevas operaciones.  
-**Excepciones:** empresa sin permiso, artículo o ubicación ajeno, filtro inválido.  
-**Criterios de aceptación:** la consulta no modifica stock; nunca mezcla unidades ni datos de empresas; los servicios carecen de existencias físicas.
+**Alternatives:** company without physical goods or item without movement: zero/empty result according to contract; multiple locations show separate balances. Paused locations retain their history even if they are not suitable for new operations.  
+**Exceptions:** company without permission, article or location other than the filter invalid.  
+**Acceptance criteria:** the consultation does not modify stock; it never mixes units or company data; services lack physical stocks.
 
-### CU-09 — Trasladar existencias entre ubicaciones
+### CU-09 — Transfer stocks between locations
 
-**Requerimiento:** RF-06. **Actor:** Miembro autorizado para movimientos. **Objetivo:** trasladar cantidades físicas de una ubicación a otra dentro de la misma empresa.  
-**Disparador:** el actor confirma un traslado.  
-**Precondiciones:** origen y destino válidos y distintos, ambos aptos para almacenamiento; artículo físico y cantidad mayor que cero.  
-**Postcondición de éxito:** movimiento de salida en origen y entrada equivalente en destino, confirmados en una sola transacción.
+**Requirement:** RF-06. **Actor:** Member authorized for movements. **Objective:** transfer physical quantities from one location to another within the same undertaking.  
+**Shooter:** The actor confirms a transfer.  
+**Preconditions:** valid and different origin and destination, both suitable for storage; physical article and quantity greater than zero.  
+**Post-success condition:** output movement at source and equivalent input at destination, confirmed in a single transaction.
 
-**Flujo principal**
+**Main flow**
 
-1. El operador indica empresa, artículo físico, ubicación de origen, ubicación de destino, cantidad y referencia/motivo si corresponde.
-2. La API valida identidad, permisos y pertenencia de **ambas** ubicaciones y del artículo; origen y destino deben ser distintos, activos y aptos para almacenamiento.
-3. Valida cantidad positiva y escala de unidad; no admite servicios ni conversiones implícitas de paquetes/cajas/kilos.
-4. En **una única transacción**, obtiene control exclusivo o atómico sobre los saldos necesarios y comprueba disponibilidad actual del origen (no la observada anteriormente en la UI).
-5. Genera una operación de traslado con identificador único y **dos movimientos correlacionados**: salida de origen y entrada equivalente en destino.
-6. Guarda la clave de idempotencia junto con el efecto, confirma o revierte toda la operación y devuelve los dos saldos resultantes.
-7. Una petición repetida con la misma clave/carga devuelve el traslado existente; una clave distinta representa operación nueva y se valida contra el stock vigente.
+1. The operator indicates business, physical item, origin location, destination location, quantity and reference/reason if applicable.
+2. API validates identity, permissions and membership of **both** locations and item; origin and destination must be distinct, active and suitable for storage.
+3. Validate positive quantity and drive scale; does not support services or implicit package/box/kilos conversions.
+4. En **one transaction**, obtains exclusive or atomic control over the necessary balances and checks current availability of origin (not as previously observed in the IU).
+5. Generates a transfer operation with unique identifier and **two correlated movements**: origin exit and equivalent entry at destination.
+6. Saves the idempotence key along with the effect, confirms or reverses the entire operation and returns the two resulting balances.
+7. A repeated request with the same key/load returns the existing transfer; a different key represents new operation and is validated against the current stock.
 
-**Alternativos:** traslado entre distintos tipos de ubicación, si ambas están habilitadas para almacenamiento.  
-**Excepciones:** origen y destino iguales; stock insuficiente; servicio seleccionado; recursos de otras empresas; alguna ubicación inactiva; reintento duplicado.  
-**Criterios de aceptación:** desde 10 unidades, trasladar 3 deja 7 en origen y 3 en destino; intentar trasladar 11 se rechaza sin cambios; repetir la solicitud no vuelve a trasladar.  
-**Pendiente E2:** decidir entre saldo bloqueable y ledger, actualización condicional o aislamiento serializable comprobado; definir el manejo de creación concurrente de saldo inicialmente cero.
+**Alternatives:** transfer between different types of location, if both are enabled for storage.  
+**Exceptions:** same origin and destination; insufficient stock; selected service; resources of other companies; some inactive location; duplicate retry.  
+**Acceptance criteria:** from 10 units, move 3 leaves 7 at source and 3 at destination; try to move 11 is rejected unchanged; repeat request does not retransfer.  
+**E2 earring:** decide between blockable balance and ledger, conditional update or verified serializable isolation; define the concurrent creation management of zero balance initially.
 
-### CU-10 — Registrar venta con pagos declarados
+### CU-10 — Register sale with declared payments
 
-**Requerimiento:** RF-07. **Actor:** Miembro autorizado para ventas. **Objetivo:** registrar una venta con uno o varios medios declarados y mantener consistencia de inventario.  
-**Disparador:** el vendedor solicita confirmar la venta.  
-**Precondiciones:** empresa y permisos válidos; productos y servicios vendibles, cantidades y precios correctos; para bienes físicos, ubicación activa apta para la venta y almacenamiento y stock suficiente **al momento de confirmar**.  
-**Postcondición de éxito:** venta confirmada exactamente una vez, aplicaciones de pago que suman el total exacto y movimientos de salida vinculados **sólo a renglones de bienes físicos**; no acredita pagos externos.
+**Requirement:** RF-07. **Actor:** Member authorized for sales. **Objective:** record a sale with one or more declared means and maintain inventory consistency.  
+**Shooter:** the seller requests confirmation of the sale.  
+**Preconditions:** valid company and permits; selling goods and services, correct quantities and prices; for physical goods, active location suitable for sale and storage and sufficient stock **at time of confirmation**.  
+**Post-success condition:** exactly once confirmed sale, payment apps that add up the exact total and linked output movements **only to the physical goods lines**; does not credit external payments.
 
-**Flujo principal**
+**Main flow**
 
-1. El operador selecciona empresa y agrega al carrito uno o varios artículos físicos y/o servicios, con cantidades, unidades, precios y descuento total.
-2. Si hay al menos un bien físico, indica ubicación **activa** que admita venta y almacenamiento; una venta solo de servicios puede prescindir de ubicación.
-3. Informa uno o varios pagos **declarados** (p. ej., efectivo y transferencia), con importes positivos expresados en centavos; no se confirman ni concilian acreditaciones bancarias externas.
-4. La API valida autenticación, membresía, permisos, pertenencia de artículos y ubicación, escala de unidades, disponibilidad comercial, límites de precios y descuentos; calcula subtotal, descuento y total con reglas exactas y verifica que los pagos sumen exactamente el total. Deben rechazarse ventas sin total positivo.
-5. En **una transacción única**, revalida estado activo/vendible de productos, permisos y capacidades vigentes de ubicación. Controla la concurrencia de existencias de **todas** las líneas físicas (incluso artículos repetidos en el carrito) mediante saldo bloqueable/decremento condicionado o aislamiento equivalente; suma por artículo antes de exigir disponibilidad.
-6. Si hay stock para todas las líneas físicas, registra Venta, renglones con snapshots, aplicaciones de pago declaradas y movimientos de salida físicos correlacionados, junto con la clave de idempotencia. **Los servicios no crean movimientos de stock**.
-7. Confirma todo o revierte todo: ninguna falta de stock puede dejar pagos, comprobantes o salidas parciales. Devuelve el comprobante interno, totales, medios declarados y saldos afectados.
-8. Ante una respuesta perdida, el reintento con la misma clave y carga recupera la venta existente; una operación nueva con otra clave vuelve a competir por el stock real.
+1. The operator selects company and adds to the cart one or more physical items and/or services, with quantities, units, prices and total discount.
+2. If there is at least one physical good, indicate location **active** that admits sale and storage; a single service sale can dispense with location.
+3. Report one or more payments **declared** (e.g. cash and transfer), with positive amounts expressed in cents; no external bank accreditation is confirmed or reconciled.
+4. API validates authentication, membership, permissions, item and location membership, unit scale, commercial availability, price limits and discounts; calculates subtotal, discount and total with exact rules and verifies that payments add up to exactly the total. Sales should be rejected without positive total.
+5. En **a single transaction**, revalidates active/soldable status of current products, permits and location capabilities. Controls the concurrent stock of **all** physical lines (including items repeated in the cart) by means of a locked balance/conditional decrease or equivalent isolation; sum per item before requiring availability.
+6. If there is stock for all physical lines, register Sales, lines with snapshots, declared payment applications and correlated physical output movements, along with the idempotency key. **Services do not create stock movements**.
+7. Confirms all or reverses all: no lack of stock can leave payments, vouchers or partial outings. Returns internal voucher, totals, declared means and affected balances.
+8. Faced with a lost response, the retry with the same key and charge recovers the existing sale; a new operation with another key competes again for the real stock.
 
-**Alternativos:** venta solo de servicios sin depósito ni salida física; venta mixta; pagos divididos (efectivo + transferencia u otros medios declarados). Una referencia de cuenta financiera puede omitirse en esta primera API; la validación integral de cuentas y jornadas corresponde a RF-08/RF-09 posteriores. Una misma línea de artículo físico repetida se agrega lógicamente para comprobar disponibilidad.  
-**Excepciones:** pagos que no concilian; total cero o descuento no válido; artículo desactivado entre selección y confirmación; cambio de ubicación; stock insuficiente, incluidos dos pedidos simultáneos por la última unidad; recurso ajeno; unidad/cantidad incorrecta; clave reutilizada con contenido distinto. No se genera venta parcial, stock negativo ni aplicaciones de pago sueltas.  
-**Criterios de aceptación:** totales exactos en centavos; pagos combinados conciliados; servicios sin movimiento físico; 2 ventas concurrentes por 1 unidad = **exactamente 1 venta exitosa y 1 rechazo controlado**, con saldo final 0; la operación fallida no deja pagos ni salidas; reintento de la exitosa no duplica.  
-**Pendiente E2:** elegir una estrategia transaccional coherente en PostgreSQL, definir bloqueo ordenado y manejo de colisiones, fijar reglas para artículo desactivado mientras se confirma. Cuentas asociadas, jornadas y QR de pago permanecen en una fase posterior del backend.
+**Alternatives:** sale of services only without deposit or physical output; mixed sale; split payments (effective + transfer or other declared means). A financial account reference can be omitted in this first API; the comprehensive validation of accounts and days corresponds to subsequent RF-08/RF-09. The same repeated physical article line is logically added to check availability.  
+**Exceptions:** Non-conciliating payments; total zero or invalid discount; item deactivated between selection and confirmation; change of location; insufficient stock, including two simultaneous orders for the last unit; other person's resource; incorrect quantity/unit; reused key with different content. Partial sale, negative stock and loose payment applications are not generated.  
+**Acceptance criteria:** Exact totals in cents; combined payments reconciled; services without physical movement; 2 concurrent sales per 1 unit = **exactly 1 successful sale and 1 controlled rejection**, with final balance 0; failed operation leaves no payments or departures; successful retry not duplicate.  
+**E2 earring:** choose a coherent transactional strategy in PostgreSQL, define orderly blocking and collision management, set rules for deactivated article while it is confirmed. Associated accounts, payment days and QR remain at a later stage of the backend.
 
-### CU-11 — Registrar ajuste justificado de inventario
+### CU-11 — Register justified inventory adjustment
 
-**Requerimiento:** RF-06. **Actor:** Miembro autorizado para ajustar inventario. **Objetivo:** corregir diferencias físicas registrando su causa, sin inventar compras ni ventas.  
-**Disparador:** el actor detecta faltante, merma, daño o sobrante, o registra una diferencia luego de contar físicamente.  
-**Precondiciones:** usuario autorizado en la empresa; ubicación válida con almacenamiento; artículo físico, unidad y cantidad compatibles.  
-**Postcondición de éxito:** se registra un movimiento de ajuste trazable y las existencias cambian únicamente por la diferencia confirmada.
+**Requirement:** RF-06. **Actor:** Member authorized to adjust inventory. **Objective:** correct physical differences by recording their cause, without inventing purchases or sales.  
+**Shooter:** the actor detects missing, diminished, damaged or leftover, or records a difference after counting physically.  
+**Preconditions:** authorized user in the company; valid location with storage; physical item, unit and quantity compatible.  
+**Post-success condition:** a traceable adjustment movement is recorded and stocks change only by confirmed difference.
 
-**Flujo principal**
+**Main flow**
 
-1. El operador autorizado selecciona empresa, ubicación apta, artículo físico y tipo de ajuste: **ingreso** o **egreso**.
-2. Informa cantidad exacta en la unidad del artículo, motivo obligatorio y, opcionalmente, referencia a una verificación física; la API valida longitud, formato, actor y pertenencia al tenant.
-3. Revalida que el artículo y la ubicación se encuentren habilitados para la operación.
-4. En **una transacción única**, obtiene control concurrente sobre el saldo afectado, lee existencias vigentes y comprueba que un egreso no genere saldo negativo.
-5. Inserta una operación identificable y el movimiento firmado correspondiente, con actor, fecha, motivo, empresa y referencia de idempotencia.
-6. Confirma y devuelve el movimiento y saldo actualizado, sin modificar retroactivamente ventas, recepciones ni traslados.
-7. Si se informa un **conteo físico** en lugar de una diferencia directa, se debe acompañar del saldo/versión observado: si otro actor modificó el stock desde la lectura, se rechaza el conteo obsoleto y se solicita revisar la diferencia; no se debe recalcular el ajuste contra un saldo cambiado sin advertirlo.
+1. The authorised operator selects company, suitable location, physical item and type of adjustment: **income** o **discharge**.
+2. It reports exact quantity in the unit of the article, mandatory reason and optionally reference to a physical verification; API validates length, format, actor and tenant membership.
+3. Revalidates that the article and location are enabled for operation.
+4. En **a single transaction**, obtains concurrent control over the affected balance, reads existing stocks and checks that an outflow does not generate negative balance.
+5. Inserts an identifiable operation and the corresponding signed movement, with actor, date, motive, company and idempotency reference.
+6. Confirms and returns the updated movement and balance, without retroactively modifying sales, receptions or transfers.
+7. If a **physical count** instead of a direct difference, it should be accompanied by the balance/version observed: if another actor modified the stock from reading, the obsolete count is rejected and the difference is requested to be revised; the adjustment against a changed balance should not be recalculated without warning.
 
-**Alternativos:** un **conteo físico individual** puede originar un ajuste, pero requiere comparar contra el saldo/versión observado y rechazar cambios intermedios; coincidencia sin diferencia no genera movimiento. El **conteo multiartículo con sesión de revisión** del frontend queda diferido si no se incorpora expresamente al MVP.  
-**Excepciones:** artículo de tipo servicio, datos ajenos a la empresa, motivo ausente, cantidad o unidad inválida, intento de salida mayor al stock disponible, reintento duplicado, saldo cambiado concurrentemente durante un conteo. Si el stock cambia entre el conteo físico y su confirmación, la API debe **rechazar la operación obsoleta o exigir revisión explícita**, no sobrescribir silenciosamente movimientos de terceros.  
-**Criterios de aceptación:** si hay 10 unidades y se registra merma de 2, saldo final 8; ajuste de salida de 11 se rechaza íntegramente; ajuste positivo queda trazado; reintento con la misma clave no duplica; una venta concurrente no deja saldo negativo ni anula una diferencia sin revisión.  
-**Pendiente E2:** definir motivos mínimos y si el conteo individual tendrá operación propia. El **ajuste de diferencia justificada** es el compromiso mínimo del CU; no mezclar a ciegas «establecer saldo absoluto» con «sumar/restar cantidad».
+**Alternatives:** un **individual physical count** may cause an adjustment, but requires comparison against the observed balance/version and reject intermediate changes; match without difference does not generate movement. **multi-article count with review session** the frontend is deferred if it is not expressly incorporated into the MVP.  
+**Exceptions:** service type item, non-company data, missing reason, invalid quantity or unit, attempt to exit larger than the stock available, duplicate retry, balance changed concurrently during a count. If the stock changes between physical count and its confirmation, API must **reject the obsolete transaction or require explicit review**do not quietly overwrite third party movements.  
+**Acceptance criteria:** if there are 10 units and a decrease of 2, final balance 8 is recorded; an output adjustment of 11 is rejected in full; positive adjustment is traced; retrying with the same key does not duplicate; a concurrent sale leaves no negative balance or cancels a difference without revision.  
+**E2 earring:** define minimum reasons and whether the individual count will have its own operation. **justified difference adjustment** is the minimum commitment of the UC; do not blindly mix ‘set absolute balance’ with ‘take/return quantity’.
 
-### CU-12 — Invitar y aceptar incorporación de un colaborador
+### CU-12 — Invite and accept incorporation of a collaborator
 
-**Requerimiento:** RF-02. **Actores:** Administrador autorizado (solicita la invitación) y Usuario invitado (acepta). **Objetivo:** vincular de forma consentida una identidad global existente a otra empresa, con una membresía y permisos acotados.  
-**Prioridad:** **soporte propuesto** para demostrar multiusuario real; confirmar si forma parte de la primera API o se prepara mediante fixtures en las pruebas. **No requiere envío automático de correos, enlace QR público ni alta de socios legales.**  
-**Disparador:** el administrador desea incorporar a un colaborador.  
-**Precondiciones:** empresa existente; administrador con permiso de invitación; destinatario con identidad válida (puede registrarse mediante CU-01 antes de aceptar).  
-**Postcondición de éxito:** existe **una sola membresía activa** del invitado en esa empresa y el token de invitación queda consumido; en otra empresa conserva sus permisos originales.
+**Requirement:** RF-02. **Actors:** Authorized Administrator (solicita la invitación) and Guest User (accepts). **Objective:** to link a consensually existing global identity to another company, with limited membership and permits.  
+**Priority:** **proposed support** to demonstrate real multiuser; confirm whether it is part of the first API or prepared by fixings in tests. **No automatic mailing, public QR link or legal partner registration required.**  
+**Shooter:** the administrator wants to incorporate a contributor.  
+**Preconditions:** existing company; administrator with invitation permission; recipient with valid identity (can be registered by CU-01 before accepting).  
+**Post-success condition:** exists **one active membership** the guest in that company and the invitation token is consumed; in another company retains its original permissions.
 
-**Flujo principal**
+**Main flow**
 
-1. Un administrador autenticado elige su empresa y solicita una invitación dirigida a un correo/identidad concreta con rol permitido (nunca la titularidad administrativa por defecto).
-2. La API comprueba la membresía y permiso del administrador, límites de rol, duplicados y validez del destinatario.
-3. Genera una invitación `PENDIENTE` con token seguro, vencimiento y empresa de origen; **crear la invitación no otorga acceso**. Su comunicación al destinatario podrá ser manual durante el MVP.
-4. El destinatario autenticado recibe el token y solicita aceptarlo; si aún no tiene cuenta, primero ejecuta CU-01 y CU-02.
-5. La API valida en servidor token, vencimiento, estado `PENDIENTE`, destinatario autenticado correcto y empresa correspondiente.
-6. **En una misma transacción** crea/activa su membresía permitida, registra aceptación y consume la invitación exactamente una vez; ninguna otra identidad puede aprovechar el token.
-7. Devuelve membresía y empresa accesible. El usuario solo verá recursos para los que tenga permisos y únicamente desde ese momento.
+1. An authenticated administrator chooses his company and requests an invitation addressed to a specific mail/identity with allowed role (never default administrative ownership).
+2. The API checks the administrator's membership and permission, role limits, duplicates, and recipient validity.
+3. Generate an invitation `PENDIENTE` with safe token, maturity and parent company; **creating the invitation does not grant access**. Your communication to the addressee may be manual during the MVP.
+4. The authenticated recipient receives the token and asks to accept it; if he has no account yet, first executes CU-01 and CU-02.
+5. API validates on token server, expiration, status `PENDIENTE`, correct authenticated recipient and corresponding company.
+6. **In the same transaction** creates/activates your allowed membership, records acceptance and consumes the invitation exactly once; no other identity can take advantage of the token.
+7. Returns membership and accessible company. The user will only see resources for which he/she has permissions and only from that moment.
 
-**Alternativos:** si el usuario ya tiene membresía activa, no se crea otra; la API informa que ya pertenece a esa empresa. La invitación puede rechazarse/cancelarse si se implementan esas operaciones.  
-**Excepciones:** token inválido, vencido, reutilizado o dirigido a otra cuenta; administrador no autorizado; rol excesivo; empresa no accesible; aceptación concurrente. Todos los errores deben evitar revelar información sensible del destinatario y no crear membresías parciales.  
-**Criterios de aceptación:** invitar no concede acceso; un token se consume una vez; solo la identidad destinataria lo acepta; el invitado puede pertenecer a A y B con roles diferentes; no se duplican membresías bajo aceptación concurrente; el administrador no puede transferir titularidad mediante invitación básica.  
-**E2-1.3C.3 y posteriores validados:** la emisión CU-12a existe en la API (token de siete días entregado solo en 201, roles `ENCARGADO`/`TRABAJADOR`, único pendiente por correo y empresa). C.4a implementó y validó la aceptación CU-12b (**171 pruebas locales**). C.4b implementó listado y actualización del equipo (**195 pruebas locales**, CI 3/3), sin habilitar transferencia de titularidad. Cancelación, rechazo y reenvío de invitaciones continúan pendientes. Se conserva unicidad SQL `(business_id,user_id)`.
+**Alternatives:** If the user already has active membership, no other member is created; the API reports that it already belongs to that company. The invitation may be refused/cancelled if such operations are implemented.  
+**Exceptions:** invalid, expired, reused or addressed to another account; unauthorized administrator; excessive role; non-accessible company; concurrent acceptance. All errors should avoid revealing sensitive information of the recipient and not creating partial memberships.  
+**Acceptance criteria:** invitation does not grant access; a token is consumed once; only the recipient identity accepts it; the guest may belong to A and B with different roles; memberships are not duplicated under concurrent acceptance; the administrator cannot transfer title by basic invitation.  
+**Validated E2-1.3C.3 and subsequent:** the CU-12a issue exists in the API (seven-day token delivered only in 201 roles, `ENCARGADO`/`TRABAJADOR`C.4a implemented and validated the CU-12b acceptance (**171 local tests**). C.4b implemented team listing and updating (**195 local tests**, CI 3/3), without enabling transfer of title. Cancellation, rejection and forwarding of invitations remain pending. SQL uniqueness is retained `(business_id,user_id)`.
 
-## 5. Escenarios transversales de validación
+## 5. Cross-sectional validation scenarios
 
-| ID | Escenario | Casos vinculados | Resultado esperado en API |
+| ID | Scenario | Related cases | Expected result in API |
 |---|---|---|---|
-| ET-01 | Usuario sin membresía intenta acceder a otra empresa | CU-04 a CU-12 (según contexto) | Rechazo, sin revelar datos de esa empresa |
-| ET-02 | Reenvío de una recepción confirmada | CU-07 | Una sola recepción y entradas; resultado estable con misma clave |
-| ET-03 | Dos usuarios autorizados venden simultáneamente el único artículo disponible | CU-10 | 1 venta confirmada, 1 rechazada; saldo final 0, nunca negativo |
-| ET-04 | Traslado que supera existencias | CU-09 | Sin salida ni entrada; stock previo intacto |
-| ET-05 | Venta mixta de producto físico y servicio | CU-10 | Stock sólo afectado por los bienes físicos |
-| ET-06 | Usuario autenticado sin empresa | CU-02, CU-03 | Puede crear empresa; no obtiene acceso a otra por conocer un ID |
-| ET-07 | SKU repetido en otra empresa | CU-05 | Permitido entre empresas, único dentro de cada empresa |
-| ET-08 | Compra registrada sin recepción | CU-06, CU-08 | Inventario sin cambios |
-| ET-09 | Compra sin bienes recepcionables | CU-06, CU-07 | Cierre sin recepción física; CU-07 rechazado, ningún movimiento |
-| ET-10 | Dos solicitudes confirman recepción de la misma compra | CU-07 | Una sola transición a `RECIBIDA`; sin doble entrada |
-| ET-11 | Ajuste por merma sin motivo o superior al saldo | CU-11 | Rechazo y stock intacto |
-| ET-12 | Stock cambia entre lectura previa y confirmación de venta, traslado o ajuste | CU-09 a CU-11 | Se revalida dentro de transacción y no hay saldo negativo |
-| ET-13 | Crear empresa sin ubicación, luego recibir bienes o vender bien físico | CU-03, CU-04, CU-07, CU-10 | Se rechaza hasta crear una ubicación habilitada; servicios permitidos sin depósito |
-| ET-14 | Reusar misma clave de idempotencia con una carga diferente | CU-07, CU-09, CU-10, CU-11 | Conflicto controlado, sin segunda operación |
-| ET-15 | Se invita a otro usuario pero no acepta, o intenta aceptar desde otra cuenta | CU-12, CU-02 | Sin nueva membresía activa; la invitación no concede acceso por sí sola |
-| ET-16 | Se repite aceptación de invitación o se aceptan en paralelo dos veces | CU-12 | Una sola membresía; invitación consumida una vez |
-| ET-17 | Compra/venta falla después de preparar registros pero antes de confirmar | CU-06, CU-07, CU-09, CU-10, CU-11 | Rollback completo; sin datos parciales, saldos y operaciones coherentes |
-| ET-18 | Venta de 2 renglones del mismo artículo con stock menor que el total solicitado | CU-10 | Rechazo completo; no se valida cada renglón aisladamente |
-| ET-19 | Usuario consulta otra empresa con un ID válido de artículo, proveedor o ubicación | CU-04 a CU-12 | Sin lectura/escritura ajena; rechazo sin fuga de atributos |
+| ET-01 | User without membership tries to access another company | CU-04 to CU-12 (depending on context) | Rejection, without revealing data of that company |
+| ET-02 | Forwarding of a confirmed receipt | CU-07 | One reception and tickets; stable result with same key |
+| ET-03 | Two authorised users simultaneously sell the only item available | CU-10 | 1 confirmed sale, 1 rejected; final balance 0, never negative |
+| ET-04 | Transfers exceeding stocks | CU-09 | No output or input; previously intact stock |
+| ET-05 | Mixed sale of physical product and service | CU-10 | Stock only affected by physical assets |
+| ET-06 | Authenticated user without company | CU-02, CU-03 | You can create a company; you don't get access to another by knowing an ID |
+| ET-07 | SKU repeated in another company | CU-05 | Allowed between companies, unique within each company |
+| ET-08 | Purchase registered without reception | CU-06, CU-08 | Inventory unchanged |
+| ET-09 | Purchase without receptionable goods | CU-06, CU-07 | Closure without physical reception; CU-07 rejected, no movement |
+| ET-10 | Two requests confirm receipt of the same purchase | CU-07 | One transition to `RECIBIDA`; no double input |
+| ET-11 | Adjustment for loss of reason or more | CU-11 | Rejection and stock intact |
+| ET-12 | Stock changes between pre-reading and confirmation of sale, transfer or adjustment | CU-09 a CU-11 | Revalidated inside transaction and no negative balance |
+| ET-13 | Create company without location, then receive goods or sell physical good | CU-03, CU-04, CU-07, CU-10 | Refusal to create an enabled location; services allowed without deposit |
+| ET-14 | Reusing same idempotence key with a different charge | CU-07, CU-09, CU-10, CU-11 | Controlled conflict, no second operation |
+| ET-15 | Another user is invited but does not accept, or tries to accept from another account | CU-12, CU-02 | No new active membership; invitation does not grant access on its own |
+| ET-16 | Repeat acceptance of invitation or accept in parallel twice | CU-12 | One membership; once consumed invitation |
+| ET-17 | Purchase/sale fails after preparing records but before confirming | CU-06, CU-07, CU-09, CU-10, CU-11 | Full Rollback; no partial data, consistent balances and operations |
+| ET-18 | Sale of 2 lines of the same item with stock less than the total requested | CU-10 | Complete rejection; not validated each line in isolation |
+| ET-19 | User consults another company with a valid article, supplier or location ID | CU-04 a CU-12 | No read/write by others; no escape rejection of attributes |
 
-### 5.1 Cómo probar ET-03 con dos usuarios sin dos computadoras
+### 5.1 How to test ET-03 with two users without two computers
 
-La prueba de **concurrencia** no depende de que dos personas hagan clic al mismo tiempo ni de la interfaz visual: la ejecutará un test de integración que lance dos peticiones HTTP simultáneas contra el backend real, con **PostgreSQL de pruebas**. No sirve como prueba equivalente ejecutar en `localStorage`, ni asumir que SQLite en memoria replica el comportamiento de bloqueos de PostgreSQL.
+The test of **attendance** does not depend on two people clicking at the same time or the visual interface: it will be run by an integration test that launches two simultaneous HTTP requests against the real backend, with **PostgreSQL testing**. It does not serve as equivalent proof to run in `localStorage`, nor assume that SQLite in memory replicates PostgreSQL block behavior.
 
-**Preparación reproducible:**
+**Reproducible preparation:**
 
-1. Crear una empresa de pruebas, un artículo físico vendible, una ubicación activa y **exactamente 1 unidad** disponible mediante una recepción o ajuste válido.
-2. Crear **dos usuarios distintos** con membresía y permiso de ventas en esa misma empresa, mediante CU-12 si está implementado o mediante **fixtures controladas de test**; obtener dos credenciales válidas. En ningún caso reutilizar una única identidad para fingir dos usuarios.
-3. Preparar dos ventas con un renglón de 1 unidad, pagos declarados que concilien y **claves de idempotencia diferentes**.
-4. Lanzar las dos peticiones en paralelo mediante `asyncio.gather`, con dos clientes HTTP y **dos sesiones/transacciones independientes de SQLAlchemy**; sincronizar el comienzo mediante barrera de prueba si se requiere probar contención real. Si el endpoint bloquea un recurso común, repetir la prueba varias veces.
-5. Verificar respuestas y **estado persistido**: una confirmación exitosa y un rechazo de negocio por falta de stock, **exactamente una venta**, sus aplicaciones de pago, una salida física y saldo final 0. No debe quedar venta/línea/pago parcial del intento rechazado.
-6. Reintentar la petición **exitosa con su misma clave** y confirmar que se recupera la misma venta sin generar otra salida.
+1. Create a test company, a physical item for sale, an active location and **exactly 1 unit** available by a valid reception or adjustment.
+2. Create **two different users** with membership and permission to sell in that same company, by CU-12 if implemented or by **controlled test fixtures**; get two valid credentials. In no case re-use a single identity to fake two users.
+3. Prepare two sales with a line of 1 unit, declared payments that reconcile and **different idempotency keys**.
+4. Launch the two requests in parallel by `asyncio.gather`, with two HTTP clients and **two SQLAlchemy independent sessions/transactions**; synchronize the start by test barrier if actual containment is required. If the endpoint blocks a common resource, repeat the test several times.
+5. Check answers and **persisting status**: a successful confirmation and a business rejection due to lack of stock, **exactly a sale**, your payment applications, a physical output and final balance 0. No sale/line/partial payment of the rejected attempt should be left.
+6. Retry request **successful with your same key** and confirm that the same sale is recovered without generating another output.
 
-> El test debe consultar la base tras finalizar ambas solicitudes. Dos respuestas HTTP por sí solas no demuestran integridad. Si el motor utiliza serialización con reintentos controlados, la API debe resolver o rechazar el conflicto de forma coherente. La coincidencia temporal exacta de las peticiones no puede darse por probada sin instrumentación; un ensayo repetible bajo contención es más sólido.
+> The test should consult the base after both requests have been completed. Two HTTP responses alone do not demonstrate integrity. If the engine uses serialization with controlled retrying, the API must resolve or reject the conflict consistently. The exact timing of the requests cannot be proven without instrumentation; a repeatable test under containment is more robust.
 
-**Ejemplo conceptual de la prueba (no código implementado):**
+**Conceptual example of the test (not code implemented):**
 
 ```python
 # Con PostgreSQL real, fixtures de dos usuarios autenticados y 1 unidad en stock.
@@ -456,185 +456,185 @@ assert consultar_aplicaciones_pago() == 1  # un único medio en esta fixture
 assert consultar_stock_disponible() == 0
 ```
 
-**Clasificación:** ET-03 es una **prueba de integración/concurrencia**, no reemplaza los **10 tests unitarios** que exige la materia. El ejemplo presupone una aplicación de pago por venta, por eso espera una sola aplicación confirmada. Se pueden cubrir las reglas con tests unitarios separados y ejecutar este escenario adicional con PostgreSQL en Docker/GitHub Actions. La interfaz con dos navegadores puede servir como demostración, pero no es un test confiable de una condición de carrera.
+**Classification:** ET-03 is a **integration test/concurrence**, does not replace the **10 unit tests** The example presupposes a paid-for-sale application, so it expects a single confirmed application. You can cover the rules with separate unit tests and run this additional scenario with PostgreSQL in Docker/GitHub Actions. The interface with two browsers can serve as a demonstration, but it is not a reliable test of a race condition.
 
-### 5.2 Matriz breve de resultados para cada transacción
+### 5.2 Brief results matrix for each transaction
 
-| Operación | Resultado exitoso | Si falla una validación o ocurre conflicto | Reintento idéntico |
+| Operation | Success | If a validation fails or conflict occurs | Identical retry |
 |---|---|---|---|
-| Registrar compra (CU-06) | Compra + líneas y estado, **sin stock** | Sin compra ni líneas parciales | Definir idempotencia en Documento 05; recomendado para evitar dobles compras |
-| Recepción (CU-07) | Recepción + todas las entradas + estado `RECIBIDA` | Compra queda pendiente y stock inalterado | Devuelve la misma recepción |
-| Traslado (CU-09) | Referencia + una salida y una entrada equivalentes | No aparece ninguno de los dos movimientos | Devuelve el mismo traslado |
-| Venta (CU-10) | Venta + líneas + pagos declarados + salidas físicas | Sin venta, aplicaciones ni salidas parciales | Devuelve la misma venta |
-| Ajuste (CU-11) | Operación + movimiento con motivo + saldo coherente | Sin movimiento ni cambio de saldo | Devuelve el mismo ajuste |
-| Aceptar invitación (CU-12) | Membresía + invitación consumida | Sin nueva membresía y sin estado de aceptación parcial | No duplica membresía |
+| Register purchase (CU-06) | Purchase + lines and status, **sin stock** | No purchase or partial lines | Define idempotence in Document 05; recommended to avoid double purchases |
+| Reception (CU-07) | Reception + all entries + status `RECIBIDA` | Purchase is pending and stock unchanged | Returns the same reception |
+| Transfer (CU-09) | Reference + an equivalent output and input | Neither move appears | Returns the same move |
+| Sale (CU-10) | Sales + lines + declared payments + physical outflows | No sale, applications or partial outputs | Returns the same sale |
+| Ajuste (CU-11) | Operation + movement with reason + consistent balance | No movement or change of balance | Returns the same setting |
+| Accept invitation (CU-12) | Membership + invitation consumed | No new membership and no partial acceptance status | No duplicate membership |
 
-Un caso de uso no certifica por sí solo el cumplimiento: estos resultados pasan a ser **tests del servidor** cuando exista FastAPI/PostgreSQL. En los casos transaccionales es necesario verificar tanto la respuesta HTTP como el estado persistido.
+A case of use does not certify compliance alone: these results become **server tests** when FastAPI/PostgreSQL exists. In transactional cases, it is necessary to verify both the HTTP response and the persisting state.
 
-## 6. Relación con los diagramas UML
+## 6. Relationship to UML diagrams
 
-El **diagrama de casos de uso** representará como actores externos al Usuario autenticado, Titular/Administrador y Colaborador autorizado (según permisos); CU-01 y CU-02 se asociarán al Visitante. CU-12 relaciona al Administrador que invita y al Usuario autenticado que acepta, sin dibujar la API como actor. **El sistema/API no será actor del diagrama**. Las relaciones entre actores deben indicar especialización solo cuando sea semánticamente válida.
+El **diagram of use cases** It will represent the Authorized User, Owner/Administrator and Collaborator as external actors (according to permissions); CU-01 and CU-02 will be associated with the Visitor. CU-12 relates the Invited Administrator and the Authenticated User that it accepts, without drawing the API as an actor. **System/API will not be an actor of the diagram**. Relationships between actors should indicate specialization only when it is semantically valid.
 
-No es necesario dibujar los doce casos con todas sus excepciones. Para la **presentación**, se propondrá una vista general legible y se detallarán los flujos complejos con esta especificación. Las relaciones `<<include>>` y `<<extend>>` se añadirán únicamente si cumplen su significado UML, no por decoración.
+It is not necessary to draw the twelve cases with all their exceptions. **presentation**, a readable overview will be proposed and the complex flows will be detailed with this specification. `<<include>>` y `<<extend>>` they shall be added only if they fulfil their UML meaning, not by decoration.
 
-El **diagrama de clases** se definirá después de aprobar el dominio y no se confundirá con el esquema de tablas SQL: habrá entidades como Usuario, Empresa, Membresía, Artículo, Ubicación, Proveedor, Compra, Recepción, Movimiento de stock, Venta y Aplicación de pago, con cardinalidades e invariantes coherentes.
+El **class diagram** will be defined after the domain approval and will not be confused with the SQL table scheme: there will be entities such as User, Company, Membership, Article, Location, Supplier, Purchase, Reception, Stock Movement, Sale and Payment Application, with consistent cardinalities and invariants.
 
-Para demostrar concurrencia e idempotencia en la defensa será útil, aunque no obligatorio, un **diagrama de secuencia de confirmación de venta**, mostrando verificación y descuento bajo la misma transacción. La máquina de estados de Compra se describe en CU-07; **no obliga a implementar el patrón State**.
+In order to demonstrate competition and indempetence in defence, a **sales confirmation sequence diagram**, showing verification and discount under the same transaction. The Purchase Status Machine is described in CU-07; **does not require the implementation of the State pattern**.
 
-## 7. Cobertura del alcance y funcionalidades diferidas
+## 7. Scope coverage and delayed functionalities
 
-Los casos CU-01 a CU-12 corresponden al backend **propuesto**, no a doce capacidades completamente implementadas hoy. La inclusión de CU-12 no obliga a enviar correos ni incorpora automáticamente permisos reales al frontend local. RF-08 (gastos y caja), RF-09 (cuentas declaradas) y RF-10 (QR DEMO) permanecen en el frontend local y se especificarán para backend solo si la planificación se amplía. Las operaciones de devoluciones, producción por lotes, reservas, conciliación bancaria y pagos reales no están comprometidas para la primera API.
+Cases CU-01 to CU-12 correspond to the backend **Proposed**, not to twelve capabilities fully implemented today. The inclusion of CU-12 does not require sending emails or automatically incorporating real permissions to the local frontend. RF-08 (expenditures and cashier), RF-09 (declared accounts) and RF-10 (QR DEMO) remain on the local frontend and will be specified for backend only if planning is expanded. Return operations, batch production, reserves, bank reconciliation and actual payments are not committed to the first API.
 
-Los endpoints y métodos HTTP exactos se definirán en `05_MATRIZ_API_Y_TRAZABILIDAD.md`. No se equipararán pruebas del frontend DEMO con pruebas unitarias y de integración del backend académico.
+Accurate HTTP endpoints and methods will be defined in `05_MATRIZ_API_Y_TRAZABILIDAD.md`. Tests of the DEMO frontend shall not be equated with unitary tests and integration tests of the academic backend.
 
-## 8. Decisiones pendientes de aprobación
+## 8. Decisions pending approval
 
-| Decisión | Propuesta inicial | Impacto |
+| Decision | Initial proposal | Impacto |
 |---|---|---|
-| D-CU-01: permisos del backend | Titular/Administrador habilita catálogos y ubicaciones; colaboradores ejecutan operaciones concedidas por empresa | Seguridad y matriz de roles |
-| D-CU-02: recepción de compras | Primera API registra **una recepción completa por compra**; recepciones parciales diferidas. Compra sólo administrativa termina en `CERRADA_SIN_RECEPCION` (propuesto) | Entidades, estados y pruebas |
-| D-CU-03: ubicación de productos físicos | Una venta física requiere ubicación con capacidades de venta y almacenamiento; servicios no exigen ubicación | Diseño de venta e inventario |
-| D-CU-04: proveedor de compra | Opcional para registro, como en la DEMO; no determina automáticamente recepción/pago | API de compras |
-| D-CU-05: estrategias de sesión y errores | Registrar/login y permisos definidos en fase de contratos; errores estructurados preferentemente con RFC 9457 | Seguridad y pruebas |
-| D-CU-06: concurrencia de stock | Comparar bloqueo de saldo en PostgreSQL vs actualizaciones atómicas condicionadas; transacción de venta y movimiento única | Garantía contra sobreventa; test ET-03 |
-| D-CU-07: ajuste de inventario | Habilitar ajuste manual con motivo y traza; conteo multiartículo se difiere si no es parte del alcance aprobado | CU-11, permisos y pruebas |
-| D-CU-08: invitaciones/membresías | CU-12 como soporte mínimo recomendado sin correo automático; alternativamente preparar membresías solo con fixtures para concurrencia si se difiere el endpoint | RF-02, usuarios reales y ET-03 |
-| D-CU-09: monto y presentación | ARS en centavos, cantidades de unidad escalada y snapshots de importes; definir redondeo y rangos en esquemas | CU-05, CU-06, CU-10 y Documento 05 |
-| D-CU-10: saldos concurrentes | Si se usa ledger, no bloquear únicamente movimientos históricos; garantizar recurso de saldo serializable para entradas/salidas concurrentes | CU-07, CU-09, CU-10, CU-11 |
+| D-CU-01: backend permissions | Owner/Manager enables catalogues and locations; collaborators execute operations granted by company | Security and Role Matrix |
+| D-CU-02: receipt of purchases | First API records **a full reception by purchase**; partial receptions deferred. Purchase only administrative ends in `CERRADA_SIN_RECEPCION` (proposed) | Entities, states and evidence |
+| D-CU-03: location of physical products | A physical sale requires location with sales and storage capabilities; services do not require location | Sales and inventory design |
+| D-CU-04: purchasing supplier | Optional for registration, as in DEMO; does not automatically determine receipt/payment | Purchase API |
+| D-CU-05: session strategies and errors | Register/login and contract-phase defined permissions; structured errors preferably with RFC 9457 | Safety and evidence |
+| D-CU-06: stock supply | Compare PostgreSQL balance lock vs conditioned atomic updates; single-sale and movement transaction | Oversales guarantee; ET-03 test |
+| D-CU-07: Inventory adjustment | Enable manual setting with motif and trace; multi-article counting differs if it is not part of the approved scope | CU-11, permits and tests |
+| D-CU-08: invitations/memberships | CU-12 as a recommended minimum support without automatic mail; alternatively prepare memberships only with matching fixes if endpoint differs | RF-02, real users and ET-03 |
+| D-CU-09: amount and presentation | ARS in cents, amounts of climbing unit and snapshots of amounts; define rounding and ranges in schemas | CU-05, CU-06, CU-10 and Document 05 |
+| D-CU-10: concurrent balances | If ledger is used, do not block only historical movements; guarantee serializable balance resource for concurrent inputs/outputs | CU-07, CU-09, CU-10, CU-11 |
 
-## 9. Condiciones de aprobación
+## 9. Conditions of approval
 
-Esta versión se considera base revisada para entrega. El equipo deberá confirmar los actores, el alcance de operaciones del núcleo y, especialmente, si **una recepción completa por compra** es suficiente para la API académica. Se propone como decisión de menor complejidad para el MVP, sin impedir evolución posterior a recepciones parciales. Los campos, códigos HTTP y rutas definitivas podrán precisarse durante diseño de API sin reescribir las metas de los casos de uso.
+This version is considered a revised basis for delivery. The team must confirm the actors, the scope of operations of the kernel and, in particular, whether **a full reception by purchase** is sufficient for the academic API. It is proposed as a less complex decision for MVP, without preventing evolution after partial receptions. The fields, HTTP codes and definitive paths may be specified during API design without rewriting the goals of use cases.
 
-**Estado:** versión 0.3 revisada para entrega como especificación **TO-BE**. Los contratos HTTP, permisos y esquemas SQL definitivos deberán concordar con los documentos siguientes; cualquier cambio de alcance exige actualizar los RF y CU relacionados.
+**Status:** revised version 0.3 for delivery as specification **TO-BE**. Final HTTP contracts, permissions and SQL schemas must be in accordance with the following documents; any change of scope requires updating the related RF and CU.
 
-**Referencia técnica externa consultada para el formato de errores:** RFC 9457 — *Problem Details for HTTP APIs* (IETF, 2023), que reemplaza a RFC 7807: https://www.rfc-editor.org/rfc/rfc9457.html. Se documenta como preferencia arquitectónica, no como obligación expresa de la consigna.
+**External technical reference consulted for the error format:** RFC 9457 — *Problem Details for HTTP APIs* (IETF, 2023), which replaces RFC 7807: https://www.rfc-editor.org/rfc/rfc9457.html. It is documented as an architectural preference, not as an express obligation of the slogan.
 
-## 10. Estado de los casos de uso y próxima política de autorización
+## 10. Status of use cases and forthcoming authorization policy
 
-| CU | Estado API | Endpoint o comprobación |
+| CU | API Status | Endpoint or check |
 |---|---|---|
-| CU-01 Registro | Implementado y probado localmente | `POST /api/v1/auth/register` |
-| CU-02 Login/perfil/salida | Implementado y probado localmente | `POST /login`, `GET /me`, `POST /logout` bajo `/api/v1/auth` |
-| CU-03 Crear y administrar perfil de empresa | Alta y lectura verificadas; edición C.2 publicada, aún sin pruebas locales confirmadas | `POST/GET /api/v1/businesses`, `GET/PATCH /api/v1/businesses/{business_id}`; RBAC empresarial en PATCH |
-| CU-04–CU-11 | Pendiente backend | Plan conceptual y experiencia frontend DEMO; todavía no hay endpoint real |
-| CU-12 Invitaciones/equipo | **C.3/C.4a/C.4b validados localmente; 195 pruebas finales y CI funcional 3/3** | Emisión, aceptación, directorio `GET /api/v1/businesses/{business_id}/memberships` y edición `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` |
+| CU-01 Registration | Implemented and locally tested | `POST /api/v1/auth/register` |
+| CU-02 Login/profile/output | Implemented and locally tested | `POST /login`, `GET /me`, `POST /logout` low `/api/v1/auth` |
+| CU-03 Create and manage company profile | Verified High and Reading; C.2 Edition published, still without confirmed local evidence | `POST/GET /api/v1/businesses`, `GET/PATCH /api/v1/businesses/{business_id}`; Business RBAC in PATCH |
+| CU-04–CU-11 | Pendiente backend | Conceptual plan and frontend DEMO experience; no real endpoint yet |
+| CU-12 Invitations/equipment | **C.3/C.4a/C.4b locally validated; 195 final tests and functional IC 3/3** | Issue, acceptance, directory `GET /api/v1/businesses/{business_id}/memberships` and editing `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` |
 
-**Política E2-1.3C.1:** se implementa la **matriz RBAC pura** con cuatro roles de membresía; para consulta empresarial todos los miembros activos pueden leer, mientras que la configuración se reserva al titular y administrador. `ENCARGADO` y `TRABAJADOR` no reciben facultad general para editar empresa, invitar ni administrar miembros. **Esta primera entrega define y prueba la política; la aplicación efectiva a la primera mutación protegida es el siguiente corte.** Identificador empresarial ajeno o membresía inactiva no deben otorgar acceso. Para un miembro activo de una empresa suspendida se prevé lectura informativa, no cambios. Véase Documento 05 para el detalle y los errores HTTP previstos.
+**Policy E2-1.3C.1:** implementation of the **matriz RBAC pura** with four membership roles; for business consultation all active members can read, while the configuration is reserved to the owner and administrator. `ENCARGADO` y `TRABAJADOR` they do not receive general authority to edit a company, invite or administer members. **This first delivery defines and tests the policy; the effective application to the first protected mutation is the following cut.** Other business identifier or inactive membership should not grant access. For an active member of a suspended company, information reading is expected, no change. See Document 05 for the detail and HTTP errors previewed.
 
-## 11. Complemento CU-03 — editar el perfil de una empresa (E2-1.3C.2)
+## 11. CU-03 plugin — editing a company profile (E2-1.3C.2)
 
-**Actor:** usuario autenticado con membresía `ACTIVA` en la empresa objetivo y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`. **Precondiciones:** sesión vigente y cuenta activa; empresa existente, propia y `ACTIVA`; cuerpo de PATCH con al menos uno de `name`, `category`, `activity_kind`.
+**Actor:** authenticated user with membership `ACTIVA` in the objective company and role `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`. **Preconditions:** current session and active account; existing company, own and `ACTIVA`; PATCH body with at least one `name`, `category`, `activity_kind`.
 
-**Flujo principal:** (1) cliente envía `PATCH /api/v1/businesses/{business_id}` con Bearer y campos permitidos; (2) FastAPI valida forma y valores, y el servidor autentica; (3) el servicio vuelve a bloquear/comprobar usuario y sesión; (4) consulta y bloquea el par `Business`–`Membership` del mismo tenant con membresía activa; (5) evalúa `BusinessPermission.EDIT_PROFILE`; (6) modifica solo campos presentes y confirma una única transacción; (7) responde 200 con `BusinessView` actualizado y la membresía que autorizó.
+**Main flow:** (1) client sends `PATCH /api/v1/businesses/{business_id}` with Bearer and enabled fields; (2) FastAPI validates form and values, and the server authenticates; (3) the service reblocks/checks user and session; (4) queryes and blocks pair `Business`–`Membership` of the same tenant with active membership; (5) evaluates `BusinessPermission.EDIT_PROFILE`; (6) modifies only fields present and confirms a single transaction; (7) replies 200 with `BusinessView` updated and the membership that authorized.
 
-**Alternativas:** sesión inválida `401`; empresa ajena, inexistente o sin membresía activa `404`; miembro válido sin facultad `403`; titular/administrador de empresa suspendida `409`; campos prohibidos, `null`, nombres no válidos o cuerpo vacío `422`. Toda excepción antes del commit revierte la actualización. El rol de una empresa nunca habilita modificar otra. El estado no se actualiza por esta API.
+**Alternatives:** invalid session `401`; non-existent or no active membership `404`; member valid without authority `403`; holder/company manager suspended `409`; prohibited fields, `null`, invalid names or empty body `422`. Any exception before commit reverses the update. The role of a company never enables to modify another. The status is not updated by this API.
 
-**Pruebas introducidas en C.2 (validadas posteriormente en la regresión de E2-1):** flujo exitoso del titular, administrador, denegación a encargado/trabajador, aislamiento entre empresas, empresa suspendida, sesión revocada, membresía inactiva, validación del cuerpo y rollback inducido tras `flush`. Este complemento no crea una entidad nueva ni exige regenerar 03A/03B.
+**Tests introduced in C.2 (validated later on regression of E2-1):** successful flow of the holder, administrator, refusal to maintainer/worker, isolation between companies, suspended company, revoked session, inactive membership, body validation and induced rollback after `flush`. This supplement does not create a new entity nor requires regenerating 03A/03B.
 
-## 12. E2-1.3C.3 — contrato parcial de CU-12a: emitir invitación
+## 12. E2-1.3C.3 — partial contract of CU-12a: issue invitation
 
-**Precondiciones:** usuario con token personal vigente, membresía `ACTIVA` en la empresa `ACTIVA` y permiso `members.invite` (titular administrativo o administrador). Solicitud con `email` válido y rol `ENCARGADO` o `TRABAJADOR` exclusivamente. No se requiere una cuenta global previa del destinatario.
+**Preconditions:** user with current personal token, membership `ACTIVA` in the company `ACTIVA` and permission `members.invite` (administrative holder or administrator). `email` valid and role `ENCARGADO` o `TRABAJADOR` only. No advance comprehensive account of the addressee is required.
 
-**Flujo:** autenticar; revalidar sesión/usuario bloqueando filas; bloquear empresa+membresía del actor; verificar permiso en el mismo tenant; verificar que no exista ya membresía `ACTIVA` asociada al correo en esa empresa; descartar de forma explícita una invitación `PENDIENTE` vencida de la misma empresa/correo; rechazar duplicado vigente; generar un token seguro de 256 bits, persistir **solo** hash, plazo y datos mínimos; confirmar una sola transacción; devolver 201 e incluir el token una vez en la respuesta. No se crean miembros ni usuarios.
+**Flow:** authenticate; revalidate session/user blocking rows; block company+actor membership; verify permission in the same tenant; check that no longer exists membership `ACTIVA` associated with mail in that company; explicitly discard an invitation `PENDIENTE` expired from the same company/mail; refuse duplicate in force; generate a 256 bit safe token, persist **only** hash, time and minimum data; confirm a single transaction; return 201 and include token once in the response. No members or users are created.
 
-**Alternativas:** 401 sin sesión; 404 si empresa ajena/inexistente o membresía inactiva; 403 si rol sin permiso; 409 empresa suspendida, miembro activo existente o invitación pendiente vigente; 422 correo/rol no admitidos o campos extra. Todos los errores revierten cambios. La tokenización se valida solo en servidor, no por React.
+**Alternatives:** 401 no session; 404 if non-member/non-existent or inactive membership; 403 if unpermitted role; 409 suspended company, existing active member or pending invitation; 422 unsupported mail/rol or extra fields. All errors reverse changes. Tokenization is validated only on server, not by React.
 
-**Pruebas y evidencia (actualización C.5):** C.3 aprobó CI (Python 3.12/3.14, Alembic y Docker) y luego **147 pruebas locales**. CU-12b se implementó y validó en C.4a (**171 pruebas**); la consulta y gestión de membresías se validó en C.4b (**195 pruebas**). Siguen pendientes cancelación/reenvío/rechazo de invitaciones y aprobación/transferencia de titularidad. Esta sección conserva la especificación original de C.3 como antecedente.
+**Evidence and evidence (updating C.5):** C.3 approved IC (Python 3.12/3.14, Alembic and Docker) and then **147 local tests**CU-12b was implemented and validated in C.4a (**171 tests**); consultation and membership management was validated in C.4b (**195 tests**). Cancellation/return/rejection of invitations and approval/transfer of title are still pending. This section retains the original specification of C.3 as antecedent.
 
-## 13. C.4a — Aceptación de invitación CU-12b (implementada y validada localmente)
+## 13. C.4a — CU-12b invitation acceptance (implemented and locally validated)
 
-**Actor:** cuenta global con sesión Bearer válida y correo normalizado **igual** al correo de la invitación. El destinatario puede registrar su cuenta después de que se haya emitido la invitación. El emisor no acepta en nombre del destinatario.
+**Actor:** global account with valid Bearer session and standard mail **Same** The recipient may register his account after the invitation has been issued. The issuer does not accept on behalf of the addressee.
 
-**Flujo principal:** (1) enviar `POST /api/v1/invitations/accept` con `{"invitation_token":"..."}`; (2) comprobar sesión y cuenta con bloqueo SQL; (3) consultar la invitación por huella SHA-256 y bloquearla; (4) exigir que el correo de la cuenta coincida con el destinatario; (5) exigir estado PENDIENTE y `expires_at` futura; (6) bloquear la Empresa ACTIVA; (7) bloquear la eventual Membresía del usuario y crearla si no existe o reactivarla si estaba INACTIVA, preservando la unicidad por tenant; (8) consumir token con estado ACEPTADA y guardar quién/cuándo aceptó; (9) confirmar membresía + invitación en una transacción; (10) devolver `BusinessView` y habilitar GET empresarial.
+**Main flow:** (1) Send `POST /api/v1/invitations/accept` con `{"invitation_token":"..."}`; (2) check session and have SQL lock; (3) consult the SHA-256 print invitation and block it; (4) require that the account mail match the recipient; (5) require PENDENT status and `expires_at` future; (6) block the Active Enterprise; (7) block the possible User Membership and create it if it does not exist or reactivate it if it was INACTIVE, preserving uniqueness per tenant; (8) consume token with an ACCEPTED state and save who/when accepted; (9) confirm membership + invitation in a transaction; (10) return `BusinessView` and enable business GET.
 
-**Excepciones:** 401 sesión/usuario inválido; 404 token inexistente o dirigido a otra identidad **con el mismo mensaje**; 409 token consumido/vencido, empresa suspendida, membresía ya activa o reactivación de antiguo titular administrativo; 422 token con forma inválida o campos extra. Las excepciones no crean ni reactivan miembros. La aceptación consumida no produce segunda membresía ni cambio de rol al reintentarse. El rol para membresía reactivada proviene de invitación, no del cliente; el `job_title` anterior se limpia. No se permite degradar un titular histórico inactivo con una invitación operativa.
+**Exceptions:** 401 invalid session/user; 404 token missing or directed to another identity **with the same message**; 409 token consumed/winned, suspended company, membership already active or reactivating former administrative holder; 422 token with invalid form or extra fields. Exceptions do not create or reactivate members. The accepted consumed does not produce second membership nor change of role when reintended. The role for reactivated membership comes from invitation, not from the client; the `job_title` previous is cleaned. No downgrading of an inactive historical holder with an operational invitation is allowed.
 
-**Trazabilidad:** CU-12b complementa CU-12a y RF-02. Se añaden `accepted_by_user_id` y `accepted_at` en una migración aditiva `e213c4_acceptance`, con restricción para que las columnas de auditoría solo aparezcan con `ACEPTADA` y sean obligatorias en ese estado. **CI aprobó Pytest/Alembic para ambos Python**; C.4a se verificó con 171 pruebas locales y C.4b con 195. La validación por correo real, cambios de rol y UI pertenecen a otros cortes.
+**Traceability:** CU-12b complements CU-12a and RF-02. Added `accepted_by_user_id` y `accepted_at` in an additive migration `e213c4_acceptance`, with restriction to only appear in the audit columns with `ACEPTADA` and be mandatory in that state. **CI approved Python/Alembic for both Python**; C.4a was verified with 171 local tests and C.4b with 195. Validation by real mail, role changes and IU belong to other courts.
 
-## 14. C.4b — CU-12: consultar equipo y cambiar permisos operativos
+## 14. C.4b — CU-12: consult equipment and change operating permissions
 
-**Consulta:** un Usuario autenticado con membresía `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` solicita `GET /api/v1/businesses/{business_id}/memberships`. La API revalida su sesión, bloquea la empresa/membresía propia y comprueba el permiso `members.read`; devuelve directorio de **esa empresa exclusivamente**, incluyendo miembros inactivos. Respuestas: 200 lista, 401 sin sesión, 403 rol sin permiso, 404 empresa ajena o miembro actor inactivo, 409 empresa suspendida. El directorio muestra datos profesionales mínimos, no secretos del usuario.
+**Referral:** a User authenticated with membership `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` request `GET /api/v1/businesses/{business_id}/memberships`. API revalidates your session, blocks the company/membership itself and checks permission `members.read`; returns directory of **that company only**, including inactive members. Replies: 200 list, 401 no session, 403 role without permission, 404 non-member or inactive actor member, 409 company suspended. The directory shows minimal professional data, not user secrets.
 
-**Mutación:** solo un titular administrativo **activo** puede solicitar `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` con campo `role` y/o `status`. El cuerpo es parcial; valores `null`, desconocidos, `TITULAR_ADMINISTRATIVO` y campos extra dan 422. Revalidar sesión, empresa/membresía del actor, privilegio `members.manage` y membresía objetivo de la misma empresa; bloquear en SQL y confirmar una sola transacción. Un administrador no puede desactivar a colegas ni ascenderse. El titular no puede modificar su propia membresía ni ninguna membresía cuyo rol actual sea `TITULAR_ADMINISTRATIVO` (respuesta 409, rollback). Un objetivo ajeno/no existente da 404. Empresa suspendida da 409. Usuario no autenticado da 401 y miembro actor sin permisos da 403. Una desactivación tiene efecto inmediato en las próximas solicitudes con esa cuenta para ese tenant; no revoca su identidad global ni afecta otras empresas.
+**Mutation:** only one administrative holder **asset** you can request `PATCH /api/v1/businesses/{business_id}/memberships/{membership_id}` with field `role` y/o `status`. The body is partial; values `null`strangers, `TITULAR_ADMINISTRATIVO` and extra fields give 422. Revalidating session, company/membership of the actor, privilege `members.manage` and objective membership of the same company; block in SQL and confirm a single transaction. An administrator cannot disable colleagues or promote. The holder may not modify his own membership or any membership whose current role is `TITULAR_ADMINISTRATIVO` (answer 409, rollback). An external/non-existent target gives 404. Suspended company gives 409. Unauthenticated user gives 401 and unlicensed actor member gives 403. A deactivation has immediate effect on the upcoming applications with that account for that tenant; it does not revoke its global identity or affect other companies.
 
-**Fuera de alcance:** transferencia o cese del titular, eliminación física, edición `job_title`, envío de emails, verificación de propiedad de correo y gestión de solicitudes de invitación. El usuario mantiene su identidad personal global. La revisión de 03A y el cierre del bloque E2-1 se tratarán en una etapa documental propia. **Pruebas de C.4b aprobadas en CI, todavía no ejecutadas localmente**.
+**Out of reach:** transfer or cessation of the holder, physical disposal, editing `job_title`, sending emails, checking mail ownership and managing invitation requests. The user maintains his or her global personal identity. The review of 03A and the closure of block E2-1 will be treated in a documentary stage of their own. **C.4b tests approved in IC, not yet executed locally**.
 
-## 15. C.5 — Correspondencia de casos de uso con API real
+## 15. C.5 — Correspondence of use cases with actual API
 
-CU-01/CU-02 (identidad) y los flujos concretados de CU-03/CU-12 (empresa, invitación y equipo básico) tienen endpoints y pruebas PostgreSQL. **Los casos de uso comerciales permanecen TO-BE**, aunque React DEMO disponga de pantallas. C.4b: `195 passed in 23.86s`, CI funcional 3/3 y Alembic sin diferencias. La transferencia de titularidad no está implementada; la auditoría para el compañero se preparará en una entrega separada, antes de RF-03.
+CU-01/CU-02 (identity) and the concrete flows of CU-03/CU-12 (company, invitation and basic equipment) have endpoints and PostgreSQL tests. **Commercial use cases remain TO-BE**, although React DEMO has screens. C.4b: `195 passed in 23.86s`, Functional CI 3/3 and Alembic without differences. The transfer of title is not implemented; the audit for the companion will be prepared in a separate delivery, before RF-03.
 
-## 16. E2-2 A — Evidencia parcial de CU-04
+## 16. E2-2 A — Partial evidence of CU-04
 
-**E2-2 A — persistencia de Ubicaciones (08/11/2026):** se publicó `Location`/`locations` con FK obligatoria `business_id → businesses.id` (`RESTRICT`), seis tipos, `can_sell`/`can_store` independientes, campos de referencia opcionales, `ACTIVA/PAUSADA`, `is_primary`, índice parcial que permite como máximo una principal activa por tenant y CHECK que impide principal pausada. Migración aditiva `20261108_0008_business_locations.py` (`e22a_locations`, descendiente de `e213c4_acceptance`). La empresa continúa iniciándose **sin ubicaciones**. **No hay todavía rutas HTTP de ubicaciones**, ni inventario/compra/venta conectado, ni permisos de ubicación; esos cambios pertenecen a E2-2 B/C y bloques siguientes. El CI del código del corte se verificó en `300fa6f` (GitHub Actions run 42491816481): resultado `success`. La validación local Windows del nuevo corte aún se requiere; los 195 tests anteriores correspondían a E2-1.
+**E2-2 A — Persistence of Locations (08/11/2026):** Published `Location`/`locations` with FK required `business_id → businesses.id` (`RESTRICT`), six types, `can_sell`/`can_store` independent, optional reference fields, `ACTIVA/PAUSADA`, `is_primary`, partial index that allows at most a main active per tenant and CHECK that prevents main paused. Additive migration `20261108_0008_business_locations.py` (`e22a_locations`, descendant of `e213c4_acceptance`) The company continues to start **no locations**. **No HTTP Location Routes yet**, no inventory/purchase/connected sale, no location permits; these changes belong to E2-2 B/C and subsequent blocks. The IC of the cut code was verified in `300fa6f` (GitHub Actions run 42491816481): result `success`. Local Windows validation of the new cut is still required; the previous 195 tests corresponded to E2-1.
 
-**Pruebas añadidas:** `test_location_model.py` y `test_location_integration.py` revisan metadatos, restricciones SQL, FK, índice de principal, estados, capacidades independientes, aislamiento por consulta filtrada y rollback. **No constituyen aún tests de HTTP ni de permisos de ubicación** y no sustituyen el escenario de CU-04 completo. Los 195 tests reportados antes son históricos de E2-1, no se atribuyen como validación local del corte nuevo.
-
-
-### E2-2 A.1 — Nuevo tipo CASA (08/11/2026)
-
-Se incorporó `CASA` como sexto tipo de ubicación, sin cambiar el contrato de capacidades independientes `can_sell` y `can_store`, ni los estados `ACTIVA`/`PAUSADA`. Una casa puede vender, almacenar, ambas actividades o ninguna (domicilio administrativo). **No se crean direcciones ni ubicaciones automáticamente** y no se presupone habilitación comercial. La migración nueva `e22b_location_casa`, descendiente de `e22a_locations`, amplía `ck_locations_kind` sin reescribir la migración anterior ni alterar filas existentes; impide su reversión mientras queden filas CASA. La DEMO React admite CASA en el selector y en validación/lectura del almacenamiento local, pero sigue separada de la API. CI del código `b50bf200`: **backend 217/217 pruebas, Alembic sin deriva y Docker 3/3** (run backend); **frontend 2/2, incluido E2E de escritorio y móvil** (run frontend). Resultado Windows anterior de E2-2 A: 212 pruebas; **validación local de A.1 pendiente**. CRUD HTTP y permisos por ubicación siguen para E2-2 B/C. E2-1/03B/03C no se alteran.
-
-## 17. E2-2 B — CU-04 parcialmente implementado con autorización
-
-**Estado E2-2 B (08/11/2026):** se publicaron tres rutas reales para ubicaciones bajo `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` lista 200, `GET /{location_id}` 200). La creación valida DTO sin campos protegidos, revalida identidad/sesión, bloquea la empresa y membresía del actor, exige tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, y confirma una única transacción. Una primera ubicación recibe `is_primary=true`; las posteriores no la reemplazan. Los miembros activos de cualquier rol reconocido pueden consultar las ubicaciones propias, incluso con empresa suspendida; una empresa suspendida no permite crear. Empresa ajena o membresía inactiva devuelve 404; rol sin permiso 403; sesión inválida 401; empresa suspendida al crear 409; cuerpo incorrecto 422. `CASA` y Google Maps HTTPS validado están incluidos. **No hay PATCH/DELETE, ni pausa/reactivación, cambio de principal, asignación individual de personal o consumo comercial de ubicaciones todavía.** La DEMO permanece independiente. Backend sin migración nueva respecto de `e22b_location_casa`.
-
-Se prueban la ausencia de ubicaciones al dar de alta una empresa, la elección automática de la primera ubicación principal, los tipos (incluido CASA), los booleanos independientes, el filtrado SQL por `business_id`, la consulta de detalle, los roles, la cuenta global, la suspensión empresarial, la prohibición de sobreescribir atributos protegidos y rollback de errores. **Situación histórica E2-2 B:** faltaban edición, pausa y principal; **las tres operaciones se implementaron y probaron en CI en E2-2 C**. Aún faltan permisos granulares/asignaciones por ubicación y reglas comerciales dependientes del stock.
-
-**Evidencia de CI:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 pruebas aprobadas**, `e22b_location_casa (head)` y Alembic sin deriva. La salida local de Windows aportada previamente para **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **fue validado en Windows con `277 passed in 31.22s`**, Alembic sin deriva y Docker saludable; E2-2 C agrega nuevas pruebas por verificar localmente. La revisión de E2-1 por el compañero sigue anclada en el commit entregado.
-
-## 18. E2-2 C — Extensiones de CU-04 implementadas
-
-**E2-2 C (08/11/2026) — operaciones reales sobre ubicaciones:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` permite editar únicamente `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (campos opcionales en el cuerpo, pero se rechazan `null`, cuerpos vacíos, valores inválidos y campos protegidos). `PATCH /{location_id}/status` recibe solo `ACTIVA` o `PAUSADA`: pausar revoca `is_primary` en la misma transacción y reactivar **no** recupera la titularidad de ubicación automáticamente. `PUT /{location_id}/primary` designa una ubicación `ACTIVA`, desmarca la anterior y marca la elegida dentro del **mismo tenant y de una transacción única**, serializada por bloqueo de empresa y protegida con el índice SQL `uq_locations_one_active_primary`. La operación sobre una ubicación ya principal no realiza cambios adicionales. Titular/administrador con membresía ACTIVA pueden administrar; encargado/trabajador solo consultan. Empresa `SUSPENDIDA` admite lectura pero no cambios; recurso ajeno/inexistente 404, rol sin permiso 403, sesión inválida 401, estado incompatible 409 y cuerpo inválido 422. No se habilitó DELETE ni se crearon tablas nuevas.
-
-**Casos protegidos:** una ubicación `PAUSADA` no puede ser principal (409); al pausar una principal el servidor elimina ese indicador atómicamente y no designa otra por su cuenta; al reactivarla no recupera condición de principal. Dos ubicaciones de una misma empresa no pueden mantener `is_primary=true` simultáneamente. No se modifican ubicaciones de otra empresa aunque se conozca su UUID. La administración usa rol de membresía empresarial actual, no un rol global, y no expone datos ajenos. Cambios de capacidad `can_store` todavía no consultan saldos reales porque el backend comercial no existe; esa regla deberá resolverse cuando se implemente inventario.
-
-**Evidencia:** código funcional `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 exitoso**, 325/325 pruebas en Python 3.12 y 3.14 con PostgreSQL, Alembic `e22b_location_casa (head)` sin deriva y Docker correcto. Windows había validado previamente E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **Los 325 tests todavía deben reproducirse en Windows para dar por cerrado localmente E2-2 C.** La integración React/API, la asignación individual de miembros a ubicaciones, control de existencias al quitar `can_store`, recepciones/ventas y gestión de cajas operativas son trabajos futuros; no se atribuyen a este incremento. E2-1 y UML 03B/03C no fueron modificados.
-
-## 19. E2-2 D — CU-04: asignación y revocación por sede
-
-**E2-2 D (08/11/2026) — implementado, pendiente de validación local:** tabla `location_assignments` con clave triple `(business_id,location_id,user_id)`; FK compuesta `(business_id,user_id)` a `memberships` y `(business_id,location_id)` a `locations` para impedir cruces de empresa aun en SQL directo. Migración aditiva `e22d_assignments`, sin modificar migraciones de E2-1; UNIQUE auxiliar `(business_id,id)` en `locations`. Asignaciones `ACTIVA`/`REVOCADA` con `revoked_at` coherente (CHECK). GET de colección de asignaciones y PUT de estado de una membresía de la sede, solamente por titular/administrador de la empresa; activar asignaciones se limita a ENCARGADO/TRABAJADOR. Revocar preserva la fila y puede hacerse con sede pausada o miembro inactivo; activar exige ambos activos. Empresa suspendida permite consulta pero impide escrituras. La función pura `can_operate_at_location` requiere ubicación y empresa activas, membresía activa, capacidad `SELL`/`STORE` pertinente y, para encargados/trabajadores, asignación ACTIVA. **No se invoca aún desde inventario, compras o ventas**, porque esos endpoints son de bloques futuros. No cambia la membresía empresarial, no conecta React y no crea ubicaciones ficticias.
+**Added tests:** `test_location_model.py` y `test_location_integration.py` They review metadata, SQL restrictions, FK, main index, states, independent capabilities, filtered query isolation and rollback. **They do not yet constitute HTTP tests or location permissions** and do not replace the entire CU-04 scenario. The 195 tests reported before are historical of E2-1, they are not attributed as local validation of the new cut.
 
 
+### E2-2 A.1 — New CASA type (08/11/2026)
 
-**Evidencia:** código final `3cd7bce71d951218e8c77da58d147e78fb0d426e` y CI E2-2 D 3/3 aprobado, **371 pruebas** en Python 3.12/3.14, `e22d_assignments (head)` sin deriva y Docker correcto. El último resultado local aportado es E2-2 C, **325 passed in 36.91s**. **La migración y las 371 pruebas de E2-2 D aún requieren ejecución local Windows antes de cerrar el bloque y preparar la hoja de auditoría.**
+He's in. `CASA` as sixth type of location, without changing the independent capacity contract `can_sell` y `can_store`, nor states `ACTIVA`/`PAUSADA`. A house can sell, store, both or none of these activities (administrative address). **No address or location is created automatically** and no commercial empowerment is assumed. `e22b_location_casa`, descendant of `e22a_locations`expand `ck_locations_kind` without rewriting the previous migration or altering existing rows; it prevents its reversal while there are CASA rows. DEMO React supports CASA in the selector and local storage validation/reading, but remains separate from API. IC from code `b50bf200`: **backend 217/217 pruebas, Alembic sin deriva y Docker 3/3** (run backend); **frontend 2/2 including E2E desktop and mobile** (run frontend). Previous Windows result of E2-2 A: 212 tests; **local validation of A.1 pending**HTTP CRUD and location permissions remain for E2-2 B/C. E2/1/03B/03C are not altered.
 
-## 20. E2-3 A — Evidencia inicial de CU-05
+## 17. E2-2 B — CU-04 partially implemented with authorization
 
-**Corte E2-3 A (08/11/2026), persistencia parcial de RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` obligatorio, FK a Empresa (`RESTRICT`) y par UNIQUE `(business_id,id)` para futuras FK comerciales del mismo tenant. Cuatro clases de ficha según la DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (bienes físicos) y `SERVICIO` (conceptualmente un servicio). Un servicio obliga unidad `SERVICIO`; un bien físico la prohíbe. Unidades físicas: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Se almacenan nombre, clave normalizada `name_key`, categoría, SKU opcional, descripción, observaciones internas, estado `ACTIVO`/`INACTIVO`, condición `sellable`, `price_cents` y `reference_cost_cents` opcionales. Importes enteros BIGINT entre 0 y 99.999.999.999 centavos, sin Float. Dos restricciones independientes impiden repetir `name_key` y SKU no nulo **dentro de la empresa**, también en fichas inactivas; distintos tenants pueden reutilizarlos. En E2-3 B el servicio deberá calcular `name_key` de forma canónica (NFKC, espacios colapsados, equivalencia de mayúsculas) y normalizar SKU a mayúsculas **antes de insertar/editar**: SQL impone la unicidad de las claves guardadas y el formato de SKU, pero no deriva `name_key` automáticamente. Crear ficha no crea ubicación, stock, compras, ventas ni movimientos.
+**State E2-2 B (08/11/2026):** Three real routes were published for low locations `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` ready 200, `GET /{location_id}` 200). The creation valid DTO without protected fields, revalidates identity/session, blocks the company and membership of the actor, demands tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, and confirms a single transaction. A first location receives `is_primary=true`; the subsequent ones do not replace it. Active members of any recognized role can consult their own locations, even with suspended company; a suspended company does not allow to create. A third party or inactive membership returns 404; role without permission 403; invalid session 401; company suspended when creating 409; incorrect body 422. `CASA` and Google Maps HTTPS validated are included. **There is no PATCH/DELETE, no pause/reactivation, change of principal, individual staff assignment or commercial consumption of locations yet.** DEMO remains independent. Backend without new migration from `e22b_location_casa`.
 
-**Criterio de aceptación pendiente:** una llamada autenticada a Catálogo debe comprobar permisos empresariales, generar una `name_key` canónica y SKU normalizado, consultar/guardar dentro del tenant y traducir duplicados a error HTTP documentado. **No confundir el modelo DB actual con el CU-05 ya implementado**. La restricción de historia (no convertir bien ↔ servicio ni unidad con movimientos previos) se activará con los módulos comerciales posteriores, conservando snapshots.
+The absence of locations is proven by the registration of a company, automatic choice of the first main location, types (including CASA), independent booleans, SQL filtering by `business_id`, the detailed query, roles, global account, business suspension, prohibition of overwriting protected attributes and rollback errors. **Historical situation E2-2 B:** missing editing, pause and main; **all three operations were implemented and tested in IC at E2-2 C**. Granular permits/locations by location and stock-dependent trade rules are still missing.
 
-**Evidencia:** corte de código/pruebas `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 pruebas aprobadas** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` sin cambios pendientes de Alembic. **Validación local de Windows pendiente para E2-3 A**; los 371 tests anteriores corresponden al cierre de E2-2. **No existen rutas HTTP de Catálogo** en este corte; CRUD, RBAC de catálogo, SKU/name normalization de entrada y protección de historias comerciales se implementarán en E2-3 B/C/D. No hay integración React API ni revisión independiente de E2-3 todavía. No se modificó E2-1 ni E2-2 ni frontend DEMO.
+**Evidence of IC:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 approved tests**, `e22b_location_casa (head)` and Alembic without drift. The local Windows output provided previously for **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **was validated in Windows with `277 passed in 31.22s`**, Alembic without drift and healthy Docker; E2-2 C adds new tests to be verified locally. The peer review of E2-1 remains anchored in the commit delivered.
 
-## 21. E2-3 B — CU-05: flujo de alta, consulta y edición implementado
+## 18. E2-2 C — CU-04 extensions implemented
 
-**E2-3 B — API real de Catálogo (RF-04/CU-05, 08/11/2026):** cuatro rutas bajo `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 alta), `GET /catalog` (200 lista con `offset>=0`, `1<=limit<=500`; por defecto `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 edición parcial). Cada operación requiere Bearer válido, revalidación de sesión, usuario y membresía de la empresa solicitada. Titular/administrador pueden leer y escribir; encargado/trabajador con membresía activa solo leen; empresa SUSPENDIDA solo lectura; empresa o artículo ajenos/inexistentes 404. El servidor normaliza los nombres Unicode NFKC, colapsa espacios y genera `name_key` con `casefold`; normaliza SKU a mayúsculas ASCII y convierte SKU vacío en NULL. PostgreSQL conserva la unicidad por empresa de `name_key`/SKU incluso con fichas INACTIVO, y la API traduce esa colisión a 409. Datos inválidos o campos protegidos (id, tenant, status, clave derivada) reciben 422. Tipo SERVICIO exige unidad SERVICIO; ninguna otra clasificación puede usarla. Son válidos `price_cents` y `reference_cost_cents` NULL o enteros desde 0 hasta 99.999.999.999. El PATCH permite eliminar SKU/precio/costo con NULL, pero no editar estado. La ficha conserva su `status` y timestamps SQL. La creación no crea ubicación, saldo de stock, compras, ventas ni movimientos.
+**E2-2 C (08/11/2026) — actual location operations:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` allows editing only `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (optional fields in the body, but rejected `null`, empty bodies, invalid values and protected fields). `PATCH /{location_id}/status` receive only `ACTIVA` o `PAUSADA`: pause revoke `is_primary` in the same transaction and reactivate **no** recovers location ownership automatically. `PUT /{location_id}/primary` designates a location `ACTIVA`, unmarks the previous one and marks the one chosen within the **and a single transaction**, serialized by company lock and protected with the SQL index `uq_locations_one_active_primary`. The operation on an already main location does not make any additional changes. Owner/Manager with Active Membership can manage; maintainer/worker only consult. `SUSPENDIDA` read but no change; other/non-existent resource 404, role without permission 403, invalid session 401, incompatible status 409 and invalid body 422. DELETE was not enabled nor new tables were created.
 
-**Contratos de CU-05:** alta requiere `name`, `kind`, `unit` y `sellable` explícitos; SKU, categoría, precio/costo, descripción y observaciones tienen valores opcionales. La API devuelve la ficha con `id`, `business_id`, clasificación conceptual `item_type=BIEN|SERVICIO`, estado y fechas. Las ediciones parciales comprueban `kind`/`unit` en combinación con los valores existentes, dentro de una transacción. Dos SKU iguales en empresas distintas son válidos; dentro de una misma empresa no se duplican ni cuando el registro original está inactivo.
+**Protected cases:** a location `PAUSADA` cannot be principal (409); when paused a main server removes that indicator atomically and does not designate another on its own; by reactivating it it does not recover the condition of principal. Two locations of the same company cannot maintain `is_primary=true` At the same time, locations of another company are not changed even if their UUID is known. Administration uses current business membership role, not a global role, and does not expose other people’s data. `can_store` They do not yet consult actual balances because the commercial backend does not exist; that rule should be resolved when inventory is implemented.
 
-**Límites explícitos:** E2-3 B no expone todavía `PATCH /status` ni borrado físico (se evaluarán en E2-3 C). No existe integración del frontend React con esta API; no se implementan recepción, ventas, snapshots comerciales ni protección de edición de unidad con historia, pues esos módulos son posteriores. Los tests nuevos comprueban permisos, rollback de duplicados, SKU/nombres normalizados, aislamiento multiempresa, lectura bajo suspensión y fallas 401/403/404/409/422. **Evidencia CI E2-3 B:** GitHub Actions 42506409757 finalizó **3/3 trabajos exitosos**, **498 pruebas aprobadas** tanto en Python 3.12 (53.96s) como Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` sin operaciones, imagen Docker/liveness aprobado. Código funcional validado: `35ff901855397c024cee50fa590c6c05a7f04cfe`. El CI anterior `42506050141` había detectado dos fallos de mapeo HTTP en PATCH con tipo/unidad incompatible; se corrigieron y ambos casos pasan ahora. **La validación Windows local de E2-3 B sigue pendiente**; el último resultado local confirmado es 407/407 de E2-3 A.
+**Evidence:** functional code `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 successful**, 325/225 Python 3.12 and 3.14 tests with PostgreSQL, Alembic `e22b_location_casa (head)` no drift and correct Docker. Windows had previously validated E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **The 325 tests must still be played on Windows to close locally E2-2 C.** React/API integration, individual assignment of members to locations, inventory control when removing `can_store`, receptions/sales and operating fund management are future works; they are not attributed to this increase. E2-1 and UML 03B/03C were not modified.
 
-## 22. E2-3 C — CU-05: desactivar/reactivar ficha
+## 19. E2-2 D — CU-04: allocation and revocation by headquarters
 
-**E2-3 C (08/11/2026):** se implementó `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` con cuerpo exclusivo `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, validación estricta y rechazo de atributos extra (422). La ruta revalida sesión y membresía y exige titular/administrador de empresa ACTIVA para escribir (401/403/404/409 según caso). El artículo se bloquea dentro del tenant y se cambia de estado en una sola transacción. El cambio repetido es idempotente, sin alterar `updated_at`. El artículo inactivo continúa visible en GET/listados, con UUID, nombre y SKU reservados incluso ante altas duplicadas; no hay DELETE ni stock ficticio. El PATCH genérico mantiene `status` protegido. Esta funcionalidad tampoco modifica el campo independiente `sellable`.
+**E2-2 D (08/11/2026) — implemented, pending local validation:** tabla `location_assignments` con clave triple `(business_id,location_id,user_id)`; Composite FK `(business_id,user_id)` a `memberships` y `(business_id,location_id)` a `locations` to prevent company crossings even in direct SQL. Additive migration `e22d_assignments`, unchanged migrations of E2-1; UNIQUE auxiliary `(business_id,id)` en `locations`Allocations `ACTIVA`/`REVOCADA` con `revoked_at` coherent (CHECK). GET of mapping collection and PUT status of a headquarters membership, only per owner/manager of the company; activating assignments is limited to ENTRY/TRAWER. Revealing preserves row and can be done with paused or inactive seat; activating requires both assets. Suspended company allows query but prevents deeds. Pure function `can_operate_at_location` requires active location and company, active membership, capacity `SELL`/`STORE` relevant and, for managers/workers, active assignment. **Not yet invoked from inventory, purchases or sales**It doesn't change business membership, it doesn't connect React and it doesn't create fictitious locations.
 
-**Dependencias:** las futuras compras/ventas deben prohibir nuevos movimientos con fichas INACTIVO y conservar snapshots históricos reales. Todavía no hay operaciones comerciales ni frontend integrado; por lo tanto, tampoco existe una restricción real de cambio de unidad por transacciones anteriores. Ninguna migración nueva: se reutiliza CHECK `ACTIVO/INACTIVO` de `e23a_catalog`.
 
-**Pruebas:** CI E2-3 C **3/3 trabajos aprobados**, **527 passed** en Python 3.12 y 3.14 con PostgreSQL, `e23a_catalog (head)`, `alembic check` sin operaciones y Docker correcto; código `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pendiente**. El commit documental posterior no equivale a otra ejecución CI.
+
+**Evidence:** final code `3cd7bce71d951218e8c77da58d147e78fb0d426e` and IC E2-2 D 3/3 approved, **371 tests** en Python 3.12/3.14, `e22d_assignments (head)` The last local result provided is E2-2 C, **325 passed in 36.91s**. **Migration and 371 E2-2 D tests still require local Windows execution before closing the block and preparing the audit sheet.**
+
+## 20. E2-3 A — Initial evidence of CU-05
+
+**Cut E2-3 A (08/11/2026), partial persistence of RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` Compulsory, FK to Company (`RESTRICT`) y par UNIQUE `(business_id,id)` for future commercial FK of the same tenant. Four kinds of tab according to DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (physical property) and `SERVICIO` (conceptually a service). `SERVICIO`; physical property prohibits it. `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Name, standardized key is stored `name_key`, category, optional SKU, description, internal observations, status `ACTIVO`/`INACTIVO`, condition `sellable`, `price_cents` y `reference_cost_cents` optional. Whole amounts BIGINT between 0 and 99,999,999.999 cents, without Float. Two independent restrictions prevent repeat `name_key` and SKU not null **within the company**, also in inactive chips; different tenants can reuse them. In E2-3 B the service must calculate `name_key` canonically (NFKC, collapsed spaces, capital equivalence) and normalize SKU to uppercase **before inserting/editing**: SQL imposes the uniqueness of saved keys and SKU format, but does not derive `name_key` Create tab does not create location, stock, purchases, sales or movements.
+
+**Pending acceptance criterion:** an authenticated call to Catalog must check business permissions, generate a `name_key` canonical and standard SKU, query/save within the tenant and translate duplicates to documented HTTP error. **Do not confuse the current DB model with the CU-05 already implemented**. History restriction (not converting well ↔ service or unit with previous movements) will be activated with subsequent commercial modules, retaining snapshots.
+
+**Evidence:** code/test cut `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 approved tests** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` no pending changes from Alembic. **Local Windows Validation Pending for E2-3 A**; the above 371 tests correspond to the closure of E2-2. **No HTTP Catalog paths** in this cut; CRUD, catalog RBAC, SKU/name standardization of entry and protection of business stories will be implemented in E2-3 B/C/D. No React API integration or independent review of E2-3 yet. No change to E2-1 or E2-2 or DEMO frontend.
+
+## 21. E2-3 B — CU-05: discharge flow, query and editing implemented
+
+**E2-3 B — Real Catalogue API (RF-04/CU-05, 08/11/2026):** four low routes `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 high), `GET /catalog` (200 list with `offset>=0`, `1<=limit<=500`; default `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 part edition). Each operation requires valid Bearer, session revalidation, user and membership of the requested company. Owner/manager can read and write; maintainer/worker with active membership only read; company SUSPENDED read only; enterprise or article other/non-existent 404. The server normalizes Unicode NFKC names, collapses spaces and generates `name_key` con `casefold`; normalizes SKU to ASCII capital letters and converts empty SKU into NULL. PostgreSQL retains the uniqueness per company of `name_key`/SKU even with INACTIVE tabs, and the API translates that collision to 409. Invalid data or protected fields (id, tenant, status, derivative key) receive 422. SERVICE type requires SERVICE unit; no other classification can use it. They are valid `price_cents` y `reference_cost_cents` NULL or integers from 0 to 99.999.999.999. The PATCH allows you to remove SKU/price/cost with NULL, but do not edit status. `status` and timestamps SQL. Creation does not create location, stock balance, purchases, sales or movements.
+
+**CU-05 contracts:** High requires `name`, `kind`, `unit` y `sellable` explicit; SKU, category, price/cost, description and observations have optional values. API returns tab with `id`, `business_id`conceptual classification `item_type=BIEN|SERVICIO`, status and dates. Partial editions check `kind`/`unit` In combination with existing securities, within a transaction. Two SKUs equal in different companies are valid; within the same company they do not duplicate even when the original registration is inactive.
+
+**Explicit limits:** E2-3 B not yet exposed `PATCH /status` No integration of frontend React with this API; no reception, sales, commercial snapshots or history unit editing protection are implemented as these modules are later. New tests check permissions, duplicate rollbacks, SKU/standard names, multi-company isolation, suspended reading and fault 401/403/404/409/422. **Evidence CI E2-3 B:** GitHub Actions 42506409757 finished **3/3 successful jobs**, **498 approved tests** both in Python 3.12 (53.96s) and Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` No operations, Docker/liveness image approved. Validated functional code: `35ff901855397c024cee50fa590c6c05a7f04cfe`. Previous IQ `42506050141` had detected two HTTP mapping failures in PATCH with incompatible type/unit; they were corrected and both cases are now happening. **Local Windows validation of E2-3 B is still pending**; the last confirmed local result is 407/407 of E2-3 A.
+
+## 22. E2-3 C — CU-05: deactivate/reactivate tab
+
+**E2-3 C (08/11/2026):** implemented `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` with exclusive body `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, strict validation and rejection of extra attributes (422). The path revalidates session and membership and requires an ACTIVA company owner/manager to write (401/403/404/409 as the case may be).The article is blocked inside the tenant and changed status in a single transaction.The repeated change is idepotent, without altering `updated_at`. The inactive article remains visible on GET/listed, with UUID, name and SKU reserved even for duplicate highs; there is no DELETE or fictitious stock. Generic PATCH maintains `status` This functionality also does not modify the independent field `sellable`.
+
+**Units:** future purchases/sales must prohibit new movements with INACTIVE chips and keep real historical snapshots. There are still no commercial operations or integrated frontend; therefore, there is no real restriction on unit change for previous transactions either. No new migration: CHECK reused `ACTIVO/INACTIVO` de `e23a_catalog`.
+
+**Tests:** CI E2-3 C **3/3 work adopted**, **527 passed** in Python 3.12 and 3.14 with PostgreSQL, `e23a_catalog (head)`, `alembic check` no operations and correct Docker; code `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pending**. The subsequent documentary committ is not equivalent to another IC execution.
 
 ## 23. E2-3 D — CU-05: negativas y rollback
 
-**E2-3 D (08/11/2026):** se reforzó el Catálogo existente, **sin agregar tablas ni migraciones**. Los tests nuevos verifican equivalencias Unicode NFKC + `casefold` en nombres, SKU NFKC y mayúsculas ASCII, rechazo de controles y formas inválidas, desbordamiento de `name_key` por expansión Unicode, importes enteros estrictos (sin booleanos ni decimales), diferenciación entre `PATCH` con campo omitido y con `null` explícito, incompatibilidad SERVICIO/unidad física, campos protegidos de `/status`, colisiones de nombre/SKU incluso en fichas INACTIVO, independencia entre dos empresas del mismo usuario, recuperación de la sesión tras 409, y rollback provocado después de `flush` tanto en alta como en edición. Se añadió un límite máximo a `offset` de catálogo (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): excederlo produce 422 antes de ejecutar SQL, manteniendo `limit` de 1 a 500 y `offset` no negativo. Los cinco endpoints de Catálogo conservan sus contratos y permisos empresariales; no se crea stock.
+**E2-3 D (08/11/2026):** the existing Catalogue was strengthened, **without adding tables or migrations**. New tests verify Unicode NFKC+ equivalences `casefold` in names, SKU NFKC and ASCII capitals, rejection of invalid controls and forms, overflowing `name_key` per Unicode expansion, strict integer amounts (no booleans or decimals), differentiation between `PATCH` field and with `null` Explicit, incompatibility SERVICE/physical unit, protected fields of `/status`, name/SKU collisions even in INACTIVE chips, independence between two companies of the same user, session recovery after 409, and rollback provoked after `flush` both in high and in edition. A ceiling was added to `offset` catalogue (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): exceed it produces 422 before running SQL, maintaining `limit` de 1 a 500 y `offset` The five Catalog endpoints retain their contracts and business permits; no stock is created.
 
-**Alcance y límites:** las UNIQUE por `(business_id,name_key)` y `(business_id,sku)` y las transacciones/bloqueos existentes protegen ante colisiones; los tests ejercen duplicados y recuperaciones reales en PostgreSQL, **pero no son una prueba simultánea de carga/concurrencia con múltiples conexiones independientes**. Esta última queda registrada como verificación futura antes de producción. No hay aún compras, ventas, movimientos ni snapshots, por lo que no se puede comprobar una regla de cambio de unidad/estado con historial comercial real. `sellable` no sustituye `status`. No conectar frontend DEMO ni E2-1/E2-2 para este corte.
+**Scope and limits:** NICK `(business_id,name_key)` y `(business_id,sku)` and existing transactions/blocks protect against collisions; tests exercise actual duplicates and recoveries in PostgreSQL, **but are not simultaneous load/concurrence testing with multiple independent connections**. The latter is registered as future verification before production. There are not yet purchases, sales, movements or snapshots, so you cannot check a unit/state change rule with real business history. `sellable` does not replace `status`. Do not connect frontend DEMO or E2-1/E2-2 for this cut.
 
-**Evidencia CI del código D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 trabajos aprobados**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` sin diferencias. **Validación local Windows E2-3 C:** 527 passed in 59.60s, contenedores saludables y `/ready` correcto. **Validación local Windows E2-3 D:** todavía pendiente. No confundir CI remoto con pruebas ejecutadas en la computadora del autor.
+**IC evidence of code D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 work adopted**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` No difference. **Local Validation Windows E2-3 C:** 527 passed in 59.60s, healthy containers and `/ready` Right. **Local Validation Windows E2-3 D:** Do not confuse remote IC with tests performed on the author's computer.
 
-## E2-3 E — CU-05: modelo, pruebas y límites reconciliados
+## E2-3 E — CU-05: model, tests and bounds reconciled
 
-**E2-3 E (08/11/2026) — cierre funcional:** E2-3 A/B/C/D implementó `CatalogItem`/`catalog_items`, migración `e23a_catalog`, cinco operaciones REST (GET/POST colección, GET/PATCH detalle, PATCH estado), permisos por tenant y rol, nombre canónico y SKU únicos dentro de la empresa, cuatro clases ELABORADO/REVENTA/INSUMO/SERVICIO, tipo BIEN/SERVICIO derivado sin columna duplicada, importes opcionales en centavos y desactivación reversible sin borrar fichas ni liberar claves. No se crean existencias al registrar un artículo. **La fuente PlantUML 03A v0.7 y su SVG editorial ya se conciliaron** con el Catálogo real; `Proveedor` sigue TO-BE.
+**E2-3 E (08/11/2026) — functional closure:** E2-3 A/B/C/D implemented `CatalogItem`/`catalog_items`, migration `e23a_catalog`, five REST operations (GET/POST collection, GET/PATCH detail, PATCH status), permissions for tenant and role, canonical name and SKU unique within the company, four classes ELABORATED/REVENT/INSUMO/SERVICE, type GOOD/SERVICE derivative without duplicate column, optional amounts in cents and reversible deactivation without erasing chips or releasing keys. No stock is created when registering an item. **PlantUML 03A v0.7 source and its editorial SVG have already been reconciled** with the actual Catalogue; `Proveedor` Go on, TO-BE.
 
-**Windows D comprobado por el desarrollador:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 tests Python 3.12 y 3.14, 3/3 jobs aprobados. Cambios posteriores solo de UML/documentos no constituyen nueva ejecución CI.
+**Windows D checked by the developer:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 Python tests 3.12 and 3.14, 3/3 jobs approved. Subsequent changes only of UML/documents do not constitute new IC execution.
 
-**Pendientes explícitos:** no se ejecutó una prueba de doble alta concurrente con dos conexiones independientes ni carga sostenida. Aún no hay compras, stock, ventas, snapshots comerciales ni uso de permisos SELL/STORE en operaciones reales. Las reglas sobre cambios de tipo/unidad con historial comercial deberán aplicarse cuando existan esos módulos. React continúa DEMO sin integración HTTP. E2-1/E2-2 y diagramas 03B/03C permanecen fuera del alcance. El bloque está preparado para **auditoría independiente** y no se declara auditado ni listo para producción.
+**Explicit pending:** no double-high test was performed at the same time with two independent connections and no sustained load. There are still no purchases, stock, sales, commercial snapshots or use of SELL/STORE permissions in real operations. The rules on type/unit changes with business history should be applied when these modules exist. React continues DEMO without HTTP integration. E2-1/E2-2 and diagrams 03B/03C remain out of reach. The block is prepared for **independent audit** and is not declared audited or ready for production.

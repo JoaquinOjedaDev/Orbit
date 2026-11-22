@@ -76,7 +76,7 @@ export function RealAuthApp() {
   }, [])
 
   useEffect(() => {
-    document.title = 'Acceso real · Orbit'
+    document.title = 'Sign in · Orbit'
   }, [])
 
   useEffect(() => {
@@ -85,12 +85,12 @@ export function RealAuthApp() {
     if (remaining <= 0) {
       // Expiration will be enforced by FastAPI; discard UI access too.
       const task = window.setTimeout(() => {
-        generation.current++; setSession(null); setMessage('Tu sesión venció. Iniciá sesión nuevamente.'); setWarning(true)
+        generation.current++; setSession(null); setMessage('Your session is over.'); setWarning(true)
       }, 0)
       return () => window.clearTimeout(task)
     }
     const task = window.setTimeout(() => {
-      generation.current++; setSession(null); setMessage('Tu sesión venció. Iniciá sesión nuevamente.'); setWarning(true)
+      generation.current++; setSession(null); setMessage('Your session is over.'); setWarning(true)
     }, Math.min(remaining, 2_147_483_647))
     return () => window.clearTimeout(task)
   }, [session])
@@ -118,7 +118,7 @@ export function RealAuthApp() {
       const user = await gateway.me(result.access_token)
       if (current !== generation.current) return
       if (user.id !== result.user.id || user.status !== 'ACTIVO') {
-        setMessage('No fue posible validar esta sesión.'); setWarning(true)
+        setMessage('It was not possible to validate this session.'); setWarning(true)
         return
       }
       setPendingCreation(null)
@@ -153,7 +153,7 @@ export function RealAuthApp() {
       setLoginInput({ email: registration.email, password: '' })
       setRegistration((old) => ({ ...old, password: '' }))
       go('/real/login', true)
-      setMessage('Cuenta registrada. Iniciá sesión con tu correo y contraseña.')
+      setMessage('Account registered. Log in with your email and password.')
     } catch (error) {
       if (current !== generation.current) return
       setMessage(authErrorMessage(error, 'register')); setWarning(true)
@@ -170,7 +170,7 @@ export function RealAuthApp() {
       const user = await gateway.me(session.token)
       if (current !== generation.current) return
       setSession((old) => old?.token === session.token ? { ...old, user } : old)
-      setMessage('Perfil actualizado desde FastAPI.')
+      setMessage('Profile updated from FastAPI.')
     } catch (error) {
       if (current !== generation.current) return
       if (error instanceof ApiHttpError && error.status === 401) {
@@ -195,7 +195,7 @@ export function RealAuthApp() {
     // Invalidate locally immediately, but never claim remote revocation on network failure.
     void gateway.logout(token).catch(() => {
       if (current + 1 !== generation.current) return
-      setMessage('Sesión cerrada en este navegador. No se pudo confirmar la revocación remota.')
+      setMessage('Logging closed in this browser. Could not confirm remote revocation.')
       setWarning(true)
     })
   }
@@ -206,7 +206,7 @@ export function RealAuthApp() {
     setPendingCreation(null)
     setSidebarCollapsed(false)
     go('/real/login', true)
-    setMessage('La sesión ya no es válida. Iniciá sesión nuevamente.')
+    setMessage('The session is no longer valid. Log in again.')
     setWarning(true)
   }, [go])
 
@@ -249,8 +249,8 @@ export function RealAuthApp() {
           onLogout={onLogout}
         />
       : <header className="real-auth-header">
-      <div className="real-auth-brand"><span className="real-auth-logo" aria-hidden="true">▦</span><div><strong>Orbit</strong><small>Acceso conectado a FastAPI</small></div></div>
-      <div className="real-auth-header-actions"><span className="real-auth-badge">REAL · Identidad</span><a href="/inicio">Entrar a DEMO</a></div>
+      <div className="real-auth-brand"><span className="real-auth-logo" aria-hidden="true">▦</span><div><strong>Orbit</strong><small>Connected workspace</small></div></div>
+      <div className="real-auth-header-actions"><span className="real-auth-badge">REAL · Identity</span><a href="/inicio">Enter DEMO</a></div>
     </header>}
     <main className={'real-auth-main' + (showBusinesses || showOperations ? ' real-business-main' : '')}>
       {showOperations && session
@@ -317,64 +317,64 @@ export function RealAuthApp() {
           pendingCreation={pendingCreation}
           setPendingCreation={setPendingCreation}
         />
-        : <section className={"real-auth-card" + (isProfile ? " e3-profile-page" : "")} aria-label="Autenticación real">
-        <span className="real-auth-eyebrow">{isProfile ? 'Cuenta personal' : 'Acceso seguro'}</span>
+        : <section className={"real-auth-card" + (isProfile ? " e3-profile-page" : "")} aria-label="Actual authentication">
+        <span className="real-auth-eyebrow">{isProfile ? 'Personal account' : 'Acceso seguro'}</span>
         {isProfile ? <>
           <div className="e3-profile-heading">
-            <span className="e3-profile-avatar"><RealPhotoPreview token={session.token} owner={{kind:'PROFILE'}} alt="Foto de perfil" revision={photoRevision} fallbackText={session.user.display_name.slice(0,1).toUpperCase() || "U"}/></span>
+            <span className="e3-profile-avatar"><RealPhotoPreview token={session.token} owner={{kind:'PROFILE'}} alt="Profile Photo" revision={photoRevision} fallbackText={session.user.display_name.slice(0,1).toUpperCase() || "U"}/></span>
             <div>
-              <h1>Mi perfil</h1>
-              <p>Consultá los datos de tu cuenta y administrá el acceso a tus empresas.</p>
+              <h1>My profile</h1>
+              <p>Check your account details and manage access to your companies.</p>
             </div>
           </div>
           <dl className="real-auth-profile e3-profile-grid">
-            <div><dt>Nombre</dt><dd>{session.user.display_name}</dd></div>
+            <div><dt>Name</dt><dd>{session.user.display_name}</dd></div>
             <div><dt>Correo</dt><dd>{session.user.email}</dd></div>
-            <div><dt>Teléfono</dt><dd>{session.user.contact_phone || 'No informado'}</dd></div>
-            <div><dt>Estado de tu cuenta</dt><dd><span className="e3-status-pill">{session.user.status}</span></dd></div>
+            <div><dt>Phone</dt><dd>{session.user.contact_phone || 'No informado'}</dd></div>
+            <div><dt>Status of your account</dt><dd><span className="e3-status-pill">{session.user.status}</span></dd></div>
           </dl>
-          <RealPhotoManager token={session.token} owner={{kind:'PROFILE'}} title="Foto de perfil" canManage onUnauthorized={onBusinessAuthLost} onChanged={()=>setPhotoRevision(n=>n+1)}/>
+          <RealPhotoManager token={session.token} owner={{kind:'PROFILE'}} title="Profile Photo" canManage onUnauthorized={onBusinessAuthLost} onChanged={()=>setPhotoRevision(n=>n+1)}/>
           <details className="e3-technical-details">
-            <summary>Información técnica de la cuenta</summary>
-            <p>Identificador de usuario: <code>{session.user.id}</code></p>
-            <p>Por seguridad, la sesión solo se mantiene mientras esté abierta. Después de actualizar con F5, deberás iniciar sesión nuevamente.</p>
+            <summary>Technical account information</summary>
+            <p>User ID: <code>{session.user.id}</code></p>
+            <p>For security reasons, the session is only held while it is open. After updating with F5, you must log in again.</p>
           </details>
           <div className="real-auth-actions">
-            <button type="button" className="real-auth-primary" onClick={() => go('/real/empresas')}>Mis empresas</button>
-            <button type="button" className="real-auth-secondary" onClick={() => go('/real/invitaciones/aceptar')}>Ingresar código de invitación</button>
-            <button type="button" className="real-auth-secondary" onClick={() => void onRefreshProfile()} disabled={busy}>{busy ? 'Consultando…' : 'Actualizar desde API'}</button>
-            <button type="button" className="real-auth-secondary" onClick={onLogout}>Cerrar sesión</button>
+            <button type="button" className="real-auth-primary" onClick={() => go('/real/empresas')}>My companies</button>
+            <button type="button" className="real-auth-secondary" onClick={() => go('/real/invitaciones/aceptar')}>Enter invitation code</button>
+            <button type="button" className="real-auth-secondary" onClick={() => void onRefreshProfile()} disabled={busy}>{busy ? 'Consultando…' : 'Update from API'}</button>
+            <button type="button" className="real-auth-secondary" onClick={onLogout}>Sign out</button>
           </div>
         </> : isRegistration ? <>
-          <h1>Crear cuenta real</h1>
-          <p>El registro crea un usuario en PostgreSQL, pero no inicia sesión automáticamente.</p>
+          <h1>Create real account</h1>
+          <p>The registry creates a user in PostgreSQL, but does not log in automatically.</p>
           <form className="real-auth-form" onSubmit={(event) => void onRegister(event)}>
-            <label>Nombre visible<input required minLength={2} maxLength={70} autoComplete="name" value={registration.display_name} onChange={(e) => setRegistration((old) => ({ ...old, display_name: e.target.value }))}/></label>
-            <label>Correo electrónico<input required type="email" autoComplete="email" value={registration.email} onChange={(e) => setRegistration((old) => ({ ...old, email: e.target.value }))}/></label>
-            <label>Teléfono (opcional)<input maxLength={30} type="tel" autoComplete="tel" value={registration.contact_phone ?? ''} onChange={(e) => setRegistration((old) => ({ ...old, contact_phone: e.target.value || null }))}/></label>
-            <label>Contraseña (mínimo 15 caracteres)<input required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={registration.password} onChange={(e) => setRegistration((old) => ({ ...old, password: e.target.value }))}/></label>
+            <label>Visible name<input required minLength={2} maxLength={70} autoComplete="name" value={registration.display_name} onChange={(e) => setRegistration((old) => ({ ...old, display_name: e.target.value }))}/></label>
+            <label>Email<input required type="email" autoComplete="email" value={registration.email} onChange={(e) => setRegistration((old) => ({ ...old, email: e.target.value }))}/></label>
+            <label>Telephone (optional)<input maxLength={30} type="tel" autoComplete="tel" value={registration.contact_phone ?? ''} onChange={(e) => setRegistration((old) => ({ ...old, contact_phone: e.target.value || null }))}/></label>
+            <label>Password (minimum 15 characters)<input required type="password" autoComplete="new-password" minLength={15} maxLength={128} value={registration.password} onChange={(e) => setRegistration((old) => ({ ...old, password: e.target.value }))}/></label>
             <button type="submit" className="real-auth-primary" disabled={busy}>{busy ? 'Registrando…' : 'Registrarme'}</button>
           </form>
-          <button type="button" className="real-auth-link" onClick={() => go('/real/login')}>Ya tengo una cuenta</button>
+          <button type="button" className="real-auth-link" onClick={() => go('/real/login')}>I already have an account.</button>
         </> : showLogin ? <>
-          <h1>Iniciar sesión real</h1>
-          <p>Ingresá con un usuario registrado en FastAPI. Este acceso no utiliza cuentas ni datos DEMO.</p>
-          {path === '/real/perfil' && <p className="real-auth-note">La sesión se conserva solo en memoria: después de recargar la página es necesario volver a ingresar.</p>}
+          <h1>Log in real</h1>
+          <p>Log in with a FastAPI registered user. This access does not use DEMO accounts or data.</p>
+          {path === '/real/perfil' && <p className="real-auth-note">The session is only stored in memory: after reloading the page you need to re-enter.</p>}
           <form className="real-auth-form" onSubmit={(event) => void onLogin(event)}>
-            <label>Correo electrónico<input required type="email" autoComplete="username" value={loginInput.email} onChange={(e) => setLoginInput((old) => ({ ...old, email: e.target.value }))}/></label>
-            <label>Contraseña<input required type="password" minLength={1} maxLength={1024} autoComplete="current-password" value={loginInput.password} onChange={(e) => setLoginInput((old) => ({ ...old, password: e.target.value }))}/></label>
-            <button type="submit" className="real-auth-primary" disabled={busy}>{busy ? 'Validando con FastAPI…' : 'Ingresar'}</button>
+            <label>Email<input required type="email" autoComplete="username" value={loginInput.email} onChange={(e) => setLoginInput((old) => ({ ...old, email: e.target.value }))}/></label>
+            <label>Password<input required type="password" minLength={1} maxLength={1024} autoComplete="current-password" value={loginInput.password} onChange={(e) => setLoginInput((old) => ({ ...old, password: e.target.value }))}/></label>
+            <button type="submit" className="real-auth-primary" disabled={busy}>{busy ? 'Validating with FastAPI...' : 'Ingresar'}</button>
           </form>
-          <button type="button" className="real-auth-link" onClick={() => go('/real/registro')}>Crear una cuenta nueva</button>
+          <button type="button" className="real-auth-link" onClick={() => go('/real/registro')}>Create a new account</button>
         </> : null}
         {message && <p role={warning ? 'alert' : 'status'} className={warning ? 'real-auth-message real-auth-error' : 'real-auth-message'}>{message}</p>}
       </section>}
       <aside className="real-auth-aside">
-        <h2>Una plataforma, diferentes negocios</h2>
-        <p>Tu identidad, empresas, ubicaciones, equipo, catálogo, proveedores y compras se consultan desde FastAPI y PostgreSQL. Stock y movimientos se confirman en backend; el historial de ventas REAL se consulta sin crear operaciones ni acreditar pagos.</p>
-        <div className="real-auth-state">Esta vista no accede a `demoStore`, cuentas, caja ni stock ficticio.</div>
+        <h2>One platform, different businesses</h2>
+        <p>Your identity, companies, locations, equipment, catalog, suppliers and purchases are consulted from FastAPI and PostgreSQL. Stock and movements are confirmed in backend; REAL sales history is checked without creating operations or accrediting payments.</p>
+        <div className="real-auth-state">This view does not access `demoStore`, accounts, cash or fictitious stock.</div>
       </aside>
     </main>
-    {!session && <footer className="real-auth-footer">Modo REAL · Token solo en memoria · Identidad y operaciones por empresa</footer>}
+    {!session && <footer className="real-auth-footer">REAL Mode · Token only in memory · Identity and operations by company</footer>}
   </div>
 }

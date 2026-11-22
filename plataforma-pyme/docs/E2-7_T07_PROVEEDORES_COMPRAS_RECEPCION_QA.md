@@ -1,79 +1,79 @@
-# E2-7 T07 — Integración REAL de proveedores, compras y recepción
+# E2-7 T07 — Real integration of suppliers, purchases and reception
 
-**Estado:** revisión de cierre incremental aprobada técnicamente el 10/11/2026; se conserva trazabilidad de QA pendiente para T11. Consultar `E2-7_T07_CIERRE_REVISION_Y_PRUEBAS.md` antes de fusionar.  
+**Status:** incremental closure review technically approved on 11/10/2026; QA traceability is preserved pending for T11. `E2-7_T07_CIERRE_REVISION_Y_PRUEBAS.md` before merging.  
 **Rama:** `feature/e2-7-t07-proveedores-compras-recepcion`  
-**Base:** `main` `fed4f8282fed964cdfb00bf96c07a5ab71e7eb75` (T06 integrado).
+**Base:** `main` `fed4f8282fed964cdfb00bf96c07a5ab71e7eb75` (T06 integrated).
 
-## 1. Alcance y contratos
+## 1. Scope and contracts
 
-Esta entrega conecta UI REAL con los endpoints de FastAPI ya existentes. No cambia backend, Alembic, datos DEMO ni habilita ventas/caja reales.
+This delivery connects UI REAL to existing FastAPI endpoints. It does not change backend, Alembic, DEMO data or enable actual sales/box.
 
-| Acción | Endpoint, relativo a `/api/v1` | Condición |
+| Action | Endpoint, relativo a `/api/v1` | Condition |
 |---|---|---|
-| Listar proveedores | `GET /businesses/{id}/suppliers?offset=n&limit=100` | Membresía activa y permiso de lectura; activos e inactivos |
-| Crear proveedor | `POST /businesses/{id}/suppliers` | Solo titular/administrador; nombre obligatorio |
-| Activar/desactivar | `PATCH /businesses/{id}/suppliers/{supplier_id}/status` | Solo titular/administrador |
-| Listar compras | `GET /businesses/{id}/purchases?offset=n&limit=100` | Lectura empresarial; todas las situaciones |
-| Detalle de compra | `GET /businesses/{id}/purchases/{purchase_id}` | Snapshots históricos |
-| Registrar compra | `POST /businesses/{id}/purchases` | `Idempotency-Key: UUID4`; 201 alta / 200 replay |
-| Recibir compra | `POST /businesses/{id}/purchases/{purchase_id}/receive` | `Idempotency-Key: UUID4`; 201 recepción / 200 replay |
-| Consultar recepción | `GET /businesses/{id}/purchases/{purchase_id}/receipt` | Historial, movimientos y saldos |
+| Listing Suppliers | `GET /businesses/{id}/suppliers?offset=n&limit=100` | Active membership and reading permission; active and inactive |
+| Create Provider | `POST /businesses/{id}/suppliers` | Holder/Manager only; mandatory name |
+| Enable/disable | `PATCH /businesses/{id}/suppliers/{supplier_id}/status` | Holder/Manager only |
+| List Shopping | `GET /businesses/{id}/purchases?offset=n&limit=100` | Business reading; all situations |
+| Detalle de compra | `GET /businesses/{id}/purchases/{purchase_id}` | Historical Snapshots |
+| Register purchase | `POST /businesses/{id}/purchases` | `Idempotency-Key: UUID4`; 201 alta / 200 replay |
+| Receive purchase | `POST /businesses/{id}/purchases/{purchase_id}/receive` | `Idempotency-Key: UUID4`; 201 reception / 200 replay |
+| Check reception | `GET /businesses/{id}/purchases/{purchase_id}/receipt` | History, movements and balances |
 
-La UI genera y valida UUID4; no los construye desde IDs DEMO ni los publica como tokens. El backend comprueba empresa, permisos, estado, artículo/proveedor y destino nuevamente.
+The UI generates and validates UUID4; it does not build them from DEMO IDs or publish them as tokens. The backend checks company, permissions, status, article/supplier and destination again.
 
-## 2. Semántica comercial importante
+## 2. Significant commercial semantics
 
-**Registrar compra NO modifica inventario.** Se guarda un documento con renglones, montos y snapshots inmutables. La compra con algún bien físico queda `REGISTRADA` y debe recibirse después, seleccionando sede. Una compra compuesta solo por conceptos o servicios queda `CERRADA_SIN_RECEPCION`.
+**Register purchase DOES NOT modify inventory.** A document with immutable lines, amounts and snapshots is saved. Purchase with some physical good remains `REGISTRADA` and must be received later, selecting headquarters. A purchase consisting only of concepts or services remains `CERRADA_SIN_RECEPCION`.
 
-**Confirmar recepción SÍ incrementa el stock real.** Es integral, irreversible desde esta pantalla, atómica y destinada a una única sede activa con `can_store=true`. No permite cantidades manuales ni recepciones parciales. El servicio de backend vuelve a comprobar que los artículos físicos estén activos, que mantengan tipo/unidad, que el actor pueda operar en la sede y que el stock no exceda límites. Un reintento idéntico con la misma clave devuelve comprobante histórico y no duplica stock. Si la compra ya se recibió con otra clave, corresponde verificar comprobante, no crear un nuevo intento.
+**Confirm receipt YES increases actual stock.** It is integral, irreversible from this screen, atomic and destined to a single active headquarters with `can_store=true`. It does not allow manual quantities or partial receptions. The backend service again checks that the physical items are active, maintain type/unit, that the actor can operate at headquarters and that the stock does not exceed limits. An identical retry with the same key returns historical proof and does not duplicate stock. If the purchase has already been received with another key, it is appropriate to verify voucher, not create a new attempt.
 
-Cálculo: cantidades en `quantity_milli` (entero en milésimas) y costos en `unit_cost_cents` (entero en centavos). Total por línea = `HALF_UP(quantity_milli * unit_cost_cents / 1000)`, con **BigInt** para evitar imprecisión numérica, concordando con Python. `UNIDAD`, `PAQUETE`, `CAJA`, `SERVICIO` y `CONCEPTO` requieren múltiplos de 1000.
+Calculation: amounts in `quantity_milli` (in total in thousandths) and costs `unit_cost_cents` Total per line = `HALF_UP(quantity_milli * unit_cost_cents / 1000)`, con **BigInt** to avoid numerical imprecision, in line with Python. `UNIDAD`, `PAQUETE`, `CAJA`, `SERVICIO` y `CONCEPTO` require multiples of 1000.
 
-El formulario permite líneas vinculadas al catálogo REAL (con unidad derivada) o concepto libre (sin stock). Hasta 30 renglones. Se permite compra sin proveedor. La selección de catálogo y proveedores es sobre páginas cargadas: si hay más de 100, la pantalla ofrece cargar más y no presume que vio todo.
+The form allows lines linked to the REAL catalog (with derivative unit) or free concept (without stock). Up to 30 lines. Purchase is allowed without supplier. Catalog selection and suppliers are on loaded pages: if there are more than 100, the screen offers to load more and does not presume that it saw everything.
 
-### 2.1. Costo unitario propuesto desde catálogo (mejora UX de T07)
+### 2.1. Unit cost proposed from catalogue (improved UX of T07)
 
-**Decisión de negocio y arquitectura:** el `reference_cost_cents` del artículo NO es el `unit_cost_cents` de la compra. El primero es una referencia vigente y editable en el catálogo; el segundo es el valor histórico efectivamente pactado con el proveedor y queda fijado en cada renglón de la compra.
+**Business and architecture decision:** el `reference_cost_cents` of the article is NOT the `unit_cost_cents` The first is a valid reference and editable in the catalogue; the second is the historical value actually agreed with the supplier and it is fixed in each line of the purchase.
 
-- Al **seleccionar un artículo** del catálogo REAL en un renglón nuevo, la UI propone `reference_cost_cents` convertido a pesos con dos decimales, sin multiplicar números flotantes.
-- El campo de costo unitario **sigue siendo editable** para cargar el importe exacto del comprobante del proveedor; modificar cantidad, proveedor o fecha no reemplaza el costo editado.
-- `reference_cost_cents = null` significa costo de referencia no informado: el campo queda **vacío**, no se interpreta como cero. `reference_cost_cents = 0` sí representa cero informado y se propone como `0,00`.
-- Al volver a seleccionar otro artículo se propone el costo del nuevo artículo; al pasar a concepto libre, el costo queda vacío. Las líneas recuperadas de IndexedDB después de F5 conservan el costo original bloqueado: nunca se recalculan desde el catálogo.
-- Cuando el costo unitario ingresado supera el **precio de venta actual** (`price_cents`), la interfaz exhibe un aviso **informativo, no bloqueante**. No hay comparación si falta el precio de venta o si el importe aún está vacío/no válido.
-- Crear o recibir una compra **no modifica automáticamente** el costo de referencia, el precio de venta ni la ficha del catálogo. Actualizar referencias sería otra decisión explícita y otro comando.
-- No se infieren márgenes reales sin considerar gastos, descuentos, impuestos y diferencias de unidad; la advertencia solo detecta una comparación simple por unidad.
-- Contratos FastAPI/DTO, `quantity_milli`, `unit_cost_cents`, snapshots e idempotencia permanecen **sin cambios**. Es una mejora de formulario, no de modelo de datos.
+- Al **select an article** from the REAL catalogue in a new line, the UI proposes `reference_cost_cents` converted to weights with two decimals, without multiplying floating numbers.
+- The unit cost field **remains editable** to charge the exact amount of supplier voucher; modify quantity, supplier or date does not replace the edited cost.
+- `reference_cost_cents = null` means uninformed reference cost: field remains **empty**It's not interpreted as zero. `reference_cost_cents = 0` is zero reported and proposed as `0,00`.
+- When you re-select another article, the cost of the new item is proposed; when you move to free concept, the cost becomes empty. The lines recovered from IndexedDB after F5 retain the original cost blocked: they are never recalculated from the catalog.
+- When the unit cost entered exceeds the **current sales price** (`price_cents`), the interface displays a warning **information, not blocking**. There is no comparison if the selling price is missing or if the amount is still empty/unvalid.
+- Create or receive a purchase **does not automatically modify** the reference cost, the sales price or the catalogue tab. Updating references would be another explicit decision and another command.
+- No real margins are inferred without considering expenses, discounts, taxes and unit differences; the warning only detects a simple comparison per unit.
+- FastAPI/DTO contracts, `quantity_milli`, `unit_cost_cents`, snapshots e idempotencia permanecen **no change**. It is an improvement of form, not data model.
 
-**Caso testigo (TEST Empresa A):** `Producto A TEST` tiene precio de venta $1.500,00 y costo de referencia $800,00. Al elegirlo en una nueva compra se sugiere **$800,00**, que puede reemplazarse por **$2.000,00**, generando una advertencia sin impedir el POST. El ejemplo histórico ya creado por el usuario conserva **2 UNIDAD × $2.000,00 = $4.000,00**; no debe mutarse para reflejar la sugerencia.
+**Witness case (TEST Company A):** `Producto A TEST` has a sales price of $1,500.00 and reference cost $800.00. When choosing it in a new purchase is suggested **$800,00**, which can be replaced by **$2.000,00**, generating a warning without preventing POST. The historical example already created by the user preserves **2 UNITY × $2.000,00 = $4,000,00**; should not be mutated to reflect the suggestion.
 
 
-## 3. Recuperación de operaciones pendientes
+## 3. Recovery of outstanding operations
 
-A diferencia de proveedores, las altas de compra y recepción disponen de **replay idempotente server-side**. Se aplica el patrón de T06:
+Unlike suppliers, the high purchase and reception rates are **replay idempotente server-side**. The pattern of T06 applies:
 
-1. Antes de POST, guarda en IndexedDB el actor, tenant, tipo de operación, UUID4 y cuerpo EXACTO.
-2. Si falla almacenamiento, se aborta antes de enviar.
-3. Si se pierde respuesta, no se dispara un segundo comando automático.
-4. Tras F5 y login, la pantalla de compras recupera el pendiente de creación por actor/empresa. Muestra los renglones originales inmutables y permite consultar historial antes de reintentar exactamente la misma clave y cuerpo.
-5. Para recepción se guarda también ID de compra y sede; el pendiente se restaura al seleccionar la compra. El comprobante `GET /receipt` expone `request_id` y permite reconciliar. Si coincide con la clave local, se limpia sin repetir POST.
-6. Se limpia el registro local solo después de confirmar respuesta, confirmar comprobante por request-id coincidente o descarte manual informado de una compra. Nunca se borra un movimiento o documento del backend con ello.
+1. Before POST, save the actor, tenant, type of operation, UUID4 and EXACT body to IndexedDB.
+2. If storage fails, it will abort before sending.
+3. If you lose response, no second automatic command is triggered.
+4. After F5 and login, the shopping screen recovers the creation slope per actor/company. It displays the original unchangeable lines and allows you to check history before retrying exactly the same key and body.
+5. For receipt also the purchase and seat ID is saved; the slope is restored when selecting the purchase. `GET /receipt` exposes `request_id` and allows reconciliation. If it matches the local key, it is cleaned without repeating POST.
+6. The local registration is cleaned only after confirming response, confirming proof by matching request-id or discarding informed manual of a purchase. A move or document from the backend is never deleted with it.
 
-**Limitaciones y privacidad:** IndexedDB del navegador no está cifrado; puede guardar datos comerciales de compra (renglones, notas, costos). No contiene contraseñas, token Bearer ni secretos de invitación. Usar únicamente con datos de prueba y no en equipos compartidos. Se limita a 60 registros por origen, no se purgan silenciosamente; mayor a 30 días requiere revisión en el cierre del producto. Borrar datos del navegador destruye pendientes; en otra computadora no se transfieren. La persistencia solo protege frente a F5/caídas cuando IndexedDB está disponible.
+**Limitations and privacy:** Browser indexedDB is not encrypted; you can save commercial purchase data (line, notes, costs). It does not contain passwords, token Bearer or invitation secrets. Use only with test data and not on shared computers. It is limited to 60 records per source, do not purge silently; more than 30 days require review in the product closure. Delete browser data destroys pending; on another computer they are not transferred. Persistence only protects against F5/falls when IndexedDB is available.
 
-**Proveedores:** la API carece de clave idempotente. No se persiste/repite automáticamente un alta de proveedor ante respuesta incierta; la UI solicita reconsultar proveedores antes de una nueva acción.
+**Suppliers:** API lacks an idempotent key. A provider discharge is not automatically persistent/repeat for uncertain response; the IU requests to consult suppliers before a new action.
 
-## 4. UI y archivos
+## 4. IU and archives
 
-- `/real/empresas/{id}/proveedores` — proveedores reales por tenant, alta inicial por nombre y estados, paginación.
-- `/real/empresas/{id}/compras` — historial paginado, registro con artículos/costos, proveedor opcional, recepción de bienes en sede, comprobante.
-- `frontend/src/features/purchases/realSupplyGateway.ts` — DTOs, rutas, validación HTTP, centavos y milésimas.
-- `frontend/src/features/purchases/purchaseCostProposal.ts` — funciones puras para proponer costo de catálogo y detectar costo mayor al precio de venta; **no realizan PATCH ni POST**.
-- `frontend/src/features/purchases/supplyPendingJournal.ts` — intents durables por actor, empresa y compra; chequeo de cuerpo inmutable.
-- `frontend/src/features/suppliers/RealSuppliersPage.tsx` y `frontend/src/features/purchases/RealPurchasesPage.tsx` — vistas independientes de DEMO.
-- `frontend/tests/supply-real-api.test.mjs` + `npm.cmd run test:supply-real` — contratos/roles/tenancy/saldo.
-- El workflow de frontend incorpora `test:supply-real`. No se modificaron contratos del backend.
+- `/real/empresas/{id}/proveedores` — real suppliers per tenant, initial discharge by name and status, pagination.
+- `/real/empresas/{id}/compras` — paging history, registration with articles/costs, optional supplier, receipt of goods at headquarters, proof.
+- `frontend/src/features/purchases/realSupplyGateway.ts` — DTOs, routes, HTTP validation, cents and thousandths.
+- `frontend/src/features/purchases/purchaseCostProposal.ts` — pure functions to propose cost of catalogue and detect higher cost at sale price; **no realizan PATCH ni POST**.
+- `frontend/src/features/purchases/supplyPendingJournal.ts` — lasting intentions per actor, undertaking and purchase; unchangeable body check.
+- `frontend/src/features/suppliers/RealSuppliersPage.tsx` y `frontend/src/features/purchases/RealPurchasesPage.tsx` — independent hearings of DEMO.
+- `frontend/tests/supply-real-api.test.mjs` + `npm.cmd run test:supply-real` — contracts/roles/tenancy/balance.
+- El workflow de frontend incorpora `test:supply-real`No changes were made to backend contracts.
 
-## 5. Comandos Windows — desde `plataforma-pyme/frontend`
+## 5. Windows Commands — from `plataforma-pyme/frontend`
 
 ```powershell
 git pull --ff-only origin feature/e2-7-t07-proveedores-compras-recepcion
@@ -90,185 +90,185 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw 'Falló lint' }
 ```
 
-Para navegar: API/Postgres Docker activos, ejecutar `$env:PYME_API_PROXY_TARGET='http://127.0.0.1:18000'; npm.cmd run dev` y abrir `http://localhost:5173/real/login`.
+To browse: API/Postgres Docker active, run `$env:PYME_API_PROXY_TARGET='http://127.0.0.1:18000'; npm.cmd run dev` and open `http://localhost:5173/real/login`.
 
-## 6. QA manual con las empresas TEST existentes
+## 6. Manual QA with existing TEST companies
 
-| Prueba | Acción | Esperado |
+| Test | Action | Expected |
 |---|---|---|
-| T07-01 | Titular de Empresa A → Proveedores, crear `Proveedor A T07` | Figura solo en A; B no lo ve |
-| T07-02 | Desactivar/reactivar proveedor | Estado persistente tras actualizar |
-| T07-03 | Crear `Compra A T07` con artículo de REVENTA activo del Catálogo A, `UNIDAD`, cantidad `2`, costo `1250,55` | Compra `REGISTRADA`, total $2501,10, **sin stock incrementado aún** |
-| T07-04 | Abrir la compra y confirmar recepción en `Sede A TEST` | Compra pasa a `RECIBIDA` y se crean movimientos/saldos reales de entrada |
-| T07-05 | Consultar comprobante de recepción | Mismo `purchase_id`, `location_id`, `request_id`; no duplica stock |
-| T07-06 | Crear compra solo con concepto libre | `CERRADA_SIN_RECEPCION`; no botón para recibir |
-| T07-07 | Empresa B → Proveedores y Compras | No se muestran documentos ni proveedores de A |
-| T07-08 | Trabajador de Empresa A consulta compras/proveedores | Lectura sin formulario de alta; permisos efectivos se vuelven a comprobar en servidor |
-| T07-09 | Trabajador de A intenta URL directa de compra B | `404`, sin datos de B |
-| T07-10 | Interrumpir API ANTES de enviar una compra de prueba | Pendiente IndexedDB; F5/re-login recupera clave y cuerpo; reintento manual solo una compra |
-| T07-11 | Interrumpir API antes de confirmar recepción | Misma clave/sede tras re-login; consultar recibo antes de reintento; no doble entrada |
-| T07-12 | Prueba backend replay con clave idéntica | 201 primera, 200 segunda; documento y stock únicos |
-| T07-13 | Intentar recibir en sede pausada/sin can_store | Rechazo 409, sin stock |
-| T07-14 | DEMO `/inicio` | Ninguna modificación en cuentas, gastos, compras o stock simulados |
-| T07-15 | Catálogos/proveedores 101+ y compras 101+ | Paginación real, sin listas incompletas asumidas como completas |
-| T07-16 | En nueva compra, seleccionar `Producto A TEST` | Costo sugerido $800,00 desde catálogo, campo editable |
-| T07-17 | Sustituir sugerencia por $2.000,00 y cambiar cantidad a 2 | Conserva $2.000,00, muestra advertencia sobre venta $1.500,00 y **no bloquea** |
-| T07-18 | Artículo con costo de referencia no informado (`null`) / cero explícito (`0`) | Vacío / `0,00`; ambos se distinguen correctamente |
-| T07-19 | Reabrir compra histórica, regresar a catálogo | La compra original conserva su costo; la ficha del artículo no se modifica automáticamente |
-| T07-20 | Recuperar una compra pendiente tras F5 y nuevo login | Costo guardado e inmutable; no se reemplaza por referencia actualizada |
+| T07-01 | Company Owner A → Suppliers, create `Proveedor A T07` | Figure only in A; B does not see |
+| T07-02 | Disable/reactivate provider | Persistent status after updating |
+| T07-03 | Create `Compra A T07` with active REVANTA article from Catalogue A, `UNIDAD`, quantity `2`, costo `1250,55` | Purchase `REGISTRADA`total $2501,10, **no stock increased yet** |
+| T07-04 | Open purchase and confirm receipt at `Sede A TEST` | Purchase pass to `RECIBIDA` and create real input movements/sales |
+| T07-05 | Check receipt voucher | Same `purchase_id`, `location_id`, `request_id`; does not duplicate stock |
+| T07-06 | Create purchase only with free concept | `CERRADA_SIN_RECEPCION`; no button to receive |
+| T07-07 | Company B → Suppliers and Purchases | No A documents or suppliers are shown |
+| T07-08 | Company Worker To Consult Shopping/Suppliers | Reading without registration form; effective permissions are rechecked on server |
+| T07-09 | A Worker Tryes Direct Purchase URL B | `404`, no B data |
+| T07-10 | Interrupt API BEFORE you send a trial purchase | IndexedDB; F5/re-login Earrings recovers key and body; manual retry only one purchase |
+| T07-11 | Interrupt API before confirming receipt | Same key/headquarters after re-login; check receipt before retry; no double entry |
+| T07-12 | Backend replay test with identical key | 201 first, 200 second; single document and stock |
+| T07-13 | Try to receive at paused/can_store-free venue | Rejection 409, stockless |
+| T07-14 | DEMO `/inicio` | No changes in simulated accounts, expenses, purchases or stock |
+| T07-15 | Catalogs/suppliers 101+ and purchases 101+ | Real Pagination, No Incomplete Lists Taken as Complete |
+| T07-16 | In new purchase, select `Producto A TEST` | Suggested cost $8,000.00 from catalog, editable field |
+| T07-17 | Replace suggestion with $2.000.00 and change amount to 2 | Keeps $2.000.00, displays warning about sale $1.500.00 and **does not block** |
+| T07-18 | Article with uninformed reference cost (`null`) / explicit zero (`0`) | Empty / `0,00`; both are correctly distinguished |
+| T07-19 | Reopen historical purchase, return to catalog | The original purchase retains its cost; the item sheet is not automatically modified |
+| T07-20 | Recover an outstanding purchase after F5 and new login | Cost saved and unchangeable; not replaced by updated reference |
 
 
-Las pruebas de fallo se realizan solo con datos de prueba y la API de Docker. No eliminar el volumen PostgreSQL. No simular un 201 perdido en datos productivos; para una prueba de extremo a extremo exhaustiva conviene utilizar PostgreSQL temporal aislado y un proxy controlable.
+Failure tests are performed only with test data and the Docker API. Do not remove PostgreSQL volume. Do not simulate a 201 lost in productive data; for an end-to-end exhaustive test, it is appropriate to use temporary isolated PostgreSQL and a controllable proxy.
 
-## 7. Puerta de cierre
+## 7. Door closing
 
-No fusionar T07 sin CI aprobado, tests locales, creación de proveedor, documento con concepto y bienes, recepción con movimiento real, permisos por tenant, prueba de reintento manual y DEMO intacta. Documentar que la lectura de balances reales detallados de inventario se abordará en T08; T07 solo muestra el comprobante.
+Do not merge T07 without approved IC, local tests, supplier creation, document with concept and goods, receipt with real movement, permissions per tenant, manual retry test and intact DEMO. Document that the reading of detailed actual inventory balances will be addressed in T08; T07 only shows proof.
 
-## 8. Evidencia de QA de T07 y estado de integración
+## 8. Evidence of QA of T07 and integration status
 
-**Confirmado con capturas compartidas por el usuario (10/11/2026):** Empresa A muestra botones de proveedores y compras REAL; `Proveedor A T07` se creó, desactivó y reactivó; una compra de **2 UNIDAD × $2.000,00 = $4.000,00** se registró sin stock, después se confirmó como **RECIBIDA** con 1 movimiento real de stock; la lectura posterior del comprobante confirmó recepción en una sede, sin reenvío del POST. La señal 404 transitoria que había aparecido no volvió a presentarse en la última lectura.
+**Confirmed with user-shared catches (10/11/2026):** Company A shows suppliers buttons and REAL purchases; `Proveedor A T07` was created, disabled and reactivated; a purchase of **2 UNITY × $2.000,00 = $4,000,00** registered without stock, then confirmed as **RECEIVED** with 1 real stock movement; the subsequent reading of the voucher confirmed reception at a headquarters, without forwarding the POST. The transient signal 404 that had appeared did not appear again in the last reading.
 
-**Actualización de cierre del 10/11/2026:** los casos centrales descritos anteriormente fueron completados y están registrados en las secciones 9–16. El informe `E2-7_T07_CIERRE_REVISION_Y_PRUEBAS.md` presenta las 165 pruebas frontend aprobadas en CI, 6 recorridos Chromium DEMO, evidencia manual con PostgreSQL, limitaciones del alcance y criterios adicionales trasladados a T11. No confundir esta conformidad del incremento T07 con el cierre de toda la integración E2-7.
+**Closing update of 10/11/2026:** The central cases described above were completed and are recorded in sections 9–16. `E2-7_T07_CIERRE_REVISION_Y_PRUEBAS.md` presents the 165 frontend tests approved in IC, 6 Chromium DEMO routes, manual evidence with PostgreSQL, limitations of scope and additional criteria transferred to T11. Do not confuse this conformity of increase T07 with the closure of all integration E2-7.
 
-**Integración posterior:** el módulo T08 deberá usar entradas de recepción y balances reales, sin inferir stocks a partir de costos de referencia. Los reportes posteriores deberán distinguir `reference_cost_cents` vigente de `unit_cost_cents` histórico por compra. Esta regla se transmite a la documentación de cierre T12 y a cualquier UI que integre compras/catálogo.
+**Later integration:** The T08 module must use actual receipt entries and balances, without infering stocks from reference costs. Subsequent reports should distinguish `reference_cost_cents` of the current `unit_cost_cents` This rule is transmitted to the T12 closing documentation and any IU that integrates purchases/catalogue.
 
-## 9. Decisión UX T07: importe por renglón y proveedor de compra
+## 9. Decision UX T07: amount per line and supplier of purchase
 
-**Diseño aprobado por el usuario (10/11/2026):** el proveedor se selecciona **una sola vez en la cabecera de cada compra**, no repetido por renglón. Una compra puede contener múltiples productos, servicios o conceptos del mismo proveedor. Si los proveedores difieren, corresponden documentos de compra separados. La compra sin proveedor sigue siendo válida conforme al contrato de FastAPI.
+**User-approved design (10/11/2026):** the provider is selected **only once in the header of each purchase**, not repeated by line. A purchase may contain multiple products, services or concepts from the same supplier. If suppliers differ, separate purchase documents correspond. The purchase without supplier remains valid under FastAPI's contract.
 
-Cada renglón presenta en una misma fila, de izquierda a derecha:
+Each row shows in the same row, from left to right:
 
-1. **Cantidad** (editable, hasta tres decimales según unidad).
-2. **Costo unitario de esta compra** (editable, precargado con costo de referencia cuando exista).
-3. **Costo total del renglón** (más ancho y visualmente destacado; se calcula automáticamente).
+1. **Quantity** (editable, up to three decimals per unit).
+2. **Unit cost of this purchase** (editable, preloaded with reference cost where available).
+3. **Total cost of line** (wider and visually prominent; calculated automatically).
 
-El subtotal **no se repite** en una fórmula de texto ni en un segundo bloque. Una acción `Editar` junto al campo total habilita una **edición explícita por total**. Mientras el usuario modifica el total, cantidad y unitario quedan temporalmente bloqueados; debe pulsar `Aplicar total` o `Cancelar` antes de registrar la compra. Si aplica, se calcula un `unit_cost_cents` compatible con la cantidad y se comprueba que `HALF_UP(quantity_milli * unit_cost_cents / 1000)` sea exactamente el importe introducido. **No se admiten ajustes silenciosos de centavos.** Algunos importes no se pueden representar exactamente con las unidades y costos actuales (por ejemplo 3 unidades por $10,00); en esos casos se explica la incompatibilidad y se mantiene la edición sin enviar POST.
+El subtotal **no se repite** in a text formula or in a second block. `Editar` next to the total field enables a **explicit edition by total**. While the user changes the total, quantity and unit are temporarily blocked; you must press `Aplicar total` o `Cancelar` before registering the purchase. If applicable, a `unit_cost_cents` compatible with the quantity and it is verified that `HALF_UP(quantity_milli * unit_cost_cents / 1000)` be the amount entered. **No silent pennies allowed.** Some amounts cannot be represented exactly with current units and costs (e.g. 3 units for $10.00); in those cases the incompatibility is explained and editing is maintained without POST being sent.
 
-La suma de subtotales de todos los renglones aparece una sola vez, al pie del formulario, como **Total de la compra**. Es solo una vista previa calculada: los contratos backend permanecen iguales y FastAPI vuelve a calcular el total histórico de forma autoritativa. No hay campo de total adicional enviado a la API ni actualización automática del costo de referencia del catálogo. La funcionalidad futura de *ofrecer actualizar el costo de referencia* queda registrada como propuesta optativa y autorizada explícitamente, separada del alta de compra. No se modifica el precio de venta sin una operación independiente.
+The sum of subtotals of all lines appears only once, at the bottom of the form, as **Total purchase**. It is only a calculated preview: backend contracts remain the same and FastAPI recalculates the historical total in an authoritative manner. There is no additional total field sent to the API or automatic update of the reference cost of the catalog. The future functionality of *offer updating the reference cost* is registered as optional and explicitly authorized proposal, separate from the purchase discharge. No change in the sales price without an independent transaction.
 
-**QA de presentación y cálculos:**
+**Presentation and calculation QA:**
 
-- T07-21: 4 unidades a $800,00 → subtotal $3.200,00; el importe no se duplica visualmente.
-- T07-22: editar total a $12.000,00 con cantidad 4 → costo unitario $3.000,00; margen informativo si supera el precio de venta.
-- T07-23: 3 unidades con total $10,00 → validación de importe no representable; no redondear ni registrar.
-- T07-24: dos renglones 4×$800,00 y 2×$2.000,00 → Total de la compra $7.200,00, sin multiplicación float.
-- T07-25: cambiar la cantidad o el unitario → subtotal se recalcula; no se modifica referencia del catálogo.
-- T07-26: verificar el formulario en pantallas estrechas: el subtotal pasa a la fila siguiente sin perder etiquetas ni controles.
+- T07-21: 4 units at $8,000.00 → subtotal $3,200; the amount is not visually doubled.
+- T07-22: edit total to $12.000,00 with quantity 4 → unit cost $3.00; information margin if you exceed the selling price.
+- T07-23: 3 units with total $10.00 → validation of unrepresentable amount; do not round or register.
+- T07-24: two lines 4800.00 and 22.000,00 → Total purchase $7,200, no float multiplication.
+- T07-25: change quantity or unit → subtotal is recalculated; no reference in the catalogue is modified.
+- T07-26: verify the form on narrow screens: Subtotal passes to the next row without losing tags or controls.
 
-## 10. Decisión UX T07: distinguir recepción pendiente de confirmada
+## 10. Decision UX T07: Distinguishing receipt pending confirmation
 
-**Solicitud adicional del usuario (10/11/2026):** los controles de **Confirmar recepción** no deben tener apariencia de operación completada. La comunicación visual depende exclusivamente de `Purchase.status` devuelto por FastAPI, no de que el usuario haya abierto la pantalla de recepción.
+**Additional user request (10/11/2026):** checks on **Confirm receipt** should not have the appearance of complete operation. Visual communication depends exclusively on `Purchase.status` returned by FastAPI, not the user has opened the reception screen.
 
-| Estado backend | Etiqueta mostrada | Estilo |
+| Backend State | Label shown | Style |
 |---|---|---|
-| `REGISTRADA` | **REGISTRADA · RECEPCIÓN PENDIENTE** | Insignia ámbar; botón *Pendiente · Confirmar recepción en ubicación* también ámbar |
-| Formulario de recepción por confirmar | **Confirmar recepción REAL** / **Reintentar MISMA recepción** | Acción principal ámbar, nunca verde; botón deshabilitado sin sede seleccionada |
-| `RECIBIDA` | **RECIBIDA** | Insignia verde de confirmación real; acción posterior solo **Consultar comprobante** |
-| `CERRADA_SIN_RECEPCION`, `CANCELADA` | Etiquetas respectivas | Neutro, no implican recepción pendiente ni exitosa |
+| `REGISTRADA` | **REGISTRADA · PENDING RECEPTION** | Amber insignia; button *Pending · Confirm reception at location* also amber |
+| Receive form to be confirmed | **Confirm Real Reception** / **Retry Same Reception** | Main action amber, never green; button disabled without selected seat |
+| `RECIBIDA` | **RECEIVED** | Real confirmation green sign; subsequent action only **Check voucher** |
+| `CERRADA_SIN_RECEPCION`, `CANCELADA` | respective labels | Neutro, do not imply pending or successful reception |
 
-El color **acompaña al texto**, nunca lo reemplaza: los estados se distinguen también por su nombre. El amarillo/ámbar representa una operación pendiente de confirmar; el verde se reserva para el registro que ya consta como `RECIBIDA` en PostgreSQL. El botón de recepción no provoca ninguna mutación al abrir el formulario: la escritura sigue ejecutándose solo con la confirmación, el destino válido y el mismo mecanismo de idempotencia/replay que antes. No se cambia backend, modelo de datos, balances ni permisos.
+El color **accompanying the text**, never replaces it: states are also distinguished by their name. Yellow/ambamber represents an operation to be confirmed; green is reserved for the record that already records as `RECIBIDA` In PostgreSQL. The reception button does not cause any mutation when opening the form: the writing continues to be executed only with confirmation, valid destination and the same idempotency/replay mechanism as before. No backend, data model, balances or permissions is changed.
 
-**QA adicional:**
+**Additional QA:**
 
-- T07-27: compra recién creada `REGISTRADA` → etiqueta y botón ámbar; no aparece ninguna señal verde de `RECIBIDA`.
-- T07-28: confirmar recepción en sede activa → en nueva lectura aparece `RECIBIDA` en verde; desaparece botón de confirmar y aparece *Consultar comprobante*.
-- T07-29: compra solo concepto / cancelada → estilo neutro; jamás se ofrece recepción.
-- T07-30: modo móvil y teclado → contraste legible, foco visible, estado también por texto.
-- T07-31: API rechaza recepción o se pierde respuesta → no pintar verde por optimismo; conservar `REGISTRADA` hasta confirmar desde servidor.
+- T07-27: Newly created purchase `REGISTRADA` → amber tag and button; no green sign appears `RECIBIDA`.
+- T07-28: confirm reception at active headquarters → in new reading appears `RECIBIDA` in green; disappears confirm button and appears *Check voucher*.
+- T07-29: purchase only concept / cancelled → neutral style; never offer reception.
+- T07-30: mobile mode and keyboard → readable contrast, visible focus, text status as well.
+- T07-31: API rejects reception or loses response → do not paint green for optimism; preserve `REGISTRADA` until confirm from server.
 
-**Trazabilidad:** `frontend/src/features/purchases/realSupplyGateway.ts` exporta la clasificación semántica del estado; `RealPurchasesPage.tsx` aplica clases según dicho estado; `auth.css` contiene los estilos ámbar/verde/neutro. Las pruebas automatizadas validan el mapeo y los cálculos; las pruebas de interfaz aún deben observarse en el navegador antes del cierre de T07. Este criterio cromático se incluye en el traspaso a T08/T12, y en los módulos futuros que reciban mercadería.
+**Traceability:** `frontend/src/features/purchases/realSupplyGateway.ts` exports semantic classification of the state; `RealPurchasesPage.tsx` applies classes according to that state; `auth.css` contains the amber/green/neutral styles. Automated tests validate mapping and calculations; interface testing must still be observed in the browser before T07 is closed. This chromatic criterion is included in the transfer to T08/T12, and in future modules receiving merchandise.
 
-## 11. Corrección UX: error 404 al verificar recepción pendiente (QA colaborador)
+## 11. UX correction: error 404 when verifying pending receipt (collaborating QA)
 
-**Observación real de QA (10/11/2026):** un trabajador con acceso de lectura a `TEST Empresa A` recuperó una intención de recepción de la compra `Compra2 prueba E2-7 T07` en IndexedDB, pulsó `Consultar comprobante` y vio el error rojo genérico «Proveedor, compra, sede o empresa no disponible para esta cuenta». La compra continuaba visible como `REGISTRADA · RECEPCIÓN PENDIENTE`.
+**Actual QA observation (10/11/2026):** a worker with read-to-read access to `TEST Empresa A` recovered an intention to receive the purchase `Compra2 prueba E2-7 T07` in IndexedDB, pulsed `Consultar comprobante` and saw the generic red error “Provider, purchase, headquarters or company not available for this account”. The purchase remained visible as `REGISTRADA · RECEPCIÓN PENDIENTE`.
 
-**Causa verificada en backend:** `GET /businesses/{id}/purchases/{purchase_id}/receipt` devuelve `404` tanto cuando todavía NO existe el recibo (`ReceiptNotFound`) como para determinados recursos no disponibles/ajenos. El frontend anterior confundía ausencia de comprobante con inaccesibilidad a un recurso, sin verificar el estado de la compra.
+**Causa verificada en backend:** `GET /businesses/{id}/purchases/{purchase_id}/receipt` devuelve `404` both when the receipt still does NOT exist (`ReceiptNotFound`) as for certain resources not available/existed. The previous frontend confused the absence of proof with inaccessibility to a resource, without verifying the status of the purchase.
 
-**Resolución en T07, sin cambios de backend:** ante `404` de `GET /receipt`, se consulta mediante **otro GET** el detalle de la misma compra, autenticado con el mismo token y tenant:
+**Resolution in T07, no backend changes:** ante `404` de `GET /receipt`, consulted through **other GET** the details of the same purchase, authenticated with the same token and tenant:
 
-- Si `GET /purchase` confirma que es legible y sigue `REGISTRADA`: mostrar aviso informativo «Todavía no hay un comprobante de recepción confirmado…», mantener el intento original y su clave, sin repetir POST ni incrementar stock.
-- Si el detalle muestra `RECIBIDA` pero no se puede leer su comprobante: presentar inconsistencia explícita y pedir revisar el acceso/servidor; **no volver a recibir**.
-- Si `GET /purchase` devuelve `401`, `403` o `404`: respetar el error de autenticación/autorización/inaccesibilidad. **Nunca** transformar un recurso ajeno o inaccesible en una supuesta compra pendiente.
-- Si `GET /receipt` devuelve `200`, comprobar `request_id` y conciliar/limpiar la clave local únicamente al verificar la misma operación, igual que antes.
-- Ante un fallo de conexión, no afirmar que no existe el comprobante; conservar la intención y no reintentar automáticamente.
+- Si `GET /purchase` confirms that it is legible and follows `REGISTRADA`: show information notice "There is still no proof of receipt confirmed...", keep the original attempt and its key, without repeating POST or increasing stock.
+- If the detail shows `RECIBIDA` but you cannot read your voucher: present explicit inconsistency and ask to review the access/server; **not to receive again**.
+- Si `GET /purchase` devuelve `401`, `403` o `404`: respect the authentication/authorization/inaccessibility error. **Never** transform an inaccessible or foreign resource into a supposed pending purchase.
+- Si `GET /receipt` devuelve `200`, check `request_id` and reconcile/clean the local key only when verifying the same operation, as before.
+- In the event of a connection failure, do not claim that there is no proof; keep the intention and do not automatically try again.
 
-**Importante:** esta mejora es para **consultar**, no para otorgar autorización de confirmar recepción. Al pulsar `Reintentar MISMA recepción` sigue siendo FastAPI quien valida los permisos de `STORE` de la cuenta y su asignación a la sede. Una solicitud fallida por permisos no puede convertirse en exitosa desde React.
+**Important:** This improvement is for **consult**, not to grant permission to confirm receipt. `Reintentar MISMA recepción` FastAPI is still the one who validates the permissions of `STORE` an application failed for permissions cannot become successful from React.
 
-**Pruebas automatizadas:** `inspectReceipt` comprueba que el caso 404 + compra registrada hace exactamente dos GET y cero POST; que el 404 del detalle no se disfraza de ausencia de recibo; que estado `RECIBIDA` sin recibo es inconsistencia; y que un comprobante confirmado se lee con un GET.
+**Automated testing:** `inspectReceipt` checks that case 404 + purchase registered does exactly two GET and zero POST; that the detail 404 is not disguised as no receipt; that it was `RECIBIDA` without receipt is inconsistency; and that a confirmed proof is read with a GET.
 
-**QA manual pendiente después del ajuste:** con la cuenta trabajadora, abrir el intento pendiente, usar `Consultar comprobante`, esperar el aviso no rojo si la compra sigue `REGISTRADA` y confirmar que el botón de reintento conserva la clave original, sin movimientos nuevos. Si luego se decide completar la recepción, verificar previamente asignación activa y permisos en sede, y hacer **una** confirmación explícita con esa misma clave. No suprimir los códigos HTTP para otros recursos.
+**Manual QA pending after adjustment:** with the working account, open the pending attempt, use `Consultar comprobante`, wait for not red notice if the purchase continues `REGISTRADA` and confirm that the retry button retains the original key, without new moves. If you then decide to complete the reception, check previously active assignment and permissions at headquarters, and do **una** explicit confirmation with the same key. Do not delete HTTP codes for other resources.
 
-## 12. Detalle visual del comprobante de recepción confirmada
+## 12. Visual detail of confirmed receipt voucher
 
-**Decisión aprobada por el usuario el 10/11/2026.** Durante la prueba de recepción con la cuenta colaboradora se confirmó la compra «Compra2 prueba E2-7 T07» y el backend devolvió correctamente la recepción. Sin embargo, el botón «Consultar comprobante» solo mostraba un mensaje verde con el UUID de la ubicación. La expectativa era consultar un detalle legible, no solamente una notificación.
+**Decision adopted by the user on 10/11/2026.** During the reception test with the partner account, the purchase "Buy2 Test E2-7 T07" was confirmed and the backend correctly returned the receipt. However, the "Check Proof" button only showed a green message with UUID of the location. The expectation was to check a legible detail, not just a notification.
 
-**Resolución T07 (solo frontend):**
+**Resolution T07 (frontend only):**
 
-- «Consultar comprobante» ejecuta el GET del recibo existente, y al obtener un registro válido presenta un panel inline «Detalle de recepción», asociado a su compra, con estado **CONFIRMADA**.
-- Incluye referencia de la compra, nombre de la sede, fecha/hora de confirmación, responsable, detalle de entradas de stock y saldos posteriores del backend.
-- La sede se resuelve por su nombre desde las ubicaciones REAL ya consultadas para la empresa; si no aparece en la lista, se explicita el nombre no disponible, dejando su UUID en la sección desplegable de trazabilidad.
-- Se utiliza el campo confirmed_by_id del servidor: cuando coincide con la sesión actual, se muestra session.user.display_name; si corresponde a otra persona, se muestra su ID de auditoría sin inventar ni revelar datos privados del equipo. No se ejecutan lecturas de membresías restringidas al trabajador.
-- Cada movimiento y cantidad proceden del comprobante REAL. La descripción y unidad se obtienen preferentemente de los snapshots históricos de la compra, no de los artículos vigentes; balances_after se utiliza solo cuando está disponible. No se agregan movimientos ficticios para servicios o conceptos.
-- Los identificadores de recibo y ubicación quedan bajo «Identificadores de trazabilidad», no como texto principal. No se publica ni copia la clave request_id del comando idempotente.
-- El panel señala que **es un registro interno de FastAPI/PostgreSQL, no una factura ni un PDF**. La exportación PDF no forma parte de T07.
-- El detalle dispone de «Cerrar detalle» y diseño adaptable a pantallas estrechas. Al consultar desde el formulario de recepción (situado debajo del listado), el navegador enfoca y desplaza la vista al detalle recién abierto para que el usuario no siga viendo solamente el formulario. No modifica estado comercial, inventario, roles, importes ni datos DEMO.
-- Cuando un POST de recepción acaba con respuesta válida, ese mismo recibo puede presentarse directamente, sin hacer otro POST. Al consultar un comprobante confirmado, se sigue reconciliando la clave pendiente por request_id según T06/T07. Para una recepción todavía pendiente, el manejo de 404 de la sección 11 continúa intacto.
+- ‘Check voucher’ executes the GET of the existing receipt, and upon obtaining a valid record presents an inline panel ‘Receiving details’ associated with its purchase, with status **CONFIRMED**.
+- Includes purchase reference, name of the venue, date/time of confirmation, responsible, stock entry details and backend balances.
+- The location is resolved by name from the REAL locations already consulted for the company; if it does not appear on the list, the name is explained as unavailable, leaving its UUID in the traceability drop-down section.
+- The confirmed_by_id field of the server is used: when it matches the current session, session.user.display_name is displayed; if it corresponds to another person, its audit ID is displayed without inventing or disclosing private data from the computer. No worker-restricted membership readings are executed.
+- Each movement and quantity comes from REAL voucher. Description and unit are obtained preferably from historical snapshots of purchase, not from current items; after_balances is used only when available. No fictitious movements are added for services or concepts.
+- Receipt and location identifiers are under "Traffic identifiers", not as main text. The request_id key of the idempotent command is not published or copied.
+- The panel notes that **is an internal FastAPI/PostgreSQL registry, not an invoice or PDF**. PDF export is not part of T07.
+- The detail has "Close Detail" and design adaptable to narrow screens. When you consult from the reception form (located below the list), the browser focuses and shifts the view to the newly opened detail so that the user does not continue seeing only the form. It does not modify commercial status, inventory, roles, amounts or DEMO data.
+- When a receiving POST ends with valid response, the same receipt may be presented directly, without making another POST. On consultation of a confirmed voucher, the pending key for request_id is still reconciled according to T06/T07. For an outstanding receipt, the handling of 404 in section 11 remains intact.
 
-**Implementación:**
+**Implementation:**
 - frontend/src/features/purchases/RealReceiptDetail.tsx: vista legible.
-- frontend/src/features/purchases/receiptViewModel.ts: mapeo puro de DTOs históricos, sedes, actor, milésimas y saldos.
-- frontend/src/features/purchases/RealPurchasesPage.tsx: apertura del comprobante dentro de la compra correspondiente.
-- frontend/src/features/auth/RealAuthApp.tsx: comparte display_name del usuario autenticado, sin consultar miembros privados.
+- frontend/src/features/purchasings/receivetViewModel.ts: pure mapping of historical DTOs, venues, actor, thousandths and balances.
+- frontend/src/features/purchases/RealPurchasesPage.tsx: opening of the voucher within the corresponding purchase.
+- frontend/src/features/auth/RealAuthApp.tsx: shares display_name of authenticated user, without consulting private members.
 - frontend/src/features/auth/auth.css: estilos responsive.
-- frontend/tests/supply-real-api.test.mjs: pruebas de nombre/ID de responsable, sede, snapshots y servicios sin movimientos.
+- frontend/tests/supply-real-api.test.mjs: name/ID tests for responsible, headquarters, snapshots and services without movement.
 
-**QA manual antes de fusionar PR #40:**
+**Manual QA before merging PR #40:**
 
-1. Con Miguel, abrir «Compra2 prueba E2-7 T07» ya RECIBIDA, consultar comprobante y comprobar sede «Sede A TEST», fecha de servidor, responsable «miguel» (si coincide con display_name de la sesión), +5 UNIDAD de Producto A TEST y saldo posterior. Las 2 unidades de servicio no deben generar movimiento de inventario.
-2. Desde el titular, leer esa misma recepción: no mostrar un nombre de responsable inventado para el otro usuario; mostrar su identificador.
-3. Consultar la primera compra recibida: debe presentar +2 UNIDAD sin crear otro movimiento.
-4. Verificar que el estado RECIBIDA siga verde, que «Cerrar detalle» funcione y que consultar nunca reenvíe una recepción.
-5. Verificar el panel en pantalla estrecha y las etiquetas de identificadores de auditoría.
-6. En compras REGISTRADA sin recibo, mantener el aviso de ausencia de comprobante y la clave original, sin simulación de éxito.
+1. With Miguel, open "Buy2 test E2-7 T07" already RECEIVED, check proof and check headquarters "Sede A TEST", server date, responsible "miguel" (if it matches display_name of the session), +5 Product UNITY A TEST and later balance. The 2 service units should not generate inventory movement.
+2. From the headline, read that same receipt: do not display a responsible name invented for the other user; show your identifier.
+3. Check the first purchase received: you must present +2 UNITY without creating another movement.
+4. Verify that the RECEIVED state remains green, that "Close Detail" works and that consultation never forwards a reception.
+5. Check the narrow screen panel and audit identifier tags.
+6. In purchases LOG IN without receipt, keep the notice of absence of proof and original key, without simulation of success.
 
-**Transferencia:** T08 debe conservar la separación entre comprobantes de compra y el ledger global del inventario. T12 debe documentar que esta vista es comprobante **interno**, no factura electrónica ni PDF. El cierre de T07 requiere capturas de navegador y CI aprobado.
+**Transfer:** T08 must keep the separation between purchase vouchers and the global inventory leader. T12 must document that this view is proof **internal**, no electronic billing or PDF. Closing T07 requires browser captures and approved IC.
 
-## 13. Evidencia visual posterior al comprobante detallado — 10/11/2026
+## 13. Visual evidence after detailed voucher — 10/11/2026
 
-**Validado por captura de navegador del usuario en la cuenta colaboradora (Miguel):** el botón «Consultar comprobante» de la compra real «Compra2 prueba E2-7 T07» abre correctamente el panel «Detalle de recepción», estado **CONFIRMADA**, ubicación **Sede A TEST**, fecha/hora de confirmación **10 nov 2026, 8:23 a. m.**, responsable **miguel**, **1 entrada real de inventario** de **Producto A TEST +5 UNIDAD**, saldo posterior de **11 UNIDAD** y la aclaración expresa de que no se trata de factura del proveedor ni archivo PDF. No se presenta una entrada ficticia del servicio incluido en esa compra. «Identificadores de trazabilidad» aparece plegado y está disponible «Cerrar detalle».
+**Validated by browser capture of the user in the collaborating account (Miguel):** the "Check voucher" button of the actual purchase "Buy2 test E2-7 T07" opens correctly the "Reception Details" panel, status **CONFIRMED**location **Headquarters A TEST**, date/time of confirmation **10 nov 2026, 8:23 a. m.**responsible **miguel**, **1 actual inventory entry** de **Product A TEST +5 UNITY**, balance of **11 UNITY** and the explicit clarification that this is not a supplier’s invoice or PDF file. No fictitious entry of the service included in that purchase is presented. ‘Trafficking identifiers’ appears folded and ‘Close detail’ is available.
 
-**Criterio T07 de comprobante: aprobado visualmente**, además de los tests de mapeo automatizados. El valor de saldo informado corresponde al balance que devuelve el backend para esa recepción, no debe deducirse de los importes de compras.
+**T07 criterion for voucher: visually approved**, in addition to automated mapping tests. The reported balance value corresponds to the balance that returns the backend for that receipt, should not be deducted from the purchase amounts.
 
-**Otras evidencias del mismo recorrido QA compartidas en la conversación:** la compra quedó `RECIBIDA` después de la acción explícita autorizada a un TRABAJADOR con asignación a sede; la consulta posterior confirmó el registro sin hacer otro POST. Anteriormente, la cuenta colaboradora con sede `NO ASIGNADO` podía consultar compras pero no estaba autorizada para confirmar allí. En Empresa B el listado de compras estaba vacío mientras Empresa A mostraba tres compras. La pantalla de proveedores del trabajador de A se presentó sin controles de administración. Los subtotales, la suma del documento, costo de referencia y el color ámbar/verde se comprobaron mediante capturas.
+**Other evidence from the same QA route shared in the conversation:** the purchase is left `RECIBIDA` after explicit action authorized to a Worker with assignment to headquarters; the subsequent consultation confirmed the registration without making another POST. Previously, the partner account with headquarters `NO ASIGNADO` I could consult purchases but it was not authorized to confirm there. In Company B the shopping list was empty while Company A showed three purchases. The A worker's supplier screen was presented without administrative controls. Subtotals, the sum of the document, reference cost and amber/green color were checked by catch.
 
-**Criterios de cierre pendientes de evidencia manual completa:** URL directa de compra de B como trabajador A (T07-09); pruebas controladas de interrupción y recuperación de alta/recepción con F5 en entorno aislado (T07-10 y T07-11); verificación independiente de replay backend (T07-12); sede pausada/sin almacenamiento (T07-13); paginación 101+ (T07-15) y los casos de importes especiales T07-18/T07-20/T07-23. Parte de estas situaciones ya tiene pruebas unitarias/contratos, pero eso no equivale a evidencias manuales end-to-end.
+**Closing criteria pending complete manual evidence:** Direct URL of purchase of B as worker A (T07-09); controlled tests of interruption and recovery of high/reception with F5 in isolated environment (T07-10 and T07-11); independent check of replay backend (T07-12); paused/unstorage (T07-13); pagination 101+ (T07-15) and special amounts cases T07-18/T07-20/T07-23. Part of these situations already has unitary evidence/contracts, but that does not amount to manual evidence end-to-end.
 
-**Decisión de cierre:** no declarar el incremento completamente validado ni fusionar automáticamente por la sola captura. Mantener PR #40 como borrador hasta revisar y ejecutar o justificar explícitamente los criterios pendientes, sin crear movimientos de stock adicionales solo para validar una vista de lectura.
+**Closing decision:** not declare the fully validated increase or automatically merge by single capture. Keep PR #40 as a draft until you explicitly review and execute or justify the pending criteria, without creating additional stock movements just to validate a read view.
 
-## 14. Evidencia QA de aislamiento de proveedores por empresa — 10/11/2026
+## 14. QA evidence of vendor isolation by company — 10/11/2026
 
-**T07-07 (proveedores): aprobado visualmente.** El usuario abrió la vista **Proveedores REAL** de **TEST Empresa B**, autenticado en el entorno real. La captura indica «Proveedores de TEST Empresa B consultados en FastAPI y PostgreSQL. Sin datos DEMO», muestra **0 proveedores cargados** y el estado vacío «No hay proveedores registrados en esta empresa». En capturas anteriores la vista de **TEST Empresa A** mostraba **Proveedor A T07**. Por lo tanto, el proveedor de A no se presenta en el listado de B. La lectura no efectuó ninguna mutación.
+**T07-07 (suppliers): visually approved.** The user opened the view **REAL Suppliers** de **TEST Company B**, authenticated in the real environment. The capture indicates ‘TEST suppliers Company B consulted in FastAPI and PostgreSQL. No DEMO data’, sample **0 loaded suppliers** and the empty state ‘No suppliers registered in this company’. **TEST Company A** showed **Supplier A T07**. Therefore, the A supplier is not listed in B. The reading did not perform any mutations.
 
-La parte de **compras** del mismo caso T07-07 también tenía evidencia anterior: B mostraba 0 compras y A mostraba 3. Esta observación confirma el aislamiento de listados en la UI, **no equivale por sí sola a una prueba adversarial HTTP** de acceso por ID al recurso ajeno; esa prueba queda dentro de T07-09 y del conjunto de contratos automatizados.
+The part of **purchases** T07-07 also had previous evidence: B showed 0 purchases and A showed 3. This observation confirms the isolation of listings in the IU, **does not in itself amount to an HTTP adverse test** access by ID to the foreign resource; that proof remains within T07-09 and the set of automated contracts.
 
-**Estado:** T07-07 completo en su alcance de interfaz. Continúan las demás verificaciones pendientes descritas en la sección 13; no fusionar el PR por esta sola comprobación.
+**Status:** T07-07 complete in its interface scope. The other pending checks described in section 13 are continuing; do not merge the PR for this single check.
 
-## 15. Evidencia QA: compra compuesta exclusivamente por concepto libre — 10/11/2026
+## 15. Evidence QA: purchase composed exclusively of free concept — 10/11/2026
 
-**T07-06: aprobado visualmente con captura de la interfaz REAL.** El usuario registró una cuarta compra de TEST Empresa A bajo la referencia `concepto libre T07`, sin proveedor, con **1 renglón de CONCEPTO**, cantidad **5** y costo unitario **$500,00**; el resumen mostró **$2.500,00** y estado **CERRADA SIN RECEPCIÓN**. No se presentó botón para confirmar recepción ni acción para aumentar inventario.
+**T07-06: visually approved with Real interface capture.** The user registered a fourth purchase of TEST Company A under the reference `concepto libre T07`, without supplier, with **1 line CONCEPT**, quantity **5** and unit cost **$500,00**; the summary showed **$2.500,00** and status **CLOSED WITHOUT RECEPTION**. No button was presented to confirm receipt or action to increase inventory.
 
-**Alcance de la evidencia:** se verificó la aritmética, el estado comercial y la ausencia de la acción de recepción en el frontend conectado a FastAPI/PostgreSQL. Aunque el caso inicialmente sugería cantidad 1, utilizar cantidad 5 es compatible con la misma regla y muestra correctamente la multiplicación. No se comparó en esta prueba el ledger de stock antes y después, por lo que la ausencia de movimientos queda respaldada por el comportamiento de la UI y las reglas/pruebas del backend, pero no por una comprobación independiente de existencias.
+**Scope of evidence:** arithmetic, commercial status and absence of reception action on the frontend connected to FastAPI/PostgreSQL were verified. Although the case initially suggested quantity 1, using quantity 5 is compatible with the same rule and shows correctly multiplication. The stock leadger was not compared in this test before and after, so the absence of movements is supported by IU behavior and backend rules/tests, but not by an independent inventory check.
 
-**No fusionado:** T07-06 pasa de pendiente a aprobado en su alcance de interfaz; otros criterios aún pendientes se enumeran en la sección 13. No se requirió confirmar recepción ni modificar movimientos de stock.
+**Not merged:** T07-06 moves from pending to approved in its interface scope; other criteria still outstanding are listed in section 13. No confirmation of receipt or modification of stock movements was required.
 
-## 16. Evidencia QA de no regresión DEMO y aislamiento REAL — 10/11/2026
+## 16. QA evidence of non-regression DEMO and REAL isolation — 10/11/2026
 
-**T07-14: aprobado en el alcance manual revisado.** El usuario abrió la aplicación de demostración después de integrar los módulos REAL de T07. Proporcionó dos capturas y confirmó que la navegación y los botones que probó funcionan correctamente, con los datos de ejemplo de WALOS y sin mezcla visible con las empresas TEST A/B.
+**T07-14: approved in revised manual scope.** The user opened the demo application after integrating the REAL modules of T07. He provided two screenshots and confirmed that the navigation and buttons he tested work properly, with WALOS example data and no visible mix with the companies TEST A/B.
 
-**Captura de Inventario DEMO:** pestañas «Existencias» e «Historial de movimientos», filtros de búsqueda y ubicación, y seis combinaciones visibles de existencias por artículo/sede. Se observan «colageno hidrolizado» (Casa Propia 600 gramo; San Martín Feria 380 gramo), «Crema de enjuague» (Casa Propia 11 caja; San Martín Feria 80 caja), «Shampoo» (Casa Propia 8 unidad; San Martín Feria 70 unidad). Son datos de demostración, **no saldos reales de PostgreSQL**.
+**DEMO Inventory Capture:** tabs "Existences" and "History of movements", search filters and location, and six visible combinations of stocks per article/headquarter. We observe "hydrolyzed collagen" (Casa Propia 600 gram; San Martín Feria 380 gram), "Crema de enjuague" (Casa Propia 11 box; San Martín Feria 80 box), "Shampoo" (Casa Propia 8 unit; San Martín Feria 70 unit). **no actual balances of PostgreSQL**.
 
-**Captura de Catálogo DEMO:** «Artículos y servicios» con 3 activos visibles de 4, campos de búsqueda/tipo/estado, fichas para esos mismos artículos, imágenes, costos y precios DEMO, con acciones «Ver ficha», «Editar» y «Desactivar». El usuario informó que los botones probados respondieron correctamente.
+**DEMO Catalog Capture:** ‘Articles and services’ with 3 visible assets of 4, search/type/state fields, tokens for those same items, images, costs and DEMO prices, with actions ‘View tab’, ‘Edit’ and ‘Disable’. The user reported that the tested buttons responded correctly.
 
-**Aislamiento observable:** ninguna ficha ni combinación de existencias de TEST Empresa A o TEST Empresa B aparece mezclada con el catálogo/inventario DEMO mostrado. Las verificaciones previas en áreas REAL también excluyeron los registros DEMO. Estas capturas no prueban por sí solas todos los recorridos DEMO (ventas, gastos, otras pantallas) ni autorizan afirmar una batería e2e completa; el resultado se circunscribe a catálogo, inventario, navegación y acciones reportadas.
+**Observable isolation:** No TEST Company A or TEST Company B records or combinations of stocks are mixed with the DEMO catalogue/inventory shown. Previous verifications in REAL areas also excluded DEMO records. These catches do not alone prove all DEMO routes (sales, expenses, other screens) nor authorize a full e2e battery to be affirmed; the result is limited to catalog, inventory, navigation and reported actions.
 
-**Resultado:** T07-14 aprobado para no regresión de las vistas inspeccionadas, sin mutaciones de datos reales y sin necesidad de alterar imágenes o existencias DEMO. Mantener suites y controles de regresión para los módulos adicionales en T11. Los demás criterios pendientes de la sección 13 continúan como pendientes, a revisar antes de fusionar.
+**Outcome:** T07-14 approved for non-regression of inspected views, without mutations of actual data and without needing to alter DEMO images or stocks. Maintain suites and regression controls for additional modules in T11. The remaining criteria in section 13 remain pending, to be reviewed before merging.

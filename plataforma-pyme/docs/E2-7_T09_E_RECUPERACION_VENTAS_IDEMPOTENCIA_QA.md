@@ -1,50 +1,50 @@
-# E2-7 · T09-E — Recuperación de ventas ante pérdida de respuesta HTTP
+# E2-7 · T09-E — Recovery for sales due to HTTP loss of response
 
-**Fecha:** 10/11/2026. Rama `feature/e2-7-t09-consulta-recuperacion-ventas`. PR #42, en borrador, sin merge a `main`.
+**Date:** 10/11/2026. Rama `feature/e2-7-t09-consulta-recuperacion-ventas`PR #42, draft, without meriting `main`.
 
-## 1. Objetivo y límite de alcance
+## 1. Objective and scope limit
 
-Probar en **Chromium REAL + FastAPI + PostgreSQL 16 efímero** que una venta confirmada **una sola vez** pueda recuperarse después de perder la respuesta del POST y de recargar/iniciar sesión, sin contabilizar dos pagos declarados, dos ventas o dos salidas de inventario.
+Probar en **Chromium REAL + FastAPI + PostgreSQL 16 ephemer** that a confirmed sale **once only** can recover after losing the POST response and reloading/starting session, without counting two declared payments, two sales or two inventory outflows.
 
-**T09 no implementa el POS REAL.** Como el formulario para crear ventas se construirá en T10, el navegador de pruebas T09-E emite el POST mediante un **harness aislado de Playwright**; la pantalla `RealSalesPage` mantiene **solo GET**. El harness conserva la misma `Idempotency-Key` UUID4 y el mismo JSON del primer intento para un replay explícito. No representa un journal duradero de ventas de producción, ni se atribuye al UI la capacidad de guardar y reintentar ventas que todavía no tiene.
+**T09 no implementa el POS REAL.** As the form to create sales will be built in T10, the test browser T09-E issues the POST using a **harness aislado de Playwright**; the screen `RealSalesPage` maintains **solo GET**. El harness conserva la misma `Idempotency-Key` UUID4 and the same JSON of the first attempt for explicit replay. It does not represent a lasting production sales journal, nor is the ability to save and retry sales that it still has not been assigned to the IU.
 
-## 2. Matriz de aceptación automatizada
+## 2. Automated acceptance matrix
 
-| Código | Precondición efímera | Acción principal | Resultado exigido |
+| Code | Ephemeral precondition | Main action | Required result |
 |---|---|---|---|
-| E1 — bien físico | Empresa nueva en DB efímera; sede SELL/STORE, producto REVENTA y stock inicial 5 UNIDAD/v1 | Playwright envía POST, `route.fetch()` permite confirmar **201**, `route.abort()` hace perder solo la respuesta, F5 y nuevo login, GET por solicitud y replay original | Una venta, un pago declarado, **un solo movimiento `VENTA_SALIDA -1`** de la venta, stock **4 UNIDAD/v2**; replay **200** con mismo comprobante y cuerpo/clave; sin POST automático |
-| E2 — servicio | Empresa nueva, artículo SERVICIO sin sede ni saldo | Misma respuesta perdida, reingreso, consulta por `request_id` y replay original | Una venta, un pago declarado, sin snapshots ni mutaciones de inventario; replay **200** |
-| E3 — rechazo preventivo | Empresa nueva, intento abortado por el harness **antes de llegar a FastAPI** | GET por solicitud da 404, F5/login, no hay POST automático, reenvío **explícito** de clave/cuerpo original | 404 **no demuestra** si un intento incierto fue confirmado o no; en este caso instrumentado se sabe que no llegó; el reenvío explícito genera un único **201** |
-| E4 — conflicto de identidad | Tras E1 y E2, enviar **misma clave** con **otro importe/cuerpo** | POST devuelto **409** | No se crean otra venta, otro pago ni movimientos adicionales |
-| E5 — frontend | Abrir `/real/empresas/{id}/ventas`, F5/login, buscar `request_id` | UI solo consulta vía GET | Comprobante REAL muestra ID y pagos **declarados**; no crea venta ni modifica stock; no hay fallback a DEMO |
+| E1 — physical well | New company in ephemeral DB; headquarters SELL/STORE, product REVENT and initial stock 5 UNIT/v1 | Playwright sends POST, `route.fetch()` allows confirmation **201**, `route.abort()` Lose only the answer, F5 and new login, GET per request and original replay | A sale, a declared payment, **one movement `VENTA_SALIDA -1`** de la venta, stock **4 UNIT/v2**; replay **200** with same voucher and body/key; without automatic POST |
+| E2 — service | New company, article SERVICE without headquarters or balance | Same response lost, re-entry, query by `request_id` y replay original | A sale, a declared payment, no snapshots or inventory mutations; replay **200** |
+| E3 — preventive rejection | New company, attempted abortion by the harness **before reaching FastAPI** | GET per request da 404, F5/login, no automatic POST, forwarding **explicit** of key/original body | 404 **does not demonstrate** whether an uncertain attempt was confirmed or not; in this case instrumented it is known that it did not arrive; explicit forwarding generates a single **201** |
+| E4 — identity conflict | After E1 and E2, send **same key** con **other amount/body** | POST devuelto **409** | No other sale, payment or additional moves created |
+| E5 — frontend | Open `/real/empresas/{id}/ventas`F5/login, search `request_id` | UI consult only via GET | REAL Checker shows ID and payments **declared**; no crea venta ni modifica stock; no hay fallback a DEMO |
 
-Las verificaciones por API leen `GET /sales`, `GET /sales/by-request/{request_id}`, `GET /inventory/balances` y `GET /inventory/movements`, exigiendo identidad e igualdad de datos antes/después del replay, no solo igualdad de un código HTTP.
+API checks read `GET /sales`, `GET /sales/by-request/{request_id}`, `GET /inventory/balances` y `GET /inventory/movements`, demanding identity and equality of data before/after replay, not just equal of an HTTP code.
 
-## 3. Protección de datos
+## 3. Data protection
 
-- **Guard obligatorio:** `PYME_DISPOSABLE_QA=1`. Configuración de Playwright REAL fija FastAPI en `127.0.0.1:18001`, frontend en `127.0.0.1:5173`. El workflow usa DB `pyme_t085_ephemeral`. **No apuntar jamás esos tests al contenedor de uso manual del usuario ni a `TEST Empresa A`.**
-- Se generan usuarios, empresas, catálogo, sede y stock inicial nuevos dentro del entorno efímero, exclusivamente para las pruebas. No se registran pagos acreditados por terceros.
-- Capturas y logs no deben almacenar Bearer. El token solo se usa en memoria del test; los artefactos CI no guardan trazas de navegador.
-- No confundir el replay POST con un nuevo cobro: es la **misma solicitud idempotente** y su salida se valida contra el ledger.
+- **Mandatory guard:** `PYME_DISPOSABLE_QA=1`. Playwright REAL set FastAPI to `127.0.0.1:18001`, frontend en `127.0.0.1:5173`. El workflow usa DB `pyme_t085_ephemeral`. **Never point those tests to the user's manual container or to `TEST Empresa A`.**
+- New users, companies, catalogs, headquarters and initial stock are generated within the ephemeral environment, exclusively for testing. No payments accredited by third parties are recorded.
+- Captures and logs should not store Bearer. Token is only used in test memory; IC artifacts do not keep browser traces.
+- Do not confuse the POST replay with a new charge: it is the **same idempotent request** and its exit is validated against the ledger.
 
-## 4. Evidencia y estado
+## 4. Evidence and status
 
-**Implementación de prueba:** `plataforma-pyme/frontend/e2e/real/sales-recovery.spec.ts`.
+**Test implementation:** `plataforma-pyme/frontend/e2e/real/sales-recovery.spec.ts`.
 
-**CI T09-E APROBADA:** workflow full-stack #42910407673, commit ejecutable `38b980edbcccf1e3b73537571bdaf1b5b4afea8c`, estado final **SUCCESS**. Evidencia directa del log del job `inventory-real`:
+**CI T09-E ADOPTED:** workflow full-stack #42910407673, commit ejecutable `38b980edbcccf1e3b73537571bdaf1b5b4afea8c`, final state **SUCCESS**. Direct evidence of job log `inventory-real`:
 
-- Backend con PostgreSQL temporal: **886 aprobadas**, 2 warnings no bloqueantes.
-- Frontend Node: **272 aprobadas**, 0 fallidas; `npm run build` y Oxlint sin errores ni advertencias.
-- Playwright REAL: **10/10 aprobadas**: 4 T08 inventario, 3 T09-D lectura, **3 T09-E** (venta física, venta de servicio y POST abortado antes del servidor).
-- Playwright DEMO: **6/6 aprobadas**.
-- Los casos T09-E se ejecutaron con `PYME_DISPOSABLE_QA=1` sobre `pyme_t085_ephemeral`. Dos casos verificaron `201` confirmado pero oculto al navegador → GET autorizado tras F5/login → replay `200`, y `409` por otra carga con clave existente. El caso de aborto antes de alcanzar FastAPI verificó `404` y reintento explícito con `201`. Se compararon antes/después saldos, comprobantes y movimientos cuando había bienes físicos.
-- Backend Python 3.12/3.14 y Docker: **SUCCESS**, ambos intérpretes y liveness. Segunda ejecución integral #42910583172, iniciada tras la documentación original de T09-E, también **SUCCESS** con el mismo código.
+- Backend con PostgreSQL temporal: **886 approved**, 2 warnings no bloqueantes.
+- Frontend Node: **272 approved**, 0 failed; `npm run build` and Oxlint without errors or warnings.
+- Playwright REAL: **10/10 approved**: 4 T08 inventory, 3 T09-D reading, **3 T09-E** (physical sales, service sales and aborted POST before server).
+- Playwright DEMO: **6/6 approved**.
+- The T09-E cases were executed with `PYME_DISPOSABLE_QA=1` on `pyme_t085_ephemeral`Two cases verified `201` confirmed but hidden from browser → Get authorized after F5/login → replay `200`, y `409` by another load with existing key. The abortion case before reaching FastAPI verified `404` and explicitly retrying to `201`. Balances, vouchers and movements were compared before/after when physical assets were present.
+- Backend Python 3.12/3.14 y Docker: **SUCCESS**, both interpreters and livingness. Second full execution #42910583172, started after the original T09-E documentation, also **SUCCESS** with the same code.
 
-**Dictamen T09-E:** **APROBADO en CI** para simulación de navegador mediante harness, no implementación POS real. La aceptación manual local de ventas escritas no es necesaria ni aconsejable sobre los datos existentes.
+**Opinion T09-E:** **Approved in CI** for browser simulation using Harness, no actual POS deployment. Local manual acceptance of written sales is not necessary or advisable on existing data.
 
-**Pruebas manuales locales de T09-E:** **no necesarias** para E1–E4; implicarían escribir ventas en una base existente, contrario al alcance acordado. La pantalla T09-D de estado vacío ya fue aceptada manualmente. Si se exige visualizar comprobante con datos, se puede usar una base TEST aislada totalmente nueva y consentida en T09-F, sin fabricar evidencia sobre `TEST Empresa A`.
+**Local manual testing of T09-E:** **not necessary** for E1–E4; would involve writing sales on an existing database, contrary to the agreed range. The empty status T09-D screen was already accepted manually. If you require viewing proof with data, a completely new and consented TEST base can be used in T09-F, without making evidence about `TEST Empresa A`.
 
-## 5. Trabajo explícitamente posterior
+## 5. Explicitly subsequent work
 
-- **T10 / POS REAL:** introducir comando de venta en React con **journal durable scoped por empresa+actor**, confirmación humana y recuperación de intento incierto sin POST automático. La recuperación por GET de T09 es una dependencia, no una sustitución del journal.
-- **T09-F:** auditoría integral, verificación de que T09-B/C/D/E no introdujeron regresiones, revisión de la documentación y pruebas manuales no mutantes pendientes; PR en borrador hasta autorización de merge.
+- **T10 / POS REAL:** enter sales command in React with **durable daily scooter by company+actor**, human confirmation and recovery from uncertain attempt without automatic POST.Get recovery of T09 is a dependency, not a replacement for the journal.
+- **T09-F:** comprehensive audit, verification that T09-B/C/D/E did not introduce regressions, revision of documentation and pending manual non-mutant tests; PR in draft until merge authorization.

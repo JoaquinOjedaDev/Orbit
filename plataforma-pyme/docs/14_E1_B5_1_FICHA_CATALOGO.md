@@ -1,30 +1,30 @@
-# E1-B5.1 — Ficha de catálogo ampliada y observaciones internas
+# E1-B5.1 — Extended catalogue and internal observations
 
-**Estado:** código publicado en `main`. Build, lint, tests y QA visual en el equipo pendientes.
-**Referencia visual:** `catalogo_modulo2(2).html` v8 y capturas del usuario del 06/11/2026. **Sin** incorporar datos preestablecidos del prototipo anterior.
+**Status:** code published in `main`. Build, Lint, Tests and Visual QA on the pending team.
+**Visual reference:** `catalogo_modulo2(2).html` v8 and user catches of 06/11/2026. **Sin** incorporate pre-established data from the previous prototype.
 
-## Cambios realizados
+## Changes made
 
-1. El botón **Ver ficha** abre una vista modal nativa HTML `dialog`, compatible con Escape, cerrar y clic fuera del contenido. No obliga a salir de la sección ni altera el menú principal de la plataforma.
-2. La ficha muestra encabezado, categoría, tipo, estado, SKU, precio/costo y unidad de control; también muestra descripción comercial y fecha de alta/última modificación guardadas en DEMO.
-3. Nuevo campo **Observaciones internas** independiente de **Descripción comercial**. No aparece en la tarjeta resumida ni en los resultados del buscador, sólo en la ficha y en su edición. Se limita a 600 caracteres.
-4. Las fichas que existían antes de E1-B5.1 conservan sus datos; al cargarlas se normaliza observaciones como texto vacío. No se cambió la clave del almacenamiento local, la versión, los IDs, ni los demás módulos.
-5. La ficha explica qué se integrará después: fotos, componentes/guías y proveedores; stock y vencimientos **no aparecen como cifras DEMO inventadas**.
-6. Un servicio sigue sin existencias físicas. No se crearon ventas, compras, recetas, datos de proveedores ni permisos funcionales.
-7. La función de observaciones es **organizativa, no confidencial**: el prototipo usa almacenamiento local del navegador sin seguridad ni autorización de servidor. Cuando haya backend se requerirán permisos reales para leer/editar notas internas.
+1. The button **Ver ficha** opens a native HTML modal view `dialog`, compatible with Escape, close and click out of the content. Do not force to exit section or alter main menu of platform.
+2. The tab shows header, category, type, status, SKU, price/cost and control unit; it also displays commercial description and high/last modification date saved in DEMO.
+3. New field **Internal comments** independent of **Commercial description**. It does not appear on the summary card or in search results, only on the tab and in its edition. It is limited to 600 characters.
+4. The tiles that existed before E1-B5.1 retain their data; when they are loaded, observations are normalized as empty text. The key to local storage, version, IDs, or other modules was not changed.
+5. The tab explains what will be integrated after: photos, components/guides and suppliers; stock and maturities **do not appear as DEMO figures invented**.
+6. A service still has no physical stock. No sales, purchases, recipes, vendor data or functional permits were created.
+7. The function of observations is **organizativa, no confidencial**: The prototype uses local browser storage without security or server authorization. When backend is in place, real permissions will be required to read/edit internal notes.
 
-## Archivos
+## Files
 
-- `frontend/src/data/demo/catalogPolicy.ts`: campo `observations` en `CatalogInput`, límite y fallback para fichas antiguas.
-- `frontend/src/data/demo/demoStore.ts`: valida registros existentes con o sin observaciones.
-- `frontend/src/features/catalog/CatalogPage.tsx`: edición del campo y apertura de ficha.
-- `frontend/src/features/catalog/CatalogDetailDialog.tsx`: componente de vista modal, independiente del catálogo.
-- `frontend/src/App.css`: estilos responsive del modal.
-- `frontend/tests/catalog-policy.test.mjs`: casos nuevos de separación y migración.
+- `frontend/src/data/demo/catalogPolicy.ts`: field `observations` en `CatalogInput`, limit and failback for old chips.
+- `frontend/src/data/demo/demoStore.ts`: validates existing records with or without observations.
+- `frontend/src/features/catalog/CatalogPage.tsx`: field edition and tab opening.
+- `frontend/src/features/catalog/CatalogDetailDialog.tsx`: modal view component, independent of the catalogue.
+- `frontend/src/App.css`: responsive styles of the modal.
+- `frontend/tests/catalog-policy.test.mjs`: new cases of separation and migration.
 
-## Verificación local
+## Local verification
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -34,21 +34,21 @@ npm.cmd run test:catalog
 npm.cmd run dev
 ~~~
 
-Pruebas de interfaz:
+Interface testing:
 
-| Caso | Acción | Esperado |
+| Case | Action | Expected |
 |---|---|---|
-| CAT-F01 | Abrir ficha de Peluquería/Servicio existente | Datos anteriores; observaciones vacías, sin cambios de precio |
-| CAT-F02 | Editar ficha y completar observaciones | Guardar; se muestran sólo en ficha ampliada |
-| CAT-F03 | Cambiar observaciones y descripción por separado | No se reemplazan mutuamente |
-| CAT-F04 | Abrir ficha, presionar Escape | Se cierra el modal, vuelve al catálogo |
-| CAT-F05 | Abrir ficha, hacer clic fuera | Se cierra sin descartar ficha |
-| CAT-F06 | Abrir ficha, pulsar Editar ficha | Se cierra y aparece el formulario de la misma empresa |
-| CAT-F07 | Cambiar empresa y volver | No arrastra ni mezcla la ficha y su observación |
-| CAT-F08 | Recargar F5 | Datos del catálogo antiguo y observaciones nuevas persisten |
-| CAT-F09 | Ver servicio en modal | No presenta stock ficticio |
-| CAT-F10 | Pantalla móvil | Modal queda dentro del viewport y permite scroll |
+| CAT-F01 | Open existing Hairdressing tab/Service | Previous data; empty observations, no price changes |
+| CAT-F02 | Edit tab and complete comments | Save; shown only in expanded tab |
+| CAT-F03 | Change comments and description separately | They don't replace each other. |
+| CAT-F04 | Open tab, press Escape | The modal is closed, back to the catalogue |
+| CAT-F05 | Open tab, click out | Closes without discarding tab |
+| CAT-F06 | Open tab, press Edit tab | The form of the same company is closed and appears |
+| CAT-F07 | Change company and go back | Do not drag or mix the tab and its observation |
+| CAT-F08 | Reload F5 | Old catalogue data and new observations persist |
+| CAT-F09 | View service in modal | No fictitious stock |
+| CAT-F10 | Mobile display | Modal queda dentro del viewport y permite scroll |
 
 ## Postergado
 
-Fotos 0..3 con principal, almacenamiento seguro de imágenes, código de barras, recetas/componentes, guías, proveedores, inventario y auditoría verificada. Son conceptos valiosos del HTML v8 pero se harán después de integrar entidades y operaciones, evitando URLs falsas o métricas de stock inventadas.
+Photos 0.3 with main, secure image storage, barcode, recipes/components, guides, suppliers, inventory and verified audit. These are valuable concepts of HTML v8 but will be done after integrating entities and operations, avoiding fake or invented stock metric URLs.

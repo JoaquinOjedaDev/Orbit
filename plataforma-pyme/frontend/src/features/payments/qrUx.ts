@@ -9,44 +9,44 @@ export type QrStatusPresentation = {
 }
 const LABELS: Record<QrStatus, QrStatusPresentation> = {
   ESPERANDO_PAGO: {
-    title: 'Pendiente de simulación', tone: 'pending',
-    description: 'El código de prueba está generado, pero todavía no se registró ninguna aprobación.',
-    nextStep: 'Simulá el resultado en el laboratorio autorizado o cancelá este intento.',
+    title: 'Pending simulation', tone: 'pending',
+    description: 'The test code is generated, but no approvals have been registered yet.',
+    nextStep: 'Simulate the result in the authorized laboratory or cancel this attempt.',
   },
   APROBADA_DEMO: {
-    title: 'Aprobado en laboratorio', tone: 'pending',
-    description: 'El laboratorio indicó una aprobación ficticia. Todavía no hay venta ni débito de inventario.',
-    nextStep: 'Si trabajás en una base QA descartable, registrá la venta de prueba.',
+    title: 'Approved in laboratory', tone: 'pending',
+    description: 'The lab indicated a fictitious approval. There is still no sale or debit of inventory.',
+    nextStep: 'If you work on a disposable QA base, you will register the trial sale.',
   },
   FINALIZADA: {
-    title: 'Venta QA confirmada', tone: 'success',
-    description: 'La venta interna fue confirmada junto con su comprobante y los movimientos de stock que correspondan.',
-    nextStep: 'Consultá el comprobante. Esta operación no acredita dinero de Mercado Pago.',
+    title: 'QA sale confirmed', tone: 'success',
+    description: 'The internal sale was confirmed together with their voucher and the stock movements that correspond.',
+    nextStep: 'Check the voucher. This transaction does not credit payment market money.',
   },
   REQUIERE_REVISION: {
-    title: 'Requiere revisión', tone: 'warning',
-    description: 'La aprobación ficticia no pudo convertirse en una venta interna. No se descontó stock parcialmente.',
-    nextStep: 'Revisá catálogo, sede y disponibilidad; no vuelvas a generar una venta desde este mismo QR.',
+    title: 'Review required', tone: 'warning',
+    description: 'The fictitious approval could not become an internal sale. No stock was deducted.',
+    nextStep: 'Check catalogue, location and availability; do not re-generate a sale from this QR.',
   },
   INDETERMINADA: {
     title: 'Resultado incierto', tone: 'warning',
-    description: 'El laboratorio no dispone todavía de un resultado definitivo.',
-    nextStep: 'Consultá estado y eventos antes de volver a simular.',
+    description: 'The laboratory has not yet had a definitive result.',
+    nextStep: 'Check status and events before re-simulating.',
   },
   RECHAZADA: {
-    title: 'Rechazado en laboratorio', tone: 'neutral',
-    description: 'La simulación terminó rechazada. No se creó una venta.',
-    nextStep: 'Para otra operación creá un nuevo QR desde el POS.',
+    title: 'Rejected in laboratory', tone: 'neutral',
+    description: 'The simulation ended up being rejected.',
+    nextStep: 'For another operation, create a new QR from the POS.',
   },
   CANCELADA: {
     title: 'QR cancelado', tone: 'neutral',
-    description: 'El intento fue cancelado. No se creó una venta.',
-    nextStep: 'Para otra operación creá un nuevo QR desde el POS.',
+    description: 'The attempt was cancelled.',
+    nextStep: 'For another operation, create a new QR from the POS.',
   },
   EXPIRADA: {
     title: 'QR vencido', tone: 'neutral',
-    description: 'El plazo para este QR DEMO terminó sin una aprobación válida.',
-    nextStep: 'Para otra operación creá un nuevo QR desde el POS.',
+    description: 'The deadline for this DEMO QR ended without a valid approval.',
+    nextStep: 'For another operation, create a new QR from the POS.',
   },
 }
 export function qrStatusPresentation(status: QrStatus): QrStatusPresentation {

@@ -1,43 +1,43 @@
-# E1-B8 — Inventario y movimientos por ubicación (DEMO)
+# E1-B8 — Inventory and locational movements (DEMO)
 
-**Estado:** implementación integrada en GitHub `main`. **Build, lint, pruebas automatizadas y QA visual local pendientes**.
-**Fuentes:** E0-A Z050 (inventario/stock integrado de M2), Z072 (conteos), Plan de Integración v4, E1-B7 Compras, ADR-004 propuesto y requisitos TP3. Se conserva el shell React existente; no se incorporan HTML ni scripts globales heredados.
+**Status:** integrated implementation in GitHub `main`. **Build, Lint, Automated Testing and Local Visual QA Pending**.
+**Sources:** E0-A Z050 (Inventory/Integrated stock of M2), Z072 (Counties), Integration Plan v4, E1-B7 Purchases, Proposed ADR-004 and TP3 requirements. Existing shell React is retained; legacy HTML or global scripts are not incorporated.
 
-## Alcance funcional entregado
+## Functional scope delivered
 
-- **Inventario:** existencias por empresa, artículo físico del Catálogo y ubicación. Sin stock ficticio precargado. Los servicios no tienen existencias.
-- **Movimientos:** ruta `/b/:businessId/movimientos` con el mismo componente y ledger que Inventario; abre directamente el historial de recepciones, traslados y ajustes. **Vista mejorada:** cada traslado se muestra en **una única fila** con origen → destino y cantidad transferida. Las dos piernas firmadas permanecen intactas en el ledger.
-- **Recepción de Compras:** las entradas previamente confirmadas en E1-B7 aparecen automáticamente, incluso las registradas antes de este incremento. Una compra todavía pendiente NO modifica existencias.
-- **Traslado:** un comando valida dos ubicaciones distintas, activas y habilitadas para almacenar; descuenta del origen y suma exactamente la misma cantidad al destino en **una sola operación**. Rechaza faltantes y no genera stock negativo.
-- **Conteo físico:** registra la cantidad efectivamente observada en una ubicación. La diferencia contra el saldo previo genera un movimiento firmado con motivo obligatorio; el conteo puede ser **cero**. No se acepta ajuste de diferencia cero ni cantidades negativas.
-- **Trazabilidad:** cada movimiento guarda fecha/hora, tipo, empresa, artículo, unidad, ubicación y motivo; los traslados comparten `operationId` y generan dos movimientos correlacionados. El historial agrupa sólo pares coherentes del mismo artículo, empresa y cantidad. Si falta una pierna o los datos no concuerdan, muestra los registros individuales para no ocultar evidencia. Los eventos no se editan ni eliminan.
-- **Filtros:** nombre/SKU/categoría y ubicación para existencias; artículo/referencia/motivo y tipo/ubicación para movimientos. Las vistas limitan registros renderizados para evitar saturar pantalla.
-- **Indicadores**: cantidad de artículos con stock, combinaciones artículo-ubicación con stock, renglones recibidos y cantidad de **operaciones visibles** (un traslado cuenta una vez). **No se suman cantidades de unidades heterogéneas**.
+- **Inventory:** inventory by company, physical item of the Catalogue and location. No fictitious stock preloaded. Services do not have stocks.
+- **Movements:** path `/b/:businessId/movimientos` with the same component and leader as Inventory; directly opens receptions, transfers and settings history. **Improved view:** each transfer is shown in **a single row** with origin → destination and amount transferred. The two signed legs remain intact in the ledger.
+- **Purchase Reception:** tickets previously confirmed in E1-B7 appear automatically, even those registered before this increase. A purchase still pending does NOT change stocks.
+- **Transfer:** a command validates two different locations, active and enabled to store; it discounts the origin and adds exactly the same amount to the destination in **one operation**. Reject missing and does not generate negative stock.
+- **Physical count:** records the amount actually observed in a location. The difference against the previous balance generates a move signed with mandatory reason; the count can be **zero**Zero difference adjustment and negative amounts are not accepted.
+- **Traceability:** each move saves date/time, type, company, item, unit, location and motive; transfers share `operationId` The history groups only consistent pairs of the same article, company and quantity. If a leg is missing or data does not match, it shows individual records to avoid concealing evidence. Events are not edited or deleted.
+- **Filters:** name/SKU/category and location for stocks; article/reference/motive and type/location for movements. Views limit rendering records to avoid saturating screen.
+- **Indicators**: quantity of items with stock, item-location combinations with stock, lines received and quantity of **visible operations** (a transfer counts once). **No amounts of heterogeneous units are added**.
 
 ## Reglas del ledger
 
-La fuente de verdad es `PurchaseReceipt.movements` (de Compras) junto con `inventoryOperations` (traslados y conteos). **No hay tabla de stock mutable paralela**. `listDemoInventoryMovements(snapshot, businessId)` produce la proyección; `stockBalances` agrupa por par `[locationId, catalogItemId]`. `inventoryBalanceMilli` consulta el saldo sin recalcular por otro origen.
+The source of truth is `PurchaseReceipt.movements` (purchase) along with `inventoryOperations` (transfers and counts). **No parallel stock table**. `listDemoInventoryMovements(snapshot, businessId)` produces projection; `stockBalances` group by pair `[locationId, catalogItemId]`. `inventoryBalanceMilli` check the balance without recalculating from another source.
 
-- Todas las cantidades se expresan como enteros en **milésimas de la unidad del Catálogo**; para Unidad, Caja y Paquete se exigen múltiplos exactos de 1000. Kilogramo, Gramo, Litro y Mililitro admiten tres decimales. No hay equivalencias automáticas entre cajas, paquetes, gramos, kilogramos o unidades.
-- No se opera sobre servicios ni artículos inactivos. Los artículos inactivos con saldo histórico pueden seguir mostrándose para consulta.
-- No se cambia la unidad de control de un artículo asociado a una compra o movimiento histórico, ni se transforma un bien histórico en servicio.
-- Una ubicación no puede perder `canStore=true` mientras conserve saldo positivo; pausar una ubicación impide nuevos traslados/conteos hasta reactivarla, pero no elimina existencias históricas.
-- Una operación posee un `requestId` estable durante su formulario. Repetir ese mismo ID devuelve la operación previa y no aplica el movimiento de nuevo. El frontend presenta una nueva solicitud sólo al iniciar un formulario nuevo.
-- Al rehidratar datos locales antiguos, `inventoryOperations` es opcional. Las operaciones restauradas se validan contra empresa, Catálogo, ubicaciones y saldos **históricos al momento del evento**, evitando que una recepción posterior invalide un conteo anterior.
-- `load()` conserva `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers`, `catalogItems`, `suppliers`, `purchases` y sus recepciones. Misma clave/version local: `asistente-pyme.e1a2.demo.v1`, versión 1.
-- Estas validaciones son **para la UX local**, no autorizaciones reales. localStorage no asegura transacciones distribuidas, sincronización entre equipos, seguridad, permisos o protección contra cambios manuales. El servidor futuro deberá usar transacciones, bloqueo/versionado y claves de idempotencia.
+- All quantities are expressed as integers in **thousandths of the Catalog unit**; for Unit, Box and Package, exact multiples of 1000 are required. Kilogram, Gram, Liter and Mililith support three decimal places. There are no automatic equivalences between boxes, packages, grams, kilograms or units.
+- No business on services or inactive items. Inactive items with historical balance may continue to be shown for consultation.
+- The control unit of an item associated with a historical purchase or movement is not changed, nor does it transform a historic good into service.
+- A location can't lose `canStore=true` while maintaining positive balance; pauseing a location prevents new transfers/counts until reactivated, but does not eliminate historical stocks.
+- An operation has a `requestId` Stable during your form. Repeating the same ID returns the previous operation and does not apply the move again. The frontend files a new request only when starting a new form.
+- When rehydrating ancient local data, `inventoryOperations` is optional. Restored operations are validated against company, catalog, locations and balances **historical at the time of the event**preventing a subsequent reception from invalidating an earlier count.
+- `load()` preserve `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers`, `catalogItems`, `suppliers`, `purchases` and its receptions. Same key/local version: `asistente-pyme.e1a2.demo.v1`version 1.
+- These validations are **para la UX local**, not real authorizations. localStorage does not ensure distributed transactions, synchronization between computers, security, permissions or protection against manual changes. The future server must use transactions, blocking/versioning and idempotency keys.
 
-## Archivos
+## Files
 
-- `frontend/src/data/demo/inventoryPolicy.ts`: tipos, proyección por claves, validación de cantidad/motivo, ajuste y pares de traslado.
-- `frontend/src/data/demo/demoStore.ts`: proyección de compras y operaciones; comandos `transferInventory`, `countInventory`; carga compatible e invariantes cruzadas.
-- `frontend/src/features/inventory/InventoryActionForm.tsx`: traslado y conteo con vista previa de saldo y variación.
-- `frontend/src/features/inventory/InventoryPage.tsx`: indicadores, existencias, filtros e historial.
-- `frontend/src/App.tsx` y `frontend/src/features/dashboard/Dashboards.tsx`: rutas y accesos de Inicio.
-- `frontend/src/App.css`: estilos de escritorio y móvil.
-- `frontend/tests/inventory-policy.test.mjs`: pruebas de ledger y reglas exactas.
+- `frontend/src/data/demo/inventoryPolicy.ts`: types, key projection, quantity/motive validation, adjustment and transfer pairs.
+- `frontend/src/data/demo/demoStore.ts`: acquisition and operations projection; commands `transferInventory`, `countInventory`; compatible and invariant cross load.
+- `frontend/src/features/inventory/InventoryActionForm.tsx`: transfer and count with preview of balance and variation.
+- `frontend/src/features/inventory/InventoryPage.tsx`: indicators, stocks, filters and history.
+- `frontend/src/App.tsx` y `frontend/src/features/dashboard/Dashboards.tsx`: routes and accesses of Home.
+- `frontend/src/App.css`: desktop and mobile styles.
+- `frontend/tests/inventory-policy.test.mjs`: ledger tests and exact rules.
 
-## Comandos desde `plataforma-pyme/frontend`
+## Commands from `plataforma-pyme/frontend`
 
 ~~~powershell
 git pull --ff-only origin main
@@ -52,37 +52,37 @@ npm.cmd run test:team
 npm.cmd run dev
 ~~~
 
-Si Vite ya está abierto, omitir `npm.cmd run dev`.
+If Vite is already open, skip `npm.cmd run dev`.
 
-## Matriz de validación manual
+## Manual validation matrix
 
-| Caso | Acción | Esperado |
+| Case | Action | Expected |
 |---|---|---|
-| INV-01 | Abrir Inventario luego de confirmar una recepción de Compra E1-B7 | El bien recibido aparece en la ubicación de recepción; no hay que cargarlo de nuevo |
-| INV-02 | Consultar otra empresa | No aparecen movimientos ni saldos de la empresa anterior |
-| INV-03 | Elegir una ubicación y activar «Incluir saldos en cero» | Se ven artículos físicos sin existencia, expresados en su unidad |
-| INV-04 | Trasladar 2 unidades del depósito al local | Origen −2, destino +2, total combinado constante, dos movimientos correlacionados internamente y **una sola fila** en el historial |
-| INV-05 | Intentar trasladar más stock del disponible | Error «Stock insuficiente», sin evento ni saldo negativo |
-| INV-06 | Intentar trasladar a la misma ubicación o a una pausada | Rechazo |
-| INV-07 | Registrar conteo real de 7 unidades donde había 9 | Se registra ajuste −2 y queda saldo 7 |
-| INV-08 | Registrar conteo cero | Se registra la salida del remanente hasta saldo cero |
-| INV-09 | Registrar conteo igual al saldo actual | Error: no hay ajuste que registrar |
-| INV-10 | Registrar 0,5 cajas o paquetes | Rechazo; no hay conversiones implícitas |
-| INV-11 | Registrar 0,500 kg | Aceptado en unidad kilogramo, sin convertir a gramos |
-| INV-12 | Crear un servicio en Catálogo | No aparece entre artículos físicos para traslado/conteo |
-| INV-13 | Intentar editar la unidad de un artículo con compra/movimiento | Rechazo; ficha y datos históricos intactos |
-| INV-14 | Intentar deshabilitar «Puede almacenar» con stock positivo | Rechazo hasta trasladar o ajustar |
-| INV-15 | Hacer conteo, después recibir otra compra y recargar F5 | Se preserva el conteo anterior y se suma la nueva recepción |
-| INV-16 | Confirmar recepción de compra y volver a Inventario/Movimientos | Único evento por renglón físico; sin doble recepción |
-| INV-17 | Actualizar F5, navegar a otras secciones y volver | Persistencia y filtros correctos, sin cruces entre empresas |
-| INV-18 | Pantalla de 390px | Listado, botones y formularios legibles sin desbordamientos |
-| INV-19 | Build, lint, test:inventory y demás scripts de regresión | Sin errores ni advertencias |
-| INV-20 | Filtrar traslados por ubicación de origen o por ubicación de destino | Una fila por operación, visible con cualquiera de ambos filtros |
-| INV-21 | Filtrar el historial por tipo «Traslados entre ubicaciones» | Una fila por traslado, sin duplicación visual |
-| INV-22 | Proyección de un traslado con una pierna faltante/incoherente | El historial no la agrupa ni oculta; quedan visibles los eventos originales |
+| INV-01 | Open Inventory after confirming a Purchase E1-B7 receipt | The received item appears at the reception location; it should not be loaded again |
+| INV-02 | Consult another company | No movements or balances of the previous company |
+| INV-03 | Choose a location and activate "Include zero balances" | Physical articles without existence, expressed in their unity |
+| INV-04 | Move 2 units from the warehouse to the premises | Origin −2, destination +2, total combined constant, two internally correlated movements and **one row** in the history |
+| INV-05 | Try to move more stock than available | Insufficient Stock error, no event or negative balance |
+| INV-06 | Try moving to the same location or a paused one | Rejection |
+| INV-07 | Register real count of 7 units where there were 9 | Adjustment recorded −2 and balance left 7 |
+| INV-08 | Register count zero | The output of the remainder is recorded to zero balance |
+| INV-09 | Register count equal to current balance | Error: no setting to record |
+| INV-10 | Register 0.5 boxes or packages | Rejection; no implicit conversions |
+| INV-11 | Register 0.500 kg | Accepted in kilogram unit, not converted to grams |
+| INV-12 | Create a service in Catalogue | Not shown among physical items for transfer/counting |
+| INV-13 | Try editing the unit of an item with purchase/movement | Rejection; undisturbed history sheet and data |
+| INV-14 | Try to disable "Can store" with positive stock | Rejection until moved or adjusted |
+| INV-15 | Count, then receive another purchase and reload F5 | Preserving the previous count and adding the new reception |
+| INV-16 | Confirm purchase receipt and return to Inventory/Movements | Unique physical event; no double reception |
+| INV-17 | Update F5, browse to other sections and go back | Persistence and correct filters, without cross-border crossings |
+| INV-18 | 390px display | Unoverflowed list, buttons and readable forms |
+| INV-19 | Build, lint, test:inventory and other regression scripts | No errors or warnings |
+| INV-20 | Filter transfers by location of origin or destination | One row per operation, visible with either filter |
+| INV-21 | Filter history by type "Transfers between locations" | One row per transfer, no visual duplication |
+| INV-22 | Projection of a missing/incoherent leg transfer | History does not group it or hide it; original events are visible |
 
-## Fuera de alcance y siguiente corte
+## Out of reach and next cut
 
-Esta entrega registra solamente entradas por Compras, traslados y diferencias por conteo. No genera salidas por Ventas ni Reservas; no tiene lotes, vencimientos, ubicación destino múltiple por recepción, devoluciones, movimientos masivos, unidades equivalentes, arqueo de caja ni disponibilidad reservada. Tampoco puede garantizar concurrencia interdispositivo.
+This delivery records only entries for Purchases, transfers and differences by count. It does not generate sales or reservations; it has no lots, maturities, multiple destination location by reception, returns, massive movements, equivalent units, box arching or reserved availability. Nor can it guarantee interdispository attendance.
 
-**Próximo corte propuesto:** mejoras de inventario por conteos/lotes según prioridad, luego Ventas y Caja con salidas de stock; backend TP3 con PostgreSQL, transacciones y contratos API antes de operar datos reales.
+**Next proposed cut:** inventory improvements by count/lots according to priority, then Sales and Box with stock outflows; TP3 backend with PostgreSQL, API transactions and contracts before operating actual data.

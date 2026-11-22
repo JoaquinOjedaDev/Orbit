@@ -1,74 +1,74 @@
-# E2-5 — Acta de revisión integral de documentación y preparación de auditoría
+# E2-5 — Comprehensive review of documentation and audit preparation
 
-**Fecha:** 09/11/2026. **Versión:** v1.2, sobre borrador v1.1 de PR documental #24.  
-**Resultado interno:** **OK PARA REVISIÓN FORMAL DEL EQUIPO Y PREPARACIÓN DE AUDITORÍA EXTERNA**, con condiciones y pendientes indicados.  
-**NO significa:** auditoría independiente realizada, producción aprobada, PR fusionado, test backend nuevamente ejecutado o remediación de los riesgos identificados.  
-**Código funcional contra el que se contrastó la documentación:** `main` `748e69319d8d04900c009d5184168a264a9deeac`.  
-**Rama revisada:** `docs/e2-5-cierre-revision-critica`, PR #24 (Draft).
+**Date:** 09/11/2026. **Version:** v1.2, on draft documentary PR v1.1 #24.  
+**Internal result:** **OK FOR FORMAL REVIEW OF THE EQUIPMENT AND PREPARATION OF EXTERNAL AUDITOR**with conditions and pending indicated.  
+**It does not mean:** independent audit carried out, approved production, merged PR, backend test again executed or remediation of identified risks.  
+**Functional code against which the documentation was contrasted:** `main` `748e69319d8d04900c009d5184168a264a9deeac`.  
+**Revised branch:** `docs/e2-5-cierre-revision-critica`, PR #24 (Draft).
 
-## 1. Método y fuentes inspeccionadas
+## 1. Method and sources inspected
 
-Esta revisión editorial/técnica cotejó:
-- **Código de GitHub**: `auth/tokens.py` y `auth/session_service.py`; modelos `inventory_operation.py`, `stock_movement.py` y `stock_balance.py`; `transfer_{router,schemas,service}.py`, `adjustment_{router,schemas,service}.py`, `inventory_router.py`, `receipt_schemas.py`, autorización en `purchases/service.py` y política en `locations/permissions.py`.
-- **Datos/migración**: `20261109_0016_inventory_operations.py` y cadena Alembic; descripción de FK, CHECK, UNIQUE y concurrencia.
-- **Tests**: nombres y escenarios de `test_inventory_operation_*`, `test_transfer_api_integration.py`, `test_transfer_concurrency_integration.py`, `test_adjustment_api_integration.py`, `test_adjustment_concurrency_integration.py` y dependencias de recepciones.
-- **CI**: runs finales de merges A `42601062105`, B `42604071018`, C `42617212795`; 816/826/840 en Python3.12 y 3.14, 3/3 jobs. Las cifras son del **histórico funcional**, no de este PR.
-- **QA**: respuestas Swagger de traslado y ajustes compartidas por el desarrollador, con balance/historial por artículo; transcripciones saneadas en bitácoras B/C.
-- **Documentos**: conjunto `00..13` del cierre; especificaciones E2-5 A/B/C; guías de auditoría; requisitos/casos de uso 01–05 y ADR-004; observaciones de otra IA como insumo, no como prueba.
+This editorial/technical review compared:
+- **GitHub code**: `auth/tokens.py` y `auth/session_service.py`; models `inventory_operation.py`, `stock_movement.py` y `stock_balance.py`; `transfer_{router,schemas,service}.py`, `adjustment_{router,schemas,service}.py`, `inventory_router.py`, `receipt_schemas.py`authorisation in `purchases/service.py` and political `locations/permissions.py`.
+- **Data/migration**: `20261109_0016_inventory_operations.py` and Alembic chain; description of FK, CHECK, UNIQUE and attendance.
+- **Tests**: names and scenarios of `test_inventory_operation_*`, `test_transfer_api_integration.py`, `test_transfer_concurrency_integration.py`, `test_adjustment_api_integration.py`, `test_adjustment_concurrency_integration.py` and reception units.
+- **CI**: runs finales de merges A `42601062105`, B `42604071018`, C `42617212795`; 816/826/840 in Python3.12 and 3.14, 3/3 jobs. **functional history**Not this PR.
+- **QA**: Swagger transfer responses and developer-shared settings, with balance/history per article; transcripts in B/C log.
+- **Documents**: Set `00..13` the closure; E2-5 A/B/C specifications; audit guides; requirements/cases of use 01–05 and ADR-004; observations from another AI as input, not as evidence.
 
-**Limitación metodológica:** no se ejecutaron tests ni Swagger desde esta revisión documental; no se inspeccionó en vivo la base Windows ni se reprodujeron carreras cruzadas. No se hace una auditoría independiente del código ni se certifica una cobertura global de seguridad. La inspección de documentación fue sobre fuentes versionadas en GitHub.
+**Methodological limitation:** no tests or Swagger were performed since this documentary review; no live inspection of the Windows database was carried out, no cross-runs were played. No independent code audit is done and no global security coverage is certified. Documentation inspection was conducted on sources used in GitHub.
 
-## 2. Hallazgos documentales y correcciones ejecutadas
+## 2. Documentary findings and corrections implemented
 
-| ID | Nivel | Hallazgo concreto | Corrección documental realizada | Estado |
+| ID | Nivel | Concrete finding | Documentary correction made | Status |
 |---|---|---|---|---|
-| **DOC-E25-01** | P2 | `05_ARQUITECTURA_MODELO_Y_API.md` llamaba «JWT» al mecanismo de autenticación. El código usa **Bearer opaco de 256 bits** y sesión revocable, con digest en BD. | Reemplazado JWT y añadido el recorrido real de autenticación y revalidación. | **CORREGIDO EN PR** |
-| **DOC-E25-02** | P2 | `08_REPRODUCCION_SEGURA.md` y `10_CHECKLIST...md` remitían al `12_MANIFIESTO_SHA256.txt` del ZIP v1.0, ya no vigente en Git. | Sustituidas instrucciones por `12_MANIFIESTO_GIT_BLOBS.md`; el manifiesto se regenera al finalizar cambios documentales. | **CORREGIDO EN PR** |
-| **DOC-E25-03** | P2 | El checklist seguía indicando como no ejecutadas tareas documentales ya contrastadas (CI, SHA, Swagger, PR). | Actualizados estados solo donde hubo evidencia; revocación del token **posteriormente confirmada por Swagger 204 con el mismo Bearer**; aprobación y merge continúan **pendientes**. | **CORREGIDO EN PR** |
-| **DOC-E25-04** | P2 | No había hoja de auditoría E2-5 ni matriz de casos suficientemente específica para un compañero y su IA; riesgo de ampliar alcance sin permiso. | Añadidos `E2-5_ENTREGA_PARA_REVISION.md` y paquete `E2-5_AUDITORIA/` con fuente de verdad, 24 invariantes, controles RBAC, tests y formato del informe. | **CORREGIDO EN PR** |
-| **DOC-E25-05** | P2 | Documentos académicos acumulativos conservaban «RF-06 planificado» y en un corte histórico vinculaban CU-11 a RF-07. Un lector automático podría confundir estado histórico con estado actual. | Adenda de estado E2-5 al inicio de `entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md` con correspondencia vigente CU-11→RF-06 y aviso sobre tablas anteriores históricas. | **CORREGIDO EN PR** |
-| **DOC-E25-06** | P2 | Algunas secciones declaraban «se hará la hoja del auditor más adelante», inconsistente con el nuevo encargo. | Actualizados índice, informe, trazabilidad, riesgos y checklist para decir **preparado, no ejecutado/no aprobado**. | **CORREGIDO EN PR** |
-| **DOC-E25-07** | P2 | Deudas repetidas entre P03/P13, P07/P16 y P04; podía duplicarse implementación por una IA. | Relacionados los IDs de deuda sin borrar su historial, y definido **un criterio principal** por familia. | **CORREGIDO EN PR** |
+| **DOC-E25-01** | P2 | `05_ARQUITECTURA_MODELO_Y_API.md` called the authentication mechanism "JWT". **Bearer opaco de 256 bits** and revocable session, with digest in BD. | Replaced JWT and added the actual authentication and revalidation path. | **CORREGITED IN PR** |
+| **DOC-E25-02** | P2 | `08_REPRODUCCION_SEGURA.md` y `10_CHECKLIST...md` referred to `12_MANIFIESTO_SHA256.txt` of the ZIP v1.0, no longer in force in Git. | Replaced with instructions `12_MANIFIESTO_GIT_BLOBS.md`; the manifest is regenerated upon completion of documentary changes. | **CORREGITED IN PR** |
+| **DOC-E25-03** | P2 | The checklist continued to indicate that no documented tasks have already been performed (CI, SHA, Swagger, PR). | Updated states only where there was evidence; token revocation **later confirmed by Swagger 204 with the same Bearer**; approval and merit continue **outstanding**. | **CORREGITED IN PR** |
+| **DOC-E25-04** | P2 | There was no E2-5 audit sheet or case matrix specific enough for a partner and his AI; risk of extending scope without permission. | Added `E2-5_ENTREGA_PARA_REVISION.md` and package `E2-5_AUDITORIA/` with real source, 24 invariants, RBAC controls, tests and report format. | **CORREGITED IN PR** |
+| **DOC-E25-05** | P2 | Cumulative academic documents kept "RF-06 planned" and in a historical cut linked CU-11 to RF-07. An automatic reader could confuse historical status with current state. | Status Addendum E2-5 at the beginning of `entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md` with current correspondence CU-11→RF-06 and notice on historical previous tables. | **CORREGITED IN PR** |
+| **DOC-E25-06** | P2 | Some sections declared that the auditor's sheet would be made later, inconsistent with the new order. | Updated index, report, traceability, risks and checklist to say **prepared, not implemented/not approved**. | **CORREGITED IN PR** |
+| **DOC-E25-07** | P2 | Repeated debts between P03/P13, P07/P16 and P04; implementation could be duplicated by an AI. | Related debt IDs without deleting your history, and defined **a main criterion** per family. | **CORREGITED IN PR** |
 
-## 3. Resultados de consistencia funcional/documental
+## 3. Functional/documentary consistency results
 
-| Criterio | Comprobación editorial | Resultado |
+| Criterion | Editorial check | Outcome |
 |---|---|---|
-| Fuente de verdad/SHAs | PR #21/#22/#23 fusionados; SHA de código, migración y CI coincidentes con cierre | **Conforme a evidencia GitHub** |
-| Autorización | Tokens opacos, Bearer + DB; permisos STORE y rol por sede; política y docs | **Corregida terminología; pendiente auditoría de seguridad efectiva** |
-| Contratos HTTP | 6 endpoints de inventario y recepción como dependencia; Pydantic estricto y UUID4 | **Conforme a código inspeccionado** |
-| Persistencia | Cabecera manual + ledger firmado + saldo versionado; migración aditiva | **Conforme a modelos/migración, no certifica SQL de rol privilegiado** |
-| Concurrencia | Locks de ubicación ordenados en transferencia, versión en ajuste, tests concurrentes propios | **Conforme a pruebas existentes, carrera cruzada sigue sin prueba específica** |
-| Idempotencia | 201 nuevo / 200 replay idéntico / 409 conflicto | **Conforme a servicios, tests y Swagger reportado** |
-| Stock inicial | Una vez por par, también cuando saldo previo fue agotado a 0 | **Regla deliberada, no adoptar reinicialización** |
-| QA y cifras | 6/4 artículo A y 6 versión3 artículo B, ledger 3+3 eventos | **Atribución manual reportada, no lectura propia de DB** |
-| CI/Windows | 816/826/840 por corte CI; 840 Windows en C | **Procedencia separada, no es % coverage** |
-| React/Ventas/Producción | DEMO/TO-BE y hardening pendiente | **Explícito; sin atribuir backend de ventas al E2-5** |
-| Secretos en docs | Sin contraseña, Bearer literal, clave real, correo personal ni DSN privado | **Control de contenido del PR; revocación de la sesión expuesta reportada por Swagger 204, no inspección SQL** |
+| Source of truth/SHAs | PR #21/#22/#23 merged; code SHA, migration and CI matching closure | **According to GitHub evidence** |
+| Authorisation | Opaque tokens, Bearer + DB; STORE permissions and role by headquarters; politics and docs | **Corrected terminology; pending effective security audit** |
+| HTTP contracts | 6 inventory and reception endpoints as a dependency; strict Pydatic and UUID4 | **According to code inspected** |
+| Persistence | Manual header + ledger signed + versioned balance; additive migration | **According to models/migration, it does not certify SQL of privileged role** |
+| Concurrence | Location locks sorted in transfer, version in adjustment, own concurrent tests | **According to existing tests, cross-race is still without specific test** |
+| Idempotency | 201 new / 200 identical replay / 409 conflict | **According to services, tests and Swagger reported** |
+| Initial stock | Once per pair, also when previous balance was exhausted at 0 | **Deliberate rule, not to adopt re-initiation** |
+| QA and figures | 6/4 Article A and 6 Version3 Article B, ledger 3+3 events | **Reported manual attribution, not DB own reading** |
+| CI/Windows | 816/826/840 per CI cut; 840 Windows in C | **Procedencia separada, no es % coverage** |
+| React/Sales/Production | DEMO/TO-BE y hardening pendiente | **Explicit; not attributing sales backend to E2-5** |
+| Secrets in docs | No password, Bearer literal, real key, personal mail or private DSN | **PR Content Control; Repeal of the Exposed Session Reported by Swagger 204, Not SQL Inspection** |
 
-## 4. Qué se aprueba y qué queda condicionado
+## 4. What is approved and what is conditioned
 
-**Se puede recomendar al equipo:**
-1. Aprobar la versión documental corregida para **entrega a auditoría técnica independiente**, tras revisión humana y merge controlado del PR.
-2. Facilitar al compañero el plan reproducible y la guía maestra, **sin publicar credenciales**.
-3. Mantener congeladas reglas actuales mientras se audita, y pedir a la IA revisora hallazgos con evidencia antes de cambiar código.
-4. Solicitar especial atención a permisos de SQL runtime, divergencias ledger/balance, carreras cruzadas, reintentos tras cambio de permisos y DB de tests aislada.
+**The team can be recommended:**
+1. Adopt the corrected documentary version for **independent technical audit**, after human review and controlled RP merge.
+2. Provide the companion with the reproducible plan and master guide, **without publishing credentials**.
+3. Keep current rules frozen while audited, and ask AI to review findings with evidence before changing code.
+4. Request special attention to SQL runtime permissions, ledger/balance divergences, cross-runs, retrying after change of permissions and DB isolated test.
 
-**Pendientes no bloqueantes para preparar auditoría, pero relevantes antes de producción:** inmutabilidad del ledger ante SQL directo según privilegios efectivos, políticas de mermas negativas, reversión compensatoria, reintento tras revocación, reconciliación y eventual interfaz de errores estructurados. **No están resueltos por redactar documentos.**
+**Non-blocking pending for preparing audit, but relevant before production:** immutability of the leadger to direct SQL according to effective privileges, negative reduction policies, compensatory reversal, retrying after revocation, reconciliation and possible structured error interface. **They are not resolved to write documents.**
 
-**Actualización de seguridad posterior al dictamen inicial:** la sesión cuyo token se expuso fue cerrada mediante `POST /api/v1/auth/logout` **204** (09/11/2026 15:23:37 GMT) usando el **mismo token**. Evidencia **SWAGGER-REPORTADO**, coherente con el servicio de revocación. **Cerrado ese pendiente específico**; no se certifica el estado de otras sesiones ni se reproduce el valor.
+**Security update after the initial opinion:** the session whose token was exposed was closed by `POST /api/v1/auth/logout` **204** (09/11/2026 15:23:37 GMT) using the **same token**. Evidence **SWAGGER-REPORTED**, consistent with the revocation service. **This specific slope is closed**; no other meeting status is certified or the value reproduced.
 
-**Condición de publicación:** PR #24 todavía es borrador sin merge; la hoja de auditoría requiere completar el SHA documental real **después de publicar**. Hasta entonces, no afirmar que la auditoría independiente ha comenzado ni que la documentación está en `main`.
+**Publication status:** PR #24 is still a draft without merit; the audit sheet requires completion of the actual SHA documentary **after publication**. Until then, do not claim that the independent audit has begun or that documentation is in place `main`.
 
-## 5. Definición del OK
+## 5. Definition of OK
 
-Este **OK es editorial y de preparación técnica**: el paquete es internamente útil, describe lo implementado con trazabilidad y provee una agenda de auditoría ejecutable por un revisor humano/IA. **No implica que la implementación de E2-5 haya superado una auditoría nueva**, ni autoriza alterar el backend, aplicar migraciones nuevas, revisar otros módulos en profundidad o fusionar por sí solo un PR.
+East **OK is editorial and technical preparation**: the package is internally useful, describes what has been implemented with traceability and provides an audit agenda that can be executed by a human reviewer/IA. **It does not imply that the implementation of E2-5 has passed a new audit**nor does it authorize altering the backend, applying new migrations, reviewing other modules in depth or merging an PR on its own.
 
-Para pasar de `OK documental` a `CIERRE AUDITADO` faltan, en orden: aprobar y publicar PR documental, compartir encargo con revisor, recibir informe independiente con pruebas reales, revisar/corregir únicamente defectos confirmados y decidir merge de ese PR por el equipo.
+To get past `OK documental` a `CIERRE AUDITADO` missing, in order: approve and publish PR documentary, share commission with reviewer, receive independent report with real evidence, review/correct only confirmed defects and decide to merit from that PR by the team.
 
 
-## 6. Addenda de publicación posterior al dictamen original
+## 6. Addendum to publication after the original opinion
 
-El acta precedente refleja el estado **previo al merge** del PR #24, por lo que sus menciones a «Draft», «pendiente de aprobación/merge» y «no publicado en `main`» son históricas. El responsable autorizó el cierre y la conservación de UUID de recursos QA; PR #24 fue **fusionado en `main`** con el SHA documental original `c66df2f8ddaa8179ca12e342bd3099348bc6b155` el 09/11/2026. La sesión QA expuesta fue revocada según la respuesta de Swagger `POST /api/v1/auth/logout` `204` aportada por el desarrollador, sin divulgar el token.
+The previous record reflects the status of **before the merge** #24, so your mentions to ‘Draft’, ‘to be approved/merged’ and ‘not published in `main`» are historical. The responsible authorized the closure and conservation of UUID resources QA; PR #24 was **merged into `main`** with the original SHA documentary `c66df2f8ddaa8179ca12e342bd3099348bc6b155` on 11/9/2026. The QA session was revoked according to Swagger's response `POST /api/v1/auth/logout` `204` provided by the developer, without spreading the token.
 
-La publicación NO implica una auditoría independiente ejecutada: esta seguirá su proceso formal, con su propia rama, pruebas y PR. Las referencias al SHA documental original se mantienen **estables** aunque exista un commit posterior de errata para completar referencias; el revisor debe registrar también el HEAD realmente inspeccionado.
+The publication does NOT imply an independent audit performed: it will follow its formal process, with its own branch, tests and PR. References to the original documentary SHA are maintained **stable** even if there is a subsequent errata commit to complete references, the reviewer must also record the actually inspected HEAD.

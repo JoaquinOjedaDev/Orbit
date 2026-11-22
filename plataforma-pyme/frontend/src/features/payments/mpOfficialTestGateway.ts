@@ -95,7 +95,7 @@ export function parseMpTestOrder(raw:unknown,businessId:string,sourceId?:string)
   return raw as MpTestOrder
 }
 export function createMpOfficialTestGateway(token:string,businessId:string,transport?:typeof fetch){
-  if(!token||!UUID_PATTERN.test(businessId))throw new TypeError('Token/empresa inválidos')
+  if(!token||!UUID_PATTERN.test(businessId))throw new TypeError('Token/firm invalid')
   const http=createApiClient({getAccessToken:()=>token,fetchImpl:transport})
   const root='/businesses/'+businessId+'/mercadopago/official-test'
   return {
@@ -103,33 +103,33 @@ export function createMpOfficialTestGateway(token:string,businessId:string,trans
     sharedConnection:()=>http.request<unknown>('/businesses/'+businessId+
       '/mercadopago/qa-shared/connection').then(r=>parseMpSharedQaConnection(r,businessId)),
     sharedBySource:(sourceId:string)=>{
-      if(!UUID_PATTERN.test(sourceId))throw new TypeError('QR inválido')
+      if(!UUID_PATTERN.test(sourceId))throw new TypeError('Invalid QR')
       return http.request<unknown>('/businesses/'+businessId+
         '/mercadopago/qa-shared/orders/for-qr/'+sourceId)
         .then(r=>r===null?null:parseMpSharedQaOrder(r,businessId,sourceId))
     },
     sharedCreate:(sourceId:string,key:string)=>{
       if(!UUID_PATTERN.test(sourceId)||!UUID_V4_PATTERN.test(key))
-        throw new TypeError('QR o clave inválidos')
+        throw new TypeError('Invalid QR or key')
       return http.request<unknown>('/businesses/'+businessId+
         '/mercadopago/qa-shared/orders/from-qr/'+sourceId,{
         method:'POST',idempotencyKey:key,
       }).then(r=>parseMpSharedQaOrder(r,businessId,sourceId))
     },
     sharedReconcile:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>('/businesses/'+businessId+
         '/mercadopago/qa-shared/orders/'+id+'/reconcile',{method:'POST'})
         .then(r=>parseMpSharedQaOrder(r,businessId))
     },
     sharedCancel:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>('/businesses/'+businessId+
         '/mercadopago/qa-shared/orders/'+id+'/cancel',{method:'POST'})
         .then(r=>parseMpSharedQaOrder(r,businessId))
     },
     sharedSettle:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>('/businesses/'+businessId+
         '/mercadopago/qa-shared/orders/'+id+'/settle-qa',{method:'POST'})
         .then(r=>{
@@ -155,7 +155,7 @@ export function createMpOfficialTestGateway(token:string,businessId:string,trans
       return url.toString()
     },
     setPos:(externalId:string)=>{
-      if(!/^[A-Za-z0-9_-]{1,64}$/.test(externalId))throw new TypeError('Caja TEST inválida')
+      if(!/^[A-Za-z0-9_-]{1,64}$/.test(externalId))throw new TypeError('Invalid TEST box')
       return http.request<unknown>(root+'/pos',{
         method:'PUT',body:{external_pos_id:externalId},
       }).then(r=>{
@@ -165,29 +165,29 @@ export function createMpOfficialTestGateway(token:string,businessId:string,trans
       })
     },
     bySource:(sourceId:string)=>{
-      if(!UUID_PATTERN.test(sourceId))throw new TypeError('QR inválido')
+      if(!UUID_PATTERN.test(sourceId))throw new TypeError('Invalid QR')
       return http.request<unknown>(root+'/orders/for-qr/'+sourceId)
         .then(r=>r===null?null:parseMpTestOrder(r,businessId,sourceId))
     },
     create:(sourceId:string,key:string)=>{
       if(!UUID_PATTERN.test(sourceId)||!UUID_V4_PATTERN.test(key))
-        throw new TypeError('QR o clave inválidos')
+        throw new TypeError('Invalid QR or key')
       return http.request<unknown>(root+'/orders/from-qr/'+sourceId,{
         method:'POST',idempotencyKey:key,
       }).then(r=>parseMpTestOrder(r,businessId,sourceId))
     },
     order:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>(root+'/orders/'+id)
         .then(r=>parseMpTestOrder(r,businessId))
     },
     reconcile:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>(root+'/orders/'+id+'/reconcile',{method:'POST'})
         .then(r=>parseMpTestOrder(r,businessId))
     },
     settle:(id:string)=>{
-      if(!UUID_PATTERN.test(id))throw new TypeError('Orden inválida')
+      if(!UUID_PATTERN.test(id))throw new TypeError('Invalid order')
       return http.request<unknown>(root+'/orders/'+id+'/settle-qa',{method:'POST'})
         .then(r=>{
           if(!isObject(r)||!isObject(r.order)||!UUID_PATTERN.test(String(r.sale_id))||

@@ -20,32 +20,32 @@ const invalid=():never=>{throw new ApiTransportError('invalid-response',false)}
 export function transferReason(value:string):string{
   const normalized=value.trim().replace(/\s+/g,' ')
   if(normalized.length<3||normalized.length>500||[...normalized].some(x=>x.charCodeAt(0)<32))
-    throw new RangeError('El motivo debe tener entre 3 y 500 caracteres, sin controles.')
+    throw new RangeError('The motif must be between 3 and 500 characters, without controls.')
   return normalized
 }
 export function transferMilli(input:string,unit:string):number {
   const text=input.trim()
   if(!/^(?:0|[1-9]\d*)(?:[.,]\d{1,3})?$/.test(text))
-    throw new RangeError('Cantidad: mayor a cero y hasta tres decimales, sin separadores de miles.')
+    throw new RangeError('Quantity: greater than zero and up to three decimal places, without thousands separators.')
   const [whole,fract='']=text.replace(',','.').split('.')
   const n=BigInt(whole)*1000n+BigInt(fract.padEnd(3,'0'))
-  if(n<1n||n>999999999n)throw new RangeError('Cantidad fuera de rango (0,001 a 999999,999).')
+  if(n<1n||n>999999999n)throw new RangeError('Out-of-range quantity (0.001 to 999999.999).')
   const result=Number(n)
   if(['UNIDAD','PAQUETE','CAJA'].includes(unit)&&result%1000!==0)
-    throw new RangeError('Este artículo solo admite unidades enteras.')
+    throw new RangeError('This article only supports whole units.')
   return result
 }
 export function validateTransfer(cmd:TransferCommand):TransferCommand{
   if(!record(cmd)||Object.keys(cmd).sort().join('|')!==
     ['catalog_item_id','destination_location_id','quantity_milli','reason','source_location_id'].sort().join('|'))
-    throw new TypeError('El traslado tiene campos no permitidos.')
+    throw new TypeError('The transfer has no fields allowed.')
   if(!validUuid(cmd.catalog_item_id)||!validUuid(cmd.source_location_id)||!validUuid(cmd.destination_location_id))
-    throw new TypeError('Artículo o ubicación inválidos.')
-  if(cmd.source_location_id===cmd.destination_location_id)throw new RangeError('Origen y destino deben ser distintos.')
+    throw new TypeError('Invalid article or location.')
+  if(cmd.source_location_id===cmd.destination_location_id)throw new RangeError('Origin and destination must be different.')
   if(!Number.isSafeInteger(cmd.quantity_milli)||cmd.quantity_milli<1||cmd.quantity_milli>999999999)
-    throw new RangeError('Cantidad de traslado inválida.')
+    throw new RangeError('Invalid transfer amount.')
   if(typeof cmd.reason!=='string'||transferReason(cmd.reason)!==cmd.reason)
-    throw new RangeError('El motivo no está normalizado.')
+    throw new RangeError('The motive is not standardized.')
   return cmd
 }
 export function parseTransfer(value:unknown,businessId:string):TransferRecord{
@@ -76,7 +76,7 @@ export function parseTransfer(value:unknown,businessId:string):TransferRecord{
   return {...value, ...cmd,movements:[out,inc]} as TransferRecord
 }
 export function createTransferGateway(token:string,businessId:string,fetchImpl?:typeof fetch){
-  if(!token||!validUuid(businessId))throw new TypeError('Sesión o empresa inválida.')
+  if(!token||!validUuid(businessId))throw new TypeError('Invalid session or company.')
   const api=createApiClient({getAccessToken:()=>token,fetchImpl})
   const root='/businesses/'+businessId+'/inventory/transfers'
   return {
@@ -94,23 +94,23 @@ export function createTransferGateway(token:string,businessId:string,fetchImpl?:
       }
     },
     async get(transferId:string,signal?:AbortSignal):Promise<TransferRecord>{
-      if(!validUuid(transferId))throw new TypeError('ID de traslado inválido.')
+      if(!validUuid(transferId))throw new TypeError('Invalid transfer ID.')
       return parseTransfer(await api.request<unknown>(root+'/'+transferId,{signal}),businessId)
     },
   }
 }
 export function transferErrorMessage(err:unknown):string {
   if(err instanceof ApiHttpError){
-    if(err.status===401)return 'Sesión vencida. Iniciá sesión nuevamente.'
-    if(err.status===403)return 'Sin permiso STORE en una o ambas sedes. Revisá la asignación activa.'
-    if(err.status===404)return 'Artículo, sede, traslado o empresa no disponible para esta cuenta.'
-    if(err.status===409)return 'Conflicto de traslado: stock insuficiente, sede no apta, empresa suspendida o clave ya utilizada con otros datos. Consultá saldos e historial antes de intentar otra operación.'
-    if(err.status===422)return 'La API rechazó el motivo, la cantidad, los UUID o el tipo de unidad.'
-    return 'FastAPI no pudo confirmar el traslado. Consultá el historial antes de repetir.'
+    if(err.status===401)return 'Session expired.'
+    if(err.status===403)return 'Without permission STORE at one or both locations. Check the active assignment.'
+    if(err.status===404)return 'Article, headquarters, transfer or company not available for this account.'
+    if(err.status===409)return 'Transfer conflict: insufficient stock, unfit headquarters, suspended company or key already used with other data. Consult balances and history before attempting another operation.'
+    if(err.status===422)return 'The API rejected the motive, quantity, UUIDs or unit type.'
+    return 'FastAPI could not confirm the transfer. Please consult the history before repeating.'
   }
   if(err instanceof ApiTransportError){
-    if(err.outcomeUnknown)return 'Resultado incierto: el traslado podría haberse confirmado. No generes otra clave. Consultá saldos e historial y reintentá solamente la MISMA solicitud cuando corresponda.'
-    return 'No se pudo conectar con FastAPI. No se realizó ninguna nueva operación automáticamente.'
+    if(err.outcomeUnknown)return 'Uncertain result: the transfer could have been confirmed. Don’t generate another key. Consult balances and history and only retry the SAME request when applicable.'
+    return 'Could not connect to FastAPI. No new operation was performed automatically.'
   }
-  return err instanceof Error?err.message:'No se completó el traslado.'
+  return err instanceof Error?err.message:'The transfer was not completed.'
 }

@@ -16,6 +16,6 @@ class HealthResponse(BaseModel):
     service: Literal["asistente-pyme-api"]
 
 
-@router.get("/health", response_model=HealthResponse, summary="Estado del proceso")
+@router.get("/health", response_model=HealthResponse, summary="Status of the proceedings")
 def health() -> HealthResponse:
     return HealthResponse(status="ok", service="asistente-pyme-api")

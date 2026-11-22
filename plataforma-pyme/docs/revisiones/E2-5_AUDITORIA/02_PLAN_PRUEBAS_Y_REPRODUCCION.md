@@ -1,22 +1,22 @@
-# E2-5 — Protocolo reproducible de auditoría y plan de pruebas
+# E2-5 — Reproducible audit protocol and test plan
 
-**Importante:** esto es **un plan para el auditor**, NO evidencia de tests adicionales ejecutados durante el cierre. El auditor debe conservar logs saneados, SHA, ambiente y resultados efectivos de cada prueba.
+**Important:** This is it. **a plan for the auditor**, DO NOT evidence of additional tests performed during closure. The auditor must keep sound logs, SHA, environment and effective results from each test.
 
-## 1. Puerta de entrada: aislamiento y trazabilidad
+## 1. Entry door: isolation and traceability
 
-**Antes de ejecutar cualquier comando de prueba que escriba PostgreSQL:**
-1. Clonar en directorio **independiente** y verificar `git rev-parse HEAD` y `git status --short`.
-2. Identificar la URL efectiva del motor y **nombre/host/puerto de la base de datos** a la que apuntará el test runner; imprimir solo los parámetros no sensibles. Si existe duda sobre la DB, detener ejecución.
-3. Levantar PostgreSQL 16 **dedicado/efímero**, con usuario y datos sin reutilizar del servidor local/producción. No reciclar el volumen QA del desarrollador. Si no se puede verificar aislamiento, marcar pruebas DB como **NO EJECUTADAS**, no forzar `RUN_DB_INTEGRATION=1`.
-4. Revisar `backend/app/core/settings.py`, `backend/app/infrastructure/db.py` y las fixtures de `test_receipt_concurrency_integration.py`: algunas pruebas concurrentes crean y limpian tenants comprometidos, aunque con alcance limitado.
-5. Aplicar migraciones **en la base de tests exclusivamente** según la cadena existente; `alembic current` debe mostrar `e25a_inventory_ops (head)` y `alembic check` no debe detectar deriva.
-6. Para entornos compartidos, todo ensayo de INSERT/UPDATE/DELETE a nivel SQL está **prohibido**, incluso dentro de rollback “supuesto” sin verificar.
+**Before you run any test commands that PostgreSQL writes:**
+1. Cloning in Directory **independent** and verify `git rev-parse HEAD` y `git status --short`.
+2. Identify the effective URL of the engine and **name/host/port of database** to which the runner test will aim; print only non-sensitive parameters. If there is doubt about DB, stop execution.
+3. Lift PostgreSQL 16 **dedicated/ephemeral**, with user and unreuseable data from local server/production. Do not recycle the developer's QA volume. If isolation cannot be verified, mark DB tests as **NOT EXECUTED**, do not force `RUN_DB_INTEGRATION=1`.
+4. Review `backend/app/core/settings.py`, `backend/app/infrastructure/db.py` y las fixtures de `test_receipt_concurrency_integration.py`: some concurrent tests create and clean committed tenants, albeit with limited scope.
+5. Apply migrations **on the test base only** according to the existing chain; `alembic current` must show `e25a_inventory_ops (head)` y `alembic check` You must not detect drift.
+6. For shared environments, any INSERT/UPDATE/DELETE SQL-level testing is **prohibited**even inside “supposed” rollback without checking.
 
-**No ejecutar:** `docker compose down -v`, `DROP`, `TRUNCATE`, `DELETE` global, `alembic downgrade`, `stamp` ni eliminación de tablas/volúmenes. Un auditor no necesita recrear la base del desarrollador para evaluar el sistema.
+**No ejecutar:** `docker compose down -v`, `DROP`, `TRUNCATE`, `DELETE` global, `alembic downgrade`, `stamp` or elimination of tables/volumes. An auditor does not need to recreate the developer's base for evaluating the system.
 
-## 2. Verificación de código y repositorio
+## 2. Code verification and repository
 
-En clon independiente, después de aprobado y fusionado el PR documental:
+In independent clone, after approval and merging of the documentary PR:
 
 ```powershell
 git fetch origin
@@ -29,16 +29,16 @@ git rev-parse HEAD
 git diff --name-status 748e69319d8d04900c009d5184168a264a9deeac HEAD -- plataforma-pyme/backend
 ```
 
-**Esperado solo si main no tuvo evolución funcional posterior:** último comando sin diferencias. Si aparece cambio en backend, registrar **dos SHAs** y no atribuir tests de E2-5 al código posterior sin volver a probarlo. No se debe saltar a rama desconocida para “arreglar” evidencia.
+**Expected only if main had no subsequent functional evolution:** Last command without difference. If change appears in backend, register **two SHAs** and not attribute E2-5 tests to the back code without retesting it. You should not jump to unknown branch to “fix” evidence.
 
-**Lectura segura de esquema:** tras verificar conexión aislada, dentro de `plataforma-pyme/backend`:
+**Safe schematic reading:** after checking isolated connection, within `plataforma-pyme/backend`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic current
 .\.venv\Scripts\python.exe -m alembic check
 ```
 
-**Suite completa solo en DB aislada:** 
+**Complete suite in isolated DB only:** 
 
 ```powershell
 $env:RUN_DB_INTEGRATION = "1"
@@ -49,7 +49,7 @@ try {
 }
 ```
 
-Con Python disponible y DB aislada, contrastar además las suites específicas:
+With Python available and DB isolated, contrast also the specific suites:
 
 ```powershell
 $env:RUN_DB_INTEGRATION = "1"
@@ -63,87 +63,87 @@ try {
 }
 ```
 
-Registrar si se ejecutó la suite completa o solo grupos, y no sumar conteos históricos como pruebas actuales. La base de CI de GitHub sirve como control anterior: A `816`, B `826` y C `840` en Python 3.12/3.14; los nuevos resultados pueden variar legítimamente si el auditor agregó tests.
+Register if you run the complete suite or just groups, and do not add historical counts as current tests. GitHub’s IC base serves as previous control: A `816`, B `826` y C `840` in Python 3.12/3.14; new results may vary legitimately if the auditor added tests.
 
-## 3. Casos mínimos HTTP y dominio (crear **tenant y artículos nuevos**)
+## 3. HTTP Minimum Cases and Domain (create **tenant and new articles**)
 
-| Código | Escenario | Operación | Resultado que debe contrastarse |
+| Code | Scenario | Operation | Result to be contrasted |
 |---|---|---|---|
-| T01 | No autenticado / token vencido/revocado | GET/POST inventario | `401`, sin escritura |
-| T02 | Usuario sin membresía de empresa / recurso de otro tenant | GET/POST | `404`/denegación prevista, sin revelación de datos |
-| T03 | Empleado STORE en ambas sedes vs. solo una | POST traslado | éxito o `403` según asignación |
-| T04 | ENCARGADO asignado vs. TRABAJADOR | POST ajuste y STOCK_INICIAL | Encargado puede ajustar pero no inicializar; trabajador ninguno |
-| T05 | Catálogo servicio / INACTIVO / sede sin STORE / sede pausada | POST | Rechazo sin movimiento; diferenciar `404`/`409`/`403`/`422` según ruta |
-| T06 | `UNIDAD` en cantidad no múltiplo 1000; booleano; decimal; campos extra | POST traslado/ajuste | `422`; no coerción silenciosa |
-| T07 | Cantidad cero/negativa/superior al máximo, motivo vacío/normalizado | POST | `422` o código contractual, cero escrituras |
-| T08 | Compra, luego recepción única | POST compra / receive / GET | Compra sola no acredita; recepción +10; lectura de documento E2-4 intacta |
-| T09 | Traslado 4 de 10 | POST transfer, GET balances/movements | `201`, 6/4, dos movimientos -4/+4 y operación única |
-| T10 | Replay y colisión de transferencia | igual clave+payload; igual clave+otro payload/actor | `200` replay; `409` colisión, sin duplicar |
-| T11 | Origen insuficiente y destino lleno | POST transfer | `409` y rollback total; verificar ledger, cantidades y versión |
-| T12 | Par sin historia, initial 5 | POST adjustment STOCK_INICIAL | `201`, evento +5, versión 1 |
-| T13 | Replay initial y nuevo initial duplicado | POST misma clave; otra clave | `200` mismo documento; `409` duplicado |
-| T14 | Saldo 0 **con historia** | POST STOCK_INICIAL | `409`: no equiparar a par nuevo |
-| T15 | `AJUSTE_ENTRADA` 2 sobre versión 1; `AJUSTE_SALIDA` 1 sobre versión 2 | POST adjustments | `201`/`201`, 6 finales versión 3, +2/-1 |
-| T16 | Salida más grande que saldo | POST AJUSTE_SALIDA | `409`, sin pérdida ni movimiento |
-| T17 | `expected_version` obsoleta tras ajuste o traslado | POST adjustment | `409`, sin delta confirmado |
+| T01 | Not authenticated / token expired/revocated | GET/POST inventario | `401`, no writing |
+| T02 | User without company membership / other tenant resource | GET/POST | `404`/rejection expected, no disclosure of data |
+| T03 | Employee STORE in both headquarters vs. only one | POST transfer | success or `403` by allocation |
+| T04 | CHARGE AFFAIRED vs. WORKER | POST ajuste y STOCK_INICIAL | Maintainer can adjust but not initialize; worker none |
+| T05 | Service / INACTIVE Catalog / Headquarters without STORY / Paused Headquarters | POST | Rejection without movement; differentiate `404`/`409`/`403`/`422` according to route |
+| T06 | `UNIDAD` in quantity not multiple 1000; boolean; decimal; extra fields | POST transfer/adjustment | `422`; not silent coercion |
+| T07 | Zero/negative/higher, empty/normalised motif | POST | `422` or contract code, zero deeds |
+| T08 | Purchase, then one-off reception | POST compra / receive / GET | Purchase alone does not credit; reception +10; reading document E2-4 intact |
+| T09 | Transfer 4 out of 10 | POST transfer, GET balances/movements | `201`6/4, two movements -4/+4 and single operation |
+| T10 | Replay and transfer collision | igual clave+payload; igual clave+otro payload/actor | `200` replay; `409` collision, without doubling |
+| T11 | Insufficient origin and full destination | POST transfer | `409` and rollback total; verify leader, quantities and version |
+| T12 | Par sin historia, initial 5 | POST adjustment STOCK_INICIAL | `201`, event +5, version 1 |
+| T13 | Initial Replay and Duplicate New Initial | POST same key; another key | `200` the same document; `409` duplicate |
+| T14 | Balance 0 **with history** | POST STOCK_INICIAL | `409`: do not match new pair |
+| T15 | `AJUSTE_ENTRADA` 2 on version 1; `AJUSTE_SALIDA` 1 envelope version 2 | POST adjustments | `201`/`201`, 6 final version 3, +2/-1 |
+| T16 | Larger output than balance | POST ADJUST_SALIDE | `409`, no loss or movement |
+| T17 | `expected_version` obsolete after adjustment or shipment | POST adjustment | `409`, no delta confirmed |
 | T18 | Ajuste sin `StockBalance` y sin initial | POST adjustment | `409`, no se crea balance por bypass de permiso |
-| T19 | UUID4 idempotente repetido en distintos tipos o con actor diferente | POST transfer vs. adjustment | `409`, límite de tenant y tipo preservado |
-| T20 | Lecturas históricas GET tras cambios posteriores de balance | GET transfer/adjustment/{id} | Comprobante original estable y no reinterpretado como saldo actual |
+| T19 | UUID4 repeated idepotent in different types or with different actor | POST transfer vs. adjustment | `409`, limit of tenant and preserved type |
+| T20 | Historical readings GET after subsequent balance sheet changes | GET transfer/adjustment/{id} | Original check stable and uninterpreted as current balance |
 
-**Clave de idempotencia:** generar valores aleatorios UUID4 **nuevos** solo en el equipo del auditor y conservarlos temporalmente durante el caso. Para reintentar usar exactamente la clave/cuerpo inicial; para una operación distinta usar clave diferente. **Nunca subir valores reales**, ni pegarlos en chats, issues, logs o capturas.
+**Idempotency key:** generate random UUID4 values **New** only on the auditor's team and keep them temporarily during the case. To try to use exactly the initial key/body; for a different operation use different key. **Never upload real values**, ni pegarlos en chats, issues, logs o capturas.
 
-## 4. Concurrencia real — pruebas preexistentes y brechas
+## 4. Actual concurrence — pre-existing evidence and gaps
 
-**Test preexistentes que deberían pasar sin modificar su semántica:**
-- `test_two_simultaneous_transfers_compete_for_same_ten_units`: dos traslados de 7 sobre origen 10, uno `201` y otro `409`; fuente nunca negativa.
-- `test_concurrent_replay_same_key_does_not_duplicate_stock`: peticiones idénticas 201/200, una operación y dos eventos.
-- `test_opposite_direction_transfers_lock_locations_in_stable_order`: A↔B sin deadlocks ni destrucción de cantidades.
-- `test_two_competing_adjustments_do_not_spend_same_version`: una versión aceptada, la rival rechazada.
-- `test_identical_key_concurrent_replay_is_safe`: misma operación confirmada una vez.
-- `test_concurrent_initial_stock_accepts_only_one_command`: dos initial rivales, uno aceptado y otro rechazado.
+**Preexisting tests that should pass without changing your semantics:**
+- `test_two_simultaneous_transfers_compete_for_same_ten_units`: two transfers of 7 over origin 10, one `201` and another `409`; never negative source.
+- `test_concurrent_replay_same_key_does_not_duplicate_stock`: identical requests 201/200, one operation and two events.
+- `test_opposite_direction_transfers_lock_locations_in_stable_order`: A∫B without deadlocks or destruction of quantities.
+- `test_two_competing_adjustments_do_not_spend_same_version`: an accepted version, the rival rejected.
+- `test_identical_key_concurrent_replay_is_safe`: same operation confirmed once.
+- `test_concurrent_initial_stock_accepts_only_one_command`: two initial rivals, one accepted and the other rejected.
 
-**Agregar/evaluar independientemente como potencial prueba faltante, NO como fallo demostrado:**
-1. **Traslado entrante vs. AJUSTE_ENTRADA sobre el mismo balance destino:** dos clientes/sesiones/DB connections, barrera temporal y orden de commit controlado. Si traslado confirma primero, ajuste con versión leída antes debe dar `409`; si ajuste confirma primero, traslado usa saldo vigente. Comparar ledger con proyección y número de versiones.
-2. **Recepción vs. STOCK_INICIAL sobre mismo artículo+ubicación inicialmente vacío:** como máximo un primer saldo reconocido; la otra operación debe comportarse según regla y serialización definida; no deben quedar duplicados de saldo ni eventos no ligados.
-3. **Traslado saliente vs. AJUSTE_SALIDA en mismo origen:** stock limitado; nunca doble consumo, sin stock negativo, rollback de la operación rechazada.
-4. **Reintento después de progreso**: Replay 200 aunque saldo/version cambió luego; revisar qué permisos siguen siendo necesarios y si devuelve datos fuera del alcance actual.
-5. **Cambios de membresía/asignación y revocación de sesión durante operación:** verificar que locks protegen transacción y no permiten escrituras después de revocación ya efectiva. Evaluar con tests diseñados con barrera; no inferir de una prueba secuencial.
-6. **Errores SQL parciales**: simular fallo entre saldo y ledger en DB efímera, verificar rollback total, sesiones limpias e idempotency key reusable cuando nada se confirmó.
+**Add/evaluate independently as potential missing test, NOT as proven failure:**
+1. **Inbound transfer vs. ADJUST_ENTRADA on the same balance destination:** two clients/meetings/DB connections, time barrier and controlled commit order. If transfer confirms first, adjustment with read version before you must give `409`; if setting confirms first, move uses current balance. Compare leader with projection and number of versions.
+2. **Reception vs. STOCK_INICIAL on the same article+ initially empty location:** a maximum of a recognized first balance; the other transaction must behave according to defined rule and serialization; neither duplicates of balance nor unrelated events should be left.
+3. **Outgoing transfer vs. ADJUST_SALIDA at the same source:** limited stock; never double consumption, no negative stock, rollback of the rejected operation.
+4. **Retry after progress**: Replay 200 although balance/version changed later; check which permissions are still needed and if it returns data outside the current scope.
+5. **Membership changes/assignment and session revocation during operation:** verify that locks protect transaction and do not allow write after revocation already effective. Evaluate with barrier designed tests; do not infer from a sequential test.
+6. **Partial SQL Errors**: simulate failure between balance and ledger in ephemeral DB, verify full rollback, clean sessions and reusable idempotency key when nothing was confirmed.
 
-Para cada carrera registrar: versión inicial de cada saldo, barrera/scheduling, HTTP por petición, IDs sanos de operación, versión final, deltas de ledger, suma de todas las ubicaciones, número de eventos y presencia/ausencia de excepciones. **Sin timings de rendimiento inventados ni tests de escalabilidad no realizados.**
+For each race register: initial version of each balance, barrier/schedule, HTTP per request, healthy operating IDs, final version, ledger deltas, sum of all locations, number of events and presence/absence of exceptions. **No invented performance timings or unexcended scalability tests.**
 
-## 5. Integridad SQL y hardening (ambiente efímero)
+## 5. SQL Integrity and Hardening (ephemeral environment)
 
-Verificar, sin poner en riesgo QA real:
-- Restricciones FK tenant; `CHECK` tipo/dirección/valor/cantidad y semántica `NULL`; UNIQUE idempotente y por evento.
-- Intentos de insertar una operación con `kind=TRASLADO` y origen=destino; una unidad discreta fraccionaria; evento con `operation_kind` incompatible; dos lados iguales de una operación; movimiento con doble origen; actor de tenant ajeno.
-- Investigar si DDL/FK/CHECK solos dejan un camino SQL directo para vincular movimiento con **ubicación o cantidad distintas de su cabecera**. Distinguir integridad en API vs integridad ante rol SQL con DML.
-- Analizar rol SQL runtime, rol migrador, permisos efectivos, posibles `UPDATE/DELETE` de ledger y eventual trigger/privilegios. **No ejecutar UPDATE/DELETE en datos ajenos.**
-- Saturación de `quantity_milli`/`StockBalance`, límite de versión BIGINT, tratamiento de IntegrityError, SQLSTATE y ausencia de errores 500 con detalles sensibles.
+Verify, without putting at risk real QA:
+- FK tenant restrictions; `CHECK` type/direction/value/quantity and semantics `NULL`; UNIQUE idempotente y por evento.
+- Attempts to insert an operation with `kind=TRASLADO` and origin=destiny; a discrete fractional unit; event with `operation_kind` incompatible; two equal sides of an operation; movement with double origin; actor of alien tenant.
+- Investigate whether DDL/FK/CHECK alone leaves a direct SQL path to link movement with **location or quantity other than your header**. Distinguish integrity in API vs integrity against SQL role with DML.
+- Analyze SQL runtime role, migrator role, effective permissions, possible `UPDATE/DELETE` de ledger y eventual trigger/privilegios. **Do not run UPDATE/DELETE on other data.**
+- Saturation of `quantity_milli`/`StockBalance`, BIGINT version limit, IntegrityError treatment, SQLSTATE and 500 error absence with sensitive details.
 
-Si la revisión encuentra una vulnerabilidad real, adjuntar **caso mínimo reproducible sin credenciales ni datos del usuario**, y proponer migración nueva/test antes de pedir implementación.
+If the review finds a real vulnerability, attach **minimum reproducible case without credentials or user data**, and propose new/test migration before requesting implementation.
 
-## 6. Comprobaciones de arquitectura, mantenimiento y documentos
+## 6. Architectural, maintenance and document checks
 
-- Verificar que router solo traduce contratos/HTTP, servicio aplica permisos y límite transaccional, y repositorio/ORM no hacen commits ocultos; sincronismo SQLAlchemy real.
-- No introducir datos DEMO de React en un flujo del backend; el frontend permanece separado.
-- Revisar coherencia actual de `entrega-programacion-2/01...05` y UML 03B; estados históricos se anotan, no se borran para “pasar” la auditoría.
-- Verificar que pruebas parametrizadas cubren errores 401/403/404/409/422 y no ocultan fallos con `pytest.mark.skip` no declarado.
-- Examinar warnings CI (C: 4 con Python3.12, 2 con 3.14) para clasificarlos; no llamarlos fallos sin evidencia.
-- Evitar tests que dependen de orden global de filas o DB vacía; aislar datos/tenants y documentar fixtures de concurrencia.
+- Verify that router only translates contracts/HTTP, service applies permissions and transactional limit, and repository/ORM does not make hidden commit; SQLAlchemy sync real.
+- Do not enter REact DEMO data into a backend stream; the frontend remains separate.
+- Review current consistency of `entrega-programacion-2/01...05` and UML 03B; historical statements are noted, not deleted to “pass” the audit.
+- Verify that parametrized tests cover 401/403/404/409/422 errors and do not hide bugs with `pytest.mark.skip` Undeclared.
+- Examine warnings IC (C: 4 with Python3.12, 2 with 3.14) to classify them; do not call them failures without evidence.
+- Avoid tests that depend on global order of rows or empty DB; isolate data/tenants and document matching fixes.
 
-## 7. Registro obligatorio por caso (plantilla breve)
+## 7. Compulsory registration by case (short template)
 
-| Campo | Valor |
+| Field | Valor |
 |---|---|
-| Código de caso | `T01`, `INV-01`, etc. |
-| Commit funcional / documental | SHA exactos |
-| Ambiente | Python, PostgreSQL, Alembic, Docker |
-| Preparación | Tenant y recursos nuevos, sin secretos |
-| Entrada | Parámetros sanitizados y versión del saldo |
-| Esperado | Código HTTP / deltas / número de registros |
-| Observado | Resultado real y referencia a log/test |
-| Aprobado / falló / no ejecutado | Uno de los tres; nunca asumir éxito |
-| Hallazgo vinculado | `REV-E2-5-NNN` o `Ninguno` |
+| Case code | `T01`, `INV-01`, etc. |
+| Commit funcional / documental | EXACT SHA |
+| Environment | Python, PostgreSQL, Alembic, Docker |
+| Preparation | Tenant and new resources, no secrets |
+| Entry | Sanitized parameters and balance version |
+| Expected | HTTP code / deltas / number of records |
+| Observed | Actual result and log/test reference |
+| Approved/failed/not executed | One of the three; never assume success |
+| Finding Linked | `REV-E2-5-NNN` o `Ninguno` |
 
-Guardar las evidencias dentro del informe/PR o en artefactos de CI con control de acceso apropiado; nunca incluir dump de DB ni token de sesión.
+Save evidence within the report/PR or IC artifacts with appropriate access control; never include DB dump or session token.

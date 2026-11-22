@@ -1,24 +1,24 @@
 # E1-D1 — Cobro con QR visual DEMO
 
-**Estado:** E1-D1 validado manualmente por el usuario en el navegador, incluyendo QR pendiente sin venta, cancelación y bloqueo de aprobación al desactivar un artículo. La integración externa con Mercado Pago continúa fuera del MVP.
+**Status:** E1-D1 manually validated by the user in the browser, including QR pending no sale, cancellation and approval blocking when deactivating an item. External integration with Pay Market continues outside of MVP.
 
-## Alcance
+## Scope
 
-- Desde **Ventas → Nueva venta**, seleccionar exactamente **un medio Mercado Pago declarado** por el total; el botón «Generar QR DEMO» crea una intención separada, con `businessId`, importe, snapshot de ítems y descuento, cuenta receptora opcional, requestId idempotente y referencia futura a la venta.
-- El QR mostrado es **un patrón gráfico ilustrativo deliberadamente no escaneable**. No hay API de Mercado Pago, OAuth, credenciales, interoperabilidad, fondos ni pago real.
-- Estados: `PENDIENTE`, `SIMULADO_APROBADO`, `CANCELADO`. Mientras está pendiente no existe venta, saldo ingresado, registro de pago ni salida de stock. Cancelar deja historial de la intención, sin tocar Inventario ni Caja.
-- «Simular aprobación (sin cobro real)» usa el mismo gateway que las ventas ordinarias. Vuelve a validar stock, actividad de ubicación, pertenencia de la cuenta y disponibilidad del catálogo; solo entonces crea **una** venta DEMO, cuyo pago Mercado Pago sigue etiquetado *declarado, no verificado*.
-- Cada QR tiene un `saleRequestId` estable. Aprobar dos veces o reintentar la operación recupera la misma venta. Una venta QR se representa en el ledger de inventario por sus renglones físicos una sola vez.
-- Si el producto se agotó o desactivaron la cuenta mientras el QR estaba pendiente, la aprobación simulada se rechaza sin crear venta; se puede cancelar y generar otro.
-- Persistencia compatible: mismo `localStorage` y `version: 1`, con colección nueva opcional `qrIntents`. Se carga después de las ventas para reconstruir una aprobación interrumpida entre escrituras.
-- En una empresa B no se puede consultar ni mutar una intención de la empresa A. Cada negocio ve únicamente sus QR.
-- El **QR de artículo** sigue fuera de este flujo; nunca realiza ni certifica cobros.
+- From **Sales → New sale**, select exactly **a market means declared payment** by the total; the button "Generate QR DEMO" creates a separate intention, with `businessId`, amount, item snapshot and discount, optional receiver account, Idepotent requestId and future reference to the sale.
+- The QR shown is **a graphical pattern that is deliberately not scanable**. There is no Pago Market API, OAuth, credentials, interoperability, funds or real payment.
+- States: `PENDIENTE`, `SIMULADO_APROBADO`, `CANCELADO`. While pending there is no sale, balance entered, payment registration or stock outing. Cancel leaves history of intention, without touching Inventory or Box.
+- "Simulate approval (without actual charge)" uses the same gateway as ordinary sales. Revalidate stock, location activity, account membership and catalog availability; only then create **una** sale DEMO, whose payment Market Payment is still labeled *declared, unverified*.
+- Each QR has a `saleRequestId` Double approval or retrying the transaction recovers the same sale. A QR sale is represented in inventory ledger by its physical lines only once.
+- If the product was sold out or disabled while the QR was pending, simulated approval is rejected without creating a sale; it can be cancelled and generated.
+- Compatible persistence: same `localStorage` y `version: 1`, with new optional collection `qrIntents`. It is loaded after sales to reconstruct a suspended approval between scriptures.
+- In a B company, an intention of A company cannot be consulted or mutated. Each business sees only its QR.
+- El **Article QR** remains outside this flow; never makes or certifies collections.
 
-## Corrección adicional en Ventas
+## Additional correction in Sales
 
-El botón de completar saldo ahora **completa el último medio agregado**, manteniendo intactos los importes de los anteriores; valida que no falten importes previos y rechaza un saldo cero o negativo. Se ajustó la distribución de columnas de los selectores.
+The button to complete balance now **complete the last medium added**, keeping the amounts of the above intact; validates that no previous amounts are missing and rejects a zero or negative balance. The distribution of columns of selectors was adjusted.
 
-## Comandos
+## Commands
 
 ```powershell
 git pull --ff-only origin main
@@ -32,25 +32,25 @@ npm.cmd run test:inventory
 npm.cmd run dev
 ```
 
-## Casos manuales de aceptación
+## Manual cases of acceptance
 
-| ID | Secuencia | Esperado |
+| ID | Sequence | Expected |
 |---|---|---|
-| QR-01 | Venta con 1 pago Mercado Pago DEMO por total; generar QR | Estado PENDIENTE, empresa e importe exactos, patrón con «no escaneable» |
-| QR-02 | Consultar Inventario y Ventas con QR pendiente | Sin venta ni descuento de stock |
-| QR-03 | F5 y volver a Ventas | Intención recuperable con su estado |
-| QR-04 | Cancelar QR pendiente | Sin venta ni stock; segunda cancelación idempotente |
-| QR-05 | Crear otro QR; simular aprobación explícita | Exactamente una venta y una salida por línea física |
-| QR-06 | Abrir intención aprobada y volver a simular (o reintentar gateway) | No duplica venta ni stock |
-| QR-07 | Cambiar a otra empresa | No muestra ni permite modificar QR de la otra empresa |
-| QR-08 | Generar con Efectivo, 2 medios o monto incorrecto | Se rechaza indicando requisitos del QR |
-| QR-09 | Desactivar billetera o agotar stock entre intención y aprobación | Bloqueo coherente; sigue PENDIENTE sin venta |
-| QR-10 | Completar último medio tras valores en los anteriores | Calcula solo el saldo final, no modifica primer medio |
-| QR-11 | Reabrir cierre de caja anterior | Snapshot idéntico; QR no altera caja |
-| QR-12 | Probar escritorio y móvil | Campos, botones y visualización legibles |
+| QR-01 | Sale with 1 payment Market Payment DEMO in total; generate QR | PENDING State, company and exact amount, pattern with ‘non-scan’ |
+| QR-02 | Consult Inventory and Sales with QR pending | No sale or stock discount |
+| QR-03 | F5 and back to Sales | Recoverable intent with your condition |
+| QR-04 | Cancel QR pending | No sale or stock; second cancellation idempotente |
+| QR-05 | Create another QR; simulate explicit approval | Exactly one sale and one exit per physical line |
+| QR-06 | Open approved intent and re-simulate (or retry gateway) | No double sale or stock |
+| QR-07 | Switching to another company | It does not show or allow QR modification of the other company |
+| QR-08 | Generate with Cash, 2 media or incorrect amount | Refusal to indicate QR requirements |
+| QR-09 | Disable wallet or exhaust stock between intent and approval | Consistent blocking; still STILL no sale |
+| QR-10 | Complete last medium after values in previous ones | Calculates only the final balance, does not modify first medium |
+| QR-11 | Reopen Previous Box Closing | Identical snapshot; QR does not alter box |
+| QR-12 | Try Desktop and Mobile | Readable fields, buttons and display |
 
-## Fuera de alcance
+## Out of reach
 
-QR real legible por apps de pago, integración de vendedores OAuth, órdenes externas, webhooks, conciliación, reservas de stock, reembolsos y seguridad multiusuario. Eso requiere backend y diseño de seguridad posterior conforme ADR-006.
+Real QR readable by payment apps, integration of OAuth vendors, external orders, webhooks, reconciliation, stock reservations, refunds and multi-user security. That requires backend and subsequent security design according to ADR-006.
 
-**Advertencia de producto:** jamás usar este QR visual para cobrar a un cliente ni considerar `SIMULADO_APROBADO` como acreditación de dinero.
+**Product Warning:** never use this visual QR to charge a customer or consider `SIMULADO_APROBADO` as a money accreditation.

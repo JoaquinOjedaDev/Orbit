@@ -26,7 +26,7 @@ router = APIRouter(
 
 def _assignment_http_error(error: Exception) -> HTTPException:
     if isinstance(error, LocationConflict):
-        return HTTPException(409, detail="Miembro o ubicación incompatibles con la asignación")
+        return HTTPException(409, detail="Member or location incompatible with the allocation")
     return _location_http_error(error)
 
 
@@ -37,7 +37,7 @@ def _assignment_http_error(error: Exception) -> HTTPException:
         403: {"description": "Sin permiso de gestionar asignaciones"},
         404: {"description": "Empresa o ubicación no disponible"},
     },
-    summary="Listar asignaciones vigentes y revocadas de una sede propia",
+    summary="List existing and revoked assignments from a head office",
 )
 def list_location_assignments(
     business_id: UUID, location_id: UUID,
@@ -66,7 +66,7 @@ def list_location_assignments(
         409: {"description": "Empresa/ubicación/miembro no aptos para asignar"},
         422: {"description": "Estado inválido o atributos protegidos"},
     },
-    summary="Asignar, reactivar o revocar una asignación de sede sin borrar historial",
+    summary="Assign, reactivate or revoke a headquarters assignment without deleting history",
 )
 def set_location_assignment(
     business_id: UUID, location_id: UUID, membership_id: UUID,

@@ -1,8 +1,8 @@
-# E2-5 — Arquitectura, modelo, API e invariantes efectivos
+# E2-5 — Effective architecture, model, API and invariants
 
-**Ámbito:** código de `plataforma-pyme/backend/` leído en `main` `748e69319d8d04900c009d5184168a264a9deeac`. Solo se describen características respaldadas por el código, las pruebas o las respuestas manuales. Esto **no** es la arquitectura completa del producto.
+**Scope:** code `plataforma-pyme/backend/` read in `main` `748e69319d8d04900c009d5184168a264a9deeac`. Only features supported by code, tests or manual responses are described. **no** is the complete architecture of the product.
 
-## 1. Flujo y separación de responsabilidades
+## 1. Flow and separation of responsibilities
 
 ```text
 Cliente autenticado
@@ -13,102 +13,102 @@ Cliente autenticado
         └── PostgreSQL 16 (FK, UNIQUE, CHECK, row locks, commit/rollback)
 ```
 
-La autenticación usa tokens **Bearer opacos de 256 bits**, con huella SHA-256 indexada en `auth_sessions`, vigencia y revocación comprobadas contra la base. **No hay JWT**. La sesión inicial se comprueba de nuevo dentro de las operaciones de stock bajo locks de usuario/sesión/membresía.
+Authentication uses tokens **Bearer opacos de 256 bits**, with SHA-256 print indexed in `auth_sessions`, validity and revocation proved against the base. **No hay JWT**. The initial session is checked again within stock operations under user/session/membership locks.
 
-Se mantiene la distinción E2-4: **compra registrada ≠ recepción física**. El alta en catálogo tampoco genera stock. E2-5 B traslada cantidades existentes; E2-5 C registra correcciones o primer stock, todos con un movimiento auditable.
+The E2-4 distinction is maintained: **• registered purchase • physical reception**. The high in catalog also does not generate stock. E2-5 B moves existing quantities; E2-5 C records corrections or first stock, all with an auditable movement.
 
 ### Endpoints vigentes (prefijo `/api/v1`)
 
-| Método | Ruta | Origen / resultado |
+| Method | Path | Origin/Result |
 |---|---|---|
-| `GET` | `/businesses/{business_id}/inventory/balances` | Saldos por empresa; filtros `location_id`, `catalog_item_id`, paginación |
-| `GET` | `/businesses/{business_id}/inventory/movements` | Ledger de recepciones, traslados y ajustes/stock inicial; filtros y paginación |
-| `POST` | `/businesses/{business_id}/inventory/transfers` | Traslado de un artículo entre dos ubicaciones aptas; `201` nuevo / `200` replay |
-| `GET` | `/businesses/{business_id}/inventory/transfers/{transfer_id}` | Comprobante histórico y dos movimientos |
+| `GET` | `/businesses/{business_id}/inventory/balances` | Balances per company; filters `location_id`, `catalog_item_id`, pagination |
+| `GET` | `/businesses/{business_id}/inventory/movements` | Ledger of receptions, transfers and initial stock/adjustments; filters and pagination |
+| `POST` | `/businesses/{business_id}/inventory/transfers` | Transfer of an item between two suitable locations; `201` new / `200` replay |
+| `GET` | `/businesses/{business_id}/inventory/transfers/{transfer_id}` | Historical check and two movements |
 | `POST` | `/businesses/{business_id}/inventory/adjustments` | `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`; `201` / `200` replay |
-| `GET` | `/businesses/{business_id}/inventory/adjustments/{adjustment_id}` | Comprobante de operación manual y un movimiento |
-| `POST` | `/businesses/{business_id}/purchases/{purchase_id}/receive` | **Dependencia E2-4**: recepción completa en ubicación STORE; cambia stock una vez |
+| `GET` | `/businesses/{business_id}/inventory/adjustments/{adjustment_id}` | Manual operation checker and a movement |
+| `POST` | `/businesses/{business_id}/purchases/{purchase_id}/receive` | **Dependencia E2-4**: Full reception at STORE location; change stock once |
 
-También se utilizaron `POST /catalog`, `POST /purchases` y `POST /locations` para preparar datos. Todas las rutas de negocio reales requieren autenticación y pertenencia a la empresa.
+Also used `POST /catalog`, `POST /purchases` y `POST /locations` to prepare data. All actual business routes require authentication and company membership.
 
-### Contratos de request esenciales
+### Essential claims contracts
 
-**Traslado:** `catalog_item_id`, `source_location_id`, `destination_location_id`, `quantity_milli`, `reason`. No se exige `expected_version` para el traslado: el origen se descuenta mediante una **actualización SQL condicional**, y el destino se incrementa con un UPSERT.
+**Transfer:** `catalog_item_id`, `source_location_id`, `destination_location_id`, `quantity_milli`, `reason`. Not required `expected_version` for the transfer: the origin is deducted by means of a **conditional SQL update**and the destination is increased with a UPSERT.
 
-**Ajuste/stock inicial:** `kind`, `catalog_item_id`, `location_id`, `quantity_milli`, `expected_version`, `reason`. La versión es estricta y proviene de `GET /inventory/balances`; si aún no existe saldo, `STOCK_INICIAL` utiliza `0`. En ambos POST se exige cabecera de idempotencia UUID4 **cuyo valor deliberadamente no se publica**.
+**Ajuste/stock inicial:** `kind`, `catalog_item_id`, `location_id`, `quantity_milli`, `expected_version`, `reason`. The version is strict and comes from `GET /inventory/balances`; if no balance exists yet, `STOCK_INICIAL` use `0`. In both POST UUID power header4 is required **whose value is not deliberately published**.
 
-- Cantidad positiva: `1..999999999` milésimas por operación.
-- Bien físico `item_type=BIEN`, artículo `ACTIVO`, unidad válida. `UNIDAD`, `PAQUETE`, `CAJA` requieren `quantity_milli` múltiplo de 1000.
-- `reason` de 3 a 500 caracteres normalizado; el comando no acepta campos extra.
-- Saldos nunca negativos; el máximo de la proyección de `stock_balances` es `999999999999999` milésimas.
+- Positive amount: `1..999999999` Thousandths per operation.
+- Well, physically. `item_type=BIEN`Article `ACTIVO`, valid unit. `UNIDAD`, `PAQUETE`, `CAJA` require `quantity_milli` multiple of 1000.
+- `reason` 3 to 500 characters normalized; the command does not accept extra fields.
+- Never negative balances; maximum projection of `stock_balances` es `999999999999999` Thousandthies.
 
-## 2. Persistencia e integridad SQL
+## 2. Persistence and SQL integrity
 
-| Entidad / tabla | Función vigente |
+| Entity/table | Current function |
 |---|---|
-| `InventoryOperation` / `inventory_operations` | Cabecera de `TRASLADO`, `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`; cantidades, tipo, artículo, dirección, motivo, actor, fecha y solicitud idempotente por empresa |
-| `StockMovement` / `stock_movements` | Registro histórico firmado con origen explícito **recepción** o **operación manual**, sin reescribir antecedentes |
-| `StockBalance` / `stock_balances` | Proyección actual con clave compuesta empresa+ubicación+artículo, cantidad no negativa, `version` y actualización temporal |
-| `PurchaseReceipt` / `purchase_receipts` | **E2-4**, recepción vinculada a compra/líneas; no cambia su contrato por E2-5 |
-| `Location`, `LocationAssignment`, `CatalogItem`, `Membership` | Aislamiento por empresa, capacidad STORE, permisos y tipo/unidad activa |
+| `InventoryOperation` / `inventory_operations` | Header `TRASLADO`, `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`; quantities, type, article, address, reason, actor, date and application by company |
+| `StockMovement` / `stock_movements` | Historical record signed with explicit origin **reception** o **manual operation**, without rewriting background |
+| `StockBalance` / `stock_balances` | Current projection with composite key company+location+article, non-negative quantity, `version` and temporary update |
+| `PurchaseReceipt` / `purchase_receipts` | **E2-4**, receipt linked to purchase/lines; does not change your contract to E2-5 |
+| `Location`, `LocationAssignment`, `CatalogItem`, `Membership` | Insulation by company, STORE capacity, permits and active type/unit |
 
-El modelo A incorpora FK compuestas por tenant y tipo de operación, UNIQUE de solicitud por empresa y evento por operación, y CHECK que distinguen direcciones y signos. **No constituye prueba de inmutabilidad frente a un superusuario SQL**; es integridad relativa a las restricciones y a los servicios expuestos.
+The A model incorporates FK composed of tenant and type of operation, UNIQUE of application by company and event by operation, and CHECK that distinguish addresses and signs. **It does not constitute proof of immutability in the face of an SQL superuser**; is integrity relative to the restrictions and services exposed.
 
-**Migración aplicada:** `backend/alembic/versions/20261109_0016_inventory_operations.py` con `revision='e25a_inventory_ops'` y `down_revision='e24e_receipt_stock'`. Nueva tabla `inventory_operations`; columnas opcionales `inventory_operation_id`, `operation_kind` en ledger; FK/CHECK de origen ampliadas; se preservan los movimientos existentes de recepción. E2-5 B/C **sin otra migración**.
+**Applied migration:** `backend/alembic/versions/20261109_0016_inventory_operations.py` con `revision='e25a_inventory_ops'` y `down_revision='e24e_receipt_stock'`New table `inventory_operations`; optional columns `inventory_operation_id`, `operation_kind` in ledger; FK/CHECK of extended origin; existing reception movements are preserved. E2-5 B/C **no other migration**.
 
-## 3. Atomicidad y concurrencia
+## 3. Atomity and continuance
 
-### Traslado E2-5 B
+### E2-5 B transfer
 
-1. Revalidación de sesión y membresía dentro del ámbito de la operación.
-2. Búsqueda de solicitud idempotente; replay idéntico devuelve el comprobante original (`200`) sin repetir saldos; carga/actor/operación incompatibles producen conflicto.
-3. Bloqueo de **ambas ubicaciones en orden fijo de UUID**; se comprueba estado `ACTIVA`, `can_store=true`, pertenencia y permisos STORE.
-4. Bloqueo compartido del catálogo activo (`FOR SHARE`).
-5. Descuento condicional sobre origen (`quantity_milli >= solicitado`); saldo ausente/insuficiente ⇒ error, sin parciales.
-6. Crédito destino mediante UPSERT PostgreSQL; sube versión del destino o crea versión 1.
-7. Inserción de una `InventoryOperation` y **dos** `StockMovement` (`TRASLADO_SALIDA` negativo, `TRASLADO_ENTRADA` positivo), seguidos de **un commit**. Excepción ⇒ rollback.
+1. Revalidation of session and membership within the scope of the operation.
+2. Idepotent request search; identical replay returns original voucher (`200`) without repeating balances; incompatible load/actor/operation produce conflict.
+3. Blockage of **both UUID fixed order locations**; status checked `ACTIVA`, `can_store=true`membership and STORE permits.
+4. Shared catalogue block (`FOR SHARE`).
+5. Conditional discount on origin (`quantity_milli >= solicitado`); missing/insufficient balance
+6. Destination credit via UPSERT PostgreSQL; uploads destination version or creates version 1.
+7. Insertion of a `InventoryOperation` y **dos** `StockMovement` (`TRASLADO_SALIDA` negative, `TRASLADO_ENTRADA` positive), followed by **un commit**Exception -rollback.
 
 ### Ajustes E2-5 C
 
-1. Revalidación de sesión, empresa, membresía, ubicación y rol; comprobación de permiso STORE.
-2. Bloqueo de ubicación; catálogo compartido; saldo `FOR UPDATE` si existe. Se protege el par de operaciones concurrentes con la misma ubicación.
-3. **Stock inicial:** solo cuando **no existe saldo ni movimiento previo** para esa combinación artículo/ubicación y `expected_version=0`. Un saldo existente de cantidad cero **no** habilita reinicialización.
-4. **Ajustes de entrada/salida:** requieren saldo anterior y `expected_version` coincidente. La salida comprueba cantidad suficiente; la entrada comprueba límite de saldo. Ambos incrementan `version`.
-5. Una cabecera manual y **un movimiento firmado** (`STOCK_INICIAL`/`AJUSTE_ENTRADA` positivos; `AJUSTE_SALIDA` negativo) se confirman con la proyección en una sola transacción.
+1. Revalidation of session, company, membership, location and role; STORE permission check.
+2. Location blocking; shared catalogue; balance `FOR UPDATE` If it exists, the pair of concurrent operations with the same location is protected.
+3. **Initial stock:** only when **no balance or previous movement** for that combination article/location and `expected_version=0`. An existing balance of zero quantity **no** enable rebootization.
+4. **Input/output adjustments:** prior balance and `expected_version` matching. The output checks sufficient quantity; the input checks balance limit. Both increase `version`.
+5. A manual header and **a signed movement** (`STOCK_INICIAL`/`AJUSTE_ENTRADA` positive; `AJUSTE_SALIDA` negative) are confirmed by projection in a single transaction.
 
-**Control de carrera demostrado por test, no por Swagger:** dos salidas rivales con la misma versión ofrecen 201/409; replay concurrente del mismo comando 201/200; dos cargas iniciales simultáneas 201/409. Para traslados opuestos existen pruebas sin deadlock en el alcance ensayado.
+**Race control demonstrated by test, not Swagger:** two rival outputs with the same version offer 201/409; concurrent replay of the same command 201/200; two simultaneous initial loads 201/409. For opposite transfers there are tests without deadlock in the tested range.
 
-## 4. Roles y permisos
+## 4. Roles and permits
 
-- **Traslado:** rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` (sin asignación particular) o `ENCARGADO`/`TRABAJADOR` **con asignación ACTIVA en ambas ubicaciones**, siempre `ACTIVA` y `can_store=true`.
-- **Stock inicial:** exclusivamente `TITULAR_ADMINISTRATIVO` / `ADMINISTRADOR`, con ubicación apta y membresía/empresa activas.
-- **Ajustes:** titular/administrador, o `ENCARGADO` asignado a la ubicación. `TRABAJADOR` **no** está autorizado a crear/quitar stock mediante ajustes manuales.
-- Un identificador de recurso ajeno no concede acceso. La API valida tenant y condiciones, y puede devolver `404` genérico para recursos externos.
+- **Transfer:** rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR` (without special allocation) or `ENCARGADO`/`TRABAJADOR` **with Active allocation in both locations**Always. `ACTIVA` y `can_store=true`.
+- **Initial stock:** only `TITULAR_ADMINISTRATIVO` / `ADMINISTRADOR`, with suitable location and active membership/company.
+- **Ajustes:** holder/manager, or `ENCARGADO` assigned to the location. `TRABAJADOR` **no** is allowed to create/remove stock using manual settings.
+- A third party resource identifier does not grant access. The valid tenant API and conditions, and you can return `404` generic for external resources.
 
-### HTTP y errores característicos
+### HTTP and characteristic errors
 
-`201` escritura nueva; `200` lectura/replay exacto; `401` sesión ausente/inválida; `403` permiso; `404` recurso/tenant ausente; `409` saldo insuficiente, doble inicial, versión obsoleta, clave en conflicto, negocio/ubicación inapropiados; `422` cuerpo/UUID/cantidad inválidos. La capa HTTP traduce excepciones del servicio; **un 409 no implica movimiento compensatorio**.
+`201` new writing; `200` lectura/replay exacto; `401` absent/invalid session; `403` permission; `404` appeal/tenant absent; `409` insufficient balance, initial double, obsolete version, conflict key, inappropriate business/location; `422` Invalid body/UID/quantity. HTTP layer translates service exceptions; **409 does not imply compensatory movement**.
 
-## 5. Compatibilidad y límites del diseño
+## 5. Compatibility and design boundaries
 
-- E2-5 A conserva las entradas `COMPRA_RECEPCION` con su referencia al recibo y línea; B extiende el DTO común para incluir nuevas clases sin forzar campos nulos en respuestas antiguas; C usa ese ledger.
-- **La fuente auditable** son los movimientos; **la proyección actual** son los saldos y versiones. Una lectura de un comprobante histórico no garantiza saldo presente.
-- No existe todavía `Venta` backend que descuente estas existencias, ni reversión automática de traslado/ajuste, stock por lote o conteo físico absoluto con reconciliación de diferencias.
-- El `reason` es trazabilidad básica; no equivale a doble aprobación, soporte documental o política antifraude.
+- E2-5 A retains the entrances `COMPRA_RECEPCION` with its reference to receipt and line; B extends the common DTO to include new classes without forcing null fields into old responses; C uses that leadger.
+- **The auditable source** are the movements; **current projection** are the balances and versions. A reading of a historical voucher does not guarantee present balance.
+- Not yet in existence `Venta` backend that does not result in these stocks, nor automatic reversal of transfer/adjustment, stock per batch or absolute physical count with reconciliation of differences.
+- El `reason` is basic traceability; it does not amount to double approval, documentary support or anti-fraud policy.
 
-### Rutas fuente verificables
+### Verifiable source paths
 
 `backend/app/infrastructure/models/{inventory_operation,stock_movement,stock_balance}.py`  
 `backend/app/modules/purchases/{inventory_router,transfer_router,transfer_schemas,transfer_service,adjustment_router,adjustment_schemas,adjustment_service}.py`  
 `backend/app/modules/purchases/{receipt_router,receipt_schemas,receipt_service}.py`  
 `backend/alembic/versions/20261109_0016_inventory_operations.py`.
 
-## Adenda técnica v1.1 — Concurrencia y semántica de saldo
+## Technical addendum v1.1 — Concurrence and semantic balance
 
-**Modelo efectivo (síncrono SQLAlchemy `Session`, no `AsyncSession`):** `TransferService.transfer()` toma locks `FOR UPDATE` sobre las **dos ubicaciones en orden de UUID**, valida ubicación/permiso y bien físico, ejecuta el débito condicional de origen y el crédito `UPSERT` en destino, sumando la `version` de los saldos. `AdjustmentService.adjust()` toma `FOR UPDATE` de la ubicación, `FOR SHARE` de artículo y `FOR UPDATE` del saldo, compara la `expected_version` del ajuste antes de modificarlo. Las entradas de compra bloquean también la ubicación.
+**Effective model (SQLAlchemy synchron) `Session`, no `AsyncSession`):** `TransferService.transfer()` toma locks `FOR UPDATE` on **two locations in UUID order**, validates location/permission and physical well, executes the conditional debit of origin and credit `UPSERT` in destination, adding the `version` of balances. `AdjustmentService.adjust()` Take `FOR UPDATE` location, `FOR SHARE` Article and `FOR UPDATE` balance, compares the `expected_version` before modifying. Purchase tickets also block the location.
 
-Si un traslado entra en un depósito entre la lectura del saldo en UI y la confirmación de un ajuste, el ajuste puede **rechazarse con 409 por versión obsoleta de forma intencional**. No demuestra pérdida de stock: evita aplicar una diferencia sobre una cantidad cambiada. El frontend deberá consultar de nuevo el saldo y permitir recalcular o confirmar el ajuste, **nunca cambiar `expected_version` silenciosamente**. Los tests automatizados de concurrencia existente cubren carreras dentro de traslados y dentro de ajustes, además de ajuste posterior a traslado; **no** constituyen una prueba específica intercalada ajuste/traslado en paralelo al mismo destino: se propone como cobertura adicional.
+If a transfer enters a deposit between reading the balance in IU and confirming an adjustment, the setting may **reject with 409 by intentionally obsolete version**. It does not show loss of stock: avoids applying a difference over a changed amount. The frontend should check the balance again and allow recalculation or confirmation of adjustment, **never change `expected_version` Quietly**. The existing automated competition tests cover races within transfers and within adjustments, as well as post-transfer adjustment; **no** are a specific interspersed adjustment/transfer test in parallel to the same destination: proposed as additional coverage.
 
-**Dos conceptos distintos:** `STOCK_INICIAL` es un hecho histórico único para cada par (empresa, ubicación, artículo) **sin movimientos previos**; un saldo presente con `quantity_milli=0` no lo rehabilita. Para nuevos ingresos después del agotamiento se usa una compra/recepción, traslado entrante o ajuste positivo justificado; para recuento absoluto se propone un CU futuro que derive el delta sobre la versión observada. Autorizar `STOCK_INICIAL` otra vez al llegar a cero falsearía la semántica del ledger.
+**Two different concepts:** `STOCK_INICIAL` is a unique historical fact for each pair (company, location, article) **no previous movements**; a balance with `quantity_milli=0` does not rehabilitate it. For new income after exhaustion a purchase/reception, incoming transfer or positive adjustment is used; for absolute count a future CU is proposed that derives the delta on the version observed. Authorize `STOCK_INICIAL` Again, when I hit zero, I would fake the semantics of the ledger.
 
-No se alteraron endpoints ni migraciones como consecuencia de esta adenda. Los cambios de política y controles estructurales deben debatirse en una entrega posterior. Ver [evaluación externa](13_EVALUACION_OBSERVACIONES_IA.md).
+No changes in endpoints or migrations were made as a result of this addition. Policy changes and structural controls should be discussed in a later submission. [external evaluation](13_EVALUACION_OBSERVACIONES_IA.md).

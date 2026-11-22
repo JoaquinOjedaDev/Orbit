@@ -7,8 +7,8 @@ export type InvitationStatus = 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'CANCELA
 export type InvitationDisplayStatus = InvitationStatus | 'EXPIRADA'
 
 export const inviteRoleLabels: Record<InviteRole, string> = {
-  ENCARGADO: 'Encargado',
-  TRABAJADOR: 'Trabajador',
+  ENCARGADO: 'Manager',
+  TRABAJADOR: 'Staff member',
 }
 
 export const INVITATION_VALIDITY_DAYS = 7
@@ -16,10 +16,10 @@ export const INVITATION_VALIDITY_DAYS = 7
 export function normalizeInviteInput(emailInput: string, role: InviteRole): { email: string; role: InviteRole } {
   const email = emailInput.trim().toLowerCase()
   if (email.length > 120 || email.length < 6 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    throw new Error('Ingresá un correo con formato válido. Para las pruebas usá un dominio ficticio .invalid.')
+    throw new Error('Enter a valid format email. For testing use a fictitious domain .invalid.')
   }
   if (role !== 'ENCARGADO' && role !== 'TRABAJADOR') {
-    throw new Error('Sólo se puede invitar con rol Encargado o Trabajador.')
+    throw new Error('You can only invite with role Manager or Worker.')
   }
   return { email, role }
 }

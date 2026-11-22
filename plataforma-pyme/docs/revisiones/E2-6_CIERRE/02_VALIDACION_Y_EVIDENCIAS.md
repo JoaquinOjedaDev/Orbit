@@ -1,59 +1,59 @@
-# E2-6 — Bitácora de validación y evidencia comprobable
+# E2-6 — Validation log and verifiable evidence
 
-**Origen de evidencias:** GitHub Actions consultado en `main` + salidas reales del operador Windows/Swagger.  
-**No se ejecutaron pruebas nuevas para redactar esta hoja.** Los resultados históricos están asociados a sus respectivos commits, fecha y ambiente.
+**Origin of evidence:** GitHub Actions consulted at `main` + actual Windows/Swagger operator outputs.  
+**No new tests were carried out to draft this sheet.** The historical results are associated with their respective committees, date and environment.
 
-## 1. Integración Git verificable
+## 1. Verifiable Git integration
 
-| Entrega | PR | Merge SHA `main` |
+| Delivery | PR | Merge SHA `main` |
 |---|---|---|
-| A — Modelo y migración | #26 | `9516633d8fe5ce69c7f8f6ed0af4c87c40e6e460` |
-| B–E — Ventas integradas | #27 | `6336152e8dd095ca91363566beddd2b622432a5e` |
+| A — Model and migration | #26 | `9516633d8fe5ce69c7f8f6ed0af4c87c40e6e460` |
+| B-E — Integrated sales | #27 | `6336152e8dd095ca91363566beddd2b622432a5e` |
 
-**GitHub Actions del SHA #27:** run 42696474777. Tres trabajos completados con `success`: Python 3.12 con PostgreSQL, Python 3.14 con PostgreSQL y build de Docker con liveness. No afirmar que esta ejecución validó futuros cambios a otro SHA.
+**GitHub Actions del SHA #27:** run 42696474777. Three jobs completed with `success`: Python 3.12 with PostgreSQL, Python 3.14 with PostgreSQL and Docker build with liveness. Don’t claim that this execution validated future changes to another SHA.
 
-## 2. Evidencia Windows del código previo al merge
+## 2. Windows evidence of pre-merge code
 
-**Código probado:** `a66c180d02bfb5decc583a90a07efcc48d0a2783`.  
-**Base temporal independiente:** `asistente_pyme_e26b_test_20261109_134652`.
+**Tested code:** `a66c180d02bfb5decc583a90a07efcc48d0a2783`.  
+**Independent time base:** `asistente_pyme_e26b_test_20261109_134652`.
 
-- Pruebas focalizadas B: 14 passed; regresión intermedia `864 passed, 1 warning`.
-- Focalizadas C: 17 passed; seguridad 16 passed; interoperabilidad 22 passed; concurrencia/API 10 passed; regresión intermedia `872 passed, 1 warning`.
-- Focalizadas D: 9 passed; regresión final: **`879 passed in 132.08s`**, sin warnings reportados.
+- Targeted tests B: 14 passed; intermediate regression `864 passed, 1 warning`.
+- Focused C: 17 passed; safety 16 passed; interoperability 22 passed; continuance/API 10 passed; intermediate regression `872 passed, 1 warning`.
+- Focused D: 9 passed; final regression: **`879 passed in 132.08s`**No reported warning.
 - `alembic current`: **`e26a_sales_foundation (head)`**.
 - `alembic check`: **`No new upgrade operations detected.`**.
-- CI de la rama para el código `a66c180`: run 42684413403, success.
+- IC branch for code `a66c180`: run 42684413403, success.
 
-## 3. Validación Swagger local (2026-11-09)
+## 3. Local Swagger Validation (2026-11-09)
 
-**Empresa de prueba exclusiva:** `fc37e4ff-9e26-423b-946e-a9cc0b662360`.  
-**Ubicación:** `013860da-e39b-4028-a080-1ae0638ae482`, `can_sell=true`, `can_store=true`.  
-**Bien:** `dfbef980-9d7b-4810-9d04-ab0e4f51c86f`.  
-**Servicio:** `740f0ed2-4371-4de3-bd0d-d218f9b53c34`.
+**Exclusive test company:** `fc37e4ff-9e26-423b-946e-a9cc0b662360`.  
+**Location:** `013860da-e39b-4028-a080-1ae0638ae482`, `can_sell=true`, `can_store=true`.  
+**Okay:** `dfbef980-9d7b-4810-9d04-ab0e4f51c86f`.  
+**Service:** `740f0ed2-4371-4de3-bd0d-d218f9b53c34`.
 
-| Solicitud | HTTP | Resultado realmente observado |
+| Request | HTTP | Actual outcome observed |
 |---|---|---|
-| Registro usuario, creación empresa, alta de bien/servicio/ubicación | 201 cada alta | Recursos activos y aptos |
-| `POST /inventory/adjustments` STOCK_INICIAL | 201 | Movimiento +10000, saldo 10000/v1 |
-| `GET /inventory/balances` del bien | 200 | 10000/v1 |
-| `POST /sales` venta física 2 unidades | 201 | Venta `def970fc-6b45-48cb-ba65-a5ca994c3fdd`, total 1000000 centavos; saldo 8000/v2 |
-| `POST /sales` venta mixta (1 bien + 1 servicio) | 201 | Venta `61108b12-df7e-4da6-8046-ddde75eedba4`; total 650000; pagos 300000 efectivo y 350000 transferencia; saldo 7000/v3 |
-| Mismo `Idempotency-Key`/payload/actor | 200 | Mismo comprobante, líneas, pagos, fecha y snapshot histórico |
-| Venta de 10 unidades con 7 disponibles | 409 | `Stock insuficiente para confirmar la venta`; saldo 7000/v3 |
-| `GET /inventory/movements` de artículo/ubicación | 200 | **Tres eventos exactos:** `STOCK_INICIAL +10000`, `VENTA_SALIDA -2000`, `VENTA_SALIDA -1000` |
+| User registration, company creation, good/service/location | 201 each | Active and fit resources |
+| `POST /inventory/adjustments` STOCK_INICIAL | 201 | Movement +10000, balance 10000/v1 |
+| `GET /inventory/balances` of good | 200 | 10000/v1 |
+| `POST /sales` physical sale 2 units | 201 | Sale `def970fc-6b45-48cb-ba65-a5ca994c3fdd`, total 1000000 cents; balance 8000/v2 |
+| `POST /sales` mixed sale (1 good + 1 service) | 201 | Sale `61108b12-df7e-4da6-8046-ddde75eedba4`; total 650000; payments 300000 cash and 350000 transfer; balance 7000/v3 |
+| Same `Idempotency-Key`/payload/actor | 200 | Same voucher, lines, payments, date and historical snapshot |
+| Sale of 10 units with 7 available | 409 | `Stock insuficiente para confirmar la venta`; balance 7000/v3 |
+| `GET /inventory/movements` Article/location | 200 | **Three exact events:** `STOCK_INICIAL +10000`, `VENTA_SALIDA -2000`, `VENTA_SALIDA -1000` |
 
-**Conciliación observable:** `+10000 - 2000 - 1000 = 7000` milésimas. Cada `VENTA_SALIDA` conserva `sale_id` y `sale_line_id`. El replay, el servicio y el rechazo por saldo insuficiente no agregaron movimientos físicos.
+**Observable reconciliation:** `+10000 - 2000 - 1000 = 7000` Thousandths. `VENTA_SALIDA` preserve `sale_id` y `sale_line_id`. Replay, service and rejection due to insufficient balance did not add physical movements.
 
-## 4. Qué no demuestra esta evidencia
+## 4. What this evidence does not prove
 
-- La prueba Swagger no cubrió un ataque multiusuario/tenant en ejecución manual ni simuló clientes concurrentes; esas condiciones se examinan en las suites automatizadas, y aún son auditables independientemente.
-- Las pruebas de concurrencia entre **ventas** y de interop **secuencial** con operaciones E2-4/E2-5 no significan prueba exhaustiva de todas las carreras cross-módulo bajo carga.
-- Los medios de pago son declarados: no se probó liquidación real, caja, billetera, QR, OAuth MP ni webhooks.
-- Las pruebas locales son las aportadas por el operador y no fueron vueltas a correr al redactar este cierre.
-- No se recibieron en este cierre los cinco informes de una auditoría independiente completada.
+- The Swagger test did not cover a multi-user/tenant attack in manual execution or simulated concurrent clients; these conditions are examined in automated suites, and they are still independently audited.
+- Evidence of continuance between **sales** and interop **sequential** with E2-4/E2-5 operations do not mean exhaustive proof of all cross-module races under load.
+- The means of payment are declared: no actual settlement, cash box, wallet, QR, OAuth MP or webhooks were tested.
+- Local tests are provided by the operator and they were not reruns when writing this closure.
+- The five reports of an independent audit completed were not received at this closure.
 
-## 5. Criterios comprobados
+## 5. Proven criteria
 
-**Comprobado dentro del alcance:** operaciones de venta física y mixta, aritmética de pagos declarados, persistencia de comprobantes y snapshots, replay, rechazo por stock insuficiente, consulta de balances y ledger coherentes, y CI de `main` exitoso.
+**Checked within range:** physical and mixed sales operations, arithmetic of declared payments, persistence of vouchers and snapshots, replay, rejection by insufficient stock, consultation of consistent balances and ledger, and CI of `main` successful.
 
-**Aún no certificado:** ausencia total de defectos, seguridad de producción, integración React–FastAPI o adopción selectiva de hallazgos externos.
+**Not yet certified:** total absence of defects, production safety, React–FastAPI integration or selective adoption of external findings.

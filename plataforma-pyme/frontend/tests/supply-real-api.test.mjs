@@ -68,11 +68,11 @@ test('proveedores no tienen Idempotency-Key y no se crea por GET',async()=>{
  const api=createSupplyGateway('opaque',A,async(url,init)=>{
    assert.equal(url,'/api/v1/businesses/'+A+'/suppliers')
    assert.equal(init.method,'POST')
-   assert.deepEqual(JSON.parse(init.body),{name:'Nuevo proveedor'})
+   assert.deepEqual(JSON.parse(init.body),{name:'New supplier'})
    assert.equal(init.headers.has('Idempotency-Key'),false)
    return json(supplier(),201)
  })
- assert.equal((await api.createSupplier('  Nuevo proveedor ')).name,'Proveedor A')
+ assert.equal((await api.createSupplier('  New supplier ')).name,'Proveedor A')
 })
 
 test('cambiar estado de proveedor usa PATCH separado',async()=>{
@@ -190,7 +190,7 @@ test('journal recibe por otra clave y scope; actor/empresa no cruzan',async()=>{
 test('journal rechaza datos corruptos o secretos',()=>{
  const a=record()
  assert.throws(()=>parsePending({...a,token:'Bearer'},a.scope),PendingConflictError)
- assert.throws(()=>parsePending({...a,body:{...body,password:'123'}},a.scope),PendingConflictError)
+ assert.throws(()=>parsePending({...a,body:{...body,password:globalThis.crypto.randomUUID()}},a.scope),PendingConflictError)
  assert.throws(()=>pendingScope('demo',A,'purchase.create'),TypeError)
 })
 
@@ -274,7 +274,7 @@ test('edición por importe total recalcula unitario exacto y conserva el subtota
 })
 
 test('no se acepta total imposible de representar con costo unitario en centavos',()=>{
-  assert.throws(()=>unitCostFromExactLineTotal('3','10,00'),/no puede representarse exactamente/)
+  assert.throws(()=>unitCostFromExactLineTotal('3','10,00'),/cannot be represented exactly/i)
   assert.throws(()=>unitCostFromExactLineTotal('0','100'),RangeError)
   assert.throws(()=>unitCostFromExactLineTotal('3',''),RangeError)
   assert.throws(()=>unitCostFromExactLineTotal('3','-1'),RangeError)
@@ -294,7 +294,7 @@ test('la conversión por total solo construye unit_cost_cents, sin cambiar catá
 
 test('REGISTRADA muestra recepción pendiente ámbar y RECIBIDA confirmación verde',()=>{
   assert.deepEqual(purchaseStatusPresentation('REGISTRADA'),{
-    label:'REGISTRADA · RECEPCIÓN PENDIENTE',tone:'pending'
+    label:'REGISTRADA · PENDING RECEPTION',tone:'pending'
   })
   assert.deepEqual(purchaseStatusPresentation('RECIBIDA'),{
     label:'RECIBIDA',tone:'confirmed'
@@ -319,7 +319,7 @@ test('GET recibo 404 y compra REGISTRADA = pendiente sin POST ni borrar clave',a
  const outcome=await inspectReceipt(api,id)
  assert.equal(outcome.kind,'pending')
  assert.equal(outcome.purchase.status,'REGISTRADA')
- assert.match(missingReceiptMessage(outcome.purchase.status),/no hay un comprobante/)
+ assert.match(missingReceiptMessage(outcome.purchase.status),/not yet a confirmed receipt/i)
  assert.deepEqual(verbs.map(x=>x[1]),['GET','GET'])
 })
 
@@ -337,7 +337,7 @@ test('404 de recibo con compra RECIBIDA se marca inconsistencia, nunca invita a 
  })
  const state=await inspectReceipt(api,id)
  assert.equal(state.kind,'inconsistent')
- assert.match(missingReceiptMessage(state.purchase.status),/No repitas la recepción/)
+ assert.match(missingReceiptMessage(state.purchase.status),/Do not receive the purchase again/i)
 })
 
 test('recibo confirmado implica un único GET y conserva datos del comprobante',async()=>{
@@ -363,7 +363,7 @@ test('detalle de recepción usa sede y snapshot de compra, saldo posterior y res
  assert.equal(view.purchaseCreatorId,actor)
  assert.equal(view.responsibleId,actor)
  assert.equal(view.receiptId,item)
- assert.notEqual(view.confirmedAt,'Fecha y hora no disponibles')
+ assert.notEqual(view.confirmedAt,'Date and time not available')
  assert.deepEqual(view.movementLines,[{
    id:item,description:'Producto A TEST',unit:'UNIDAD',entered:'2',balanceAfter:'2'
  }])
@@ -372,16 +372,16 @@ test('detalle de recepción usa sede y snapshot de compra, saldo posterior y res
 test('detalle de recepción no inventa nombre del responsable de otra cuenta',()=>{
  const view=receiptDisplay(receipt(),purchase(),[{id:site,name:'Sede A TEST'}],
    {id:B,displayName:'Otro usuario'})
- assert.equal(view.responsibleName,'Nombre no disponible')
- assert.equal(view.purchaseCreatorName,'Nombre no disponible')
+ assert.equal(view.responsibleName,'Name not available')
+ assert.equal(view.purchaseCreatorName,'Name not available')
  assert.equal(view.responsibleId,actor)
  assert.notEqual(view.responsibleName,'Otro usuario')
 })
 
 test('detalle histórico funciona sin catálogo actual ni sede visible; no filtra datos de otra compra',()=>{
  const view=receiptDisplay(receipt(),null,[],{id:B,displayName:'No corresponde'})
- assert.match(view.locationName,/no disponible/)
- assert.equal(view.movementLines[0].description,'Artículo '+item.slice(0,8))
+ assert.match(view.locationName,/not available/i)
+ assert.equal(view.movementLines[0].description,'Item '+item.slice(0,8))
  assert.throws(()=>receiptDisplay(receipt(),{...purchase(),id:B},[],{id:actor,displayName:'miguel'}),TypeError)
 })
 
@@ -414,8 +414,8 @@ test('compra y recepción distinguen autores con nombres del equipo autorizado',
 test('no atribuye operaciones a usuario actual ni nombres sin permisos',()=>{
  const view=receiptDisplay({...receipt(),confirmed_by_id:B},
    {...purchase(),created_by_id:actor},[],{id:item,displayName:'Usuario conectado'})
- assert.equal(view.purchaseCreatorName,'Nombre no disponible')
- assert.equal(view.responsibleName,'Nombre no disponible')
+ assert.equal(view.purchaseCreatorName,'Name not available')
+ assert.equal(view.responsibleName,'Name not available')
  assert.notEqual(view.purchaseCreatorName,'Usuario conectado')
  assert.notEqual(view.responsibleName,'Usuario conectado')
 })

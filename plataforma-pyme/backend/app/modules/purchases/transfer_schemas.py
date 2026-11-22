@@ -23,13 +23,13 @@ class TransferStockRequest(BaseModel):
     def normalize_reason(cls, value: str) -> str:
         cleaned = " ".join(value.strip().split())
         if not 3 <= len(cleaned) <= 500 or any(ord(c) < 32 for c in cleaned):
-            raise ValueError("Motivo de traslado invalido")
+            raise ValueError("Invalid reason for transfer")
         return cleaned
 
     @model_validator(mode="after")
     def distinct_locations(self):
         if self.source_location_id == self.destination_location_id:
-            raise ValueError("Origen y destino deben ser distintos")
+            raise ValueError("Origin and destination must be different")
         return self
 
     def payload_digest(self) -> str:

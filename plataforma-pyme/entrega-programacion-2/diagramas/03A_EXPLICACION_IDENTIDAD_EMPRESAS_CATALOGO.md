@@ -1,231 +1,231 @@
-# 03A — Guía de identidad, empresas, ubicaciones, catálogo y proveedores
+# 03A — Identity Guide, Companies, Locations, Catalogues and Suppliers
 
-**Proyecto:** Orbit — Plataforma generalista de gestión multiempresa y multirrubro  
-**Materia:** Programación 2 — UNSAM (2C2026)  
-**Versión:** 2.1 — **T12-C2** (aprobada y publicada en la rama documental)  
-**Fecha de corte:** 11 de noviembre de 2026  
-**Referencia funcional:** `main` en `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45, T11).  
-**Documento rector:** [03 — Modelo de dominio y diagramas UML](../03_MODELO_DE_DOMINIO_Y_UML.md), **v2.1**, aprobado y publicado en la rama documental del PR #46.  
-**Archivos asociados:** [`03A_CLASES_IDENTIDAD_Y_CATALOGO.puml`](03A_CLASES_IDENTIDAD_Y_CATALOGO.puml) y [`03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg`](03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg).
+**Project:** Orbit — Generalistic multi-company and multi-rub management platform  
+**Materia:** Programming 2 — UNSAM (2C2026)  
+**Version:** 2.1 — **T12-C2** (approved and published in the documentary branch)  
+**Date of cut:** 11 November 2026  
+**Functional reference:** `main` en `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45, T11).  
+**Leading document:** [03 — Modelo de dominio y diagramas UML](../03_MODELO_DE_DOMINIO_Y_UML.md), **v2.1**, approved and published in the documentary branch of PR #46.  
+**Files Associated:** [`03A_CLASSES_IDENTITY_Y_CATALOGO.puml`](03A_CLASES_IDENTIDAD_Y_CATALOGO.puml) y [`03A_IDENTITY_EMPRESSES_CATALOGO_REDISENATE.svg`](03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg).
 
-> **Alcance y estado:** esta guía sustituye conceptualmente la edición **v0.7 (E2-3, 08/11/2026)**. Las ocho clases principales del 03A son **AS-IMPLEMENTED** y están persistidas. El diagrama **no** supone que las funcionalidades fuera de RF-01 a RF-07 tengan backend real. T12-C2 es una actualización exclusivamente documental aprobada: **se publicaron únicamente los tres archivos de 03A en la rama del PR #46; no se modificaron código, base de datos ni `main`**.
+> **Scope and status:** this guide replaces the edition conceptually **v0.7 (E2-3, 08/11/2026)**. The eight main classes of the 03A are **AS-IMPLEMENTED** and they are persistent. **no** supposes that the functionalities outside RF-01 to RF-07 have real backend. T12-C2 is an exclusively approved documentary update: **only the three 03A files were published in the PR #46 branch; no code, database or `main`**.
 
-![03A — Clases, relaciones y cardinalidades](03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg)
+![03A — Classes, relationships and cardinalities](03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg)
 
-## 1. Finalidad, alcance y regla de interpretación
+## 1. Purpose, scope and rule of interpretation
 
-El 03A responde **quién es una persona dentro del sistema, qué empresas puede integrar, con qué permisos puede actuar y cuáles son los recursos empresariales asociados**. Explica la identidad **global** y la empresa como **tenant** independiente. Una misma persona puede participar en varias empresas y tener distinto rol en cada una.
+The 03A responds **who is a person within the system, what companies can integrate, with what permissions it can act and what are the associated business resources**. Explains identity **global** and the company as **tenant** The same person can participate in several companies and have different roles in each.
 
-Las **ocho clases representadas** están respaldadas por modelos reales de SQLAlchemy. Los campos del dibujo utilizan nombres **conceptuales en español**, no la nomenclatura exacta de los DTO HTTP ni de los atributos Python. La fuente `.puml` documenta las asociaciones completas; la lámina `.svg` combina campos para legibilidad. La correspondencia de ambas se comprueba en las tablas siguientes.
+Las **eight classes represented** are backed up by real SQLAlchemy models. Drawing fields use names **Conceptual in Spanish**, not the exact nomenclature of HTTP DTOs or Python attributes. `.puml` documents the complete associations; foil `.svg` combines fields for readability. Correspondence of both is checked in the following tables.
 
-Las compras, sus recepciones, los saldos, los movimientos y las ventas están **implementados** en el backend del corte T11; su estructura corresponde al **03B**, no a este diagrama. Los casos de uso y los actores de negocio corresponden al **03C**.
+Purchases, receptions, balances, movements and sales are **implemented** on the backend of the cut T11; its structure corresponds to **03B**The use cases and the business actors correspond to the **03C**.
 
-**No está dentro de este 03A:** el DER físico exhaustivo, pantallas de caja y cuentas financieras, QR REAL de Mercado Pago, producción con recetas/lotes, reservas con stock apartado, transferencia de titularidad o auditoría completa de cada cambio histórico de asignación. El documento rector separa ese alcance pendiente.
+**It is not within this 03A:** the comprehensive physical ER, cash screens and financial accounts, QR REAL Market Payment, production with recipes/lots, reserves with item stock, transfer of ownership or complete audit of each historical change of allocation. The governing document separates that pending scope.
 
-## 2. Las ocho clases REAL y su correspondencia SQL
+## 2. The eight REAL classes and their SQL correspondence
 
-| Clase UML | Modelo SQLAlchemy / tabla | Datos y comportamiento relevantes |
+| Clase UML | Modelo SQLAlchemy / tabla | Relevant data and behaviour |
 |---|---|---|
-| `Usuario` | `User` / `users` | UUID; correo normalizado único; `password_hash`; nombre visible; estado `ACTIVO`/`DESHABILITADO`; no contiene rol empresarial global. |
-| `Empresa` | `Business` / `businesses` | Nombre, categoría, actividad `PRODUCTOS`/`SERVICIOS`/`MIXTO`, `founder_user_id` histórico y estado `ACTIVA`/`SUSPENDIDA`. |
-| `Membresia` | `Membership` / `memberships` | `business_id`, `user_id`, rol, estado `ACTIVA`/`INACTIVA`, puesto opcional; UNIQUE `(business_id,user_id)`. |
-| `Invitacion` | `BusinessInvitation` / `business_invitations` | Empresa; emisor obligatorio; email del destinatario; rol propuesto; token SHA-256; vigencia; aceptante y fecha opcionales hasta aceptar. |
-| `Ubicacion` | `Location` / `locations` | Empresa, tipo, dirección/mapa, `can_sell`, `can_store`, `is_primary`, `ACTIVA`/`PAUSADA`. |
-| `AsignacionUbicacion` | `LocationAssignment` / `location_assignments` | Clave primaria `(business_id,location_id,user_id)` y FKs compuestas hacia sede y membresía del mismo tenant; estado `ACTIVA`/`REVOCADA`. |
-| `ArticuloCatalogo` | `CatalogItem` / `catalog_items` | Nombre normalizado, `kind`, unidad, SKU opcional, vendible, precio/costo de referencia en centavos, estado y fechas. |
-| `Proveedor` | `Supplier` / `suppliers` | Nombre y `name_key`, referencias de contacto, redes, ofertas, JSONB de medios y promociones, estado `ACTIVO`/`INACTIVO`. |
+| `Usuario` | `User` / `users` | UUID; single standard mail; `password_hash`; visible name; status `ACTIVO`/`DESHABILITADO`; does not contain global business role. |
+| `Empresa` | `Business` / `businesses` | Name, category, activity `PRODUCTOS`/`SERVICIOS`/`MIXTO`, `founder_user_id` and state `ACTIVA`/`SUSPENDIDA`. |
+| `Membresia` | `Membership` / `memberships` | `business_id`, `user_id`, role, status `ACTIVA`/`INACTIVA`optional position; UNIQUE `(business_id,user_id)`. |
+| `Invitacion` | `BusinessInvitation` / `business_invitations` | Company; mandatory issuer; recipient's email; proposed role; token SHA-256; validity; opt-in date and optional until accepted. |
+| `Ubicacion` | `Location` / `locations` | Company, type, address/map, `can_sell`, `can_store`, `is_primary`, `ACTIVA`/`PAUSADA`. |
+| `AsignacionUbicacion` | `LocationAssignment` / `location_assignments` | Primary key `(business_id,location_id,user_id)` and FKs composed of tenant headquarters and membership; state `ACTIVA`/`REVOCADA`. |
+| `ArticuloCatalogo` | `CatalogItem` / `catalog_items` | Standard name, `kind`, unit, optional SKU, sellable, price/cost reference in cents, status and dates. |
+| `Proveedor` | `Supplier` / `suppliers` | Name and `name_key`, contact references, networks, offers, JSONB media and promotions, status `ACTIVO`/`INACTIVO`. |
 
-**Dos tablas técnicas reales que no aparecen como clases centrales de esta lámina:** `AuthSession`/`auth_sessions` (sesiones y token opaco almacenado **solo como hash**) y `BusinessCreationRequest`/`business_creation_requests` (idempotencia del alta empresarial con PK `(actor_user_id,idempotency_key)`). Su exclusión es una decisión de **legibilidad del modelo de negocio**, no una afirmación de que no existen. El Documento 03 contiene el inventario completo de **19 modelos**.
+**Two actual technical tables that do not appear as central classes of this sheet:** `AuthSession`/`auth_sessions` (series and opaque token stored **Just like hash.**) y `BusinessCreationRequest`/`business_creation_requests` (Power of the senior business with PK `(actor_user_id,idempotency_key)`). Their exclusion is a decision of the **legibility of the business model**, not an assertion that they do not exist. Document 03 contains the full inventory of **19 models**.
 
-### 2.1 Nomenclatura: clase, atributo conceptual y SQL real
+### 2.1 Nomenclature: class, conceptual attribute and real SQL
 
-| UML conceptual | Nombre técnico implementado | Precisión |
+| UML conceptual | Technical name implemented | Accuracy |
 |---|---|---|
-| `Usuario.emailNormalizado` | `users.email_normalizado` | Correo normalizado y único globalmente. |
-| `Empresa.fundadorUserId` | `businesses.founder_user_id` | Historia de creación; **no** fuente exclusiva de permiso ni titularidad legal. |
+| `Usuario.emailNormalizado` | `users.email_normalizado` | Mail is standardized and unique globally. |
+| `Empresa.fundadorUserId` | `businesses.founder_user_id` | History of creation; **no** exclusive source of permission and legal title. |
 | `Membresia.rol` | `memberships.role` | `TITULAR_ADMINISTRATIVO`, `ADMINISTRADOR`, `ENCARGADO`, `TRABAJADOR`. |
-| `Invitacion.emisorUserId` | `business_invitations.invited_by_user_id` | FK obligatoria a identidad global. |
-| `Invitacion.aceptanteUserId` | `business_invitations.accepted_by_user_id` | FK opcional, poblada al aceptar. |
-| `Invitacion.emailDestinatarioNormalizado` | `business_invitations.email_normalizado` | No se exige una FK previa a `users`. |
-| `Ubicacion.canSell / canStore` | `locations.can_sell / can_store` | Capacidades independientes. |
-| `Ubicacion.esPrincipal` | `locations.is_primary` | Índice parcial de **máximo una** sede principal activa por empresa. |
-| `AsignacionUbicacion.revocadoEn` | `location_assignments.revoked_at` | Coherente con su estado; no guarda todos los ciclos históricos. |
+| `Invitacion.emisorUserId` | `business_invitations.invited_by_user_id` | FK mandatory to global identity. |
+| `Invitacion.aceptanteUserId` | `business_invitations.accepted_by_user_id` | Optional FK, populated when accepting. |
+| `Invitacion.emailDestinatarioNormalizado` | `business_invitations.email_normalizado` | No FK required prior to `users`. |
+| `Ubicacion.canSell / canStore` | `locations.can_sell / can_store` | Independent capacities. |
+| `Ubicacion.esPrincipal` | `locations.is_primary` | Partial index of **maximum one** main active headquarters by company. |
+| `AsignacionUbicacion.revocadoEn` | `location_assignments.revoked_at` | Consistent with its state; it does not keep all historical cycles. |
 | `ArticuloCatalogo.clase` | `catalog_items.kind` | `ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`. |
-| `ArticuloCatalogo.tipoDerivado` | `CatalogItem.item_type` (propiedad) | `BIEN`/`SERVICIO` **no** es columna SQL adicional. |
-| `ArticuloCatalogo.claveNombre` | `catalog_items.name_key` | Normalización con NFKC/casefold y unicidad por empresa. |
-| `ArticuloCatalogo.precioCentavos` | `catalog_items.price_cents` | `BIGINT` o `NULL`; sin cálculo monetario con float. |
-| `Proveedor.claveNombre` | `suppliers.name_key` | UNIQUE `(business_id,name_key)` también para inactivos. |
-| `Proveedor.metodosPago / promociones` | `suppliers.payment_methods / promotions` | **Dos campos JSONB de arreglo**, no un campo genérico `contacto_jsonb`. |
+| `ArticuloCatalogo.tipoDerivado` | `CatalogItem.item_type` (property) | `BIEN`/`SERVICIO` **no** is additional SQL column. |
+| `ArticuloCatalogo.claveNombre` | `catalog_items.name_key` | Standardisation with NFKC/casefold and singleness by company. |
+| `ArticuloCatalogo.precioCentavos` | `catalog_items.price_cents` | `BIGINT` o `NULL`; no monetary calculation with float. |
+| `Proveedor.claveNombre` | `suppliers.name_key` | UNIQUE `(business_id,name_key)` also for inactive. |
+| `Proveedor.metodosPago / promociones` | `suppliers.payment_methods / promotions` | **Two JSONB fields of arrangement**, not a generic field `contacto_jsonb`. |
 
-La entidad `Supplier` también dispone de atributos SQL como `offerings`, `contact_person`, `phone`, `whatsapp`, `email`, `address`, `maps_url`, `website`, `instagram`, `notes` y fechas. El SVG resume estos atributos para no convertir el diagrama de clases en un volcado de todas las columnas.
+The entity `Supplier` also has SQL attributes such as `offerings`, `contact_person`, `phone`, `whatsapp`, `email`, `address`, `maps_url`, `website`, `instagram`, `notes` The SVG summarizes these attributes to avoid converting the class diagram into a dump of all columns.
 
-## 3. Asociaciones UML y multiplicidades verificables
+## 3. Verifiable UML partnerships and multipleities
 
-| Asociación | Cardinalidad | Regla real / conceptual |
+| Association | Cardinality | Royal/conceptual rule |
 |---|---|---|
-| `Usuario — Membresia` | Usuario **1** ⇄ **0..*** membresías | Cada membresía corresponde a un usuario; un usuario puede no tener empresa. |
-| `Empresa — Membresia` | Empresa **1** ⇄ **1..*** membresías en una empresa creada válidamente | La transacción de alta crea el primer titular. **El mínimo 1 no se impone por una FK o CHECK aislados.** |
-| `Usuario — Empresa` | Usuario fundador **1** ⇄ **0..*** empresas | Cada empresa almacena `founder_user_id` obligatorio e histórico. |
-| `Empresa — Invitacion` | Empresa **1** ⇄ **0..*** invitaciones | Toda invitación pertenece a una empresa. |
-| `Usuario — Invitacion` (emisor) | Usuario emisor **1** ⇄ **0..*** invitaciones emitidas | `invited_by_user_id` obligatorio. |
-| `Usuario — Invitacion` (aceptante) | Usuario aceptante **0..1** ⇄ **0..*** invitaciones aceptadas | `accepted_by_user_id` es opcional hasta aceptación. |
-| `Empresa — Ubicacion` | Empresa **1** ⇄ **0..*** ubicaciones | La empresa nace con cero sedes; no crea depósito ficticio. |
-| `Membresia — AsignacionUbicacion` | Membresía **1** ⇄ **0..*** asignaciones | FK `(business_id,user_id)` hacia la membresía del tenant. |
-| `Ubicacion — AsignacionUbicacion` | Ubicación **1** ⇄ **0..*** asignaciones | FK `(business_id,location_id)` hacia la sede del tenant. |
-| `Empresa — ArticuloCatalogo` | Empresa **1** ⇄ **0..*** artículos | Artículo siempre acotado a un tenant. |
-| `Empresa — Proveedor` | Empresa **1** ⇄ **0..*** proveedores | Proveedor opcional en compras; referencia propia de una empresa. |
+| `Usuario — Membresia` | User **1** ⇄ **0..*** Memberships | Each membership corresponds to a user; a user may not have a company. |
+| `Empresa — Membresia` | Company **1** ⇄ **1..*** Memberships in a validly created company | The discharge transaction creates the first holder. **Minimum 1 is not imposed by an isolated FK or CHECK.** |
+| `Usuario — Empresa` | Founding user **1** ⇄ **0..*** companies | Each company stores `founder_user_id` mandatory and historical. |
+| `Empresa — Invitacion` | Company **1** ⇄ **0..*** Invitations | Every invitation belongs to a company. |
+| `Usuario — Invitacion` (issuer) | Issuer **1** ⇄ **0..*** invitations issued | `invited_by_user_id` mandatory. |
+| `Usuario — Invitacion` (acceptant) | Accepting user **0..1** ⇄ **0..*** accepted invitations | `accepted_by_user_id` is optional until acceptance. |
+| `Empresa — Ubicacion` | Company **1** ⇄ **0..*** locations | The company is born with zero headquarters; it does not create fictitious deposit. |
+| `Membresia — AsignacionUbicacion` | Membership **1** ⇄ **0..*** allocations | FK `(business_id,user_id)` towards the tenant membership. |
+| `Ubicacion — AsignacionUbicacion` | Location **1** ⇄ **0..*** allocations | FK `(business_id,location_id)` to the tenant headquarters. |
+| `Empresa — ArticuloCatalogo` | Company **1** ⇄ **0..*** Articles | Article always limited to a tenant. |
+| `Empresa — Proveedor` | Company **1** ⇄ **0..*** suppliers | Optional supplier in purchases; company's own reference. |
 
-**Lectura de 0..1 vs 0..*:** en la relación del aceptante de una invitación, **cada invitación** admite cero o un usuario aceptante, pero **un usuario** puede aceptar muchas invitaciones a distintas empresas. No se debe invertir la multiplicidad.
+**Reading of 0.1 vs. 0.*:** in the list of the acceptor of an invitation, **each invitation** zero or an accepting user, but **a user** Many invitations to different companies can be accepted. Multiply should not be reversed.
 
-La pertenencia empresarial de `location_assignments` no es solo una promesa documental: la PK triple y las FKs compuestas restringen referencias cruzadas. El backend comprueba además los permisos; **FK correcta no equivale a autorización**.
+The business affiliation of `location_assignments` It is not just a documentary promise: the triple PK and composite FKs restrict cross-references. The backend also checks permissions; **FK correct does not amount to authorisation**.
 
-## 4. Reglas críticas del dominio
+## 4. Critical rules of the domain
 
-### 4.1 Usuario global, sesión y titularidad
+### 4.1 Global user, session and ownership
 
-Al registrarse, una persona obtiene una identidad global con email normalizado y contraseña almacenada como hash. Las autorizaciones comerciales se resuelven mediante **su membresía activa en la empresa seleccionada** y no a partir de un rol en la tabla `users`.
+When registering, a person gets a global identity with standardized email and password stored as hash. Commercial authorizations are resolved by means of **your active membership in the selected company** and not from a role in the table `users`.
 
-La creación de empresa guarda Empresa y Membresía inicial `TITULAR_ADMINISTRATIVO` **en una misma transacción**. `founder_user_id` identifica un hecho histórico, no propiedad legal, ni una autorización independiente de la membresía actual. El índice parcial `uq_memberships_one_active_owner` establece **a lo sumo un titular ACTIVO**, no existencia obligatoria de uno en todos los estados SQL posibles.
+Company creation saves Enterprise and initial Membership `TITULAR_ADMINISTRATIVO` **in the same transaction**. `founder_user_id` identifies a historical fact, not legal property, nor an independent authorization of the current membership. `uq_memberships_one_active_owner` sets **at most one ASSETS holder**, not mandatory existence of one in all possible SQL states.
 
-El servicio de edición de equipo impide **autoedición** y la modificación de membresías de rol `TITULAR_ADMINISTRATIVO`, incluidas las que se encuentran inactivas. La aceptación de invitaciones no puede reescribir la titularidad histórica. **No hay transferencia de titularidad pública implementada**; por ello tampoco se documenta un supuesto flujo de degradación transaccional como si existiera.
+Equipment editing service prevents **self-publishing** and the modification of role memberships `TITULAR_ADMINISTRATIVO`The acceptance of invitations cannot rewrite historical ownership. **No public ownership transfer implemented**; therefore, no supposed flow of transactional degradation is documented as if it existed.
 
-Las sesiones (`AuthSession`) emplean token opaco y hash; la sesión de React REAL se conserva en memoria del cliente, por lo que refrescar (`F5`) exige volver a autenticarse en el corte actual. Un mecanismo de persistencia segura de sesión sería evolución **post-T12** y no debe confundirse con el diseño ya implementado.
+Meetings (`AuthSession`) use opaque token and hash; the React REAL session is kept in memory of the client, so refresh (`F5`) requires re-authentication in the current court. A secure sessional persistence mechanism would be evolution **post-T12** and should not be confused with the design already implemented.
 
-### 4.2 Invitación: identidad, vigencia y aceptación
+### 4.2 Invitation: identity, validity and acceptance
 
-`BusinessInvitation` almacena `business_id`, emisor obligatorio, destinatario por email, `proposed_role` limitado a **ENCARGADO** o **TRABAJADOR**, token hasheado, estado, vencimiento y datos de aceptación opcionales. Estados posibles: `PENDIENTE`, `ACEPTADA`, `RECHAZADA`, `CANCELADA`, `EXPIRADA`.
+`BusinessInvitation` store `business_id`, mandatory issuer, recipient by email, `proposed_role` limited to **MANAGER** o **STAFF MEMBER**, token hashed, status, expiration and optional acceptance data. Possible states: `PENDIENTE`, `ACEPTADA`, `RECHAZADA`, `CANCELADA`, `EXPIRADA`.
 
-El índice parcial único impide dos filas **PENDIENTE** para el mismo `(business_id,email_normalizado)`. La fecha vencida debe validarse al utilizar la invitación; no implica que una tarea automática cambie inmediatamente su columna `status`.
+Single partial index prevents two rows **PENDING** for the same `(business_id,email_normalizado)`. The expired date must be validated when using the invitation; it does not imply that an automatic task immediately changes its column `status`.
 
-**CU-12:** invitar no concede acceso. La aceptación exige usuario autenticado cuyo email corresponda y, en una misma transacción, consume la invitación y crea/reactiva la Membresía sin duplicar `(business_id,user_id)`.
+**CU-12:** invitation does not grant access. Acceptance requires authenticated user whose email corresponds and, in the same transaction, consumes the invitation and creates/reactivates Membership without doubling `(business_id,user_id)`.
 
-### 4.3 Sedes, asignaciones y permisos reales
+### 4.3 Actual headquarters, assignments and permits
 
-`Location` admite `LOCAL`, `FERIA`, `DEPOSITO`, `OFICINA`, `CASA`, `OTRO`; tiene `ACTIVA`/`PAUSADA`, atributos de contacto y capacidades `can_sell` y `can_store`. No se crea ninguna sede al registrar la empresa. Si una sede principal se pausa, pierde `is_primary`; reactivarla no recupera automáticamente ese indicador. SQL permite **0 o 1** ubicación principal activa en un tenant, no exige una.
+`Location` admite `LOCAL`, `FERIA`, `DEPOSITO`, `OFICINA`, `CASA`, `OTRO`; has `ACTIVA`/`PAUSADA`, contact attributes and capabilities `can_sell` y `can_store`. No headquarters are created when registering the company. If a head office is paused, it loses `is_primary`; reactivate it does not automatically recover that indicator. SQL allows **0 o 1** main active location in a tenant, does not require one.
 
-`LocationAssignment` vincula una membresía y una ubicación del **mismo tenant**, se activa/revoca sin borrar físicamente la fila y no otorga un quinto rol de empresa.
+`LocationAssignment` links a membership and location of the **same tenant**, is activated/revocated without physically deleting the row and does not grant a fifth role of enterprise.
 
-**Política SELL/STORE implementada:**
+**Policy SELL/STORE implemented:**
 
-- `TITULAR_ADMINISTRATIVO` y `ADMINISTRADOR` pueden operar bajo las capacidades de la sede sin asignación individual.
-- `ENCARGADO` y `TRABAJADOR` requieren **membresía activa y asignación activa a esa sede**, además de empresa/sede activas y capacidad apropiada.
-- **Recepcionar bienes:** STORE en la sede de destino.
-- **Trasladar:** STORE en origen y destino, sin traslado entre empresas.
-- **Vender bienes físicos:** SELL **y** STORE sobre la sede de venta, porque la confirmación también descuenta existencias.
-- **Servicios:** no se genera salida automática de insumos; las condiciones específicas de sede y rol se aplican según el comando.
-- **Administrar compra / stock inicial / ajustes:** no todos los roles tienen idénticas facultades. Crear compra y fijar stock inicial corresponde a titular/administrador; los ajustes ordinarios pueden admitir encargado conforme al servicio. No extrapolar estos permisos a trabajador.
+- `TITULAR_ADMINISTRATIVO` y `ADMINISTRADOR` can operate under headquarters capabilities without individual assignment.
+- `ENCARGADO` y `TRABAJADOR` require **active membership and active assignment to that headquarters**, in addition to active enterprise/headquarters and appropriate capacity.
+- **Receive goods:** STORE at the destination headquarters.
+- **Move:** STORY in origin and destination, without transfer between companies.
+- **Selling physical goods:** SELL **y** STORE about the sales headquarters, because confirmation also takes out stocks.
+- **Services:** automatic output of inputs is not generated; the specific headquarters and role conditions are applied according to the command.
+- **Manage purchase / stock start / settings:** Not all roles have identical powers. Creating purchase and fixing initial stock is the owner/manager; ordinary adjustments can admit maintainer according to service. Do not extrapolate these permits to worker.
 
-Estas políticas se utilizan en los bloques **E2-4 (compras/recepción), E2-5 (stock), E2-6/E2-7 (ventas POS)**. La guía v0.7 que las llamaba «futuras» está desactualizada.
+These policies are used in the blocks **E2-4 (purchase/reception), E2-5 (stock), E2-6/E2-7 (sales POS)**. Guide v0.7 which called them "futures" is outdated.
 
-### 4.4 Artículo de catálogo
+### 4.4 Catalogue article
 
-`CatalogItem` diferencia `kind` comercial (`ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`) del `item_type` derivado (`BIEN`/`SERVICIO`). El SKU, si se informa, es único dentro de una empresa; el nombre normalizado es único incluso al desactivar una ficha. Los campos de precio y costo de referencia son enteros en centavos o `NULL`.
+`CatalogItem` difference `kind` trade (`ELABORADO`, `REVENTA`, `INSUMO`, `SERVICIO`) del `item_type` derivative (`BIEN`/`SERVICIO`). The SKU, if reported, is unique within a company; the standard name is unique even when deactivating a token. Price and cost reference fields are whole in cents or `NULL`.
 
-Una ficha `ACTIVO` no implica que exista stock; **crear catálogo no crea saldo**. La política de venta toma precios de catálogo y permite variaciones según rol: trabajadores y encargados no pueden imponer descuentos ni reemplazar el precio vigente con otro valor; un artículo sin precio de lista no puede venderse por esos roles. El artículo solo de servicio puede venderse sin descontar existencias físicas.
+A tab `ACTIVO` does not imply that stock exists; **create catalog does not create balance**. The sales policy takes prices from catalogue and allows variations according to role: workers and managers cannot impose discounts or replace the current price with another value; an item without list price cannot be sold for those roles. The service-only item can be sold without discounting physical stocks.
 
-Las líneas históricas de compras y ventas guardan snapshots de descripción, tipo, unidad, SKU e importe para no reescribir transacciones ya confirmadas cuando se modifica el catálogo.
+Historical shopping and sales lines keep snapshots of description, type, unit, SKU and amount to avoid rewriting transactions already confirmed when the catalog is modified.
 
-### 4.5 Proveedor real, no TO-BE
+### 4.5 Real supplier, not TO-BE
 
-`Supplier` ya tiene tabla `suppliers`, lógica de lectura/edición y estados **ACTIVO/INACTIVO**. La unicidad `(business_id,name_key)` se aplica también a inactivos. Se conservan contacto, redes, ofertas y condiciones comerciales; `payment_methods` y `promotions` son **arreglos JSONB** con restricciones de estructura y tamaño.
+`Supplier` already has a table `suppliers`, reading/editing logic and states **ASSETS/INACTIVE**. Uniqueness `(business_id,name_key)` also applies to inactive persons. Contact, networks, offers and commercial conditions are maintained; `payment_methods` y `promotions` son **JSONB arrangements** with structure and size restrictions.
 
-En compras el proveedor es **opcional**. Cuando una compra se asocia con un proveedor activo del mismo tenant, el documento comercial conserva `supplier_name_snapshot`. Desactivar o cambiar el proveedor no altera el histórico. Las condiciones de pago almacenadas son **descripciones comerciales**, no acreditaciones bancarias ni una integración REAL con Mercado Pago.
+In purchases the supplier is **optional**. When a purchase is associated with an active supplier of the same tenant, the commercial document retains `supplier_name_snapshot`. Disable or change the provider does not alter history. The stored payment conditions are **commercial descriptions**, no bank accreditations or a REAL integration with Mercado Pago.
 
-## 5. Recorridos operativos para explicar en la defensa
+## 5. Operational routes to explain in the defense
 
-| Recorrido | Resultado | Vinculación con el UML |
+| Route | Outcome | Linking to the UML |
 |---|---|---|
-| CU-01/CU-02 | Registro y acceso de cuenta global | `Usuario` y sesión técnica omitida del dibujo principal. |
-| CU-03 | Empresa y titular inicial, sin sede ni stock | `Usuario` (fundador histórico), `Empresa`, `Membresia`. |
-| CU-12 | Emisión/aceptación segura de invitación | `Empresa`, `Usuario` emisor/aceptante, `Invitacion`, `Membresia`. |
-| CU-04 | Alta, edición y estados de sede; asignaciones | `Empresa`, `Ubicacion`, `AsignacionUbicacion`, `Membresia`. |
-| CU-05 | Alta, consulta y edición de ficha vendible | `Empresa`, `ArticuloCatalogo`; normalización y baja lógica. |
-| CU-06/CU-07 | Compra y recepción física posterior | `Proveedor` (opcional), `ArticuloCatalogo`, `Ubicacion` (destino); detalle completo en 03B. |
-| CU-08/CU-09/CU-11 | Consulta de saldos, traslado y ajustes | `Ubicacion`, `AsignacionUbicacion`, `ArticuloCatalogo`; movimientos en 03B. |
-| CU-10 | Venta en POS REAL, física o de servicio | `ArticuloCatalogo`, sede SELL/STORE, membresía del actor; venta y pagos en 03B. |
+| CU-01/CU-02 | Global account registration and access | `Usuario` and technical session omitted from the main drawing. |
+| CU-03 | Company and initial holder, not headquartered or stocked | `Usuario` (historical founder), `Empresa`, `Membresia`. |
+| CU-12 | Safe invitation issuance/acceptance | `Empresa`, `Usuario` issuer/acceptant, `Invitacion`, `Membresia`. |
+| CU-04 | High, editing and headquarters status; assignments | `Empresa`, `Ubicacion`, `AsignacionUbicacion`, `Membresia`. |
+| CU-05 | High, query and edit of saleable sheet | `Empresa`, `ArticuloCatalogo`; normalisation and low logic. |
+| CU-06/CU-07 | Purchase and subsequent physical reception | `Proveedor` (optional), `ArticuloCatalogo`, `Ubicacion` (destiny); full detail in 03B. |
+| CU-08/CU-09/CU-11 | Balances, relocation and adjustments | `Ubicacion`, `AsignacionUbicacion`, `ArticuloCatalogo`; movements in 03B. |
+| CU-10 | Sale in REAL, physical or service POS | `ArticuloCatalogo`, headquarters SELL/STORE, member of the actor; sale and payments in 03B. |
 
-El sistema contempla **múltiples empresas y rubros**. WALOS es solamente un ejemplo; estas clases no deben especializarse para una tienda de mascotas.
+The system contemplates **multiple companies and items**WALOS is just one example; these classes should not be specialized for a pet shop.
 
-## 6. Integridad: diferenciación de SQL y de servicios
+## 6. Integrity: differentiation of SQL and services
 
-| Garantía | Restricción persistente | Validación adicional de aplicación |
+| Guarantee | Persistent restriction | Additional validation of application |
 |---|---|---|
-| Identidad única | `uq_users_email_normalizado` | Normalización, contraseña, sesión vigente. |
-| Equipo sin duplicados | `uq_memberships_business_user` | Asignaciones y protección del titular. |
-| Titular activo único | Índice parcial `uq_memberships_one_active_owner` | Creación inicial atómica; bloqueo de ediciones de titular. |
-| Invitaciones sin duplicados pendientes | Índice parcial `uq_business_invitations_pending_email` | Vencimiento, email del aceptante, reintentos. |
-| Principal única activa | Índice parcial `uq_locations_one_active_primary` | Transición `PAUSADA` y nueva principal transaccional. |
-| Asignaciones de mismo tenant | PK triple y FKs compuestas | Rol, estado y permisos SELL/STORE. |
-| SKU único de empresa | Índice único parcial por `(business_id,sku)` cuando SKU no es `NULL` | Normalización y controles de artículo. |
-| Proveedor único por nombre de empresa | `uq_suppliers_business_name` | Normalización, estado y verificación antes de comprar. |
-| Transacciones históricas | FKs y snapshots en tablas comerciales | Operaciones atómicas; sin borrado en cascada del historial. |
+| Unique identity | `uq_users_email_normalizado` | Standardization, password, current session. |
+| Equipment without duplicates | `uq_memberships_business_user` | Allocations and protection of the holder. |
+| Single active holder | Partial index `uq_memberships_one_active_owner` | Initial atomic creation; blocking of headline editions. |
+| Invitations without duplicates pending | Partial index `uq_business_invitations_pending_email` | Overcoming, acceptance email, retrying. |
+| Single active principal | Partial index `uq_locations_one_active_primary` | Transition `PAUSADA` and new main transactional. |
+| Tenant allocations | Triple PK and composite FKs | Role, status and SELL/STORE permissions. |
+| Single company SKU | Single partial index per `(business_id,sku)` when SKU is not `NULL` | Standardisation and article controls. |
+| Single provider by company name | `uq_suppliers_business_name` | Standardisation, status and verification before purchase. |
+| Historical transactions | FKs y snapshots en tablas comerciales | Atomic operations; no cascading history. |
 
-**Importante:** los índices de «a lo sumo uno» no significan «exactamente uno» a nivel SQL. La regla de disponer de titular inicial resulta de la operación de alta. Los roles se validan por empresa, no por una propiedad global de `User`.
+**Important:** The "at most one" indexes do not mean "exactly one" at SQL level. The rule of having an initial holder results from the discharge operation. Roles are validated by company, not by a global ownership of `User`.
 
-## 7. Diferencia entre PlantUML, SVG y DER físico
+## 7. Difference between PlantUML, SVG and physical DER
 
-La fuente `.puml` es un **diagrama de clases UML editable**, con las **ocho clases y once asociaciones** explícitas y sus multiplicidades. La lámina `.svg` es una **representación vectorial editorial** de esas mismas clases y asociaciones: simplifica o combina algunos campos del cuadro para que el texto no desborde. **No es un renderizado literal de PlantUML**; un motor PlantUML redistribuirá las cajas si se lo compila directamente.
+The source `.puml` es un **Editable UML class diagram**, with the **eight classes and eleven associations** explicit and their multiplicity. `.svg` is a **vector representation editorial** of these same classes and associations: it simplifies or combines some fields in the box so that the text does not overflow. **It is not a literal rendering of PlantUML**; a PlantUML engine will redistribute the boxes if it is compiled directly.
 
-Para evitar falsa equivalencia:
+To avoid false equivalence:
 
-1. Ambas versiones deben mostrar **`AsignacionUbicacion`**, a diferencia del SVG antiguo, y conservar emisor y aceptante de `Invitacion`.
-2. Ambas deben mostrar a **`Proveedor` como REAL** y a catálogo/ubicaciones como recursos ya utilizados por operaciones comerciales.
-3. Ambas deben distinguir `item_type` derivado de columna SQL y fundador histórico de titularidad actual.
-4. Las líneas de asociación del SVG usan colores por tema y algunas trayectorias ortogonales; se deben leer por sus **etiquetas y extremos**, no como nuevas clases.
-5. La fuente de verdad para FKs, tipos físicos, índices y columnas completas son SQLAlchemy/Alembic; el **DER físico post-T12** podrá generarse desde PostgreSQL con una herramienta como DBeaver sin reemplazar 03A.
+1. Both versions must show **`AsignacionUbicacion`**, unlike the old SVG, and retain issuer and acceptor of `Invitacion`.
+2. Both must show **`Proveedor` as REAL** and catalogue/locations as resources already used by commercial operations.
+3. Both must distinguish `item_type` derivative of SQL column and current title historical founder.
+4. SVG's partnership lines use colours per theme and some orthogonal trajectories; they should be read by their **labels and ends**I don't eat new classes.
+5. The source of truth for FKs, physical types, indices and complete columns are SQLAlchemy/Alembic; the **Post-T12 physical DER** can be generated from PostgreSQL with a tool such as DBeaver without replacing 03A.
 
-El diagrama no incluye `Supplier → Purchase` ni otras asociaciones comerciales con clases ausentes; esto no indica que no existan. Se desarrollan en 03B. Asimismo, la relación `Empresa — Membresia` de **1 a 1..*** representa el invariante de la empresa creada válidamente, pero SQL por sí solo no puede garantizar ese mínimo usando solamente la FK de `Membership`.
+Diagram not included `Supplier → Purchase` or other commercial associations with classes absent; this does not indicate that they do not exist. They develop in 03B. Likewise, the relationship `Empresa — Membresia` de **1 a 1..*** represents the validly created company's invariant, but SQL alone cannot guarantee that minimum using only FK of `Membership`.
 
-## 8. Evidencia y límites de validación
+## 8. Evidence and validation limits
 
-**Base contrastada:** modelos SQLAlchemy `User`, `Business`, `Membership`, `BusinessInvitation`, `Location`, `LocationAssignment`, `CatalogItem`, `Supplier`, junto con las políticas y servicios del corte `main` `c6a77137`. El Documento 03 v2.1 aprobado contiene el inventario más amplio de 19 modelos, operaciones transaccionales y límites de seguridad.
+**Base contrast:** SQLAlchemy models `User`, `Business`, `Membership`, `BusinessInvitation`, `Location`, `LocationAssignment`, `CatalogItem`, `Supplier`along with the policies and services of the court `main` `c6a77137`Document 03 v2.1 approved contains the largest inventory of 19 models, transactional operations and safety limits.
 
-**Evidencia histórica T11** (no reejecutada para crear estas láminas): pipeline de QA integral GitHub Actions run 43015544889, con **892 Pytest, 38 Playwright REAL y 6 DEMO** informados en el cierre previo. La existencia de esas pruebas no sustituye la revisión visual/semántica de esta nueva documentación.
+**Historical evidence T11** (not re-executed to create these sheets): integral QA pipeline GitHub Actions run 43015544889, with **892 Pytest, 38 Playwright REAL y 6 DEMO** The existence of such evidence does not replace the visual/semantic review of this new documentation.
 
-**Control de publicación:** se revisaron las entidades, asociaciones y cardinalidades del `.puml` y su equivalencia semántica con el SVG editorial, así como la integridad XML de este último. La compilación de la fuente `.puml` con el motor PlantUML **queda pendiente** de un entorno con el ejecutable instalado; no se presenta como una validación realizada. Los enlaces se comprueban tras la publicación. El SVG propuesto se generó como vector gráfico y se visualizó; no es una exportación directa del motor PlantUML.
+**Publication Control:** the entities, associations and cardinalities of the `.puml` and its semantic equivalence with the editorial SVG, as well as the XML integrity of the latter. `.puml` con el motor PlantUML **outstanding** The proposed SVG was generated as a graphical vector and was visualised; it is not a direct export of the PlantUML engine.
 
-## 9. Qué cambió con respecto a v0.7 (08/11/2026)
+## 9. What changed with respect to v0.7 (08/11/2026)
 
-| Punto | Versión anterior | Propuesta T12-C2 |
+| Point | Previous version | Proposal T12-C2 |
 |---|---|---|
-| Proveedor | Figura con implementación futura/TO-BE | `Supplier`/`suppliers` **REAL**, nombre normalizado, contacto y JSONB. |
-| Comercio | Compra/inventario/venta proyectados | E2-4/E2-5/E2-6/E2-7 ya implementados. |
-| Sedes | SELL/STORE declarados como futuros | Capacidad y asignación aplicadas en comandos reales. |
-| Asignación de sede | En PlantUML, omitida del SVG | **Incluida en ambos** y asociada a membresía y ubicación. |
-| Invitación aceptada | Enlace opcional solo en PUML | Emisor y aceptante visibles en ambas representaciones. |
-| Cabecera | E2-3, 8/11/2026 | T12-C2, corte T11/11-11-2026, Documento 03 v2.1. |
-| PlantUML y SVG | Sin comprobación de equivalencia vigente | Matriz de asociaciones y regla explícita de simplificación editorial. |
-| Sesiones e idempotencia | No siempre diferenciadas del negocio | Modelos de soporte SQL reales documentados, fuera de la lámina central. |
+| Supplier | Figure with future implementation/TO-BE | `Supplier`/`suppliers` **REAL**, standard name, contact and JSONB. |
+| Trade | Projected purchase/inventory/sale | E2-4/E2-5/E2-6/E2-7 already implemented. |
+| Sedes | SELL/STORE declared as futures | Capacity and allocation applied in real commands. |
+| Headquarters allocation | In PlantUML, omitted from SVG | **Included in both** and associated with membership and location. |
+| Invitation accepted | Optional link only in PUML | Issuer and acceptor visible in both representations. |
+| Header | E2-3, 8/11/2026 | T12-C2, cut T11/11-11-2026, Document 03 v2.1. |
+| PlantUML y SVG | No existing equivalence check | Partnership matrix and explicit rule of editorial simplification. |
+| Meetings and powerlessness | Not always different from business | Documented real SQL support models, outside the central foil. |
 
-**Corrección al prompt de apoyo:** el SVG v0.7 **sí contiene nombres de clases y atributos visibles**. El hallazgo verificable es que la imagen editorial era una **representación parcial** frente al `.puml`, particularmente por la ausencia de `AsignacionUbicacion` y el aceptante opcional. No es correcto presentarlo como una imagen sin texto.
+**Correction to the support proposal:** the SVG v0.7 **yes contains visible class names and attributes**. The verifiable finding is that the editorial image was a **partial representation** in front of `.puml`, particularmente por la ausencia de `AsignacionUbicacion` and the optional acceptor. It is not correct to present it as an image without text.
 
-## 10. Preguntas útiles para la defensa académica
+## 10. Useful Questions for Academic Defense
 
-**¿Por qué Usuario no tiene rol?** Porque una identidad puede trabajar para muchas empresas, con roles distintos; `Membership` determina acceso contextual.
+**Why does User not have a role?** Because an identity can work for many companies, with different roles; `Membership` determines contextual access.
 
-**¿Qué diferencia hay entre fundador y titular?** El fundador es un UUID histórico inmutable; los permisos provienen de la membresía vigente. El índice parcial evita dos titulares activos pero no impone que exista uno sin servicio.
+**What difference does it make between founder and holder?** The founder is an unchangeable historical UUID; the permits come from the current membership. The partial index avoids two active holders but does not require that there be one without service.
 
-**¿Por qué una clase de asignación y no una relación simple?** La relación miembro–sede posee datos propios (`status`, `revoked_at`) y necesita FKs compuestas para validar el tenant. Es una entidad asociativa real con PK triple.
+**Why an assignment class and not a simple relationship?** The member-head relationship has its own data (`status`, `revoked_at`) and needs composite FKs to validate the tenant. It is a real association with triple PK.
 
-**¿Puede una feria vender y almacenar?** Sí, `can_sell` y `can_store` son independientes. La operación física requiere capacidades acordes y asignación para roles operativos.
+**Can a fair sell and store?** Sí, `can_sell` y `can_store` physical operation requires matching capabilities and assignment for operational roles.
 
-**¿Por qué Proveedor está en este diagrama pero Compra no?** 03A muestra recursos empresariales principales. Su participación opcional en compras y el snapshot de proveedor se explican en 03B.
+**Why is Supplier in this diagram but Buy not?** 03A shows core business resources. Your optional participation in purchases and supplier snapshots are explained in 03B.
 
-**¿Se guardan pagos en el Proveedor?** No: `payment_methods` contiene información comercial referencial. No representa conciliación, pago acreditado ni QR REAL de Mercado Pago.
+**Are payments saved on the Provider?** No: `payment_methods` contains referential business information. It does not represent reconciliation, accredited payment or Real Market Payment QR.
 
-**¿Por qué no dibujar `AuthSession`?** Se conserva en PostgreSQL pero es infraestructura de autenticación, no una nueva relación conceptual de catálogo, sedes o membresía. El Documento 03 contiene las tablas técnicas.
+**Why not draw `AuthSession`?** It is preserved in PostgreSQL but it is authentication infrastructure, not a new conceptual relationship of catalog, headquarters or membership. Document 03 contains the technical tables.
 
-## 11. Pendientes y criterio de aprobación de T12-C2
+## 11. Pending and approval criteria for T12-C2
 
-- [x] Conciliación de clases SQLAlchemy, campos representativos y relaciones principales contra el corte T11.
-- [x] Proveedor marcado REAL, atributos de contacto y arreglos JSONB.
-- [x] Aplicación vigente de SELL/STORE y condiciones de rol/asignación.
-- [x] `AsignacionUbicacion`, invitador y aceptante reflejados en la representación SVG editorial.
-- [x] Documentación de clases omitidas por razones de alcance (`AuthSession`, `BusinessCreationRequest`).
-- [x] Nuevo SVG vectorial y vista previa raster para revisión.
-- [x] Confirmación visual y aprobación expresa del usuario; no se solicitaron cambios estructurales.
-- [ ] Validación de sintaxis con un ejecutable PlantUML (si no está disponible en el entorno, usar el instalado por el equipo).
-- [x] Aprobación expresa y reemplazo de los **tres** archivos actuales de 03A en la rama documental del PR #46.
-- [ ] Control posterior de enlaces en GitHub y conciliación cruzada con 03B/03C en T12-C5.
+- [x] Conciliation of SQLAlchemy classes, representative fields and main relationships against the T11 court.
+- [x] REAL marked provider, contact attributes and JSONB arrangements.
+- [x] Current application of SELL/STORE and role/assignment conditions.
+- [x] `AsignacionUbicacion`, guest and acceptor reflected in the SVG editorial representation.
+- [x] Documentation of classes omitted for reasons of scope (`AuthSession`, `BusinessCreationRequest`).
+- [x] New vector SVG and raster preview for revision.
+- [x] Visual confirmation and express user approval; no structural changes were requested.
+- [ ] Syntax validation with a PlantUML executable (if not available in the environment, use the one installed by the computer).
+- [x] Express approval and replacement of **three** Current archives of 03A in the documentary branch of PR #46.
+- [ ] Later GitHub link control and cross-compromise with 03B/03C in T12-C5.
 
-**Publicación aprobada:** se conservó sin modificaciones el Documento 03 v2.1 y el código frontend/backend/SQL. Se reemplazaron exclusivamente los tres archivos 03A en la rama documental del PR #46, que permanece en DRAFT sin merge a `main`. El siguiente paso es **T12-C3: 03B — Compras, recepción, inventario y ventas**.
+**Published:** Document 03 v2.1 and the frontend/backend/SQL code were retained unchanged. The three 03A files were replaced exclusively in the documentary branch of PR #46, which remains in DRAFT without meriting `main`The next step is **T12-C3: 03B — Purchases, receipt, inventory and sales**.

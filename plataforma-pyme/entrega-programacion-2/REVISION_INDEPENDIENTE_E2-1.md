@@ -1,100 +1,100 @@
-# E2-1 — Hoja de revisión independiente para el compañero
+# E2-1 — Independent peer review sheet
 
-**Proyecto:** Orbit — API generalista de gestión multiempresa y multirrubro  
-**Materia:** Programación 2 (UNSAM)  
-**Fecha de preparación:** 8 de noviembre de 2026  
-**Tipo:** consigna de revisión técnica independiente, **NO informe de auditoría ni dictamen aprobado**  
-**Rama de referencia:** `main`  
-**Commit base de código y documentación (anterior a esta hoja):** `c54461d18020f22483273dad3f14bf6308522fbc`  
-**Carpeta exclusiva:** `plataforma-pyme/`  
-**Modo de revisión:** estrictamente lectura del repositorio; no editar, hacer push, introducir migraciones ni corregir archivos.
+**Project:** Orbit — Multi-company and multi-rub management generalist API  
+**Materia:** Programming 2 (UNSAM)  
+**Date of preparation:** 8 November 2026  
+**Type:** independent technical review record; **NO audit report or opinion adopted**  
+**Reference branch:** `main`  
+**Commit code base and documentation (pre-date of this sheet):** `c54461d18020f22483273dad3f14bf6308522fbc`  
+**Exclusive Folder:** `plataforma-pyme/`  
+**Review mode:** strictly reading the repository; not editing, pushing, entering migrations or correcting files.
 
-## 1. Objetivo y regla de evidencia
+## 1. Objective and rule of evidence
 
-Evaluar si el bloque **E2-1 — autenticación, empresas, autorización por tenant e invitaciones/equipo** está correctamente implementado, probado y documentado. No basta con que las pruebas pasen: revisar decisiones de diseño, consistencia entre capas, contratos HTTP, transacciones, aislamiento de empresas, seguridad, esquema SQL y trazabilidad académica.
+Assess if block **E2-1 — authentication, business, tenant authorization and invitations/equipment** It is correctly implemented, tested and documented. It is not enough for tests to pass: review design decisions, interlayer consistency, HTTP contracts, transactions, business isolation, security, SQL scheme and academic traceability.
 
-La revisión debe **distinguir cuatro categorías**: (a) observado directamente en código/DDL/pruebas; (b) reproducido por el revisor en un entorno de desarrollo; (c) reportado por el desarrollador o CI, sin reproducción propia; (d) previsto, diferido o no implementado. Nunca inferir código que no se pudo consultar. Si falla el acceso al repositorio, detener la revisión del ítem afectado y documentar la limitación.
+The review should **distinguish four categories**: (a) observed directly in code/DDL/tests; (b) reproduced by the reviewer in a development environment; (c) reported by the developer or IC, without own reproduction; (d) predicted, deferred or not implemented. Never infer code that could not be consulted. If access to the repository fails, stop the revision of the affected item and document the limitation.
 
-**No confundir:** WALOS es solo un negocio de ejemplo, no el producto. React sigue siendo una DEMO local desacoplada de esta API. RF-03–RF-07 todavía son TO-BE en backend; no se debe declarar terminado el TP íntegro ni certificar un despliegue público.
+**Do not confuse:** WALOS is just an example business, not the product. React remains a local DEMO decoupled from this API. RF-03–RF-07 are still TO-BE in backend; you must not declare completion of full TP or certify a public deployment.
 
-## 2. Fuente de verdad y enlaces
+## 2. Source of truth and links
 
-- Repositorio: https://github.com/JoaquinOjedaDev/Orbit
-- Commit fijado para auditar: historical commit c54461d18020f22483273dad3f14bf6308522fbc
-- Código: `plataforma-pyme/backend/` (especialmente `app/modules/auth/`, `app/modules/businesses/`, `app/infrastructure/models/`, `alembic/versions/` y `tests/`).
-- Documentos: `plataforma-pyme/entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md` a `05_MATRIZ_API_Y_TRAZABILIDAD.md`.
-- Diagramas: `entrega-programacion-2/diagramas/03A_CLASES_IDENTIDAD_Y_CATALOGO.puml`, `03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg` y `03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md`.
-- Arquitectura de ejecución: `plataforma-pyme/backend/README.md`, `plataforma-pyme/compose.yaml` y `.github/workflows/plataforma-pyme-backend.yml`.
-- **CI del último commit funcional C.4b:** historical CI run 42472269979 — GitHub informa `completed / success`, correspondiente al SHA `8cd167481291b78628da0d038c7414cc26e3a311`.
-- Los commits posteriores de **C.5** solo modifican documentación y UML 03A. No atribuirles el CI del commit funcional ni suponer que ejecutaron pruebas nuevas.
+- Repository: https://github.com/JoaquinOjedaDev/Orbit
+- Committee set for audit: historical commit c54461d18020f22483273dad3f14bf6308522fbc
+- Code: `plataforma-pyme/backend/` (especially `app/modules/auth/`, `app/modules/businesses/`, `app/infrastructure/models/`, `alembic/versions/` y `tests/`).
+- Documents: `plataforma-pyme/entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md` a `05_MATRIZ_API_Y_TRAZABILIDAD.md`.
+- Diagrams: `entrega-programacion-2/diagramas/03A_CLASES_IDENTIDAD_Y_CATALOGO.puml`, `03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg` y `03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md`.
+- Execution architecture: `plataforma-pyme/backend/README.md`, `plataforma-pyme/compose.yaml` y `.github/workflows/plataforma-pyme-backend.yml`.
+- **IC of the last functional committee C.4b:** historical CI run 42472269979 — GitHub reports `completed / success`, corresponding to SHA `8cd167481291b78628da0d038c7414cc26e3a311`.
+- Los commits posteriores de **C.5** only modify documentation and UML 03A. Do not attribute the IC to them of the functional commission or assume that they carried out new tests.
 
-Al comenzar, verificar `git rev-parse HEAD` y registrar el SHA que efectivamente se auditó. Si `main` avanzó, usar el SHA fijado arriba o declarar explícitamente el nuevo alcance; no mezclar estados de commits distintos.
+At the beginning, check `git rev-parse HEAD` and register the SHA that was actually audited. Yes `main` advanced, use the above-fixed SHA or explicitly declare the new scope; do not mix different commit states.
 
-## 3. Evidencia previa aportada por el desarrollador — contrastar, no dar por revalidada
+## 3. Pre-evidence provided by the developer — contrast, not revalidated
 
-| Corte | Alcance | Pruebas locales reportadas |
+| Cut | Scope | Local tests reported |
 |---|---|---:|
-| C.1 | RBAC de empresa; regresión de idempotencia | 98 |
-| C.2 | PATCH de perfil empresarial | 125 |
-| C.3 | Emisión de invitaciones | 147 |
-| C.4a | Aceptación autenticada | 171 |
-| C.4b | Directorio y gestión de equipo | **195** |
-| C.5 | Corrección de documentos y UML 03A | **Sin nueva ejecución de pruebas por este corte** |
+| C.1 | Company RBAC; regression of idempotency | 98 |
+| C.2 | Business profile PATCH | 125 |
+| C.3 | Issue of invitations | 147 |
+| C.4a | Authenticated acceptance | 171 |
+| C.4b | Directory and team management | **195** |
+| C.5 | Corrigendum and UML 03A | **No further evidence being executed by this court** |
 
-El desarrollador compartió para C.4b (Windows) `195 passed in 23.86s`, `alembic current` = `e213c4_acceptance (head)`, `alembic check` = `No new upgrade operations detected.`, Docker API y DB `healthy`, y `GET /ready` = `status: ready, database: ok`. El revisor deberá clasificar estos datos como **evidencia reportada** a menos que los reproduzca. El CI indicado corresponde al código funcional (no al commit de esta guía).
+Developer shared for C.4b (Windows) `195 passed in 23.86s`, `alembic current` = `e213c4_acceptance (head)`, `alembic check` = `No new upgrade operations detected.`, Docker API y DB `healthy`, y `GET /ready` = `status: ready, database: ok`. The reviewer should classify these data as **evidence reported** unless you reproduce them. The IC indicated corresponds to the functional code (not the commit of this guide).
 
-## 4. Matriz de revisión funcional y seguridad
+## 4. Functional review matrix and safety
 
-Registrar **CONFORME / HALLAZGO / NO VERIFICADO / NO APLICA**, con archivo, función o test exacto para cada conclusión.
+Register **CONFORME / FULLNESS / NOT VERIFIED / NOT APPLICABLE**, with exact file, function or test for each conclusion.
 
-| Área | Qué comprobar | Riesgo a descartar |
+| Area | What to check | Risk to be ruled out |
 |---|---|---|
-| Registro RF-01 / CU-01 | Validación y normalización de email; UNIQUE SQL; Argon2id; respuesta sin hash ni contraseña | Alta duplicada, secretos expuestos, errores no controlados |
-| Sesiones RF-01 / CU-02 | Login, expiración, token opaco; huella persistida, `/me`, revocación `/logout`; cuenta deshabilitada | Sesiones revocadas aún válidas, token claro en DB |
-| Alta de empresa RF-02 / CU-03 | Empresa, fundador histórico y membresía titular inicial en **una transacción**; idempotencia por actor+clave+contenido | Empresas huérfanas, duplicados concurrentes, reintentos incompatibles |
-| Perfil empresarial C.2 | `PATCH /api/v1/businesses/{business_id}`; campos permitidos; RBAC titular/administrador; 403/404/409/422 | Escalada de privilegios, escritura cross-tenant |
-| Emisión de invitación C.3 / CU-12a | `POST .../invitations`; permisos; rol solo ENCARGADO/TRABAJADOR; TTL 7 días; único pendiente por email/tenant | Otorgar acceso antes de aceptar; repetir token o guardar secreto plano |
-| Aceptación C.4a / CU-12b | `POST /api/v1/invitations/accept`; email de cuenta autenticada; estado/vencimiento; consumo único; crear/reactivar membresía | Reutilización, doble membresía, rollback incompleto, invitación ajena |
-| Equipo C.4b — GET | `GET .../memberships` solo titular/administrador; incluye activos/inactivos del tenant y solo campos públicos previstos | Filtrar mal el tenant, exponer datos sensibles |
-| Equipo C.4b — PATCH | `PATCH .../memberships/{membership_id}` solo titular vigente; cambiar roles operativos/estado; prohibir tocar titular actual/histórico | Auto-desactivación del titular, escalada a titular, editar otra empresa |
-| Estado empresa/sesión | `SUSPENDIDA` y `INACTIVA` niegan operaciones según política; rollback y errores coherentes | Operar con privilegios vencidos o de otra empresa |
-| Concurrencia | Bloqueos SQL; conflictos únicos; idempotencia y aceptación bajo solicitudes paralelas independientes | Verificar y escribir fuera de la misma transacción |
+| Registration RF-01 / CU-01 | Email Validation and Normalization; UNIQUE SQL; Argon2id; response without hash or password | Duplicate tall, exposed secrets, uncontrolled errors |
+| Sesiones RF-01 / CU-02 | Login, expiration, opaque token; persistent footprint, `/me`, revocation `/logout`; disabled account | Sessions revoked still valid, token clear in DB |
+| RF-02 / CU-03 company release | Company, historical founder and initial membership in **a transaction**; actor-key+content power | Orphan companies, concurrent duplicates, incompatible retries |
+| Business profile C.2 | `PATCH /api/v1/businesses/{business_id}`; permitted fields; holder/manager RBAC; 403/404/409/422 | Privilege scaling, cross-tenant writing |
+| Invitation issue C.3 / CU-12a | `POST .../invitations`; permissions; role only CHARGE/TRABEDOR; TTL 7 days; single pending by email/tenant | Give access before accepting; repeat token or keep plain secret |
+| Acceptance C.4a / CU-12b | `POST /api/v1/invitations/accept`; authenticated account email; status/surplus; single consumption; create/reactivate membership | Re-use, double membership, incomplete rollback, other people's invitation |
+| Equipment C.4b — GET | `GET .../memberships` only holder/manager; includes tenant assets/inactives and only intended public fields | Misfilt the tenant, expose sensitive data |
+| Equipo C.4b — PATCH | `PATCH .../memberships/{membership_id}` only current holder; change operational/state roles; ban playing current/historical headline | Auto-deactivation of the holder, climbing to owner, editing another company |
+| State of business/meeting | `SUSPENDIDA` y `INACTIVA` Denies operations according to policy; rollback and consistent errors | Operating with expired privileges or other companies |
+| Concurrence | SQL blocks; unique conflicts; idempotency and acceptance under independent parallel requests | Verify and write out the same transaction |
 
-**Matriz RBAC a contrastar con código**: TITULAR_ADMINISTRATIVO puede editar perfil, invitar, leer y administrar miembros; ADMINISTRADOR puede editar perfil, invitar y leer equipo, **no** administrar roles/estados; ENCARGADO y TRABAJADOR no reciben esas facultades. `business.view` sí corresponde a miembros activos del tenant, sujeto al estado aplicable. La mera existencia de la función de permisos no acredita que cada ruta la invoque correctamente.
+**RBAC matrix to contrast with code**: ADMINISTRATIVE PORTUNITY can edit profile, invite, read and manage members; ADMINISTRATOR can edit profile, invite and read equipment, **no** administering roles/states; CHARGE and WORKER do not receive these powers. `business.view` does correspond to active members of the tenant, subject to the applicable state. The mere existence of the permission function does not prove that each route invokes it correctly.
 
-## 5. Integridad SQL, migraciones y UML 03A
+## 5. SQL integrity, migrations and UML 03A
 
-Verificar modelos SQLAlchemy y revisiones Alembic, incluidos `users`, `auth_sessions`, `businesses`, `memberships`, `business_creation_requests` y `business_invitations`. Examinar PK/FK, índices parciales y CHECK, su correspondencia con DTO/servicios, y el grafo de revisiones hasta `e213c4_acceptance`. **No usar `stamp` ni destruir una base para ocultar deriva.**
+Verify SQLAlchemy models and Alembic revisions, including `users`, `auth_sessions`, `businesses`, `memberships`, `business_creation_requests` y `business_invitations`. Examine PK/FK, partial indexes and CHECK, its correspondence with DTO/services, and the review graph up to `e213c4_acceptance`. **Do not use `stamp` Or destroy a base to hide drift.**
 
-Puntos específicos:
+Specific points:
 
-1. `Membership`: UNIQUE `(business_id,user_id)`; el índice `uq_memberships_one_active_owner` impone **como máximo un** titular ACTIVO, mientras que el servicio de alta garantiza el titular inicial. No atribuir al índice la obligación de que exista un titular.
-2. `Business`: el `founder_user_id` representa fundador histórico, **no** autorización automática ni propiedad legal.
-3. `BusinessInvitation`: FK `invited_by_user_id` obligatoria (emisor); `email_normalizado` como destinatario (no FK a Usuario); `accepted_by_user_id` opcional y `accepted_at` coherente con estado ACEPTADA mediante CHECK.
-4. Token: nunca en claro dentro de la tabla; comprobar hash SHA-256 y unicidad; vencimiento funcional incluso si el estado persiste como PENDIENTE.
-5. Aceptación: una sola transacción debe escribir consumo de invitación y alta/reactivación de membresía; buscar tests de rollback.
-6. UML **03A**: revisar que PlantUML y SVG editorial no se contradigan. El SVG resume **emisor**, el PUML contiene también **aceptante opcional** y fundador histórico. Ubicacion, ArticuloCatalogo y Proveedor continúan modelados como TO-BE.
-7. UML **03B/03C**: confirmar que C.5 no los modificó y no interpretar reglas comerciales futuras como ya implementadas.
+1. `Membership`: UNIQUE `(business_id,user_id)`; index `uq_memberships_one_active_owner` imposes **not more than one** ASSETS holder, while the service of discharge guarantees the initial holder. Do not attribute to the index the obligation that there is an operator.
+2. `Business`: el `founder_user_id` represents historical founder, **no** automatic authorization or legal property.
+3. `BusinessInvitation`: FK `invited_by_user_id` mandatory (issuer); `email_normalizado` as recipient (not FK to User); `accepted_by_user_id` optional and `accepted_at` consistent with CHECK-ACEPTED state.
+4. Token: never clear within the table; check SHA-256 hash and uniqueness; functional maturity even if the state persists as PENDENT.
+5. Acceptance: a single transaction must write invitation consumption and high/membership reactivation; look for rollback tests.
+6. UML **03A**: review that PlantUML and SVG editorial do not contradict. **issuer**, the PUML contains also **optional acceptor** and historical founder. Location, ArticleCatalog and Supplier continue modelled as TO-BE.
+7. UML **03B/03C**: confirm that C.5 did not modify them and do not interpret future trade rules as already implemented.
 
-## 6. Verificación de documentación y arquitectura
+## 6. Documentation and architecture verification
 
-Contrastar por lo menos:
+Contrast at least:
 
-- **01**: RF-01/RF-02 y límites reales; RF-03–RF-07 pendientes. No confundir la columna de alcance propuesto con implementación.
-- **02**: CU-01/CU-02/CU-03/CU-12, precondiciones, idempotencia, errores, atomicidad y autorización.
-- **03 + 03A**: entidades, estados, cardinalidades, titular inicial e histórico; relaciones y FKs verdaderas.
-- **04**: implementación Router → Service → Repository → PostgreSQL, sesiones por petición, commits y rollbacks; separar secciones históricas propuestas del AS-IMPLEMENTED.
-- **05**: métodos/rutas, roles, errores, migraciones, tests y estados de evidencia en correspondencia con el código.
-- **README backend**: comandos reproducibles, limitaciones, no exposición de secretos ni sugerencias destructivas.
-- **CI**: confirmar que la ejecución de referencia realmente revisó el commit funcional C.4b. El workflow puede no activarse por cambios solo documentales en C.5.
+- **01**: RF-01/RF-02 and actual limits; RF-03–RF-07 pending. Do not confuse the proposed scope column with implementation.
+- **02**: CU-01/CU-02/CU-03/CU-12, preconditions, idempotency, errors, atomism and authorisation.
+- **03 + 03A**: entities, states, cardinalities, initial and historical title; true relations and FKs.
+- **04**: implementation Router → Service → Repository → PostgreSQL, on-demand sessions, commit and rollbacks; separate historical sections proposed from AS-IMPLEMENTED.
+- **05**: methods/paths, roles, errors, migrations, tests and evidence states in correspondence with the code.
+- **README backend**: Reproducible commands, limitations, no exposure of secrets or destructive suggestions.
+- **CI**: confirm that the reference execution actually revised the functional commit C.4b. The workflow may not be activated by changes only documentaries in C.5.
 
-**Especial atención:** textos históricos aún pueden mencionar estados anteriores; reportar una contradicción real que afecte al lector, distinguiéndola de un antecedente explícitamente rotulado como histórico.
+**Special attention:** historical texts can still mention earlier states; report a real contradiction that affects the reader, distinguishing it from an explicitly labeled as historical background.
 
-## 7. Ejecución opcional de pruebas en entorno de desarrollo
+## 7. Optional testing in development environment
 
-La auditoría del repositorio es de **solo lectura**. Si el revisor decide ejecutar pruebas, hacerlo exclusivamente en una **base de desarrollo propia y aislada**, con Docker disponible, nunca contra producción ni datos de una empresa real.
+The audit of the repository is **read only**. If the reviewer decides to perform tests, do so exclusively in a **the basis for own and isolated development**with Docker available, never against production or data from a real company.
 
-Desde `plataforma-pyme/`, en PowerShell (ajustar el entorno de Python al equipo):
+From `plataforma-pyme/`, in PowerShell (to adjust Python environment to the computer):
 
 ```powershell
 git rev-parse HEAD
@@ -114,33 +114,33 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-No pegar en el informe secretos, tokens, `.env` ni contraseñas. No ejecutar `git clean -fd`, `git reset --hard`, `docker compose down -v` ni migraciones destructivas. El repositorio puede contener archivos personales no versionados; preservarlos.
+Don't stick in the secret report, tokens, `.env` no passwords. Do not execute `git clean -fd`, `git reset --hard`, `docker compose down -v` The repository may contain unversed personal files; preserve them.
 
-Si no se ejecutan las pruebas, indicar «no reproducidas por el revisor» y utilizar el CI/la evidencia aportada con atribución correcta. **No sumar cifras de pruebas de distintos cortes**: 195 es el total reportado para C.4b, no 98+125+147+171+195.
+If the evidence is not executed, indicate "not reproduced by the reviewer" and use the IC/evidence provided with correct attribution. **Do not add up test figures from different courts**: 195 is the total reported for C.4b, no 98+125+147+171+195.
 
-## 8. Alcances expresamente pendientes
+## 8. Specific scopes outstanding
 
-**No exigir como implementado en E2-1:** transferencia de titularidad, auditoría histórica de cambios de roles, edición de puesto, cancelación/rechazo/reenvío/listado de invitaciones, verificación de email, envío automático, rate limiting y demás endurecimientos para producción, integración del frontend con API, despliegue público, ubicaciones RF-03, catálogo RF-04, compras RF-05, inventario RF-06, ventas RF-07, ni funciones diferidas de gastos/caja, Mercado Pago y QR real.
+**Do not require as implemented in E2-1:** transfer of ownership, historical audit of role changes, post editing, cancellation/rejection/return/listing of invitations, email verification, automatic shipping, rate limiting and other hardenings for production, integration of frontend with API, public deployment, RF-03 locations, RF-04 catalog, RF-05 purchases, RF-06 inventory, RF-07 sales, no deferred functions of expense/box, Market Payment and real QR.
 
-Sin embargo, **sí** se puede señalar que una de esas capacidades faltantes limita seguridad, operatividad o cumplimiento académico; distinguir entre «bug contra alcance E2-1», «riesgo real» y «mejora futura».
+However, **sí** it can be noted that one of these missing capabilities limits security, operativity or academic compliance; distinguish between “bug versus E2-1 scope”, “real risk” and “future improvement”.
 
-La consigna académica exige una API RESTful con un conjunto suficiente de requerimientos funcionales (incluidos al menos cinco de alto nivel según documentos de entrega), pruebas, CI, patrones y despliegue. El éxito de E2-1 **no prueba por sí solo** que todos esos requisitos estén completos.
+The academic slogan requires an RESTful API with a sufficient set of functional requirements (including at least five high-level ones according to delivery documents), tests, IQs, patterns and deployment. **not test by itself** that all these requirements are complete.
 
-## 9. Entregable solicitado al revisor
+## 9. Deliverable requested to the reviewer
 
-Presentar una revisión técnica independiente, con este orden:
+Submit an independent technical review, with this order:
 
-1. **Identificación:** fecha, SHA efectivamente revisado, archivos accesibles y límites del acceso.
-2. **Dictamen por área:** autenticación, multiempresa, RBAC, creación idempotente, emisión, aceptación, administración de equipo, transacciones, migraciones, diagramas y documentos.
-3. **Hallazgos priorizados:** para cada uno: ID, severidad (CRÍTICA/ALTA/MEDIA/BAJA), archivo y línea o función, evidencia reproducible, escenario/impacto, corrección propuesta y si bloquea el paso a RF-03.
-4. **Matriz de trazabilidad:** RF → CU → endpoint → servicio/repositorio/modelo → tests → estado real. Dejar como pendiente cualquier relación no corroborada.
-5. **Pruebas/evidencias:** diferenciar resultados observados por el revisor, registros de CI y resultados comunicados por el desarrollador.
-6. **Pendientes reconocidos:** fuera de E2-1, riesgos para producción y requisitos del TP aún no cubiertos.
-7. **Conclusión de avance:** `APTO PARA CONTINUAR / APTO CON OBSERVACIONES / BLOQUEADO`, justificación y condiciones verificables para iniciar RF-03.
+1. **Identification:** date, SHA effectively revised, accessible files and access limits.
+2. **Opinion by area:** authentication, multi-company, RBAC, creation idempotent, issuance, acceptance, equipment administration, transactions, migrations, diagrams and documents.
+3. **Priority findings:** for each: ID, severity (Critical/ALTA/MEDIA/LOW), file and line or function, reproducible evidence, scenario/impact, proposed correction and if blocking the step to RF-03.
+4. **Tracer matrix:** RF → CU → endpoint → service/repository/model → tests → actual status. Leave any unconfirmed relationship as pending.
+5. **Evidence/evidence:** differentiate results observed by the reviewer, IC records and results reported by the developer.
+6. **Recognised earrings:** outside E2-1, risks to production and requirements of TP not yet covered.
+7. **Conclusion of progress:** `APTO PARA CONTINUAR / APTO CON OBSERVACIONES / BLOQUEADO`, justification and verifiable conditions for starting RF-03.
 
-Para cada afirmación técnica sustantiva, citar **rutas concretas, clases, métodos o tests**, no opiniones generales. No atribuir éxito a CI de C.5 sin verificar su ejecución ni afirmar conformidad total de seguridad solo por el número de tests. Si no hay hallazgos críticos, describir también las limitaciones de cobertura verificadas.
+For each substantive technical statement, quote **specific routes, classes, methods or tests**, not general opinions. Do not attribute success to C.5 CI without verifying its execution or asserting total security compliance only by the number of tests. If there are no critical findings, also describe verified coverage limitations.
 
-### Plantilla breve por hallazgo
+### Brief template per finding
 
 ```markdown
 ### H-E2-XX — Título
@@ -154,6 +154,6 @@ Para cada afirmación técnica sustantiva, citar **rutas concretas, clases, mét
 - ¿Bloquea RF-03?: Sí / No / Por verificar
 ```
 
-## 10. Criterio de cierre
+## 10. Closing criterion
 
-La revisión de E2-1 se considera **realizada** solo cuando el compañero aporte sus hallazgos y evidencia; **esta hoja no es un dictamen**. El siguiente paso del equipo será evaluar los hallazgos, corregir únicamente aquellos que lo ameriten y, después, comenzar **RF-03 — Ubicaciones** como nuevo incremento funcional. No modificar el repositorio durante la auditoría independiente.
+The E2-1 review is considered **realized** only when the companion provides his findings and evidence; **This sheet is not an opinion**. The next step of the team will be to evaluate the findings, correct only those that merit it and then start **RF-03 — Locations** as a new functional increase. Do not modify the repository during independent audit.

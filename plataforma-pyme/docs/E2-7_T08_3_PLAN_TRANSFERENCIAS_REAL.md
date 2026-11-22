@@ -1,27 +1,27 @@
-# E2-7 T08-3 — Plan de integración de transferencias REALES
+# E2-7 T08-3 — Real Transfer Integration Plan
 
-**Estado actualizado después de T08-5:** circuito de traslados REAL **ACEPTADO funcionalmente** con evidencia manual de saldos, ledger y trazabilidad; QA de permisos, recuperación e idempotencia completado mediante PostgreSQL/Playwright aislado. **No** se realizó manualmente el escenario adversarial de rechazo 403 con Miguel; DEMO sí se comprobó manualmente en T08-5 y automáticamente en escritorio/móvil. Esta acta conserva las observaciones parciales de cada ronda como historial. Rama `feature/e2-7-t08-inventario-real`, PR #41 en borrador, sin fusionar.
+**Updated status after T08-5:** REAL transfer circuit **Functionally accepted** with manual evidence of balances, leadger and traceability; QA permissions, recovery and idempower completed by PostgreSQL/Playwright isolated. **No** The adverse rejection scenario 403 was performed manually with Miguel; DEMO was checked manually on T08-5 and automatically on desktop/mobile. This record retains the partial observations of each round as a history. `feature/e2-7-t08-inventario-real`, PR #41 in draft, not merged.
 
-## 1. Punto de partida verificado
+## 1. Checked starting point
 
-T08-1 (consulta de existencias/ledger) y T08-2 (historial y trazabilidad) tienen pruebas funcionales principales aprobadas por el usuario; T08-2 reporta **6/6** casos manuales. CI T08-2 validado: 25/25 inventario, 190/190 frontend, build y lint correctos; E2E Chromium existentes. Esto no equivale al QA integral T08-5/T11.
+T08-1 (stock consultation/ledger) and T08-2 (history and traceability) have primary functional tests approved by the user; T08-2 reports **6/6** manual cases. IC T08-2 validated: 25/25 inventory, 190/190 frontend, build and lint correct; existing E2E Chromium. This does not equal the comprehensive QA T08-5/T11.
 
-Backend **ya implementado** bajo `app/modules/purchases/`:
+Backend **already implemented** low `app/modules/purchases/`:
 - `transfer_router.py`
 - `transfer_schemas.py`
 - `transfer_service.py`
 
-**No duplicar ni reimplementar reglas de negocio en frontend.**
+**Do not duplicate or reimplement business rules on frontend.**
 
-## 2. Contrato real existente
+## 2. Existing actual contract
 
 **POST** `/api/v1/businesses/{business_id}/inventory/transfers`
 
-Cabeceras:
+Headers:
 - `Authorization: Bearer <token opaco>`
-- `Idempotency-Key: <UUID v4>` por intención única, estable ante replay.
+- `Idempotency-Key: <UUID v4>` by unique intention, stable before replay.
 
-Cuerpo estricto:
+Strict body:
 
 ```json
 {
@@ -33,191 +33,191 @@ Cuerpo estricto:
 }
 ```
 
-Restricciones del contrato:
-- Artículo `BIEN` activo de la empresa seleccionada; servicio no transferible.
-- Sedes distintas, activas y con almacenamiento; ambos extremos dentro del mismo tenant.
-- `quantity_milli` entero `1..999999999`; unidades discretas (`UNIDAD`, `CAJA`, `PAQUETE`) múltiplos de 1000; otras unidades admiten milésimas compatibles.
-- `reason`: entre 3 y 500 caracteres tras normalizar espacios.
-- El backend verifica **permiso STORE en ambas sedes** y evita saldo negativo.
-- Un solo commit registra **salida** en origen, **entrada** en destino, operación histórica y saldos actualizados.
-- `201`: creación; `200`: replay con **misma clave, actor y cuerpo** (sin duplicar).
-- `401` sesión no válida, `403` falta permiso en origen o destino, `404` recurso fuera de tenant/no disponible, `409` falta de saldo, sede incompatible, empresa suspendida o conflicto de idempotencia, `422` cuerpo/cantidad incompatible.
-- **GET** `/api/v1/businesses/{business_id}/inventory/transfers/{transfer_id}` permite recuperar una operación **si se conoce el transfer_id**; no hay aquí endpoint por `Idempotency-Key`.
+Contract restrictions:
+- Item `BIEN` asset of the selected company; non-transferable service.
+- Different, active and storageable locations; both ends within the same tenant.
+- `quantity_milli` whole `1..999999999`; discrete units (`UNIDAD`, `CAJA`, `PAQUETE`) multiples of 1000; other units allow thousandths compatible.
+- `reason`: between 3 and 500 characters after normalizing spaces.
+- El backend verifica **STORE permission in both offices** and avoid negative balance.
+- Un solo commit registra **exit** at source, **entry** in destination, historical operation and updated balances.
+- `201`: creation; `200`: replay con **same key, actor and body** (without doubling).
+- `401` invalid session, `403` no permit at source or destination; `404` resource outside tenant/not available, `409` lack of balance, incompatible headquarters, suspended company or conflict of willpower, `422` incompatible body/quantity.
+- **GET** `/api/v1/businesses/{business_id}/inventory/transfers/{transfer_id}` allows to recover an operation **if transfer_id is known**; there is no endpoint here by `Idempotency-Key`.
 
-## 3. Orden de trabajo propuesto
+## 3. Proposed work order
 
-1. **Gateway TypeScript**: DTOs estrictos por tenant, UUIDs, movimientos y signo; POST y GET; distinción errores HTTP y transporte. Sin reintentos automáticos.
-2. **Conversión exacta**: texto `1` unidad discreta → `1000` milésimas; rechazar fracciones de bienes discretos. No usar multiplicaciones flotantes ambiguas para cantidades monetarias/unidades.
-3. **Diálogo de traslado** desde Inventario REAL: seleccionar artículo, sede origen, destino distinto, cantidad y motivo. Mostrar saldo **consultado** de origen antes de confirmar, pero **no asumirlo como autorización ni garantía contra concurrencia**.
-4. **Permisos**: elegibilidad visual orientativa según rol/ubicación/asignación conocida; FastAPI autoriza siempre, especialmente STORE en ambas sedes. No inventar privilegios.
-5. **Confirmación explícita**: mostrar `X unidades de artículo desde Origen hasta Destino`. Un único POST tras aceptación. Bloquear dobles clics.
-6. **Identidad durable de la intención**: diseñar registro seguro por `actor_id + business_id` que conserve **cuerpo canónico y misma Idempotency-Key** tras F5, sin almacenar token. Política de consentimiento y riesgo de IndexedDB siguiendo T06/T07. Si almacenamiento falla, evitar mutación que no pueda recuperarse.
-7. **Resultado incierto**: al fallar conexión/timeout después de enviar el POST, **no crear otra intención ni clave**. Si se obtuvo `transfer_id`, ofrecer GET de detalle. Si no se obtuvo, revalidar con el usuario y permitir **reenvío explícito con clave/cuerpo idénticos** (el backend responderá 200 ante replay). Sin GET por clave inexistente, sin borrado arbitrario de intención ni reintento automático.
-8. **Confirmación y lectura posterior**: mostrar resumen de salida/entrada y los dos movimientos con identificadores; refrescar ambos saldos y el historial con la API. No calcular la proyección final como fuente de verdad.
-9. **Regresión**: preservar T08-1/2, T07 y DEMO, sin nuevos endpoints backend ni scripts globales.
+1. **Gateway TypeScript**: Strict DTOs by tenant, UUIDs, movements and sign; POST and GET; HTTP error distinction and transport. No automatic retry.
+2. **Exact conversion**: text `1` discrete unit → `1000` thousandths; reject discrete fractions of goods. Do not use ambiguous floating multiplications for monetary/unit quantities.
+3. **Transfer dialogue** from REAL Inventory: select article, home address, different destination, quantity and motif. Show balance **consulted** of origin before confirming, but **not assume it as authorization or guarantee against competition**.
+4. **Permissions**: guidance visual eligibility according to role/location/known assignment; FastAPI always authorizes, especially STORE in both locations. Do not invent privileges.
+5. **Express confirmation**: display `X unidades de artículo desde Origen hasta Destino`. One single POST after acceptance. Block double clicks.
+6. **Durable identity of intention**: design secure registration by `actor_id + business_id` Keeping **canonical body and Idempotency-Key itself** after F5, without storing token. IndexedDB consent and risk policy following T06/T07. If storage fails, avoid mutation that cannot be recovered.
+7. **Uncertain result**: when connection/timeout fails after POST is sent, **not create any other intention or key**. If obtained `transfer_id`, offer detailed GET. If not obtained, revalidate with the user and allow **explicit forwarding with identical key/body** (backend will respond 200 to replay) No GET for non-existent key, no arbitrary deletion of intent or automatic retry.
+8. **Confirmation and subsequent reading**: show output/entry summary and the two movements with identifiers; refresh both balances and history with API. Do not calculate final projection as a true source.
+9. **Regression**: preservar T08-1/2, T07 y DEMO, sin nuevos endpoints backend ni scripts globales.
 
-## 4. Pruebas automatizadas obligatorias
+## 4. Mandatory automated testing
 
 - DTOs de POST/GET completos, URL relativa, Bearer, header UUID v4.
-- `201` nuevo y `200` replay del mismo cuerpo; un solo traslado lógico.
-- Rechazo local: fuente=destino, cantidad 0/negativa, exceso máximo, fracción de unidad discreta, `SERVICIO`, motivo inválido.
-- Los dos movimientos deben corresponder al mismo `inventory_operation_id`, uno `TRASLADO_SALIDA` negativo en origen y otro `TRASLADO_ENTRADA` positivo en destino; error cerrado si no.
-- `401/403/404/409/422` con mensajes útiles, sin DEMO fallback.
-- Interrupción de red/timeout: resultado desconocido, no POST automático; F5 recupera cuerpo/clave original en el scope del usuario correcto.
-- Cambio de empresa o usuario cancela lectura anterior y no expone datos cruzados.
-- Compilación, lint, tests frontend existentes y CI Chromium sin regresión.
+- `201` new and `200` replay of the same body; a single logical transfer.
+- Local rejection: source=destination, quantity/negative, maximum excess, discrete unit fraction, `SERVICIO`invalid motive.
+- The two movements must correspond to the same `inventory_operation_id`, uno `TRASLADO_SALIDA` negative at source and other `TRASLADO_ENTRADA` positive at destination; error closed if not.
+- `401/403/404/409/422` with useful messages, without DEMO failback.
+- Network/timeout interruption: unknown result, not automatic POST; F5 recovers original body/key in the correct user scope.
+- Change of company or user cancels previous reading and does not expose cross data.
+- Compilation, lint, existing frontend tests and non-regression Chromium CI.
 
-## 5. QA manual sugerido (usar datos ficticios y poca cantidad)
+## 5. Suggested manual QA (use fictitious data and small amount)
 
-**Precondición:** en TEST Empresa A, Producto A TEST tiene 11 unidades en `Sede A TEST` y no hay saldo registrado en `Sede A TEST 2`, **solo si no hubo movimientos posteriores**. Verificar estado inmediatamente antes del ejercicio.
+**Precondition:** in TEST Company A, Product A TEST has 11 units in `Sede A TEST` and no balance recorded in `Sede A TEST 2`, **only if there were no subsequent movements**. Check status immediately before exercise.
 
-1. Con la cuenta propietaria, hacer traslado de **1 UNIDAD** del Producto A TEST de Sede A TEST a Sede A TEST 2, motivo explicativo y confirmación.
-2. Comprobar desde el servidor que origen pasa a **10** y destino a **1**, si el origen era 11. El historial debe registrar **-1** y **+1** con la misma operación.
-3. Consultar el detalle por ID y confirmar UUIDs, actor, sedes, unidad y cantidad sin factura ficticia.
-4. Reabrir el detalle y/o verificar idempotencia **solo con la misma intención almacenada**, sin emitir un nuevo traslado con nueva clave.
-5. Intentar origen=destino y cantidad que exceda saldo: bloquear o recibir 409 **sin alterar stock**.
-6. Cambiar a TEST Empresa B: no mostrar productos ni traslados de A.
-7. Con Miguel (TRABAJADOR), comprobar acceso y conducta de permisos: si no está asignado para STORE **a ambas sedes**, FastAPI debe rechazar el traslado. No modificar membresías solo para forzar éxito.
-8. Verificar que WALOS/DEMO sigue independiente.
-9. Ante interrupción simulada de API para QA, confirmar recuperación con **misma clave y cuerpo** tras F5; evitar un segundo traslado por error.
+1. With the owner account, make transfer of **1 UNITY** Product A TEST from Headquarters A TEST to Headquarters A TEST 2, explanatory reason and confirmation.
+2. Check from the source server **10** and destination to **1**, if the origin was 11. History must record **-1** y **+1** with the same operation.
+3. Check the details by ID and confirm UUIDs, actor, venues, unit and amount without fictitious invoice.
+4. Reopen detail and/or verify idempotency **only with the same intention stored**without issuing a new transfer with new key.
+5. Trying to origin=destiny and amount exceeding balance: block or receive 409 **sin alterar stock**.
+6. Switch to TEST Company B: do not display products or transfers of A.
+7. With Miguel (TRABAJADOR), check access and permission behavior: if not assigned to STORE **to both headquarters**, FastAPI must refuse the transfer. Do not modify memberships just to force success.
+8. Verify that WALOS/DEMO remains independent.
+9. Upon simulated interruption of API for QA, confirm recovery with **same key and body** after F5; avoid a second shipment by mistake.
 
-**Advertencia:** repetir el POST con **otra clave** crea una operación nueva; no usarlo como prueba de replay.
+**Warning:** repeat POST with **other key** creates a new operation; do not use it as a replay test.
 
-## 6. Siguiente bloque
+## 6. Next block
 
-T08-4 integrará **stock inicial y ajustes versionados**, mediante `adjustment_router.py` y `adjustment_schemas.py`: `kind`, `quantity_milli`, `expected_version`, `reason`, `location_id`. Ante 409 por versión obsoleta se requiere **refresco, revisión y nueva confirmación humana**, no recalcular diferencias ni reintentar automáticamente.
+T08-4 will integrate **initial stock and versioned adjustments**, by means of `adjustment_router.py` y `adjustment_schemas.py`: `kind`, `quantity_milli`, `expected_version`, `reason`, `location_id`. Before 409 per obsolete version is required **refresh, review and new human confirmation**, do not recalculate differences or automatically try again.
 
-T08-5 consolidará QA full-stack real/DEMO y preparación de merge único de T08, siempre luego de validar cada subincremento. **No se solicita ni realiza merge en esta planificación.**
+T08-5 will consolidate QA full-stack real/DEMO and unique T08 merge preparation, always after validating each subincrement. **No request or merit is made in this planning.**
 
-## 7. Implementación efectiva del frontend — 10/11/2026
+## 7. Effective implementation of the frontend — 10/11/2026
 
-### Archivos nuevos
+### New Files
 
-- `frontend/src/features/inventory/realTransferGateway.ts`: contrato estricto `POST /transfers` con `Idempotency-Key` UUID4, `GET /transfers/{id}`, motivos normalizados como backend, entrada exacta en milésimas con `BigInt` y verificación de operación/actor/sedes/artículo y dos movimientos firmados. Sin reintentos automáticos ni `demoStore`.
-- `frontend/src/features/inventory/transferPendingJournal.ts`: IndexedDB independiente de T06/T07, scope `actorId:businessId:inventory.transfer`. Reserva transaccional y verificación por lectura **antes del POST**; clave y cuerpo inmutables, solo un intento pendiente por actor/empresa. No guarda credenciales, Bearer, contraseña, email ni datos de DEMO. Los datos de operación permanecen **sin cifrar** en el navegador; usuario consiente. Si IndexedDB falla se bloquea la mutación.
-- `frontend/src/features/inventory/RealTransferPanel.tsx`: formulario por artículo físico ACTIVO, dos sedes ACTIVA con `can_store=true`, cantidades exactas, motivo y consentimiento de persistencia; consulta saldo de origen por GET específico antes de confirmar. Confirmación explícita `window.confirm`, deshabilitación de dobles clics; si el resultado es incierto, conserva clave/cuerpo y **nunca** reenvía automáticamente. El usuario puede revisar saldos/historial, reintentar **la misma clave** mediante acción explícita, o descartar solo después de afirmar que verificó y confirmar de nuevo. En éxito muestra ID de operación, dos deltas y consulta detalle por GET.
-- `frontend/src/features/inventory/RealInventoryPage.tsx`: lanza el formulario desde el inventario REAL y vuelve a consultar balances/movements en FastAPI al confirmar. Sigue permitiendo filtros, historial y trazabilidad T08-1/2.
-- `frontend/src/features/auth/auth.css`: estilos responsive de formulario, saldo consultado, pendiente ámbar y confirmación verde.
-- `frontend/tests/transfer-real-api.test.mjs`, `frontend/package.json` y `.github/workflows/plataforma-pyme-frontend.yml`: comando `npm.cmd run test:transfer-real` incorporado al CI.
+- `frontend/src/features/inventory/realTransferGateway.ts`: strict contract `POST /transfers` con `Idempotency-Key` UUID4, `GET /transfers/{id}`, standard motifs like backend, exact entry in thousandths with `BigInt` and operation/actor/headquarters/articulate verification and two signed movements. No automatic retrying or `demoStore`.
+- `frontend/src/features/inventory/transferPendingJournal.ts`: IndexedDB independiente de T06/T07, scope `actorId:businessId:inventory.transfer`. Transactional reservation and reading verification **before POST**; key and body unchangeable, only one pending attempt per actor/company. It does not save credentials, Bearer, password, email or DEMO data. Operating data remain **unencrypted** in the browser; user consents. If IndexedDB fails, mutation is blocked.
+- `frontend/src/features/inventory/RealTransferPanel.tsx`: form by physical article ASSETS, two active sites with `can_store=true`, exact quantities, reason and consent to persistence; consult source balance by specific GET before confirming. `window.confirm`, disabling double clicks; if the result is uncertain, retain key/body and **Never** forwarding automatically. User can review balances/history, retry **the same key** by explicit action, or discard only after stating that you verified and confirmed again. Successfully displays operation ID, two deltas and query details by GET.
+- `frontend/src/features/inventory/RealInventoryPage.tsx`: Launch the form from the REAL inventory and re-check balances/movements in FastAPI when confirming. It continues to allow filters, history and traceability T08-1/2.
+- `frontend/src/features/auth/auth.css`: responsive form styles, balance consulted, amber pending and green confirmation.
+- `frontend/tests/transfer-real-api.test.mjs`, `frontend/package.json` y `.github/workflows/plataforma-pyme-frontend.yml`: command `npm.cmd run test:transfer-real` incorporated into the IC.
 
-### Garantías y límites importantes
+### Major guarantees and limits
 
-- El saldo mostrado es lectura previa, **no reserva**: FastAPI vuelve a validar disponibilidad con UPDATE condicional y transacción atómica, por lo que un 409 de concurrencia es normal y no provoca retry automático.
-- El botón aparece para la empresa activa con sedes y artículos elegibles; **los permisos STORE reales son los del servidor**. A un trabajador sin asignaciones a ambas sedes FastAPI puede rechazar con 403. No se crean ni se cambian asignaciones para habilitarlo.
-- La respuesta se acepta solo si incluye **exactamente dos** movimientos, uno `TRASLADO_SALIDA=-quantity_milli` en origen y uno `TRASLADO_ENTRADA=+quantity_milli` en destino, ambos con el mismo `inventory_operation_id`, actor y artículo.
-- Un 201 (creación) y un 200 (replay de misma clave/cuerpo) se presentan como confirmación, **no** como dos traslados diferentes.
-- El GET por ID no recupera un POST cuyo identificador nunca llegó. En resultado incierto se utiliza historial/saldos y eventual replay **idéntico**, jamás clave nueva automática.
-- No se crean comprobantes fiscales, no se editan saldos en el frontend y no se modifica la cuenta/caja.
-- Los registros de intención persisten solo en el navegador donde se originaron y pueden permanecer sin cifrar hasta limpieza explícita; no usar equipo compartido.
-- T08-3 no requiere cambios de backend ni migraciones. No modifica inventario inicial/ajustes de T08-4.
+- The balance shown is read-in, **no booking**: FastAPI revalidates availability with conditional UPDATE and atomic transaction, so a 409 of continuance is normal and does not cause automatic retry.
+- The button appears for the active company with eligible locations and items; **the actual STORE permissions are those of the server**. A worker without assignments to both FastAPI headquarters can be refused with 403. No creation or change of assignments to enable it.
+- The answer is accepted only if it includes **exactly two.** movements, one `TRASLADO_SALIDA=-quantity_milli` at source and one `TRASLADO_ENTRADA=+quantity_milli` in destination, both with the same `inventory_operation_id`actor and article.
+- A 201 (creation) and a 200 (replay of the same key/body) are presented as confirmation, **no** like two different transfers.
+- The GET per ID does not recover a POST whose identifier never arrived. Uncertain result is used history/salts and eventual replay **identical**Never new automatic key.
+- No tax vouchers are created, no balances are edited on the frontend and no account/box is changed.
+- Intent records persist only in the browser where they originated and may remain unencrypted until explicit cleaning; do not use shared equipment.
+- T08-3 does not require backend changes or migrations. It does not modify initial inventory/t08-4 adjustments.
 
-### CI y pruebas
+### IQ and testing
 
-GitHub Actions #42855668226, commit de implementación `7dc23ba`: **ambos jobs SUCCESS**.
+GitHub Actions #42855668226, implementation commit `7dc23ba`: **ambos jobs SUCCESS**.
 
 - **Frontend: SUCCESS:** `npm ci`, `npm run build`, `npm run lint` **0 warnings y 0 errors**.
-- **Tests frontend: 204/204 aprobadas** (14 pruebas nuevas en `test:transfer-real` y 190 preexistentes); **test:inventory-real 25/25** sin regresión.
-- Se conserva el aviso Vite por chunk JavaScript mayor de 500 kB, sin modificar umbrales ni silenciar. Se corrigió además el formulario para limpiar el destino al cambiar de origen y bloquear el botón durante la reserva de identidad en IndexedDB. También se distingue respuesta GET inválida (solo lectura) de POST exitoso con DTO inválido (resultado incierto: conservar el intento); estos casos están probados.
-- **Chromium escritorio y móvil: SUCCESS**. Sus recorridos actuales son **DEMO**, no pruebas full-stack de POST transferencias con PostgreSQL.
-- Pruebas T08-3 incluyen: POST Bearer e Idempotency-Key, 200 replay, GET histórico, validación de unidades y motivo, dos movimientos con actor/sede/ID compartidos, HTTP 401/403/404/409/422, timeout/red incierta, conservación de clave tras F5, aislamiento de actor/tenant y rechazo cerrado de registro corrupto y de nuevo cuerpo.
-- Una ejecución anterior detectó un test que esperaba rechazo de salto de línea en motivo; se corrigió porque el backend normaliza espacios y saltos de línea. La última ejecución de frontend está aprobada.
+- **Frontend tests: 204/204 approved** (14 new tests in `test:transfer-real` and 190 pre-existing); **test:inventory-real 25/25** No regression.
+- The Vite warning is retained by chunk JavaScript over 500 kB, without modifying thresholds or silencing. The form was also corrected to clear the destination when changing its origin and blocking the button during the indexedDB identity reservation. Invalid GET response (read only) of successful POST with invalid DTO (uncertain result: keep the attempt); these cases are proven.
+- **Chromium desktop and mobile: SUCCESS**. Its current routes are **DEMO**, no pruebas full-stack de POST transferencias con PostgreSQL.
+- T08-3 tests include: POST Bearer and Idempotency-Key, 200 replay, historical GET, unit validation and motif, two movements with shared actor/headquarters/ID, HTTP 401/403/404/409/422, uncertain timeout/red, key preservation after F5, actor/tenant isolation and closed rejection of corrupt and new body registration.
+- A previous execution detected a test that expected rejection of line jump in motive; it was corrected because the backend normalizes spaces and line breaks. The last frontend execution is approved.
 
-### QA humano pendiente
+### Human QA pending
 
-1. `git pull --ff-only origin feature/e2-7-t08-inventario-real`, ejecutar `npm.cmd run test:transfer-real`, `npm.cmd run test:inventory-real`, `npm.cmd run build` y `npm.cmd run lint` desde `plataforma-pyme/frontend`.
-2. Con FastAPI y Postgres saludables, abrir `http://localhost:5173/real/login`, entrar como titular de **TEST Empresa A** → Inventario REAL → **Transferir entre ubicaciones**.
-3. Elegir `Producto A TEST`, origen `Sede A TEST`, destino `Sede A TEST 2`. Verificar mediante GET el saldo **antes de confirmar**. Si sigue en 11 y destino no tenía registro, transferir **1 UNIDAD**, motivo `Reposición de sede secundaria`. Confirmar.
-4. Resultado esperado si los saldos no cambiaron antes de la operación: **origen 10, destino 1**, historial con **−1 en origen y +1 en destino**, relacionados por un único identificador de transferencia. **No** asumir saldos fijos ni repetir el POST de esa operación con clave nueva.
-5. Abrir «Ver identificadores» del resultado, después «Revisar saldos e historial actualizados» y comprobar datos leídos desde API. No debe modificar DEMO ni el historial anterior.
-6. Probar destino=origen, cantidad inválida/servicio y saldo insuficiente **sin realizar una nueva transferencia válida**. El frontend debe bloquear y/o API devolver 409 sin cambios.
-7. Cambiar a cuenta Miguel: sin permisos STORE **a ambas sedes**, un intento debe recibir 403; conservar el pendiente de ese actor si se envió POST y no inventar permisos.
-8. Comprobar Empresa B y WALOS/DEMO continúan aislados.
-9. **Prueba de fallo de red opcional y controlada**: parar solo la API una vez que se haya reservado un intento nuevo, revisar el mensaje de resultado incierto, F5 y re-login; el registro deberá reaparecer con la **misma clave y el mismo cuerpo** y nunca reenviarse solo. No usar la prueba sobre una transferencia confirmada que ya se haya limpiado.
+1. `git pull --ff-only origin feature/e2-7-t08-inventario-real`, ejecutar `npm.cmd run test:transfer-real`, `npm.cmd run test:inventory-real`, `npm.cmd run build` y `npm.cmd run lint` from `plataforma-pyme/frontend`.
+2. With FastAPI and Healthy Postgres, open `http://localhost:5173/real/login`, enter as holder of **TEST Company A** → REAL Inventory → **Transfer between locations**.
+3. Elegir `Producto A TEST`, origin `Sede A TEST`, destination `Sede A TEST 2`. Check the balance using GET **before confirming**If you are still in 11 and destination had no record, transfer **1 UNITY**, motive `Reposición de sede secundaria`Confirm.
+4. Expected result if the balances did not change before the operation: **origin 10, destination 1**history with **−1 at source and +1 at destination**, related by a single transfer identifier. **No** assume fixed balances or repeat the POST of that operation with new key.
+5. Open "View identifiers" of the result, then "Review updated balances and history" and check data read from API. You must not modify DEMO or previous history.
+6. Test destination=origin, invalid quantity/service and insufficient balance **without making a new valid transfer**. The frontend must lock and/or API return 409 unchanged.
+7. Switch to account Miguel: no STORE permissions **to both headquarters**, an attempt must receive 403; keep the pending of that actor if POST was sent and not invent permissions.
+8. Check Company B and WALOS/DEMO remain isolated.
+9. **Optional and controlled network failure test**: stop the API only once a new attempt has been booked, review the message of uncertain result, F5 and re-login; the record will have to reappear with the **same key and the same body** and never forward yourself. Do not use proof of a confirmed transfer that has already been cleaned.
 
-**Prohibido:** detener/eliminar volúmenes PostgreSQL, forzar roles, crear segunda clave para imitar un replay, asumir éxito por los tests simulados o fusionar el PR #41 antes de T08-4/5.
+**Prohibited:** stop/eliminate PostgreSQL volumes, force roles, create second key to mimic a replay, assume success by simulated tests or merge PR #41 before T08-4/5.
 
-## 8. Criterio de cierre
+## 8. Closing criterion
 
-El subincremento **T08-3 queda listo para pruebas manuales**, no aprobado todavía en PostgreSQL real. Cerrar una vez contrastados 201/200, saldos, exactamente dos movimientos, aislamiento A/B, permisos STORE y regresión DEMO. Los casos de carrera >100 movimientos y pérdida de respuesta permanecerán en T08-5/T11 cuando requieran orquestación full-stack.
+The sub-increment **T08-3 is ready for manual testing**, not yet approved in Real PostgreSQL. Close once checked 201/200, balances, exactly two movements, A/B isolation, STORY permissions and DEMO regression. Race cases >100 movements and loss of response will remain in T08-5/T11 when requiring full-stack orchestration.
 
-## 9. Evidencia funcional REAL recibida — 10/11/2026 (confirmación parcial)
+## 9. REAL functional evidence received — 10/11/2026 (partial confirmation)
 
-El usuario adjuntó cuatro capturas del navegador tras ejecutar una transferencia desde la cuenta titular de **TEST Empresa A**. A diferencia del ejemplo inicial de 1 unidad, **la operación efectivamente realizada fue de 3 UNIDAD**: no debe documentarse como una transferencia de 1 unidad.
+The user attached four browser captures after running a transfer from the account holder of **TEST Company A**. Unlike the initial example of 1 unit, **the operation actually carried out was 3 UNIT**: must not be documented as a transfer of 1 unit.
 
-| Paso | Evidencia observada | Resultado |
+| Paso | Evidence observed | Outcome |
 |---|---|---|
-| Formulario antes del POST | `Producto A TEST · UNIDAD`, **Sede A TEST** origen, **Sede A TEST 2** destino, **cantidad 3**, motivo y consentimiento; saldo leído por API **11 UNIDAD** en origen | **Aprobado** |
-| Confirmación previa | Diálogo explícito confirma artículo, **3 unidades**, sedes y la operación atómica en backend | **Aprobado** |
-| POST / respuesta / GET por ID | Pantalla **«Traslado confirmado»**, 3 unidades, fecha/hora, dos movimientos vinculados, salida **−3 UNIDAD** y entrada **+3 UNIDAD**; mensaje de comprobación por ID | **Aprobado en interfaz** |
-| Historial sede de origen | **4 movimientos cargados: 3 entradas y 1 salida**; nueva salida «Traslado enviado» **−3** precede las recepciones anteriores **+5, +4, +2** | **Aprobado en interfaz** |
-| Existencias actualizadas | Saldo teórico del origen **11−3=8**; en destino se esperan **+3** sobre su saldo previo, que debe consultarse | **Pendiente de evidencia en pestaña Existencias** |
-| Historial de destino | Debería figurar «Traslado recibido» **+3**, compartiendo `inventory_operation_id` con la salida | **Pendiente de captura específica** |
-| Permisos de trabajador, 403 por sede no asignada | Aún sin prueba manual específica de T08-3 | **Pendiente** |
-| Tenant B y DEMO después del traslado | Aún sin prueba posterior a la transferencia de T08-3 | **Pendiente** |
+| Form before POST | `Producto A TEST · UNIDAD`, **Headquarters A TEST** origin, **Headquarters A TEST 2** destination, **quantity 3**, reason and consent; balance read by API **11 UNITY** at source | **Approved** |
+| Prior confirmation | Explicit dialogue confirms article, **3 units**, headquarters and atomic operation in backend | **Approved** |
+| POST / response / GET per ID | Display **‘Reconfirmed transfer’**, 3 units, date/time, two linked movements, output **−3 UNITY** and entry **+3 UNITY**; ID check message | **Approved in interface** |
+| History of home | **4 charged moves: 3 inputs and 1 output**; new ‘Send forward’ output **−3** precedes the previous receptions **+5, +4, +2** | **Approved in interface** |
+| Updated stocks | Theoretical balance of origin **11−3=8**; at destination expected **+3** on its prior balance, to be consulted | **Pending evidence in the Stock tab** |
+| Destination history | It should include ‘Received transfer’ **+3**sharing `inventory_operation_id` with the exit | **Specific catch pending** |
+| Workers' permits, 403 per unallocated seat | Still no manual test specific to T08-3 | **Pending** |
+| Tenant B and DEMO after transfer | Still no test after T08-3 transfer | **Pending** |
 
-**Observación:** el formulario muestra saldo consultado (11), pero no se toma esa lectura como prueba de los saldos finales. La pantalla de confirmación sí valida que la API devolvió una salida y una entrada coherentes. Verificar por separado saldos postoperación y, si es posible, las dos líneas del historial filtradas por sede. El usuario ya ejecutó la transferencia: **no repetirla ni crear otra clave para probar la misma acción**.
+**Comment:** the form shows a query (11), but this reading is not taken as proof of final balances. The confirmation screen does validate that the API returned a coherent output and input. Separately verify post-operation balances and, if possible, the two lines of history filtered by headquarters. The user already executed the transfer: **not repeat it or create another key to test the same action**.
 
-**Siguiente verificación recomendada:** Inventario REAL → Existencias, comprobar origen **8 UNIDAD** y destino **3 UNIDAD** solo si este último partía de cero. Revisar el historial de la sede destino para la entrada +3 y el mismo identificador de operación. Luego validar permisos y aislamiento. Sin merge a `main` hasta completar T08-4/5.
+**Next recommended verification:** REAL Inventory → Stocks, check origin **8 UNITY** and destination **3 UNITY** only if the latter was starting from zero. Check the destination headquarters history for entry +3 and the same operation identifier. Then validate permissions and isolation. `main` until complete T08-4/5.
 
-## 10. Segunda ronda de evidencia manual — 10/11/2026
+## 10. Second round of manual evidence — 10/11/2026
 
-El usuario remitió cinco capturas adicionales tras la transferencia de **3 UNIDAD** ya confirmada. Se contrastaron las lecturas postoperación, sin repetir la transferencia ni escribir movimientos nuevos.
+The user sent five additional catches after the transfer of **3 UNITY** The post-op readings were contrasted, without repeating the transfer or writing new movements.
 
-| Control | Datos visualizados | Veredicto |
+| Ctrl | Displayed data | Verdict |
 |---|---|---|
-| Existencias de origen | TEST Empresa A → **Sede A TEST** → Producto A TEST: **8 UNIDAD**, versión **4**, actualizado **10/11/26 14:06** | **Aprobado** |
-| Historial origen | **4 movimientos cargados**, **3 entradas + 1 salida**. Traslado enviado **−3** a las **14:06**; compras anteriores +5, +4, +2 | **Aprobado** |
-| Existencias de destino | TEST Empresa A → **Sede A TEST 2** → Producto A TEST: **3 UNIDAD**, versión **1**, actualizado **10/11/26 14:06** | **Aprobado** |
-| Historial destino | **1 movimiento cargado**, «**Traslado recibido**» **+3**, a las **14:06** | **Aprobado** |
-| Trazabilidad destino | UUID real del movimiento, actor, sede, artículo, **operación de inventario** y tipo **TRASLADO** | **Aprobado** |
-| Invariante de conservación | **11 = 8 + 3** después de la operación; antes, **11 + 0** | **Aprobado** |
-| Correspondencia exacta de IDs | Se ve el ID de operación de la entrada, pero **no se adjuntó el detalle de trazabilidad desplegado de la salida**, para confrontar literalmente los dos `inventory_operation_id` | **Pendiente de comparación visual puntual** |
-| Permisos y aislamiento | No hay evidencia nueva de T08-3 para trabajador con acceso insuficiente, Empresa B y DEMO | **Pendiente** |
+| Source stocks | TEST Company A → **Headquarters A TEST** → Product A TEST: **8 UNITY**version **4**updated **10/11/26 14:06** | **Approved** |
+| History of origin | **4 charged moves**, **3 inputs + 1 output**. Transfer sent **−3** at **14:06**; previous purchases +5, +4, +2 | **Approved** |
+| Destination stocks | TEST Company A → **Headquarters A TEST 2** → Product A TEST: **3 UNITY**version **1**updated **10/11/26 14:06** | **Approved** |
+| History of destination | **1 charged movement**, «**Transfer received**» **+3**, to the **14:06** | **Approved** |
+| Target traceability | Real UUID movement, actor, headquarters, article, **inventory operation** and type **TRANSFER** | **Approved** |
+| Conservation invariant | **11 = 8 + 3** after the operation; before, **11 + 0** | **Approved** |
+| Correspondencia exacta de IDs | You can see the operation ID of the input, but **the displayed traceability detail of the output was not attached**, to literally confront the two `inventory_operation_id` | **Timely visual comparison pending** |
+| Permissions and isolation | There is no new evidence of T08-3 for under-accessed worker, Company B and DEMO | **Pending** |
 
-### Hallazgo visual no funcional (corregido en la rama)
+### Unfunctional visual finding (corrected in branch)
 
-En el historial filtrado por la segunda sede se visualizaba «En los **1 movimientos** cargados: **1 entradas** y 0 salidas». No afecta saldos, signos, operaciones ni permisos. Se corrigió a:
+The leaked history of the second site showed "In the **1 stroke** Loaded: **1 entries** and 0 outputs.’ No balances, signs, operations or permits affected.
 
-> En el movimiento cargado: **1 entrada y 0 salidas**.
+> In the loaded movement: **1 input and 0 outputs**.
 
-La misma regla ahora contempla 0, 1 y N entradas/salidas y el singular de coincidencias. Se añadió una prueba de regresión automatizada. **CI verificado y aprobado:** GitHub Actions #42862320601 para el commit de código `0e234c4`: **205/205 pruebas frontend**, incluidas **26/26 de inventario** y **14/14 de transferencias**; build aprobado, lint **0 advertencias y 0 errores**, Chromium escritorio/móvil aprobado. Persiste únicamente el aviso de bundle grande de Vite.
+The same rule now includes 0, 1 and N inputs/outputs and the singular matching. An automated regression test was added. **IC verified and approved:** GitHub Actions #4286232601 for the code commit `0e234c4`: **205/205 Frontend tests**including **26/26 inventory** y **14/14 Transfers**; build aprobado, lint **0 warnings and 0 errors**, Chromium approved desktop/mobile. Only the large Vite bundle notice persists.
 
-### Criterio actualizado
+### Updated criterion
 
-**Circuito de transferencia REAL principal: ACEPTADO funcionalmente** con evidencia de saldos y ledger en ambas sedes. No declarar **todo T08-3** aprobado hasta verificar los permisos STORE, aislamiento A/B, DEMO y el ID compartido en el detalle de origen. No repetir el traslado de 3 unidades; su resultado persistente ya está demostrado. La rama permanece abierta y el PR #41 sigue en borrador, **sin merge a `main`**.
+**Main REAL transfer circuit: Functionally accepted** with evidence of balances and leadger in both locations. **all T08-3** approved until verification of the STORE, A/B isolation, DEMO and shared ID permissions in the source detail. Do not repeat the transfer of 3 units; its persistent result is already proven. The branch remains open and PR #41 remains in draft, **sin merge a `main`**.
 
-## 11. Tercera ronda de QA — 10/11/2026 (trazabilidad, saldos posteriores, tenant)
+## 11. Third round of QA — 10/11/2026 (traceability, subsequent balances, tenant)
 
-El usuario adjuntó cinco capturas adicionales y reportó «Verificaciones completadas bien creo». Los resultados **verificables en las capturas** son:
+The user attached five additional catches and reported "Verifications completed well I believe." **verifiable catches** son:
 
-| Control | Evidencia | Veredicto |
+| Ctrl | Evidence | Verdict |
 |---|---|---|
-| ID compartido del traslado de 3 UNIDAD, origen vs destino | Ambos detalles muestran `efeff7f6-5f82-475b-b29b-bf0b53d778e6`, responsable `dd64a12c-a6bc-4d20-941e-533967b1a341`, mismo artículo y tipo de operación `TRASLADO`; salida **−3**, entrada **+3** | **Aprobado** |
-| Separación de movimientos | IDs de movimiento distintos para cada sede, con el mismo ID de operación | **Aprobado** |
-| Nueva transferencia adicional | A las **14:23** las capturas muestran otra transferencia **−1 origen, +1 destino**. Es una **operación distinta**, posterior al traslado de 3 unidades de las 14:06. No atribuirla a Miguel o al titular sin evidencia de cuenta/actor | **Confirmada en el ledger** |
-| Saldo posterior de origen | **7 UNIDAD** en Sede A TEST, versión 5 | **Aprobado** |
-| Saldo posterior de destino | **4 UNIDAD** en Sede A TEST 2, versión 2 | **Aprobado** |
-| Invariante de transferencia | **7 + 4 = 11 UNIDAD**, mismo total que antes de ambas transferencias | **Aprobado** |
-| Historial agregado | **7 movimientos cargados: 5 entradas y 2 salidas**, consistentes con 3 recepciones y 2 transferencias de dos movimientos cada una | **Aprobado** |
-| Aislamiento por empresa | TEST Empresa B presenta **0 combinaciones artículo/sede**; no aparece el stock de TEST Empresa A | **Aprobado en consulta** |
-| DEMO | El usuario informa que las verificaciones completaron bien, pero **no hay captura DEMO en esta ronda** | **Aceptación reportada, sin evidencia visual específica** |
-| Autorización de Miguel | Las capturas no muestran sesión activa ni identidad del actor del traslado de 1 unidad; por tanto no demuestra por sí sola un rechazo 403 cuando falte asignación STORE a origen/destino | **Pendiente de evidencia negativa específica / T08-5** |
+| Shared transfer ID of 3 UNIT, origin vs destination | Both details show `efeff7f6-5f82-475b-b29b-bf0b53d778e6`responsible `dd64a12c-a6bc-4d20-941e-533967b1a341`, same article and type of operation `TRASLADO`; exit **−3**, input **+3** | **Approved** |
+| Separation of movement | Different motion IDs for each location, with the same operation ID | **Approved** |
+| New additional transfer | At **14:23** Catches show another transfer **−1 origin, +1 destination**It's a **Different operation**, after the transfer of 3 units of 14:06. Do not attribute it to Miguel or to the holder without account/actor evidence | **Confirmada en el ledger** |
+| Post-origin balance | **7 UNITY** at Headquarters A TEST, version 5 | **Approved** |
+| Post-entry balance | **4 UNITY** at Headquarters A TEST 2, version 2 | **Approved** |
+| Transfer Invariant | **7 + 4 = 11 UNITY**, same total as before both transfers | **Approved** |
+| Added history | **7 charged moves: 5 inputs and 2 outputs**, consisting of 3 receptions and 2 transfers of two movements each | **Approved** |
+| Insulation by company | TEST Company B presents **0 item/headquarter combinations**; no stock of TEST Company A | **Approved in consultation** |
+| DEMO | The user reports that the checks were completed well, but **There's no DEMO capture in this round.** | **Acceptance reported, no specific visual evidence** |
+| Authorization of Miguel | The captures show no active session or identity of the actor of the transfer of 1 unit; therefore it does not demonstrate a rejection 403 alone when missing allocation STORE to origin/destiny | **Pending specific negative evidence / T08-5** |
 
-**Decisión de cierre:** T08-3 tiene el circuito **funcional principal aprobado**, con trazabilidad y conservación validadas; la integración de QA de permisos negativos (trabajador sin acceso a una de las sedes), regresión DEMO y fallos controlados **permanece expresamente en T08-5** antes del merge global. La segunda transferencia de 1 unidad no debe volver a ejecutarse solo para «completar» el acta. No se fusiona PR #41 ni se modifica `main`.
+**Closing decision:** T08-3 has the circuit **Main functional approved**, with validated traceability and preservation; integration of QA negative permits (worker without access to one of the headquarters), DEMO regression and controlled failures **remains expressly in T08-5** The second transfer of 1 unit must not be re-run only to "complete" the act. PR #41 is not merged or modified `main`.
 
-**Siguiente bloque:** T08-4, inventario inicial y ajustes versionados con `expected_version`, resolución de conflictos 409 y no regresión de transferencias/recepciones. La nueva base de pruebas es **origen 7 UNIDAD / destino 4 UNIDAD** si no se generan operaciones posteriores. Esos valores son evidencia histórica, no constantes a codificar.
+**Next block:** T08-4, initial inventory and versioned adjustments with `expected_version`, conflict resolution 409 and non-regression of transfers/receptions. The new evidence base is **origin 7 UNITY / destination 4 UNITY** These values are historical evidence, not constants to codify.
 
-## 12. Reconciliación T08-3 → T08-5, revisión previa a merge
+## 12. Reconciliation T08-3 → T08-5, pre-merge review
 
-El checklist original (secciones 5 y 7) es un **plan**, no un acta de ejecución. Sus números iniciales 11→10/1 eran ilustrativos; **la primera transferencia efectivamente confirmada fue de 3 UNIDAD**, origen **11→8**, destino **0→3**; una segunda transferencia distinta fue de 1 UNIDAD, con saldos finales **7 y 4**, total constante **11**. Se verificaron manualmente salida/entrada, ID compartido `efeff7f6-5f82-475b-b29b-bf0b53d778e6` del traslado de 3, historial, B aislada y lectura posterior. No hay motivo para volver a crear ninguna de esas operaciones.
+The original checklist (sections 5 and 7) is a **plan**, not an execution record. Its initial numbers 11→10/1 were illustrative; **the first transfer was effectively confirmed was 3 UNITY**, origin **11→8**, destination **0→3**; a second separate transfer was 1 UNIT, with final balances **7 y 4**, constant total **11**. Manually checked output/entry, shared ID `efeff7f6-5f82-475b-b29b-bf0b53d778e6` The transfer of 3, history, isolated B and read back. There is no reason to recreate any of those operations.
 
-| Verificación pendiente de las rondas históricas | Evidencia posterior y alcance |
+| Pending verification of historical rounds | Subsequent evidence and scope |
 |---|---|
-| Trabajador sin STORE en una de las sedes: rechazo 403 | **No realizada manualmente**; validada mediante `test_transfer_api_integration.py::test_employee_requires_store_assignment_at_both_locations` en PostgreSQL efímero. No cambiar asignaciones locales para simularla |
-| Origen=destino, cantidad indebida y rechazo de operación inválida | **No consta el recorrido negativo manual completo**; cubierto por `frontend/tests/transfer-real-api.test.mjs` y pruebas de integración PostgreSQL |
-| Recuperación con corte de respuesta y F5/re-login | **No realizada manualmente**, era opcional; aprobada con Playwright REAL en API/PostgreSQL efímeros, tanto para traslado como para ajuste, sin POST automático |
-| Clave repetida tras pérdida de respuesta | Comprobada automáticamente como `201` inicial y `200` replay, sin duplicar movimientos; no reproducir con clave nueva en la base local |
-| Regresión DEMO | **Verificada manualmente en ronda T08-5**, más 6/6 recorridos Playwright DEMO de escritorio/móvil |
-| Integridad transaccional, idempotencia y concurrencia | Suites `test_transfer_api_integration.py` y `test_transfer_concurrency_integration.py` aprobadas con PostgreSQL real en CI |
+| Workers without STORE in one of the headquarters: rejection 403 | **Not performed manually**; validated by `test_transfer_api_integration.py::test_employee_requires_store_assignment_at_both_locations` in PostgreSQL ephemeral. Do not change local assignments to simulate it |
+| Source=destination, undue amount and rejection of invalid operation | **No complete manual negative path**; covered by `frontend/tests/transfer-real-api.test.mjs` PostgreSQL integration tests |
+| Recovery with response cut and F5/re-login | **Not performed manually**, was optional; approved with Playwright REAL in API/PostgreSQL ephemerals, both for transfer and adjustment, without automatic POST |
+| Repeated key after loss of response | Automatically checked as `201` initial and `200` replay, without duplicating movements; do not play with new key on local base |
+| DEMO regression | **Manually checked in round T08-5**, plus 6/6 Playwright DEMO desktop/mobile tours |
+| Transactional integrity, powerlessness and continuance | Suites `test_transfer_api_integration.py` y `test_transfer_concurrency_integration.py` approved with real PostgreSQL in IC |
 
-**Cierre técnico:** GitHub Actions #42896686337: 879 backend, 256 frontend, 4 Playwright REAL, 6 Playwright DEMO, todos aprobados. La aceptación funcional T08-3 se conserva; ningún caso automatizado se presenta como si fuera una captura manual.
+**Technical closure:** GitHub Actions #42896686337: 879 backend, 256 frontend, 4 Playwright REAL, 6 Playwright DEMO, all approved. Functional acceptance T08-3 is preserved; no automated case is presented as a manual capture.

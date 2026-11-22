@@ -16,19 +16,19 @@ export function locationSetupSuggestion(input: {
   if (!input.verified) return null
   if (input.count === 0) return {
     id: 'locations-empty',
-    title: 'Primero, definí dónde trabaja tu empresa',
+    title: 'First, I defined where your company works.',
     detail: input.canManage
-      ? 'La sede puede ser un local, una feria, una oficina o un depósito. Usá «Crear ubicación real» y elegí si admite ventas, almacenamiento o ambos.'
-      : 'No hay sedes registradas en la consulta. Una persona autorizada debe crearlas; tu rol no habilita esa operación.',
-    route: 'inicio', actionLabel: 'Volver a primeros pasos',
+      ? 'The venue can be a venue, fair, office or deposit. Use "Create real location" and choose whether to support sales, storage or both.'
+      : 'There are no registered locations in the consultation. An authorized person must create them; your role does not enable that operation.',
+    route: 'inicio', actionLabel: 'Back to first steps',
   }
   if (input.activeCount === 0) return {
     id: 'locations-paused',
-    title: 'Las ubicaciones consultadas están pausadas',
+    title: 'The locations consulted are paused',
     detail: input.canManage
-      ? 'Para preparar la primera sede, revisá cuál corresponde reactivar desde el listado. Reactivar es una operación explícita.'
-      : 'La activación depende de alguien con permisos para administrar ubicaciones.',
-    route: 'inicio', actionLabel: 'Volver a primeros pasos',
+      ? 'To prepare the first headquarters, check which one is reactivated from the list. Reactivating is an explicit operation.'
+      : 'Activation depends on someone with permission to manage locations.',
+    route: 'inicio', actionLabel: 'Back to first steps',
   }
   return null
 }
@@ -39,11 +39,11 @@ export function teamSetupSuggestion(input: {
   if (!input.verified || !input.canRead || !input.onlySelf) return null
   return {
     id: 'team-solo',
-    title: 'Podés empezar trabajando por tu cuenta',
+    title: 'You can start working on your own.',
     detail: input.canInvite
-      ? 'Invitar colaboradores es opcional. Cuando los necesites, emití un código desde el formulario de esta página; cada persona usará su propia cuenta.'
-      : 'Incorporar colaboradores es opcional. Para emitir invitaciones necesitás que una persona con permisos administrativos las gestione.',
-    route: 'inicio', actionLabel: 'Revisar primeros pasos',
+      ? 'Invite contributors is optional. When you need them, I issued a code from the form on this page; each person will use their own account.'
+      : 'Incorporating collaborators is optional. To issue invitations you need a person with administrative permissions to manage them.',
+    route: 'inicio', actionLabel: 'Review first steps',
   }
 }
 
@@ -53,11 +53,11 @@ export function catalogSetupSuggestion(input: {
   if (!input.verified || input.count !== 0) return null
   return {
     id: 'catalog-empty',
-    title: 'Registrá lo que ofrecés',
+    title: 'Register what you offer',
     detail: input.canWrite
-      ? 'Usá «Crear artículo REAL» para cargar un producto, insumo o servicio. Los servicios no necesitan stock; los bienes físicos se controlan después desde Inventario.'
-      : 'Todavía no hay fichas en el catálogo consultado. Podés verlas, pero una persona autorizada debe crearlas.',
-    route: 'inicio', actionLabel: 'Revisar primeros pasos',
+      ? 'Use "Create REAL article" to load a product, input or service. Services do not need stock; physical goods are then controlled from Inventory.'
+      : 'There are still no files in the catalogue consulted. You can see them, but an authorized person must create them.',
+    route: 'inicio', actionLabel: 'Review first steps',
   }
 }
 
@@ -74,28 +74,28 @@ export function inventorySetupSuggestion(input: {
   if (!input.verified) return null
   if (input.locationsCount === 0) return {
     id: 'inventory-locations',
-    title: 'Primero necesitás una ubicación',
-    detail: 'Las existencias físicas se controlan por sede. Revisá Ubicaciones y habilitá almacenamiento cuando corresponda.',
-    route: 'ubicaciones', actionLabel: 'Ir a Ubicaciones',
+    title: 'First you need a location.',
+    detail: 'Physical stocks are controlled by headquarters. Check Locations and enable storage where applicable.',
+    route: 'ubicaciones', actionLabel: 'Go to Locations',
   }
   if (input.catalogComplete && input.catalogCount === 0) return {
     id: 'inventory-catalog',
-    title: 'Primero cargá artículos físicos en el catálogo',
-    detail: 'Inventario registra existencias de bienes físicos, no crea fichas de artículos. Podés empezar desde Catálogo.',
-    route: 'catalogo', actionLabel: 'Ir a Catálogo',
+    title: 'First load physical items in the catalog',
+    detail: 'Inventory records physical goods, does not create product files. You can start from Catalogue.',
+    route: 'catalogo', actionLabel: 'Go to Catalogue',
   }
   if (input.catalogComplete && input.catalogCount > 0 && input.physicalCount === 0) return {
     id: 'inventory-services',
-    title: 'Los servicios no requieren inventario físico',
-    detail: 'El catálogo consultado contiene únicamente servicios. No cargues stock inicial para ellos. Podés gestionarlos desde Catálogo.',
-    route: 'catalogo', actionLabel: 'Revisar Catálogo',
+    title: 'Services do not require physical inventory',
+    detail: 'The catalogue consulted contains only services. Do not load stock initial for them. You can manage them from Catalogue.',
+    route: 'catalogo', actionLabel: 'Check Catalogue',
   }
   if (input.balancesLoaded && input.unfiltered && input.balancesCount === 0
     && input.catalogComplete && input.physicalCount > 0) return {
     id: 'inventory-no-balances',
-    title: 'Todavía no hay saldos en la consulta general',
-    detail: 'Si necesitás existencias de bienes físicos, revisá las sedes habilitadas y usá «Stock inicial y ajustes» solo con permisos y datos verificados. No se crea stock automáticamente.',
-    route: 'inicio', actionLabel: 'Revisar primeros pasos',
+    title: 'No balances in the general query yet',
+    detail: 'If you need physical property stock, check the enabled locations and use "Start Stock and Settings" only with verified permissions and data. Stock is not automatically created.',
+    route: 'inicio', actionLabel: 'Review first steps',
   }
   return null
 }

@@ -27,17 +27,17 @@ const emptyNewBusiness: NewBusiness = { name: '', category: '', activity_kind: '
 
 // Rutas existentes del sistema REAL. No se agregan endpoints ni permisos.
 const detailSections = [
-  { title: 'Administración', description: 'Organizá las sedes, el equipo y los recursos de tu empresa.', actions: [
-    { suffix: 'ubicaciones', title: 'Ubicaciones', detail: 'Sedes y disponibilidad para operar.' },
-    { suffix: 'equipo', title: 'Equipo e invitaciones', detail: 'Integrantes, roles y acceso.' },
-    { suffix: 'catalogo', title: 'Catálogo', detail: 'Productos, insumos y servicios.' },
-    { suffix: 'proveedores', title: 'Proveedores', detail: 'Tus relaciones comerciales.' },
+  { title: 'Administration', description: 'Organize your company\'s headquarters, equipment and resources.', actions: [
+    { suffix: 'ubicaciones', title: 'Locations', detail: 'Locations and availability to operate.' },
+    { suffix: 'equipo', title: 'Equipment and invitations', detail: 'Members, roles and access.' },
+    { suffix: 'catalogo', title: 'Catalog', detail: 'Outputs, inputs and services.' },
+    { suffix: 'proveedores', title: 'Suppliers', detail: 'Your business relations.' },
   ] },
-  { title: 'Operaciones', description: 'Accedé a los movimientos disponibles para tu negocio.', actions: [
-    { suffix: 'compras', title: 'Compras y recepciones', detail: 'Compras y recepción de mercadería.' },
-    { suffix: 'inventario', title: 'Inventario', detail: 'Saldos y movimientos de stock.' },
-    { suffix: 'pos', title: 'Punto de venta', detail: 'Prepará y revisá una venta.' },
-    { suffix: 'ventas', title: 'Historial de ventas', detail: 'Comprobantes y consultas.' },
+  { title: 'Operations', description: 'I\'ve agreed to the moves available for your business.', actions: [
+    { suffix: 'compras', title: 'Purchases and receptions', detail: 'Purchase and receipt of goods.' },
+    { suffix: 'inventario', title: 'Inventory', detail: 'Balances and stock movements.' },
+    { suffix: 'pos', title: 'Point of sale', detail: 'Prepare and check a sale.' },
+    { suffix: 'ventas', title: 'Sales history', detail: 'Checks and queries.' },
   ] },
 ] as const
 
@@ -105,7 +105,7 @@ export function RealBusinessesPage({
         setDraft(record.body)
         setAcknowledged(true) // the original attempt was already persisted explicitly
         setIntentOld(intentIsOld(record))
-        setJournalNote('Se recuperó un intento guardado en este navegador. No se reenviará automáticamente.')
+        setJournalNote('An attempt saved in this browser was recovered. It will not be automatically forwarded.')
       } else {
         setDraft(emptyNewBusiness)
         setIntentOld(false)
@@ -115,7 +115,7 @@ export function RealBusinessesPage({
     }).catch(() => {
       if (!active) return
       setJournalState('error')
-      setJournalNote('No se pudo abrir o validar el registro del navegador. Por seguridad no se permitirá crear una empresa sin conservar antes su clave.')
+      setJournalNote('You could not open or validate the browser registry. For security you will not be allowed to create a company without first retaining your key.')
     })
     return () => { active = false }
   }, [route.kind, userId, setPendingCreation])
@@ -129,16 +129,16 @@ export function RealBusinessesPage({
     if (busy || journalState !== 'ready') return
     setError(''); setNotice('')
     if (!acknowledged) {
-      setError('Para crear una empresa, aceptá conservar temporalmente el intento en este navegador. No se guardan tokens ni contraseñas.')
+      setError('To create a company, you agree to temporarily keep the attempt in this browser. No tokens or passwords are saved.')
       return
     }
     const desired = normalize(draft)
     if (desired.name.length < 2 || desired.category.length < 2) {
-      setError('Nombre y rubro deben tener al menos dos caracteres.')
+      setError('Name and heading must have at least two characters.')
       return
     }
     if (pendingCreation && JSON.stringify(pendingCreation.body) !== JSON.stringify(desired)) {
-      setError('Existe un intento anterior sin confirmar. Conservamos el cuerpo original para no reutilizar su clave con otros datos.')
+      setError('There is an unconfirmed previous attempt. We keep the original body to avoid reusing its key with other data.')
       return
     }
     const pending = pendingCreation ?? { key: crypto.randomUUID(), body: desired }
@@ -155,7 +155,7 @@ export function RealBusinessesPage({
       try {
         await businessIntentJournal.discard(userId, saved.key)
       } catch {
-        setError('La empresa se confirmó en FastAPI, pero no se pudo limpiar su intento local. Consultá Mis empresas y descartá manualmente el registro cuando vuelva a estar disponible.')
+        setError('The company was confirmed at FastAPI, but could not clean up its local attempt. Consult My companies and manually discard registration when it becomes available again.')
         return
       }
       if (mutationId !== mutationGeneration.current) return
@@ -170,11 +170,11 @@ export function RealBusinessesPage({
       const ambiguous = err instanceof ApiTransportError
         || (err instanceof ApiHttpError && (err.status === 409 || err.status >= 500))
       setError(err instanceof JournalUnavailableError
-        ? 'No se pudo guardar el intento en este navegador: NO enviamos la creación a FastAPI. Revisá la disponibilidad de IndexedDB.'
+        ? 'Could not save try in this browser: We do NOT send creation to FastAPI. Check IndexedDB availability.'
         : err instanceof JournalConflictError
-          ? 'Ya existe un intento guardado con otra clave o contenido. No enviamos un POST nuevo: revisá la solicitud pendiente.'
+          ? 'There is already an attempt saved with another key or content. We do not send a new POST: check the pending request.'
           : ambiguous
-            ? 'No podemos confirmar el resultado. Revisá «Mis empresas» antes de repetir. Si corresponde, reintentá con la MISMA clave y los MISMOS datos, incluso después de F5.'
+            ? 'We cannot confirm the result. Check "My companies" before repeating. If applicable, try the SAME key and the SAME data even after F5.'
             : businessErrorMessage(err))
     } finally {
       if (mutationId === mutationGeneration.current) setBusy(false)
@@ -202,7 +202,7 @@ export function RealBusinessesPage({
       // Preserve confirmed values when the user opens the editor again.
       setChanges({ name: current.name, category: current.category, activity_kind: current.activity_kind })
       setEditing(false)
-      setNotice('Datos de la empresa actualizados en PostgreSQL.')
+      setNotice('Company data updated at PostgreSQL.')
     } catch (err) {
       if (mutationId !== mutationGeneration.current) return
       if (err instanceof ApiHttpError && err.status === 401) { onUnauthorized(); return }
@@ -214,7 +214,7 @@ export function RealBusinessesPage({
 
   async function dismissPending() {
     if (!pendingCreation || busy) return
-    const confirmed = window.confirm('Descartá el intento solo después de verificar Mis empresas. Si el servidor ya confirmó la creación, otra clave puede crear una empresa duplicada. ¿Eliminar el registro local?')
+    const confirmed = window.confirm('Discard the attempt only after checking My companies. If the server has already confirmed the creation, another key can create a duplicate company. Delete local registration?')
     if (!confirmed) return
     setBusy(true)
     try {
@@ -225,143 +225,143 @@ export function RealBusinessesPage({
       setAcknowledged(false)
       setError('')
       setJournalNote('')
-      setNotice('Registro local descartado por tu decisión. No se modificó nada en FastAPI.')
+      setNotice('Local registration ruled out by your decision. Nothing changed in FastAPI.')
     } catch {
-      setError('No se pudo eliminar el registro local. No se descartó su identidad de intento.')
+      setError('Could not remove local registration. Your intent identity was not ruled out.')
     } finally { setBusy(false) }
   }
 
   function fields(value: NewBusiness, update: (field: keyof NewBusiness, value: string) => void) {
     return <>
-      <label>Nombre comercial<input required minLength={2} maxLength={120} autoComplete="organization" value={value.name} onChange={(e) => update('name', e.target.value)}/></label>
-      <label>Rubro<input required minLength={2} maxLength={120} placeholder="Ej.: comercio, gastronomía, consultoría" value={value.category} onChange={(e) => update('category', e.target.value)}/></label>
-      <label>Actividad<select value={value.activity_kind} onChange={(e) => update('activity_kind', e.target.value)}>
-        {activityKinds.map((item) => <option key={item} value={item}>{item === 'MIXTO' ? 'Productos y servicios' : item === 'PRODUCTOS' ? 'Productos' : 'Servicios'}</option>)}
+      <label>Trade name<input required minLength={2} maxLength={120} autoComplete="organization" value={value.name} onChange={(e) => update('name', e.target.value)}/></label>
+      <label>Rubro<input required minLength={2} maxLength={120} placeholder="E.g.: trade, gastronomy, consultancy" value={value.category} onChange={(e) => update('category', e.target.value)}/></label>
+      <label>Activity<select value={value.activity_kind} onChange={(e) => update('activity_kind', e.target.value)}>
+        {activityKinds.map((item) => <option key={item} value={item}>{item === 'MIXTO' ? 'Products and services' : item === 'PRODUCTOS' ? 'Products' : 'Services'}</option>)}
       </select></label>
     </>
   }
 
-  return <section className={"real-auth-card real-business-panel" + (route.kind === "list" ? " e3-companies-page" : route.kind === "detail" ? " e3-business-detail" : "")} aria-label="Empresas reales">
+  return <section className={"real-auth-card real-business-panel" + (route.kind === "list" ? " e3-companies-page" : route.kind === "detail" ? " e3-business-detail" : "")} aria-label="Real companies">
     <div className="real-business-nav">
-      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/perfil')}>Volver al perfil</button>
-      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/empresas')}>Mis empresas</button>
-      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/empresas/nueva')}>Crear empresa</button>
+      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/perfil')}>Back to profile</button>
+      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/empresas')}>My companies</button>
+      <button className="real-auth-link" type="button" onClick={() => onNavigate('/real/empresas/nueva')}>Create company</button>
     </div>
-    <span className="real-auth-eyebrow">{route.kind === 'list' ? 'Tu espacio de trabajo' : route.kind === 'create' ? 'Nueva organización' : 'Datos de la empresa'}</span>
+    <span className="real-auth-eyebrow">{route.kind === 'list' ? 'Your workspace' : route.kind === 'create' ? 'New organization' : 'Company details'}</span>
     {route.kind === 'list' ? <>
       <div className="e3-company-heading">
         <div>
-          <h1>Mis empresas</h1>
-          <p>Elegí un negocio para gestionar sus datos y operaciones.</p>
+          <h1>My companies</h1>
+          <p>I chose a business to manage your data and operations.</p>
         </div>
-        {!loading && items && <span className="e3-company-count" role="status">{items.length} {items.length === 1 ? 'empresa vinculada' : 'empresas vinculadas'}</span>}
+        {!loading && items && <span className="e3-company-count" role="status">{items.length} {items.length === 1 ? 'related company' : 'related companies'}</span>}
       </div>
-      {loading && <p role="status">Consultando empresas en FastAPI…</p>}
+      {loading && <p role="status">Consulting companies in FastAPI...</p>}
       {!loading && items?.length === 0 && <div className="real-business-empty e3-company-empty">
-        <strong>Tu primer negocio comienza acá</strong>
-        <p>Creá una empresa y después seguí los primeros pasos desde Inicio. Podés completarlos de a poco; los servicios no necesitan stock físico.</p>
+        <strong>Your first business starts here.</strong>
+        <p>You create a company and then follow the first steps from Home. You can complete them gradually; services do not need physical stock.</p>
       </div>}
       {!loading && items && items.length > 0 && <div className="real-business-grid">
         {items.map((item) => <button key={item.id} className="real-business-tile e3-company-tile" type="button" onClick={() => onNavigate('/real/empresas/' + item.id)}>
           <RealPhotoPreview token={token} owner={{kind:'BUSINESS',businessId:item.id}} alt={"Logo de "+item.name} className="e3-company-photo"/>
           <strong>{item.name}</strong>
-          <span>{item.category} · {item.activity_kind === 'MIXTO' ? 'Productos y servicios' : item.activity_kind === 'PRODUCTOS' ? 'Productos' : 'Servicios'}</span>
+          <span>{item.category} · {item.activity_kind === 'MIXTO' ? 'Products and services' : item.activity_kind === 'PRODUCTOS' ? 'Products' : 'Services'}</span>
           <span className="e3-company-meta">
             <small className="e3-company-role">{item.membership.role.replaceAll('_', ' ')}</small>
             <small className={item.status === 'ACTIVA' ? 'e3-company-state e3-company-active' : 'e3-company-state'}>{item.status}</small>
           </span>
-          <span className="real-business-tile-action">Abrir empresa</span>
+          <span className="real-business-tile-action">Open company</span>
         </button>)}
       </div>}
-      <button type="button" className="real-auth-primary" onClick={() => onNavigate('/real/empresas/nueva')}>Crear nueva empresa</button>
+      <button type="button" className="real-auth-primary" onClick={() => onNavigate('/real/empresas/nueva')}>Create new business</button>
     </> : route.kind === 'create' ? <>
-      <h1>Nueva empresa real</h1>
-      <p>Se creará una empresa y tu membresía de titular administrativo mediante una única operación en PostgreSQL.</p>
-      <p className="real-auth-note">Al confirmar, vas a llegar a Inicio. Desde ahí podés preparar ubicaciones, artículos o servicios y, si vendés bienes físicos, su inventario. No hace falta completar todo ahora.</p>
-      <p className="real-auth-note">El registro de recuperación guarda únicamente nombre, rubro, actividad, clave UUID y fecha en IndexedDB de este navegador. No cifra esos datos ni guarda credenciales: evitá utilizar dispositivos compartidos.</p>
-      {journalState === 'loading' && <p role="status">Verificando intentos guardados…</p>}
+      <h1>Real new company</h1>
+      <p>A company and your membership as an administrative holder will be created through a single transaction in PostgreSQL.</p>
+      <p className="real-auth-note">By confirming, you will arrive at Home. From there you can prepare locations, items or services and if you sell physical goods, your inventory. You don't need to complete everything now.</p>
+      <p className="real-auth-note">The recovery record only saves name, item, activity, UUID key and date in IndexedDB of this browser. It does not encrypt that data or save credentials: avoid using shared devices.</p>
+      {journalState === 'loading' && <p role="status">Checking saved attempts...</p>}
       {journalNote && <p role={journalState === 'error' ? 'alert' : 'status'} className={journalState === 'error' ? 'real-auth-message real-auth-error' : 'real-auth-note'}>{journalNote}</p>}
-      {intentOld && <p className="real-auth-message real-ops-warning">Este intento tiene más de 30 días. Comprobá su estado con especial cuidado antes de reintentarlo. No se elimina automáticamente.</p>}
+      {intentOld && <p className="real-auth-message real-ops-warning">This attempt takes more than 30 days. Check your condition with special care before retrying. It is not automatically removed.</p>}
       <form className="real-auth-form" onSubmit={(e) => void createCompany(e)}>
         <fieldset disabled={busy || journalState !== 'ready' || !!pendingCreation} className="real-intent-fields">
           {fields(draft, (field, value) => setDraft((old) => ({ ...old, [field]: value })))}
         </fieldset>
-        {!pendingCreation && <label className="real-ops-check"><input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)}/> Acepto conservar los datos de esta solicitud en este navegador hasta resolverla. No usar en dispositivos compartidos.</label>}
-        <button className="real-auth-primary" type="submit" disabled={busy || journalState !== 'ready' || (!pendingCreation && !acknowledged)}>{busy ? 'Procesando…' : pendingCreation ? 'Reintentar MISMO intento' : 'Crear empresa'}</button>
+        {!pendingCreation && <label className="real-ops-check"><input type="checkbox" checked={acknowledged} onChange={e => setAcknowledged(e.target.checked)}/> I agree to keep the data of this request in this browser until it is resolved. Do not use on shared devices.</label>}
+        <button className="real-auth-primary" type="submit" disabled={busy || journalState !== 'ready' || (!pendingCreation && !acknowledged)}>{busy ? 'Procesando…' : pendingCreation ? 'Retrying Same Try' : 'Create company'}</button>
       </form>
       {pendingCreation && <div className="real-business-uncertain">
-        <strong>Existe un intento de creación guardado para esta cuenta.</strong>
-        <p>El registro persistió en IndexedDB y se recuperará después de F5 cuando vuelvas a iniciar sesión con la misma cuenta. Primero revisá el listado, porque el servidor podría haber confirmado la creación.</p>
+        <strong>There is an attempt to create saved for this account.</strong>
+        <p>The log persisted in IndexedDB and will be recovered after F5 when you re-enter the same account. First check the listing, because the server could have confirmed the creation.</p>
         <div className="real-auth-actions">
-          <button className="real-auth-secondary" type="button" onClick={() => onNavigate('/real/empresas')}>Consultar mis empresas</button>
-          <button className="real-auth-secondary" type="button" onClick={dismissPending}>Descartar tras verificar</button>
+          <button className="real-auth-secondary" type="button" onClick={() => onNavigate('/real/empresas')}>Consult my companies</button>
+          <button className="real-auth-secondary" type="button" onClick={dismissPending}>Discard after verification</button>
         </div>
       </div>}
     </> : <>
       <div className="e3-detail-header">
-        <div className="e3-detail-mark"><RealPhotoPreview token={token} owner={{kind:'BUSINESS',businessId:route.businessId}} alt="Foto de la empresa" revision={businessPhotoRevision}/></div>
+        <div className="e3-detail-mark"><RealPhotoPreview token={token} owner={{kind:'BUSINESS',businessId:route.businessId}} alt="Company photo" revision={businessPhotoRevision}/></div>
         <div className="e3-detail-heading">
-          <h1>Datos de la empresa</h1>
-          <p>Consultá los datos registrados y las herramientas de tu negocio.</p>
+          <h1>Company details</h1>
+          <p>Check out the recorded data and tools of your business.</p>
         </div>
         {!loading && selected && <div className="real-auth-actions">
           <button type="button" className="real-auth-primary"
             onClick={() => onNavigate('/real/empresas/'+selected.id+'/inicio')}>
-            Inicio y primeros pasos
+            Start and first steps
           </button>
           {canEditBusiness(selected) && !editing && <button
             type="button" className="real-auth-secondary e3-detail-edit-trigger"
-            onClick={() => setEditing(true)}>Editar datos</button>}
+            onClick={() => setEditing(true)}>Edit Data</button>}
         </div>}
       </div>
-      {loading && <p role="status">Comprobando pertenencia a la empresa…</p>}
+      {loading && <p role="status">Checking for company membership...</p>}
       {!loading && selected && <>
-        <section className="e3-detail-overview" aria-label="Información de la empresa">
+        <section className="e3-detail-overview" aria-label="Company information">
           <div className="e3-detail-overview-head">
             <div>
-              <p className="e3-detail-kicker">Identidad empresarial</p>
+              <p className="e3-detail-kicker">Corporate identity</p>
               <h2 className="e3-detail-business-name">{selected.name}</h2>
               <p className="e3-detail-category">{selected.category}</p>
             </div>
             <span className={selected.status === 'ACTIVA' ? 'e3-detail-status e3-detail-status-active' : 'e3-detail-status'}>
-              {selected.status === 'ACTIVA' ? 'Activa' : 'Suspendida'}
+              {selected.status === 'ACTIVA' ? 'Active' : 'Suspendida'}
             </span>
           </div>
           <dl className="e3-detail-facts">
-            <div><dt>Nombre comercial</dt><dd>{selected.name}</dd></div>
+            <div><dt>Trade name</dt><dd>{selected.name}</dd></div>
             <div><dt>Rubro</dt><dd>{selected.category}</dd></div>
-            <div><dt>Actividad</dt><dd>{selected.activity_kind === 'MIXTO' ? 'Productos y servicios' : selected.activity_kind === 'PRODUCTOS' ? 'Productos' : 'Servicios'}</dd></div>
+            <div><dt>Activity</dt><dd>{selected.activity_kind === 'MIXTO' ? 'Products and services' : selected.activity_kind === 'PRODUCTOS' ? 'Products' : 'Services'}</dd></div>
             <div><dt>Tu rol</dt><dd>{selected.membership.role.replaceAll('_', ' ')}</dd></div>
-            <div><dt>Estado de membresía</dt><dd>{selected.membership.status}</dd></div>
+            <div><dt>Membership status</dt><dd>{selected.membership.status}</dd></div>
           </dl>
           <details className="e3-detail-technical">
-            <summary>Información técnica</summary>
+            <summary>Technical information</summary>
             <dl>
-              <div><dt>Identificador del negocio</dt><dd><code>{selected.id}</code></dd></div>
-              <div><dt>Fecha de alta</dt><dd>{selected.created_at}</dd></div>
+              <div><dt>Business identifier</dt><dd><code>{selected.id}</code></dd></div>
+              <div><dt>Date of registration</dt><dd>{selected.created_at}</dd></div>
             </dl>
           </details>
         </section>
-        {!editing&&<RealPhotoManager token={token} owner={{kind:'BUSINESS',businessId:selected.id}} title="Foto o logo de la empresa" canManage={false} onUnauthorized={onUnauthorized} onChanged={()=>setBusinessPhotoRevision(n=>n+1)}/>}
+        {!editing&&<RealPhotoManager token={token} owner={{kind:'BUSINESS',businessId:selected.id}} title="Photo or logo of the company" canManage={false} onUnauthorized={onUnauthorized} onChanged={()=>setBusinessPhotoRevision(n=>n+1)}/>}
         {canEditBusiness(selected) && editing && <section className="e3-detail-edit-panel" aria-labelledby="e3-edit-heading">
-          <h2 id="e3-edit-heading">Editar datos de la empresa</h2>
-          <p>Revisá nombre, rubro y actividad. Los cambios se guardan solo cuando confirmás.</p>
-          <form className="real-auth-form e3-detail-edit-form" aria-label="Formulario de edición de empresa" onSubmit={(e) => void updateCompany(e)}>
+          <h2 id="e3-edit-heading">Edit Company Data</h2>
+          <p>Check name, category and activity. Changes are saved only when you confirm.</p>
+          <form className="real-auth-form e3-detail-edit-form" aria-label="Company Editing Form" onSubmit={(e) => void updateCompany(e)}>
             {fields(changes, (field, value) => setChanges((old) => ({ ...old, [field]: value })))}
             <div className="real-auth-actions">
               <button className="real-auth-primary" type="submit" disabled={busy}>{busy ? 'Guardando…' : 'Guardar cambios'}</button>
               <button className="real-auth-secondary" type="button" disabled={busy} onClick={() => {
                 setEditing(false)
                 setChanges({ name: selected.name, category: selected.category, activity_kind: selected.activity_kind })
-              }}>Cancelar</button>
+              }}>Cancel</button>
             </div>
           </form>
           <RealPhotoManager token={token} owner={{kind:'BUSINESS',businessId:selected.id}}
-            title="Foto o logo de la empresa" canManage={true} onUnauthorized={onUnauthorized}
+            title="Photo or logo of the company" canManage={true} onUnauthorized={onUnauthorized}
             onChanged={()=>setBusinessPhotoRevision(n=>n+1)}/>
         </section>}
         {!canEditBusiness(selected) && <p className="e3-detail-readonly" role="note">
-          Esta información es de solo lectura para tu rol o el estado actual de la empresa.
+          This information is read-only for your role or the current state of the company.
         </p>}
         {detailSections.map((group) => <section className="e3-detail-section" key={group.title} aria-label={group.title}>
           <div className="e3-detail-section-head">
@@ -371,7 +371,7 @@ export function RealBusinessesPage({
           <div className="e3-detail-actions">
             {group.actions.map((action) => <button
               key={action.suffix} type="button" className="e3-detail-action"
-              aria-label={'Abrir ' + action.title}
+              aria-label={'Open ' + action.title}
               onClick={() => onNavigate('/real/empresas/' + selected.id + '/' + action.suffix)}>
               <span className="e3-detail-action-icon" aria-hidden="true">{action.title.slice(0, 1)}</span>
               <span className="e3-detail-action-body">
@@ -383,7 +383,7 @@ export function RealBusinessesPage({
           </div>
         </section>)}
         <p className="e3-detail-footnote">
-          Cada operación se valida con los permisos de tu usuario y las reglas de la API.
+          Each operation is validated with your user's permissions and API rules.
         </p>
       </>}
     </>}

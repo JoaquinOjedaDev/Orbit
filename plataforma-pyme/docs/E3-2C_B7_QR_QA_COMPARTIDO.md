@@ -1,38 +1,38 @@
-# E3-2C · B7 — asociación automática a la única caja QR QA
+# E3-2C · B7 — Automatic combination with the single QR QA box
 
 **Base:** B6 commit `6ed69cc70a740f2491daf06510fa0b8366d70f47`. **Rama:** `feature/e3-2c-qr-qa-caja-unica`.
-Sin merge a `main`. Se conserva el código B6 (OAuth por vendedor/Orders dinámicas) independiente.
+Sin merge a `main`. The B6 code (OAuth per seller/dynamic Orders) is retained independently.
 
-## Recursos que ya creó el operador en Mercado Pago TEST
+## Resources already created by the TEST Payment Market operator
 
-| Tipo | Identificador |
+| Type | Identifier |
 |---|---|
 | Seller TEST | `3837129107` |
 | Sucursal TEST | `89968780` (`PYMEQA001`) |
-| Caja TEST | `140776986` (`PYMEQA001POS001`) |
-| QR estático | trama devuelta por Mercado Pago al crear esa caja |
+| TEST box | `140776986` (`PYMEQA001POS001`) |
+| Static QR | plot returned by Mercado Pago when creating that box |
 
-No volver a invocar POST de sucursal ni POS. La trama pública se representa en PNG desde el backend con `qrcode`, pero no equivale a un pago ni a una orden.
+Do not re-invoke branch POST or POS. The public plot is represented in PNG from the backend with `qrcode`but it does not amount to a payment or an order.
 
-## Implementación B7-A: vinculación de lectura (entregada)
+## B7-A implementation: reading link (delivered)
 
 - `GET /api/v1/businesses/{business_id}/mercadopago/qa-shared/connection`.
-- Requiere sesión y membresía activa en la empresa; las empresas ajenas dan 404.
-- Devuelve por empresa una **asociación virtual, automática** al mismo recurso QA; no se crean comerciantes ni cajas, no se escribe saldo ni se copian credenciales.
-- Visible en **Medios de cobro** para toda empresa QA, solo si `PYME_DISPOSABLE_QA=1` y `PYME_MP_QR_SHARED_QA_ENABLED=1`.
-- No utiliza Access Token, clave privada, OAuth ni API remota. Cuando las banderas faltan no expone la trama QR ni sus identificadores.
-- Mientras el modo QA compartido esté habilitado, se bloquea por backend el alta de vendedor OAuth y el cambio de POS desde las rutas B6.
-- La UI deja explícito: aún no se creó una **order** para asignar importe; no hay acreditación ni garantía de que el QR siga activo en el proveedor.
+- It requires active membership and session in the company; foreign companies give 404.
+- Returns by company a **virtual, automatic association** to the same QA resource; no traders or boxes are created, no balance is written and credentials are copied.
+- Visible in **Means of collection** for any QA company, only if `PYME_DISPOSABLE_QA=1` y `PYME_MP_QR_SHARED_QA_ENABLED=1`.
+- It does not use Access Token, private key, OAuth or remote API. When flags are missing it does not expose the QR frame or its identifiers.
+- While the shared QA mode is enabled, OAuth vendor registration and POS change from B6 routes are blocked by backend.
+- The IU makes explicit: no one has yet been created **order** to allocate amount; there is no accreditation or guarantee that the QR remains active in the provider.
 
-## Pendiente B7-B: habilitar cobro QR real en TEST, antes de marcar el flujo listo
+## B7-B pending: enable real QR charging in TEST, before dialing the ready flow
 
-Se requiere configurar `PYME_MP_SHARED_QA_ACCESS_TOKEN` **solo en el entorno backend QA** y comprobar por GET la identidad del vendedor y caja (sin pegar el token en GitHub, frontend ni esta conversación). Luego:
-1. Extender Orders API B6 al modo **static** usando `config.qr.external_pos_id=PYMEQA001POS001`; cada venta/empresa genera su propia `external_reference` y clave idempotente.
-2. Un solo intento externo pendiente globalmente por caja, con exclusión **en base de datos**; las empresas se mantienen aisladas por `business_id`.
-3. Validar importe y artículos del snapshot, estado de Merchant/Test, webhook firmado o GET al proveedor, y recién después asentar venta QA idempotente.
-4. Probar con comprador TEST, credencial local y red accesible; nunca afirmar que un pago está acreditado solo porque aparece el QR.
-5. No permitir otras cajas ni cuentas a usuarios de QA compartido.
+Setup required `PYME_MP_SHARED_QA_ACCESS_TOKEN` **solo en el entorno backend QA** and check by GET the identity of the seller and box (without pasting the token on GitHub, frontend or this conversation).
+1. Extend Orders API B6 to Mode **static** using `config.qr.external_pos_id=PYMEQA001POS001`; each sale/company generates its own `external_reference` and idepotent key.
+2. One external attempt globally pending per box, excluding **database**; companies remain isolated by `business_id`.
+3. Validate amount and items from snapshot, Merchant/Test status, signed webhook or GET to supplier, and just then settle QA idempotent sale.
+4. Try TEST buyer, local card and accessible network; never claim that a payment is credited just because the QR appears.
+5. Do not allow other boxes or accounts to shared QA users.
 
-B7-A no integra pagos remotos. **No escanear como si el carrito del POS estuviera asociado a este QR hasta finalizar B7-B**.
+B7-A does not integrate remote payments. **Do not scan as if the POS cart is associated with this QR until B7-B is finished.**.
 
-Referencias: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing
+References: https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing

@@ -1,72 +1,72 @@
-# E3-2A — Auditoría técnica previa a QA manual
+# E3-2A — Technical audit prior to manual QA
 
-**Alcance:** PR #65 de fotos privadas en REAL sobre `main` E3-1; validación estática de arquitectura, contratos, DB, autorización, almacenamiento, frontend y tests.
-**Resultado del análisis del código:** implementación funcional completa, con controles de seguridad reforzados; QA manual visual **todavía pendiente**.
-**Evidencia CI del último HEAD de código auditado:** `67ef91950f61ed47509608db70e5db4a281dfaa5`, 12/11/2026, 3/3 workflows aprobados: Backend FastAPI, Frontend, full-stack PostgreSQL + Chromium. En full-stack: **908/908 pruebas backend**, **54/54 recorridos REAL**, **6/6 DEMO**; `e32a_photo_assets (head)`, `alembic check` sin diferencias. Backend Python 3.12 y 3.14, compilación/lint/frontend y Docker aprobados.
+**Scope:** PR #65 of private real photos about `main` E3-1; static validation of architecture, contracts, DB, authorization, storage, frontend and tests.
+**Result of the code analysis:** complete functional implementation, with reinforced security controls; visual manual QA **still outstanding**.
+**Evidence from the latest HEAD of audited code:** `67ef91950f61ed47509608db70e5db4a281dfaa5`, 12/11/2026, 3/3 workflows aprobados: Backend FastAPI, Frontend, full-stack PostgreSQL + Chromium. En full-stack: **908/908 pruebas backend**, **54/54 REAL routes**, **6/6 DEMO**; `e32a_photo_assets (head)`, `alembic check` no difference. Backend Python 3.12 and 3.14, build/lint/frontend and Docker approved.
 
-**Dictamen técnico definitivo:** apto para iniciar **QA manual de uso y diseño** en una base aislada. No hubo errores de pruebas pendientes ni hallazgos bloqueantes en la revisión de código. **No equivale a aprobación visual**, despliegue productivo ni autorización de merge; los riesgos evolutivos de la sección 6 siguen abiertos.
+**Final technical opinion:** suitable for starting **QA manual for use and design** There were no outstanding evidence errors or blocking findings in the code review. **It's not equivalent to visual approval.**, productive deployment or merge authorization; the evolutionary risks of section 6 remain open.
 
-## 1. Requisitos y trazabilidad
+## 1. Requirements and traceability
 
-| Requisito | Evidencia de código | Estado |
+| Requirement | Evidence of code | Status |
 |---|---|---|
-| 1 foto personal | `PhotoService.upload` (slot único), `RealAuthApp`, `RealPhotoManager` | Implementado |
-| 1 foto empresa | `/photos/businesses/{id}`, `RealBusinessesPage` | Implementado |
-| Múltiples fotos de artículo/servicio | 8 slots (0–7), `RealCatalogPage`, `RealPhotoPreview` | Implementado |
-| 1 foto opcional proveedor | `/photos/businesses/{id}/suppliers/{id}`, `RealSuppliersPage` | Implementado |
-| Portada en POS | `RealPosPage` + primera foto del catálogo | Implementado |
-| Sin romper stock, caja ni pagos | Modelo y API aditivos, sin mutar fichas comerciales | Revisado por código; CI E2E requerida |
+| 1 personal photo | `PhotoService.upload` (single slot), `RealAuthApp`, `RealPhotoManager` | Implemented |
+| 1 company photo | `/photos/businesses/{id}`, `RealBusinessesPage` | Implemented |
+| Multiple article/service photos | 8 slots (0–7), `RealCatalogPage`, `RealPhotoPreview` | Implemented |
+| 1 optional photo supplier | `/photos/businesses/{id}/suppliers/{id}`, `RealSuppliersPage` | Implemented |
+| Cover page in POS | `RealPosPage` + first photo of the catalogue | Implemented |
+| Without breaking stock, cash or payments | Additive model and API, without mutating trade tokens | Revised by code; required CI E2E |
 
-## 2. Seguridad, privacidad y tenants
+## 2. Security, privacy and tenants
 
-- Toda lectura y escritura de imágenes exige Bearer real. Fotos de perfil limitadas al usuario autenticado. Los integrantes activos pueden consultar fotos empresariales; solo titular/administrador puede escribir en empresa activa.
-- Se resuelve `business_id` y se comprueba existencia y pertenencia del recurso catálogo/proveedor; actor ajeno recibe 404 sin acceso a bytes.
-- La descarga verifica permisos antes de seleccionar la columna BYTEA; POST realiza control anticipado de autorización antes de decodificar bytes y **revalida bajo lock** al guardar (mitiga abuso y TOCTOU). DELETE revalida bajo lock.
-- `PhotoAsset` limita slots, tamaño, MIME y dimensión con CHECKs y UNIQUE en PostgreSQL. Una sustitución de foto única se confirma o revierte atómicamente.
-- JPEG/PNG/WebP estáticos se decodifican y normalizan a WebP sin EXIF, con protección 5 MiB/12 MP/1280 px y transparencia PNG conservada. No se admite SVG, GIF animado ni importación de URL externa.
-- Las vistas React descargan blobs con encabezado Bearer en memoria. No almacenan fotos o credenciales en localStorage ni insertan token en URL. Revocan object URLs al desmontar.
-- CPU de Pillow y escrituras SQL de los POST se ejecutan fuera del event loop; el backend sigue usando PostgreSQL real, no guardado en memoria del navegador.
+- All image reading and writing requires real Bearer. Profile photos limited to the authenticated user. Active members can view business photos; only holder/manager can write in active company.
+- Se resuelve `business_id` and it is verified existence and belonging of the resource catalogue/supplier; foreign actor receives 404 without access to bytes.
+- The download checks permissions before selecting the BYTEA column; POST performs advance authorization control before decoding bytes and **revalidated under lock** when saving (mitigation abuse and TOCTOU). DELETE revalidates under lock.
+- `PhotoAsset` limits slots, size, MIME and dimension with CHECKs and UNIQUE in PostgreSQL. A single photo replacement is confirmed or reversed atomically.
+- JPEG/PNG/WebP statics are decoded and normalized to WebP without EXIF, with 5 MiB/12 MP/1280 px protection and PNG transparency preserved. SVG, animated GIF or external URL import is not supported.
+- React views download blobs with Bearer header in memory. They do not store photos or credentials in localStorage or insert token into URL. They revoke objects URLs when unmounting.
+- Pallow CPU and POST SQL scripts run outside of the event loop; the backend continues to use actual PostgreSQL, not saved in browser memory.
 
-## 3. Migración y consistencia
+## 3. Migration and consistency
 
-- `e32a_photo_assets` incorpora `photo_assets` después de `e26a_sales_foundation`; las otras tablas permanecen intactas. `alembic check` en CI debe confirmar identidad con SQLAlchemy.
-- `get_content` tiene lectura en dos fases (ACL, luego BYTEA); las fotos no se exponen como directorio estático público.
-- Revertir migración con datos de fotos está expresamente bloqueado para prevenir pérdida accidental.
-- Las pruebas de PostgreSQL deben crear datos dentro de DB efímera y/o transacción externa revertible.
+- `e32a_photo_assets` incorporates `photo_assets` after `e26a_sales_foundation`; the other tables remain intact. `alembic check` IC must confirm identity with SQLAlchemy.
+- `get_content` has two-phase reading (ACL, then BYTEA); photos are not displayed as a public static directory.
+- Reverse migration with photo data is expressly blocked to prevent accidental loss.
+- PostgreSQL tests must create data within ephemeral DB and/or revertible external transaction.
 
-## 4. Compatibilidad y pruebas automáticas
+## 4. Compatibility and automatic testing
 
-- Backend: normalización, formatos inválidos, transparencia, autenticación, sustitución, ocho posiciones, borrado, permisos, lectura entre tenants y acceso de trabajador.
-- Frontend: contrato de URL/token, upload FormData, validación tamaño/MIME, errores HTTP, parseo de metadatos, vista previa, states.
-- E2E REAL Playwright: perfil con reemplazo, empresa con logo, galería servicios, proveedor con borrado, imagen portada en POS; pantalla 390px; regresión DEMO y funcionalidades anteriores.
-- No se ejecutó migración ni pruebas manuales en la base local personal del usuario.
+- Backend: standardization, invalid formats, transparency, authentication, substitution, eight positions, deletion, permissions, reading between tenants and worker access.
+- Frontend: URL/token contract, upload FormData, size/MIME validation, HTTP errors, metadata parseo, preview, states.
+- E2E REAL Playwright: profile with replacement, company with logo, gallery services, supplier with deleted, POS cover image; 390px screen; DEMO regression and previous features.
+- No migration or manual testing was performed on the user's personal local base.
 
-## 5. Hallazgos de auditoría corregidos en la rama
+## 5. Audit findings corrected in the branch
 
-| Prioridad | Hallazgo detectado | Corrección |
+| Priority | Finding detected | Corrigendum |
 |---|---|---|
-| Alta (rendimiento) | Decodificación Pillow de imágenes en funciones async bloqueaba el event loop | `run_in_threadpool` durante conversión |
-| Media (rendimiento/privacidad) | Acceder al recurso por UUID cargaba BYTEA antes de confirmar ACL | Lectura selectiva de metadata y, después de autorización, bytes |
-| Media (abuso) | POST no autorizado procesaba primero la imagen | Autorización anticipada y revalidación al guardar |
-| Media (rendimiento) | Operaciones DB de carga dentro de handlers async | SQL de POST movido a threadpool |
-| Media (UX) | Foto cargada parcialmente podía dejar portada local desactualizada | Reconsulta y revisión de callback tras respuesta incierta |
-| Media (QA) | Test antiguo ataba HEAD Alembic al corte de ventas | Test dinámico del HEAD real |
-| Media (QA) | Selectores de empresa podían coincidir con opciones ocultas | Playwright identifica la tarjeta; POS usa scrollIntoView |
+| High (performance) | Pallow decoding of images in functions async blocked the event loop | `run_in_threadpool` during conversion |
+| Average (performance/privacy) | Accessing the resource by UUID loaded BYTEA before confirming ACL | Selective reading of metadata and, after authorisation, bytes |
+| Average (abuse) | Unauthorized POST first processed the image | Advance authorisation and revalidation when saving |
+| Average (performance) | Operaciones DB de carga dentro de handlers async | SQL de POST movido a threadpool |
+| Average (UX) | Photo partially loaded could leave local cover outdated | Callback review and consultation after uncertain response |
+| Average (QA) | Old test tied HEAD Alembic to the sales cut | Real HEAD Dynamic Test |
+| Average (QA) | Company selectors could match hidden options | Playwright identifica la tarjeta; POS usa scrollIntoView |
 
-## 6. Observaciones no bloqueantes y deuda futura
+## 6. Non-blocking observations and future debt
 
-| Severidad | Observación | Recomendación |
+| Severity | Observation | Recommendation |
 |---|---|---|
-| Media | `owner_id` es polimórfico y no posee FK específica a user/catálogo/proveedor. Hoy no existen borrados físicos de fichas; en el futuro podría requerir limpieza de imágenes huérfanas. | Si se incorporan bajas físicas, crear política de cascada o limpieza transaccional verificada |
-| Media | Portadas de listados y POS se consultan con un GET por recurso visible; con cientos de tarjetas habría múltiples consultas de metadatos y bytes. | Medir en QA y estudiar endpoint de portadas en lote/miniaturas separadas |
-| Media | POST de foto de catálogo no lleva clave explícita de idempotencia. Tras timeout el usuario podría repetir manualmente y generar foto duplicada. La UI no reintenta automáticamente. | Analizar clave de idempotencia/reconciliación si se incrementa el volumen |
-| Media | BYTEA en PostgreSQL es correcto para el prototipo pero incrementa respaldos y costo de almacenamiento. | En producción de volumen elevado, migrar a bucket de objetos privado y mantener metadatos/ACL |
-| Baja | No hay recorte ni selección manual de foto principal/reordenamiento de galería. | Decidir tras QA de usabilidad, sin bloquear MVP |
-| Baja | HEIC/HEIF no admitido por el primer contrato. | Evaluar conversión segura en una futura etapa |
-| Media | No se incluyó rate limit específico ni escaneo antimalware de servicio externo; el formato se redecodifica y restringe. | Antes de exponer cargas a Internet, revisar controles perimetrales y cuotas por tenant |
+| Average | `owner_id` is polymorphic and does not have specific FK to user/catalogue/supplier. Physical chip deletions do not exist today; in the future it may require cleaning of orphan images. | If physical casualties are incorporated, create a verified cascade or transactional cleaning policy |
+| Average | Listings covers and POS are consulted with a GET per visible resource; with hundreds of cards there would be multiple queries of metadata and bytes. | Measure in QA and study endpoint of covers in separate batch/miniatures |
+| Average | Catalog photo POST does not carry explicit idempotence key. After timeout the user could manually repeat and generate duplicate photo. The UI does not automatically retry. | Analyze idempower/reconciliation key if volume increases |
+| Average | BYTEA in PostgreSQL is correct for the prototype but increases backups and storage cost. | In high volume production, migrate to private object pocket and maintain metadata/ACL |
+| Low | No main photo clipping or manual selection/gallery rearrangement. | Decide after usability QA, without blocking MVP |
+| Low | HEIC/HEIF not accepted by the first contract. | Evaluate safe conversion at a future stage |
+| Average | No specific limit rate or external service antimalware scanning was included; formatting is redecorated and restricted. | Before exposing charges to the Internet, check perimeter controls and quotas per tenant |
 
-## 7. Veredicto y puerta de aceptación
+## 7. Verdict and door of acceptance
 
-**Apto para pruebas manuales únicamente si CI final termina completamente verde**, sin fallas de pruebas unitarias/integración, migración, frontend, navegación REAL y regresión DEMO. Las observaciones de la sección 6 no requieren refactorizar el módulo para el MVP pero deben mantenerse visibles en el backlog. Validar en Windows con base QA separada y las pruebas `E3-2A_GUIA_QA_MANUAL_WINDOWS.md`.
+**Suitable for manual testing only if final IC ends completely green**, without unit testing/integration failures, migration, frontend, REAL navigation and DEMO regression. The observations in section 6 do not require refactoring the module for MVP but should be kept visible on backlog. Validate on Windows with separate QA base and tests `E3-2A_GUIA_QA_MANUAL_WINDOWS.md`.
 
-**No hay autorización para merge a main** hasta que el usuario revise las pantallas, valide M01–M18 y apruebe explícitamente.
+**No authorization to merge a main** until the user reviews the screens, validates M01–M18 and explicitly approves.

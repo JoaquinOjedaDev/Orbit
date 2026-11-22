@@ -1,113 +1,113 @@
-# E2-7 T07 — Revisión integral, matriz de pruebas y decisión de integración
+# E2-7 T07 — Comprehensive review, testing matrix and integration decision
 
-**Fecha de revisión:** 10/11/2026  
-**Repositorio:** `JoaquinOjedaDev/Orbit`  
-**Rama revisada:** `feature/e2-7-t07-proveedores-compras-recepcion`  
+**Date of revision:** 10/11/2026  
+**Repository:** `JoaquinOjedaDev/Orbit`  
+**Revised branch:** `feature/e2-7-t07-proveedores-compras-recepcion`  
 **PR:** #40  
-**Referencia de código de cierre (antes de este documento):** `279f61ab409fb33785d4fcd9d097184903815f86`  
+**Closing code reference (before this document):** `279f61ab409fb33785d4fcd9d097184903815f86`  
 **Base:** `main` — `fed4f8282fed964cdfb00bf96c07a5ab71e7eb75` (T06).  
-**Decisión técnica:** *apto para integración de T07, con riesgos de QA adicional enumerados y transferidos a T08/T11*. No confundir esta decisión con el cierre de toda E2-7.
+**Technical Decision:** * Suitable for T07 integration, with additional QA risks listed and transferred to T08/T11*. Do not confuse this decision with closing all E2-7.
 
-## 1. Alcance real del cambio y trazabilidad
+## 1. Real scope of change and traceability
 
-Comparación `main...feature/e2-7-t07-proveedores-compras-recepcion` sobre la referencia previa al informe: **14 archivos modificados/creados, 56 commits, 0 commits de atraso**, GitHub marca PR fusionable. Se modificaron frontend React/TypeScript, tests de frontend, workflow frontend y documentación de T07. **No se modificaron módulos FastAPI, migraciones Alembic, Docker ni fixtures de DEMO.**
+Comparison `main...feature/e2-7-t07-proveedores-compras-recepcion` on the pre-report reference: **14 modified/created files, 56 commit, 0 commit overdue**, GitHub branded PR mergeable. Frontend Reaction/TypeScript, frontend tests, workflow frontend and T07 documentation were modified. **FastAPI, Alembic migrations, Docker and DEMO fixtures were not modified.**
 
-Se integraron:
-- Proveedores REAL por empresa: listado paginado, alta inicial, cambio de estado y visibilidad según rol.
-- Compras REAL: proveedores opcionales, líneas de catálogo o concepto libre, cantidades en milésimas, costos en centavos y snapshots históricos, historial paginado.
-- Recepción atómica de compras: solo productos físicos generan entrada de stock, con sede activa y `can_store`, autorización backend, clave idempotente y comprobante del servidor.
-- Registro de intentos pendientes de compra/recepción en IndexedDB **por actor, empresa y operación** antes del POST, con identidad, cuerpo y clave original; no se persisten Bearer tokens.
-- Mejora visual de costos: propuesta de `reference_cost_cents`, cantidad × costo unitario, edición explícita por importe total solo si es representable exactamente en centavos, total de documento y advertencia no bloqueante si costo > precio de venta.
-- Estado `REGISTRADA · RECEPCIÓN PENDIENTE` en ámbar y `RECIBIDA` en verde.
-- Conciliación de 404 de recibo: segundo GET del documento propio antes de informar que aún no existe comprobante; sin fingir permisos sobre compras ajenas.
-- Panel «Detalle de recepción» con nombre de sede, hora de backend, responsable si corresponde a sesión, identificadores de trazabilidad, snapshots de productos, movimientos y saldo posterior.
-- Separación **REAL / DEMO** conservada: ni costos ni stocks reales se deducen de `demoStore`.
+They were integrated:
+- REAL Providers by company: paged listing, initial high, change of status and visibility according to role.
+- REAL purchases: optional suppliers, catalog lines or free concept, quantities in thousandths, costs in cents and historical snapshots, pagado history.
+- Atomic buy-in: only physical products generate stock entry, with active headquarters and `can_store`, backend authorization, key ID and server voucher.
+- Recording of pending attempts to purchase/receive in IndexedDB **by actor, company and operation** before POST, with original identity, body and key; Bearer tokens do not persist.
+- Visual cost improvement: proposed `reference_cost_cents`, quantity × unit cost, explicit edition for total amount only if it is representable exactly in cents, total document and warning not blocking if cost > sale price.
+- Status `REGISTRADA · RECEPCIÓN PENDIENTE` on amber and `RECIBIDA` Green.
+- Reconciliation of 404 receipt: second GET of the own document before reporting that there is no proof yet; without fake permissions on purchases from others.
+- "Reception Details" panel with headquarters name, backend time, responsible if session relevant, traceability identifiers, product snapshots, movements and balance after.
+- Separation **REAL / DEMO** preserved: neither actual costs nor stocks are deducted from `demoStore`.
 
-## 2. Evidencia automatizada GitHub Actions
+## 2. GitHub Actions automated evidence
 
-**Workflow `Plataforma PyME · Frontend`, run #42812095691, resultado: SUCCESS (dos jobs), SHA funcional `279f61ab409fb33785d4fcd9d097184903815f86`.** El log del job `frontend` acredita `npm ci`, compilación `tsc -b && vite build`, `oxlint` con 0 errores/0 advertencias y las suites siguientes:
+**Workflow `Plataforma PyME · Frontend`, run #42812095691, result: SUCCESS (two jobs), SHA functional `279f61ab409fb33785d4fcd9d097184903815f86`.** The job log `frontend` credit `npm ci`compilation, compilation `tsc -b && vite build`, `oxlint` with 0 errors/0 warnings and the following suites:
 
-| Suite | Casos | Aprobados | Fallos | Alcance |
+| Suite | Cases | Approved | Judgements | Scope |
 |---|---:|---:|---:|---|
-| `test:api` | 11 | 11 | 0 | HTTP, errores, bearer, cancelación, timeout |
-| `test:auth` | 6 | 6 | 0 | Registro, login, perfil, logout |
-| `test:businesses` | 13 | 13 | 0 | Empresas, tenant, lectura, creación idempotente |
-| `test:operations-real` | 14 | 14 | 0 | Ubicaciones, equipo, invitaciones y permisos |
-| `test:catalog-real` | 15 | 15 | 0 | Catálogo, centavos, paginación y tenant |
-| `test:pending-commands` | 12 | 12 | 0 | Identidad de comandos e IndexedDB |
-| **`test:supply-real` (T07)** | **37** | **37** | **0** | Proveedores, compras, recepción, replay, importe, panel |
-| `test:accounts` | 14 | 14 | 0 | Módulo DEMO |
-| `test:sales` | 14 | 14 | 0 | Módulo DEMO |
-| `test:cash` | 13 | 13 | 0 | Módulo DEMO |
-| `test:qr` | 3 | 3 | 0 | Módulo DEMO |
-| `test:inventory` | 13 | 13 | 0 | Módulo DEMO |
+| `test:api` | 11 | 11 | 0 | HTTP, errors, bearer, cancellation, timeout |
+| `test:auth` | 6 | 6 | 0 | Log, login, profile, logout |
+| `test:businesses` | 13 | 13 | 0 | Businesses, tenant, reading, creation idempotente |
+| `test:operations-real` | 14 | 14 | 0 | Locations, equipment, invitations and permits |
+| `test:catalog-real` | 15 | 15 | 0 | Catalogue, cents, pagination and tenant |
+| `test:pending-commands` | 12 | 12 | 0 | Command Identity and IndexedDB |
+| **`test:supply-real` (T07)** | **37** | **37** | **0** | Suppliers, purchases, reception, replay, amount, panel |
+| `test:accounts` | 14 | 14 | 0 | DEMO Module |
+| `test:sales` | 14 | 14 | 0 | DEMO Module |
+| `test:cash` | 13 | 13 | 0 | DEMO Module |
+| `test:qr` | 3 | 3 | 0 | DEMO Module |
+| `test:inventory` | 13 | 13 | 0 | DEMO Module |
 | **TOTAL** | **165** | **165** | **0** | Suites frontend de CI |
 
-**Job Chromium:** 6/6 recorridos aprobados (3 escenarios ejecutados en escritorio y móvil): navegación y URL ajena, drawer/foco/desbordes, flujo de servicio/QR **DEMO**. **Advertencia de alcance:** los recorridos Chromium actuales NO levantan FastAPI/PostgreSQL ni sustituyen el E2E REAL previsto en T11.
+**Job Chromium:** 6/6 approved paths (3 scenarios executed on desktop and mobile): navigation and URL of others, drawer/focus/desbords, flow of service/QR **DEMO**. **Scope warning:** Current Chromium routes do NOT lift FastAPI/PostgreSQL or replace the REAL E2E provided for in T11.
 
-**Advertencias no ocultadas:** Vite señala un chunk JS de >500 kB (optimización futura de code splitting). Los logs del runner presentan advertencias de deprecación de componentes Node/acciones GitHub y módulos `punycode`/`url.parse()`. Ninguna fue un fallo del job; conservarlas visibles y revisarlas cuando se actualice el tooling, sin aumentar artificialmente los límites.
+**Unhidden warnings:** Vite points to a chunk JS of >500 kB (future optimization of code splitting). Runner logs provide pre-emption warnings for components Node/Action GitHub and modules `punycode`/`url.parse()`None was a job failure; keep them visible and review them when the tooling is updated, without artificially increasing limits.
 
-## 3. Evidencia manual REAL en el navegador — datos TEST
+## 3. REAL manual evidence in the browser — TEST data
 
-Los resultados siguientes se sustentan en los mensajes, logs y capturas compartidos por el responsable durante el desarrollo; **no representan una ejecución independiente de un entorno E2E nuevo**.
+The following results are based on messages, logs and catches shared by the responsible during development; **do not represent an independent execution of a new E2E environment**.
 
-| ID / grupo | Evidencia | Resultado |
+| ID/group | Evidence | Outcome |
 |---|---|---|
-| T07-01 / T07-02 | `Proveedor A T07` creado, desactivado y reactivado; consulta desde PostgreSQL | **Aprobado** |
-| T07-03 | Primera compra `2 UNIDAD × $2.000,00 = $4.000,00`, `REGISTRADA` sin recepción | **Aprobado** |
-| T07-04 / T07-05 | Recepción en sede y consulta posterior: `RECIBIDA`, 1 movimiento; no reenviar al consultar | **Aprobado** |
-| T07-06 | `concepto libre T07`: 5 CONCEPTO × $500,00 = **$2.500,00**, sin proveedor; `CERRADA SIN RECEPCIÓN`, sin acción de recibir | **Aprobado visualmente** |
-| T07-07 | TEST Empresa A muestra proveedor y compras; TEST Empresa B: **0 proveedores, 0 compras** | **Aprobado en listados** |
-| T07-08 | Miguel con rol TRABAJADOR puede leer compras/proveedores; sin alta de proveedores; permisos de sede separados de membresía | **Aprobado en UI** |
-| T07-10/11 (parcial) | Intención de recepción recuperada con clave original tras reingreso; 404 ausente se reconoce con segundo GET; no POST automático; posterior recepción explícita | **Recuperación observada**; corte artificial de red y POST sin respuesta no reproducidos íntegramente |
-| Recepción de Miguel | Sede A TEST previamente `NO ASIGNADO`; luego de asignación y confirmación explícita, compra `Compra2 prueba E2-7 T07` de $9.200,00 pasó a `RECIBIDA` | **Aprobado**; autorización real respaldada por backend |
-| Comprobante detallado | Captura `CONFIRMADA`, `Sede A TEST`, `miguel`, fecha 10 nov 2026 8:23 a. m., **+5 UNIDAD Producto A TEST**, saldo posterior **11 UNIDAD**; servicio sin movimiento | **Aprobado visualmente** |
-| Costo de referencia / fórmula | Propuesta $800,00, cantidad y unitario editables, subtotal automático, total de renglones y total del documento; advertencia si costo excede venta | **Aprobado visualmente** |
-| T07-14 | Catálogo e inventario DEMO: colágeno hidrolizado, Crema de enjuague, Shampoo; filtros, tarjetas, ubicaciones, acciones probadas; sin mezcla visible de datos REAL | **Aprobado en pantallas revisadas** |
-| T07-19 | Compra histórica conserva importe original al listar; referencia de catálogo vigente no reemplaza costo histórico | **Aprobado en listados** |
+| T07-01 / T07-02 | `Proveedor A T07` created, disabled and reactivated; query from PostgreSQL | **Approved** |
+| T07-03 | First purchase `2 UNIDAD × $2.000,00 = $4.000,00`, `REGISTRADA` no reception | **Approved** |
+| T07-04 / T07-05 | Reception at headquarters and subsequent consultation: `RECIBIDA`, 1 movement; do not forward when consulting | **Approved** |
+| T07-06 | `concepto libre T07`: 5 CONCEPT × $500.00 = **$2.500,00**, without supplier; `CERRADA SIN RECEPCIÓN`, no action to receive | **Visually Approved** |
+| T07-07 | TEST Company A shows supplier and purchases; TEST Company B: **0 suppliers, 0 purchases** | **Approved in Lists** |
+| T07-08 | Miguel with role WORKER can read purchases/suppliers; without vendor registration; separate membership headquarters permits | **Approved in IU** |
+| T07-10/11 (partial) | Recuperation intention with original key after re-entry; 404 absent recognized with second GET; no automatic POST; subsequent explicit reception | **Observed recovery**; artificial network cutting and unresponsive POST not fully reproduced |
+| Reception of Miguel | Headquarters A TEST previously `NO ASIGNADO`; after assignment and explicit confirmation, purchase `Compra2 prueba E2-7 T07` of $9,200.00 went on to `RECIBIDA` | **Approved**; real authorization backed by backend |
+| Detailed check | Catch `CONFIRMADA`, `Sede A TEST`, `miguel`date 10 Nov 2026 8:23 a.m., **+5 UNIT Product A TEST**, balance later **11 UNITY**; no movement service | **Visually Approved** |
+| Reference cost / formula | Proposal $8,000.00, quantity and unit editable, automatic subtotal, total line and total document; warning if cost exceeds sale | **Visually Approved** |
+| T07-14 | DEMO Catalogue and Inventory: Hydrolyzed Collagen, Rinse Cream, Shampoo; Filters, Cards, Locations, Proven Actions; Without Visible Mixing of REAL Data | **Approved on revised screens** |
+| T07-19 | Historical purchase retains original amount to list; existing catalog reference does not replace historical cost | **Approved in Lists** |
 
-**Precisión:** la captura de `RECIBIDA` y el comprobante son evidencia del estado devuelto por el backend; los balances y movimientos no se verificaron en una consulta SQL independiente en esta revisión. Se evita afirmar que el saldo 11 equivale a un inventario reconciliado globalmente: T08 realizará esa lectura.
+**Accuracy:** catch of `RECIBIDA` and the voucher is evidence of the status returned by the backend; the balances and movements were not verified in an independent SQL query in this review. It is avoided to say that balance 11 amounts to a globally reconciled inventory: T08 will perform that reading.
 
-## 4. Contratos backend y controles existentes contrastados por lectura
+## 4. Existing backend contracts and controls contrasted by reading
 
-No hubo cambios backend en este PR. Se revisó que el repositorio contiene los siguientes tests de integración de PostgreSQL:
+No backend changes were made to this PR. It was revised that the repository contains the following PostgreSQL integration tests:
 
-- `test_purchase_api_integration.py`: compra mixta y snapshots; concepto/servicio sin stock; replay 201/200/409; idempotencia por actor; proveedor/artículo ajeno rechazado; roles/empresa suspendida; paginación; rollback.
-- `test_receipt_api_integration.py`: recepción atómica; balances históricos; replay; autorización de trabajador asignado versus no asignado; ubicación ajena, pausada y sin almacenaje; cambios de unidad/tipo; rollback y restricciones DB.
-- `test_receipt_concurrency_integration.py`: recepción simultánea con clave igual/diferente; evitar duplicados, sumatoria de entradas concurrentes.
-- `test_supplier_api_integration.py`: roles, reactivación, unicidad empresarial, aislamiento entre tenants, estados, paginación y rollback.
-- `test_location_assignment_integration.py`: asignación activa, revocación, 409 en ubicación pausada y aislamiento entre empresas.
+- `test_purchase_api_integration.py`: mixed purchase and snapshots; concept/service without stock; replay 201/200/409; idempotence per actor; supplier/other person's article rejected; roles/company suspended; pagination; rollback.
+- `test_receipt_api_integration.py`: atomic reception; historical balances; replay; authorization of assigned versus unallocated worker; location outside, paused and without storage; unit/type changes; rollback and DB restrictions.
+- `test_receipt_concurrency_integration.py`: simultaneous reception with equal/different key; avoid duplicates, sum of concurrent entries.
+- `test_supplier_api_integration.py`: roles, reactivation, enterprise uniqueness, isolation between tenants, states, pagination and rollback.
+- `test_location_assignment_integration.py`: active assignment, revocation, 409 in paused location and isolation between companies.
 
-**No se ejecutó Pytest de nuevo para este cierre.** La existencia y lectura de esos tests valida el diseño de cobertura del backend, no se atribuye a este cierre un resultado de ejecución inexistente.
+**Pytest was not executed again for this closure.** The existence and reading of these tests validates the backend coverage design, not attributed to this closure a result of non-existent execution.
 
-## 5. Hallazgos, riesgos residuales y decisión
+## 5. Findings, residual risks and decision
 
-**No se detectaron defectos bloqueantes confirmados para integrar el alcance T07.** El backend mantiene la autoridad sobre roles, acceso a empresa, permisos de ubicación, transacciones, snapshots y stock. El cliente no reenvía escrituras automáticamente ni reutiliza datos DEMO; persiste la misma clave/cuerpo en las operaciones idempotentes.
+**No confirmed blocking defects were detected to integrate the T07 range.** The backend maintains authority over roles, access to business, location permits, transactions, snapshots and stock. The client does not automatically forward deeds or reuse DEMO data; the same key/body persists in idepotent operations.
 
-| Riesgo / QA diferido | Evidencia actual | Tratamiento |
+| Risk / deferred QA | Current evidence | Treatment |
 |---|---|---|
-| T07-09: URL directa de compra ajena como trabajador | Tests backend de tenant/ID y mocks frontend; no prueba manual específica | T11 E2E REAL contra dos empresas, 404 sin fuga |
-| T07-10: perder respuesta del alta y recuperar tras F5 | Unit tests de journal y API; experiencia T06; no caída controlada para compra T07 | T11 full-stack con corte de red y una sola compra |
-| T07-11/12: replay recepción tras pérdida de respuesta | Recuperación manual exitosa de la clave, GET de recibo y recepción; tests backend 201/200 y concurrencia | T11 repetir con interrupción/observación de ledger en DB efímera |
-| T07-13: sede pausada / `can_store=false` | Tests de backend de 409, control frontend por lista de sedes activas | T11 negativa real y sin movimientos |
-| T07-15: >100 registros (catálogo/proveedor/compra) | Paginación offset/limit implementada y tests de contrato/backend; no dataset manual 101+ | T11 dataset sintético paginado |
-| T07-18, T07-20, T07-23: importes extremos, `null` vs 0, total imposible | Tests puros de centavos/HALF_UP/estado, no todos probados visualmente | T11 ampliar escenarios de formulario |
-| IndexedDB sin cifrado, token en memoria | Riesgo documentado y aceptación informada; sin credenciales persistidas | Mantener recomendación de no usar dispositivos compartidos; revisar UX de sesiones en cierre |
-| Performance y warnings de toolchain | Bundle JS >500 kB, Node deprecado en Actions | Optimización y dependencias después de cerrar integraciones funcionales |
-| E2E real en CI | Chromium actual DEMO 6/6; manual T07 real, backend integración previa | **T11** debe levantar FastAPI/PostgreSQL en base efímera con Playwright en mismo SHA |
+| T07-09: Direct URL of purchase from others as a worker | Tenant/ID backend tests and frontend mocks; no specific manual test | T11 E2E REAL against two companies, 404 without leak |
+| T07-10: Loss of discharge response and recovery after F5 | Unit journal and API tests; T06 experience; non-fall controlled for purchase T07 | T11 full-stack with network cut and one purchase |
+| T07-11/12: replay received after loss of response | Successful manual key recovery, GET receipt and reception; backend tests 201/200 and attendance | T11 repeat with discontinuation/observation of ledger in ephemeral DB |
+| T07-13: quiet location / `can_store=false` | Tests de backend de 409, control frontend por lista de sedes activas | T11 real negative and no movement |
+| T07-15: >100 records (catalogue/supplier/buyer) | Offset/limit implementation and contract/backend tests; no manual dataset 101+ | T11 synthetic dataset pagado |
+| T07-18, T07-20, T07-23: extreme amounts, `null` vs 0, total impossible | Pure cent tests/HALF_UP/state, not all visually tested | T11 Expand Form Scenarios |
+| IndexedDB sin cifrado, token en memoria | Documented risk and informed acceptance; no persistent credentials | Keep recommendation not to use shared devices; review UX sessions on closing |
+| Performance y warnings de toolchain | Bundle JS >500 kB, Node deprecado en Actions | Optimization and dependencies after closing functional integrations |
+| Real E2E in IC | Current Chromium DEMO 6/6; real T07 manual, previous integration backend | **T11** must lift FastAPI/PostgreSQL on ephemeral basis with Playwright on same SHA |
 
-**Puerta T07:** los flujos comerciales centrales han sido probados mediante usuario real en navegador y la cobertura de frontend en CI está verde. La recepción se comprobó con colaborador asignado, con idempotencia manual y comprobante. Las evidencias restantes no son descartadas: se trasladan a la matriz de QA de T11 como trabajo verificable. Las limitaciones anteriores se aceptan **solo para el cierre incremental de T07**; no se autoriza declarar completada T11 ni E2-7.
+**Door T07:** the central commercial flows have been tested by real user in browser and frontend coverage in IC is green. The reception was verified with assigned collaborator, with manual idempotency and proof. The remaining evidence is not discarded: they are moved to the QA matrix of T11 as verifiable work. The above limitations are accepted **only for incremental closure of T07**; not authorised to declare complete T11 or E2-7.
 
-## 6. Transferencia y próximos incrementos
+## 6. Transfer and forthcoming increases
 
-**T08 — Inventario REAL:** consulta de saldos autoritativos y movimientos paginados por sede, uso de unidades en milésimas y UI de balances, traslado entre ubicaciones con una operación atómica, inventario inicial y ajuste de conteo con `expected_version`, `409` con relectura y reconfirmación humana. Probar compra `RECIBIDA` → mismo saldo/movimiento desde API, sin sumar dos veces.
+**T08 — REAL Inventory:** query of authoritative balances and pagulated movements by headquarters, use of units in thousandths and IU of balances, transfer between locations with an atomic operation, initial inventory and counting adjustment with `expected_version`, `409` with rereading and human reconfirmation. `RECIBIDA` → same balance/movement from API, without adding twice.
 
-**T09 — Soporte de ventas:** definir contratos de historial/recovery por `request_id` y política de replay histórico cuando cambia autorización de sede; testear permisos. Decidir la política de precios/descuentos por rol antes del POS.
+**T09 — Sales support:** define history/recovery contracts by `request_id` and historical replay policy when you change headquarters authorization; test permissions. Decide the pricing/discount policy per role before the POS.
 
-**T10 — POS REAL:** venta física/servicio/mixta, pagos declarados, reducción de stock y comprobante; nunca mezclar cuentas/caja/QR DEMO con cobros reales.
+**T10 — POS REAL:** physical sale/service/mixed, declared payments, stock reduction and voucher; never mix accounts/box/QR DEMO with actual collections.
 
-**T11 — QA integral:** backend PostgreSQL + frontend + Playwright contra **la misma base efímera**, tests multi-tenant, fallos de red, reversión/rollback, 101/501 elementos, pruebas adversariales de permisos y verificación de ledger; recuperar pendientes manuales sin duplicar movimientos.
+**T11 — Comprehensive QA:** backend PostgreSQL + frontend + Playwright contra **the same ephemeral base**, multi-tenant tests, network failures, reversal/rollback, 101/501 elements, adverse testing of permits and ledger verification; recover manual earrings without doubling movements.
 
-**T12 — Cierre académico:** contratos, UML, documentos 01–05, README, matriz REAL/DEMO/DIFERIDO, diagramas, evidencia de CI y límites conocidos.
+**T12 — Academic closure:** contracts, UML, documents 01–05, README, REAL/DEMO/DIFFERED matrix, diagrams, evidence of IC and known boundaries.
 
-**Registro de decisiones visuales:** costos unitarios editables, subtotales automáticos, importe total editable solo cuando tiene representación exacta, sugerencia desde referencia sin sobreescribir el catálogo, proveedor único por compra, semáforo ámbar/verde, panel de recibo interno sin PDF: asentados en el documento principal de QA de T07.
+**Recording of visual decisions:** Editable unit costs, automatic subtotals, total amount editable only when it has exact representation, suggestion from reference without overwriting the catalog, single supplier by purchase, amber/green light, internal receipt panel without PDF: recorded in QA main document of T07.

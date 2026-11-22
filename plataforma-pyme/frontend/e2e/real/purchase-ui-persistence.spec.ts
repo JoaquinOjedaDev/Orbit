@@ -9,7 +9,7 @@ test.beforeAll(() => {
 
 test('T11-F: compra UI bien + concepto libre, F5, recepción y ledger real', async ({ page, request }) => {
   const email = 't11-pur-ui-' + randomUUID() + '@example.com'
-  const password = 'Clave QA T11 F compra 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const register = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'QA compras UI T11-F' },
   })
@@ -43,31 +43,31 @@ test('T11-F: compra UI bien + concepto libre, F5, recepción y ledger real', asy
   })
 
   const signIn = async () => {
-    await page.getByLabel('Correo electrónico', { exact: true }).fill(email)
-    await page.getByLabel('Contraseña', { exact: true }).fill(password)
+    await page.getByLabel('Email', { exact: true }).fill(email)
+    await page.getByLabel('Password', { exact: true }).fill(password)
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
   }
 
   await page.goto('/real/empresas/' + company.id + '/compras')
   await signIn()
-  await expect(page.getByRole('heading', { name: 'Compras y recepción' })).toBeVisible()
-  await page.getByRole('button', { name: 'Registrar compra REAL' }).click()
+  await expect(page.getByRole('heading', { name: 'Purchases and reception' })).toBeVisible()
+  await page.getByRole('button', { name: 'Register Real Purchase' }).click()
   const form = page.locator('form.real-ops-form')
   await form.getByLabel('Referencia').fill('Compra E2E física y concepto')
   const lines = form.locator('.real-supply-line')
   await expect(lines).toHaveCount(1)
-  await lines.nth(0).getByLabel('Artículo del catálogo o concepto libre')
+  await lines.nth(0).getByLabel('Catalogue article or free concept')
     .selectOption(product.id)
-  await lines.nth(0).getByLabel('Cantidad (hasta 3 decimales)').fill('5')
-  await lines.nth(0).getByLabel('Costo unitario ($)').fill('700')
-  await form.getByRole('button', { name: 'Agregar renglón' }).click()
+  await lines.nth(0).getByLabel('Amount (up to 3 decimal places)').fill('5')
+  await lines.nth(0).getByLabel('Unit cost ($)').fill('700')
+  await form.getByRole('button', { name: 'Add Line' }).click()
   await expect(lines).toHaveCount(2)
-  await lines.nth(1).getByLabel('Descripción').fill('Flete documentado T11-F')
-  await lines.nth(1).getByLabel('Cantidad (hasta 3 decimales)').fill('1')
-  await lines.nth(1).getByLabel('Costo unitario ($)').fill('500')
+  await lines.nth(1).getByLabel('Description').fill('Flete documentado T11-F')
+  await lines.nth(1).getByLabel('Amount (up to 3 decimal places)').fill('1')
+  await lines.nth(1).getByLabel('Unit cost ($)').fill('500')
   await expect(form.locator('.real-supply-grand-total')).toContainText('4000,00')
-  await form.getByLabel('Acepto guardar temporalmente los datos de esta compra en este navegador.').check()
-  await form.getByRole('button', { name: 'Registrar compra', exact: true }).click()
+  await form.getByLabel('I agree to temporarily save the data of this purchase in this browser.').check()
+  await form.getByRole('button', { name: 'Register purchase', exact: true }).click()
   await expect(page.getByText('La compra NO agregó stock', { exact: false })).toBeVisible()
 
   const purchases = await get(root + '/purchases')
@@ -84,16 +84,16 @@ test('T11-F: compra UI bien + concepto libre, F5, recepción y ledger real', asy
   expect(await get(root + '/inventory/movements')).toEqual([])
 
   await page.reload()
-  await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
   await signIn()
   await expect(page.getByText('Compra E2E física y concepto')).toBeVisible()
-  await page.getByRole('button', { name: 'Pendiente · Confirmar recepción en ubicación' }).click()
-  await page.getByLabel('Destino con almacenamiento activo').selectOption(site.id)
+  await page.getByRole('button', { name: 'Pending · Confirm reception at location' }).click()
+  await page.getByLabel('Destination with active storage').selectOption(site.id)
   const postReceipt = page.waitForResponse(res =>
     res.request().method() === 'POST' && new URL(res.url()).pathname ===
       '/api/v1' + root + '/purchases/' + purchases[0].id + '/receive')
   page.once('dialog', dialog => void dialog.accept())
-  await page.getByRole('button', { name: 'Confirmar recepción REAL' }).click()
+  await page.getByRole('button', { name: 'Confirm Real Reception' }).click()
   const confirmed = await postReceipt
   expect(confirmed.status(), await confirmed.text()).toBe(201)
   const submitted = await confirmed.json()
@@ -126,7 +126,7 @@ test('T11-F: compra UI bien + concepto libre, F5, recepción y ledger real', asy
 
   await page.reload()
   await signIn()
-  await expect(page.getByRole('button', { name: 'Consultar comprobante' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Check voucher' })).toBeVisible()
   expect(await get(root + '/inventory/balances')).toEqual(balances)
   expect(await get(root + '/inventory/movements')).toEqual(moves)
 })

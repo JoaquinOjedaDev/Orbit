@@ -39,26 +39,26 @@ export function assessBusinessSetup(s:SetupSources):SetupAssessment {
   const places=s.locations.state==='ready'?s.locations.data:null
   const locationReady=places!==null&&places.some(l=>l.status==='ACTIVA')
   const locations:SetupStep={
-    id:'location',title:'Prepará tu primera ubicación',
-    subtitle:'Un local, feria, depósito, oficina u otro espacio de tu empresa.',
+    id:'location',title:'Prepare your first location',
+    subtitle:'A venue, fair, warehouse, office or other space of your company.',
     route:'ubicaciones',status:places===null?'unknown':locationReady?'done':'todo',
-    detail:places===null?'No pudimos verificar las ubicaciones. No significa que no existan.'
-      :locationReady?'Tu empresa ya tiene al menos una ubicación activa.'
-      :'Todavía no hay ubicaciones activas registradas.',
+    detail:places===null?'We couldn\'t verify the locations.'
+      :locationReady?'Your company already has at least one active location.'
+      :'There are no active locations registered yet.',
   }
 
   const catalog=s.catalog.state==='ready'?s.catalog.data:null
   const activeItems=catalog?.items.filter(i=>i.status==='ACTIVO'&&i.sellable)??[]
   const catalogReady=activeItems.length>0
   const products:SetupStep={
-    id:'catalog',title:'Cargá un artículo o servicio',
-    subtitle:'Registrá lo que ofrece tu negocio y sus datos de venta.',
+    id:'catalog',title:'Load an article or service',
+    subtitle:'Register what your business offers and its sales data.',
     route:'catalogo',
     status:catalog===null?'unknown':catalogReady?'done':catalog.complete?'todo':'unknown',
-    detail:catalog===null?'El catálogo no pudo verificarse.'
-      :catalogReady?'Ya hay al menos un artículo o servicio activo y vendible.'
-      :catalog.complete?'No encontramos artículos vendibles en tu catálogo.'
-      :'La consulta es parcial: puede haber artículos en otras páginas.',
+    detail:catalog===null?'The catalogue could not be verified.'
+      :catalogReady?'There is already at least one item or service active and sellable.'
+      :catalog.complete?'We didn\'t find any selling items in your catalog.'
+      :'The query is partial: there may be articles on other pages.',
   }
 
   const stockPage=s.balances.state==='ready'?s.balances.data:null
@@ -68,32 +68,32 @@ export function assessBusinessSetup(s:SetupSources):SetupAssessment {
     &&physicalIds.has(b.catalog_item_id)&&storingIds.has(b.location_id)))
   const onlyServices=Boolean(catalog?.complete&&activeItems.length>0&&physicalIds.size===0)
   let stockStatus:SetupStatus='unknown'
-  let stockDetail='No se pudo verificar un saldo positivo en una sede de almacenamiento.'
+  let stockDetail='A positive balance at a storage facility could not be verified.'
   if(onlyServices){
     stockStatus='not-required'
-    stockDetail='Tu catálogo vendible contiene solo servicios: no necesitan stock físico.'
+    stockDetail='Your sellable catalog contains only services: they do not need physical stock.'
   }else if(hasStock){
     stockStatus='done'
-    stockDetail='Encontramos existencias positivas de un bien vendible en una sede activa con depósito.'
+    stockDetail='We found positive stocks of a good soldable in an active headquarters with deposit.'
   }else if(catalog?.complete&&!catalogReady){
     stockStatus='todo'
-    stockDetail='Primero cargá un artículo. Los servicios no requieren inventario físico.'
+    stockDetail='First load an item. Services do not require physical inventory.'
   }else if(physicalIds.size===0){
-    stockDetail='El catálogo todavía no está verificado por completo para determinar si hay bienes físicos.'
+    stockDetail='The catalogue is not yet fully verified to determine whether there are physical assets.'
   }else if(places!==null&&storingIds.size===0){
     stockStatus='todo'
-    stockDetail='Necesitás una sede activa habilitada para almacenar antes de iniciar stock.'
+    stockDetail='You need an active site enabled to store before starting stock.'
   }else if(stockPage?.complete&&catalog?.complete&&places!==null){
     stockStatus='todo'
-    stockDetail='No encontramos existencias positivas de bienes vendibles en sedes de almacenamiento.'
+    stockDetail='We did not find positive stocks of goods sold at storage sites.'
   }else if(s.balances.state==='unavailable'){
-    stockDetail='No fue posible consultar las existencias. No se considera que el stock sea cero.'
+    stockDetail='Stock was not considered to be zero.'
   }else{
-    stockDetail='Consulta parcial: no se puede confirmar que falte stock.'
+    stockDetail='Partial query: cannot be confirmed missing stock.'
   }
   const stocks:SetupStep={
-    id:'stock',title:'Verificá el inventario de tus productos',
-    subtitle:'Solo para bienes físicos: la cantidad disponible se controla por sede.',
+    id:'stock',title:'Check your product inventory',
+    subtitle:'For physical goods only: the amount available is controlled by headquarters.',
     route:'inventario',status:stockStatus,detail:stockDetail,
   }
   const steps=[locations,products,stocks]

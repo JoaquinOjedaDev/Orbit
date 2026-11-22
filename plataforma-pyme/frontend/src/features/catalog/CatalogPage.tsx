@@ -116,15 +116,15 @@ export function CatalogPage({
       const input = toInput(draft)
       if (editingId === 'new') {
         await demoGateway.createCatalogItem(business.id, input)
-        setNotice('Artículo o servicio DEMO creado para «' + business.name + '». No se generó stock.')
+        setNotice('Article or DEMO service created for "' + business.name + '». No stock was generated.')
       } else {
         await demoGateway.updateCatalogItem(business.id, editingId, input)
-        setNotice('Ficha DEMO actualizada. No se modificaron cantidades de inventario.')
+        setNotice('Updated DEMO statement. No inventory quantities were changed.')
       }
       setEditingId(null)
       setStatusFilter('TODOS')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No fue posible guardar el artículo.')
+      setError(err instanceof Error ? err.message : 'Could not close temporary folder: %s')
     } finally {
       setBusy(false)
     }
@@ -140,11 +140,11 @@ export function CatalogPage({
       await demoGateway.setCatalogItemStatus(business.id, item.id, status)
       setConfirmationId(null)
       setNotice(status === 'INACTIVO'
-        ? 'Artículo inactivado. La ficha se conserva y aparece con el filtro Inactivos.'
-        : 'Artículo reactivado en el catálogo DEMO.')
+        ? 'Inactivated article. The file is preserved and appears with the Inactive filter.'
+        : 'Article reactivated in the DEMO catalogue.')
       setStatusFilter('TODOS')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo actualizar el estado.')
+      setError(err instanceof Error ? err.message : 'Could not update status.')
     } finally {
       setBusy(false)
     }
@@ -157,21 +157,21 @@ export function CatalogPage({
 
   return <>
     <div className="page-heading">
-      <div><p className="eyebrow">OPERACIONES · EMPRESA DEMO</p><h1>Catálogo general</h1><p>Productos, insumos y servicios de «{business.name}».</p></div>
+      <div><p className="eyebrow">OPERATIONS · DEMO COMPANY</p><h1>Product and service catalog</h1><p>Products, inputs and services from "{business.name}».</p></div>
       <button type="button" className="button button-primary" onClick={editingId === null ? startCreate : cancelEdit} disabled={busy}>
         <Icon name={editingId === null ? 'plus' : 'close'} size={18}/>
-        {editingId === null ? 'Agregar artículo o servicio' : 'Cerrar formulario'}
+        {editingId === null ? 'Add article or service' : 'Cerrar formulario'}
       </button>
     </div>
 
-    <section className="catalog-summary" aria-label="Resumen del catálogo">
-      <div><span className="feature-icon blue"><Icon name="package"/></span><small>Fichas registradas</small><strong>{items.length}</strong></div>
+    <section className="catalog-summary" aria-label="Catalogue summary">
+      <div><span className="feature-icon blue"><Icon name="package"/></span><small>Registered files</small><strong>{items.length}</strong></div>
       <div><span className="feature-icon mint"><Icon name="shield"/></span><small>Activas</small><strong>{active}</strong></div>
-      <div><span className="feature-icon violet"><Icon name="briefcase"/></span><small>Servicios</small><strong>{serviceCount}</strong></div>
+      <div><span className="feature-icon violet"><Icon name="briefcase"/></span><small>Services</small><strong>{serviceCount}</strong></div>
     </section>
 
     <div className="informational-note catalog-info-note"><Icon name="shield" size={19}/><span>
-      Las fichas son exclusivas de esta empresa. Un <strong>servicio no tiene existencias físicas</strong>.
+      The tokens are unique to this company. <strong>service has no physical stock</strong>.
       Registrar un producto o insumo tampoco crea stock: las existencias se actualizan desde Compras, Inventario y Ventas.
       Los precios son de demostración y se expresan en pesos argentinos (ARS).
     </span></div>
@@ -179,95 +179,95 @@ export function CatalogPage({
     {error && <p className="form-message error catalog-feedback" role="alert">{error}</p>}
     {notice && <p className="form-message success catalog-feedback" role="status">{notice}</p>}
 
-    {editingId !== null && <section className="form-panel catalog-editor" aria-label="Formulario de catálogo">
+    {editingId !== null && <section className="form-panel catalog-editor" aria-label="Catalogue form">
       <div className="form-panel-header">
         <span className="feature-icon blue"><Icon name={currentlyEditing ? 'package' : 'plus'}/></span>
-        <div><h2>{currentlyEditing ? 'Editar ficha de catálogo' : 'Agregar al catálogo'}</h2><p>
-          {currentlyEditing ? 'Editás únicamente la ficha de «' + currentlyEditing.name + '».' : 'Creá un producto, insumo o servicio sin stock inicial obligatorio.'}
+        <div><h2>{currentlyEditing ? 'Edit Catalog Tab' : 'Add to Catalogue'}</h2><p>
+          {currentlyEditing ? 'You will edit only the "' + currentlyEditing.name + '».' : 'Create a product, input or service without mandatory initial stock.'}
         </p></div>
       </div>
       <form className="demo-form" onSubmit={saveItem}>
-        {currentlyEditing ? <DemoImagePicker imageKey={demoImageKey('catalog', business.id, currentlyEditing.id)} label="Imagen del artículo o servicio"/> :
-          <p className="form-hint">Guardá primero la ficha; después vas a poder agregarle su foto desde «Editar».</p>}
+        {currentlyEditing ? <DemoImagePicker imageKey={demoImageKey('catalog', business.id, currentlyEditing.id)} label="Image of the article or service"/> :
+          <p className="form-hint">Save the tab first; then you can add your photo from Edit.</p>}
         <div className="catalog-form-grid">
-          <label className="form-field"><span>Nombre del artículo o servicio *</span>
-            <input required minLength={2} maxLength={90} autoFocus value={draft.name} onChange={(e) => setDraft((x) => ({ ...x, name: e.target.value }))} placeholder="Ej.: Producto, insumo o servicio de prueba" />
+          <label className="form-field"><span>Name of article or service *</span>
+            <input required minLength={2} maxLength={90} autoFocus value={draft.name} onChange={(e) => setDraft((x) => ({ ...x, name: e.target.value }))} placeholder="E.g.: Product, input or test service" />
           </label>
           <label className="form-field"><span>Tipo *</span>
             <select value={draft.kind} onChange={(e) => setKind(e.target.value as CatalogKind)}>
               {catalogKinds.map((kind) => <option key={kind} value={kind}>{catalogKindLabels[kind]}</option>)}
             </select>
           </label>
-          <label className="form-field"><span>Categoría *</span>
-            <input required maxLength={60} minLength={2} value={draft.category} onChange={(e) => setDraft((x) => ({ ...x, category: e.target.value }))} placeholder="Ej.: Accesorios / Servicios / Materiales" />
+          <label className="form-field"><span>Category *</span>
+            <input required maxLength={60} minLength={2} value={draft.category} onChange={(e) => setDraft((x) => ({ ...x, category: e.target.value }))} placeholder="E.g.: Accessories / Services / Materials" />
           </label>
-          <label className="form-field"><span>Unidad de control *</span>
+          <label className="form-field"><span>Control unit *</span>
             <select value={draft.unit} disabled={draft.kind === 'SERVICIO'} onChange={(e) => setDraft((x) => ({ ...x, unit: e.target.value as CatalogUnit }))}>
               {catalogUnits.filter((unit) => draft.kind === 'SERVICIO' ? unit === 'SERVICIO' : unit !== 'SERVICIO').map((unit) =>
                 <option key={unit} value={unit}>{catalogUnitLabels[unit]}</option>)}
             </select>
           </label>
-          <label className="form-field"><span>SKU propio (opcional)</span>
+          <label className="form-field"><span>Own SKU (optional)</span>
             <input maxLength={32} autoComplete="off" value={draft.sku} onChange={(e) => setDraft((x) => ({ ...x, sku: e.target.value }))} placeholder="Ej.: ART-001" />
           </label>
-          <label className="form-field"><span>Precio de lista (ARS, opcional)</span>
+          <label className="form-field"><span>List price (ARS, optional)</span>
             <input inputMode="decimal" maxLength={14} autoComplete="off" value={draft.priceText} onChange={(e) => setDraft((x) => ({ ...x, priceText: e.target.value }))} placeholder="Ej.: 1500,50" />
           </label>
-          <label className="form-field"><span>Costo de referencia (ARS, opcional)</span>
+          <label className="form-field"><span>Reference cost (ARS, optional)</span>
             <input inputMode="decimal" maxLength={14} autoComplete="off" value={draft.costText} onChange={(e) => setDraft((x) => ({ ...x, costText: e.target.value }))} placeholder="Ej.: 800,00" />
           </label>
           <div className="catalog-sellable">
             <label><input type="checkbox" checked={draft.sellable} onChange={(e) => setDraft((x) => ({ ...x, sellable: e.target.checked }))}/>
-              <span><strong>Disponible para ofrecer o vender</strong><small>Un insumo puede ser sólo para consumo interno.</small></span>
+              <span><strong>Available for sale or offer</strong><small>An input can only be for internal consumption.</small></span>
             </label>
           </div>
         </div>
-        <label className="form-field"><span>Descripción comercial (opcional)</span>
-          <textarea rows={3} maxLength={450} value={draft.description} onChange={(e) => setDraft((x) => ({ ...x, description: e.target.value }))} placeholder="Información pública o comercial visible en la ficha."/>
+        <label className="form-field"><span>Commercial description (optional)</span>
+          <textarea rows={3} maxLength={450} value={draft.description} onChange={(e) => setDraft((x) => ({ ...x, description: e.target.value }))} placeholder="Public or commercial information visible on the sheet."/>
         </label>
-        <label className="form-field"><span>Observaciones internas (opcional)</span>
-          <textarea rows={3} maxLength={600} value={draft.observations} onChange={(e) => setDraft((x) => ({ ...x, observations: e.target.value }))} placeholder="Indicaciones internas, cuidados y recordatorios del equipo."/>
-          <small>Se guardan en esta DEMO local; todavía no existe autorización de lectura desde un servidor.</small>
+        <label className="form-field"><span>Internal comments (optional)</span>
+          <textarea rows={3} maxLength={600} value={draft.observations} onChange={(e) => setDraft((x) => ({ ...x, observations: e.target.value }))} placeholder="Internal indications, care and reminders of the team."/>
+          <small>They are stored in this local DEMO; there is still no permission to read from a server.</small>
         </label>
-        <p className="form-hint">El SKU es único dentro de cada empresa, pero puede repetirse en negocios diferentes. No se convierten automáticamente paquetes, cajas ni kilos a otras unidades. Sin precio significa «A cotizar».</p>
+        <p className="form-hint">The SKU is unique within each company, but can be repeated in different businesses. Packages, boxes or kilos are not automatically converted to other units. No price means "To quote".</p>
         <div className="form-actions">
-          <button type="button" className="button button-secondary" onClick={cancelEdit} disabled={busy}>Cancelar</button>
-          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Guardando…' : currentlyEditing ? 'Guardar cambios' : 'Agregar a catálogo DEMO'}</button>
+          <button type="button" className="button button-secondary" onClick={cancelEdit} disabled={busy}>Cancel</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Guardando…' : currentlyEditing ? 'Guardar cambios' : 'Add to DEMO Catalogue'}</button>
         </div>
       </form>
     </section>}
 
     <section className="form-panel catalog-list-panel">
       <div className="business-section-heading catalog-list-heading">
-        <div><Icon name="package" size={22}/><h2>Artículos y servicios</h2></div>
-        <span>{filtered.length} visibles de {items.length}</span>
+        <div><Icon name="package" size={22}/><h2>Articles and services</h2></div>
+        <span>{filtered.length} visible from {items.length}</span>
       </div>
       <div className="catalog-filters">
-        <label className="form-field"><span>Buscar por nombre, SKU, categoría o descripción</span>
-          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar en el catálogo…" />
+        <label className="form-field"><span>Search by name, SKU, category or description</span>
+          <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search the catalog..." />
         </label>
-        <label className="form-field"><span>Tipo</span>
+        <label className="form-field"><span>Type</span>
           <select value={kindFilter} onChange={(e) => setKindFilter(e.target.value as CatalogKind | 'TODOS')}>
-            <option value="TODOS">Todos los tipos</option>
+            <option value="TODOS">All types</option>
             {catalogKinds.map((kind) => <option key={kind} value={kind}>{catalogKindLabels[kind]}</option>)}
           </select>
         </label>
-        <label className="form-field"><span>Estado</span>
+        <label className="form-field"><span>Status</span>
           <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
-            <option value="ACTIVO">Activos</option><option value="INACTIVO">Inactivos</option><option value="TODOS">Todos</option>
+            <option value="ACTIVO">Activos</option><option value="INACTIVO">Inactivos</option><option value="TODOS">All</option>
           </select>
         </label>
       </div>
 
       {items.length === 0 && <div className="catalog-empty">
         <span className="feature-icon blue"><Icon name="package" size={25}/></span>
-        <h3>Tu catálogo todavía está vacío</h3>
-        <p>Agregá tu primer producto, insumo o servicio. Una empresa de servicios puede empezar sin inventario ni ubicaciones.</p>
-        {editingId === null && <button className="button button-primary" type="button" onClick={startCreate}><Icon name="plus" size={17}/> Agregar primera ficha</button>}
+        <h3>Your catalog is still empty.</h3>
+        <p>Add your first product, input or service. A service company can start without inventory or locations.</p>
+        {editingId === null && <button className="button button-primary" type="button" onClick={startCreate}><Icon name="plus" size={17}/> Add First Tab</button>}
       </div>}
       {items.length > 0 && filtered.length === 0 && <div className="catalog-empty">
-        <h3>Sin coincidencias</h3><p>Probá otra búsqueda o cambiá los filtros. Las fichas inactivas se conservan en el catálogo.</p>
-        <button className="button button-secondary" type="button" onClick={() => { setSearch(''); setKindFilter('TODOS'); setStatusFilter('TODOS') }}>Limpiar filtros</button>
+        <h3>No matches</h3><p>Try another search or change the filters. Inactive chips are kept in the catalog.</p>
+        <button className="button button-secondary" type="button" onClick={() => { setSearch(''); setKindFilter('TODOS'); setStatusFilter('TODOS') }}>Clear Filters</button>
       </div>}
       <div className="catalog-grid">
         {filtered.map((item) => <article key={item.id} className={'catalog-card'+(item.status === 'INACTIVO' ? ' catalog-card-inactive' : '')}>
@@ -275,26 +275,26 @@ export function CatalogPage({
             <DemoPhoto imageKey={demoImageKey('catalog', business.id, item.id)} alt={'Imagen de ' + item.name}
               fallback={<Icon name={kindIcon[item.kind]} size={23}/>} className="feature-icon blue demo-photo-list"/>
             <div className="catalog-card-title"><h3>{item.name}</h3><span>{catalogKindLabels[item.kind]}</span></div>
-            <span className={'catalog-state '+(item.status === 'ACTIVO' ? 'is-active' : 'is-inactive')}>{item.status === 'ACTIVO' ? 'Activo' : 'Inactivo'}</span>
+            <span className={'catalog-state '+(item.status === 'ACTIVO' ? 'is-active' : 'is-inactive')}>{item.status === 'ACTIVO' ? 'Active' : 'Inactive'}</span>
           </div>
           <div className="catalog-tags"><span>{item.category}</span><span>{catalogUnitLabels[item.unit]}</span>{item.sku && <span>SKU: {item.sku}</span>}</div>
-          <p className="catalog-description">{item.description || 'Sin descripción comercial.'}</p>
+          <p className="catalog-description">{item.description || 'No commercial description.'}</p>
           <div className="catalog-value-row">
-            <div><small>Precio de lista</small><strong>{item.sellable ? moneyDisplay(item.priceCents) : 'No ofrecido a la venta'}</strong></div>
-            <div><small>Costo de referencia</small><strong>{item.referenceCostCents === null ? 'No informado' : moneyDisplay(item.referenceCostCents)}</strong></div>
+            <div><small>List price</small><strong>{item.sellable ? moneyDisplay(item.priceCents) : 'Not offered for sale'}</strong></div>
+            <div><small>Reference cost</small><strong>{item.referenceCostCents === null ? 'No informado' : moneyDisplay(item.referenceCostCents)}</strong></div>
           </div>
           <div className="catalog-card-note">{item.kind === 'SERVICIO'
-            ? 'Servicio: sin stock físico propio'
-            : 'Producto o material: consultá sus existencias en Inventario'}</div>
+            ? 'Service: no physical stock of its own'
+            : 'Product or material: consults its inventory in Inventory'}</div>
           <div className="catalog-card-actions">
             <button type="button" className="button button-secondary" onClick={() => { setDetailId(item.id); setConfirmationId(null) }}>Ver ficha</button>
-            <button type="button" className="button button-secondary" onClick={() => startEdit(item)} disabled={busy}>Editar</button>
+            <button type="button" className="button button-secondary" onClick={() => startEdit(item)} disabled={busy}>Edit</button>
             <button type="button" className="button button-secondary" onClick={() => { setConfirmationId(confirmationId === item.id ? null : item.id); setDetailId(null) }} disabled={busy}>{item.status === 'ACTIVO' ? 'Desactivar' : 'Reactivar'}</button>
           </div>
           {confirmationId === item.id && <section className="catalog-confirm">
-            <p>¿Querés {item.status === 'ACTIVO' ? 'desactivar' : 'reactivar'} esta ficha? No se borra su registro ni se modifican existencias.</p>
-            <div><button className="button button-secondary" type="button" onClick={() => setConfirmationId(null)} disabled={busy}>Cancelar</button>
-              <button className="button button-primary" type="button" onClick={() => toggleStatus(item)} disabled={busy}>{busy ? 'Procesando…' : 'Confirmar'}</button></div>
+            <p>Do you want to {item.status === 'ACTIVO' ? 'desactivar' : 'reactivar'} Does not delete your registration or change stocks.</p>
+            <div><button className="button button-secondary" type="button" onClick={() => setConfirmationId(null)} disabled={busy}>Cancel</button>
+              <button className="button button-primary" type="button" onClick={() => toggleStatus(item)} disabled={busy}>{busy ? 'Procesando…' : 'Confirm'}</button></div>
           </section>}
         </article>)}
       </div>

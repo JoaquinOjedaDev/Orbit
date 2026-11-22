@@ -1,46 +1,46 @@
-# E3-1D — Catálogo y Proveedores: diseño visual REAL y QA
+# E3-1D — Catalog and Suppliers: REAL visual design and QA
 
-**Fecha:** 12/11/2026  
-**Base apilada:** PR #51 E3-1C3, aún sin integrar a main; PR #50 es dependencia de #51.  
-**Rama:** feature/e3-1d-catalogo-proveedores-visual  
-**Fuente funcional:** frontend React REAL y gateways FastAPI existentes, no los HTML DEMO.
+**Date:** 12/11/2026  
+**Stacked base:** PR #51 E3-1C3, still not integrating main; PR #50 is dependent on #51.  
+**Rama:** feature/e3-1d-catalog-suppliers-visual  
+**Functional source:** frontend React REAL y gateways FastAPI existentes, no los HTML DEMO.
 
-## Objetivo
+## Objective
 
-Tras la revisión aprobada de E3-1C3, la UX de gestión debe usar **vistas exclusivas**: las tarjetas permanecen en el listado, pero crear, editar o consultar una ficha sustituye el contenido por una pantalla independiente con **«Volver»** arriba; no se expanden formularios debajo de las tarjetas.
+After the approved review of E3-1C3, the management UX should use **exclusive views**: cards remain in the list, but create, edit or view a tab replaces content with a separate screen with **«Volver»** up; forms under cards are not expanded.
 
-## Catálogo REAL
+## REAL Catalog
 
-- Encabezado, resumen de fichas **cargadas** (total, activas, inactivas) y tarjetas con nombre, tipo, categoría, unidad, SKU, vendible, precios y estado.
-- Búsqueda por nombre/SKU, filtro por tipo/estado, **solo dentro de páginas consultadas**. Nunca sugerir que se buscó todo el catálogo cuando quedan páginas posibles.
-- **Ver ficha** accesible a quienes pueden consultar: datos y textos reales sin lanzar mutaciones.
-- **Crear artículo / Editar** abren vistas dedicadas, con precarga actual en edición y cancelación que no escribe.
-- Mantener tipo/unidad compatibles, centavos exactos, validación, 409 y recuperación ante resultado incierto. El guardado confirmado retorna al listado y reconsulta la primera página porque el nombre afecta el orden.
-- Sin fotos reales ni almacenamiento DEMO, ni stock inventado. No se añaden endpoints.
+- Header, summary of tabs **loaded** (total, active, inactive) and cards with name, type, category, unit, SKU, sellable, prices and status.
+- Search by name/SKU, filter by type/state, **only within pages consulted**Never suggest that the whole catalogue was searched when possible pages remain.
+- **Ver ficha** accessible to those who can consult: real data and texts without launching mutations.
+- **Create article / Edit** open dedicated views, with current preload in editing and cancellation that does not write.
+- Keep compatible type/unit, exact cents, validation, 409 and recovery from uncertain result. Confirmed save returns to list and re-checks first page because the name affects order.
+- No real photos, no DEMO storage, no invented stock. No endpoints added.
 
-## Proveedores REAL
+## REAL Suppliers
 
-- Encabezado, totales **cargados**, estado, búsqueda local, fichas con datos de contacto que efectivamente entrega FastAPI.
-- **Ver ficha** abre pantalla de consulta con contacto, teléfono, correo, dirección, WhatsApp, web, Instagram, Maps, ofertas y notas, si existen; sin editar ni generar datos ficticios.
-- **Agregar proveedor** abre una vista de alta exclusiva, **solo por nombre comercial**, porque es lo único que implementa el gateway REAL de esta pantalla. Cancelar no hace POST, guardar vuelve al listado si la operación y la reconsulta resultaron correctamente.
-- Activar/desactivar conserva el diálogo de confirmación existente y la API actual.
-- No presentar edición ficticia de contactos, promociones, medios de pago, pagos o QR. No generar compras automáticamente.
+- Heading, total **Loaded**, status, local search, contact details tabs that effectively delivers FastAPI.
+- **Ver ficha** opens consultation screen with contact, phone, mail, address, WhatsApp, web, Instagram, Maps, offers and notes, if they exist; without editing or generating fictitious data.
+- **Add Provider** opens an exclusive high view, **only by commercial name**, because it is the only thing that implements the REAL gateway of this screen. Cancel does not make POST, save returns to list if operation and checkout were successful.
+- Enable/disable retains the existing confirmation dialog and current API.
+- Do not submit fake edition of contacts, promotions, payment means, payments or QR. Do not generate purchases automatically.
 
-## Invariantes
+## Invariants
 
-1. No tocar backend, esquema, migraciones, permisos, roles, cachés cross-tenant ni rutas del shell.
-2. Ningún dato DEMO se mezcla con la API REAL; todos los datos, incluidos contadores, se calculan a partir del tenant y de páginas realmente consultadas.
-3. Las escrituras dudosas bloquean reintentos automáticos y requieren reconsulta segura; no duplicar altas.
-4. La selección de empresa remonta los componentes, eliminando borradores de otra empresa.
-5. Botones con foco y estado de pulsación, vistas dedicadas, navegación por teclado y responsive a 390 px.
+1. Do not touch backend, schematic, migrations, permissions, roles, cross-tenant caches or shell routes.
+2. No DEMO data is mixed with the REAL API; all data, including counters, are calculated from the tenant and pages actually viewed.
+3. Doubtful scriptures block automatic retrying and require safe conversion; do not duplicate high.
+4. The selection of companies goes back to the components, eliminating drafts from another company.
+5. Buttons with focus and pulse status, dedicated views, keyboard navigation and respond to 390 px.
 
-## Pruebas y revisión
+## Testing and review
 
-- **E2E nueva:** e2e/real/catalog-suppliers-visual.spec.ts, solo en PostgreSQL efímero: tarjetas, filtros, ficha, precarga y cancelación, alta REAL, navegación, móvil, ausencia de ventas/stock ficticios.
-- **Regresión:** business-crud-persistence.spec.ts actualizado para acceder al nuevo formulario dedicado de proveedores, sin alterar expectativas de CRUD.
-- **CI exigida:** build/lint/frontend, E2E Chromium, backend/postgres full-stack y regresión DEMO.
-- **QA manual antes de merge:** catálogo con artículos de prueba de distintos tipos; verificar búsqueda local, cambio de precio con rol autorizado, cancelación; proveedor con datos reales o sin completar; creación y regreso; móvil/escritorio.
+- **New E2E:** e2e/real/catalog-suppliers-visual.spec.ts, only in PostgreSQL ephemeral: cards, filters, tab, preload and cancellation, high REAL, navigation, mobile, no fictitious sales/stock.
+- **Regression:** business-crud-persistence.spec.ts updated to access the new dedicated supplier form, without altering CRUD expectations.
+- **Required CI:** build/lint/frontend, E2E Chromium, backend/postgres full-stack and regression DEMO.
+- **Manual QA before merge:** catalog with test items of different types; verify local search, change of price with authorized role, cancellation; supplier with real or incomplete data; creation and return; mobile/scritory.
 
-## Dependencias de PR
+## PR units
 
-Este PR se basa en PR #51 E3-1C3. No fusionar C2, C3 ni D sin autorización expresa; validar cambios primero y luego aprobar integración secuencial. No modificar la base local del usuario.
+This PR is based on PR #51 E3-1C3. Do not merge C2, C3 or D without express permission; validate changes first and then approve sequential integration. Do not modify the local user base.

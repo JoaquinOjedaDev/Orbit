@@ -39,7 +39,7 @@ def clean_text(value: str, *, minimum: int, maximum: int, label: str) -> str:
 def normalized_name_key(name: str) -> str:
     key = clean_text(name, minimum=2, maximum=90, label="name").casefold()
     if len(key) > 90:
-        raise ValueError("name: clave normalizada demasiado larga")
+        raise ValueError("name: Too long standard key")
     return key
 
 
@@ -51,10 +51,10 @@ def _safe_url(value: str, *, maps: bool) -> str:
         host = u.hostname
         if (u.scheme != "https" or not host or u.username is not None
                 or u.password is not None or u.port is not None):
-            raise ValueError("HTTPS sin usuario, contraseña ni puerto requerido")
+            raise ValueError("HTTPS without user, password or port required")
         host = host.encode("idna").decode("ascii").lower().rstrip(".")
         if not host or not re.fullmatch(r"[a-z0-9.-]+", host):
-            raise ValueError("Dominio no válido")
+            raise ValueError("Invalid domain")
         if maps:
             allowed = (
                 (host in {"google.com", "www.google.com"}
@@ -65,44 +65,44 @@ def _safe_url(value: str, *, maps: bool) -> str:
                 or (host == "goo.gl" and u.path.startswith("/maps/"))
             )
             if not allowed:
-                raise ValueError("Solo URLs oficiales de Google Maps")
+                raise ValueError("Only official Google Maps URLs")
         else:
             if (len(host.split(".")) < 2
                     or host.endswith((".localhost", ".local", ".internal", ".test", ".invalid"))):
-                raise ValueError("Sitio público requerido")
+                raise ValueError("Public site required")
             try:
                 ipaddress.ip_address(host)
             except ValueError:
                 pass
             else:
-                raise ValueError("IP directa no permitida")
+                raise ValueError("Direct IP not allowed")
         canonical = urlunsplit(("https", host, u.path or "/", u.query, u.fragment))
         if len(canonical) > 2048:
-            raise ValueError("URL demasiado extensa")
+            raise ValueError("URL too long")
         return canonical
     except (ValueError, UnicodeError) as exc:
-        raise ValueError("URL HTTPS no válida o dominio no permitido") from exc
+        raise ValueError("Invalid HTTPS URL or domain not allowed") from exc
 
 
 def normalized_contact(value: str, field: str) -> str:
     a, b = _TEXT_LIMITS[field]
     s = clean_text(value, minimum=a, maximum=b, label=field)
     if field == "phone" and s and not re.fullmatch(r"\+?[\d\s().-]{6,35}", s):
-        raise ValueError("phone: formato telefónico inválido")
+        raise ValueError("phone: invalid telephone format")
     if field == "whatsapp" and s:
         if not re.fullmatch(r"\+[1-9][\d\s().-]{6,22}", s):
-            raise ValueError("whatsapp: se requiere prefijo internacional E.164")
+            raise ValueError("whatsapp: international prefix required E.164")
         digits = re.sub(r"\D", "", s)
         if not 8 <= len(digits) <= 15:
-            raise ValueError("whatsapp: longitud internacional inválida")
+            raise ValueError("whatsapp: invalid international length")
         s = "+" + digits
     if field == "email" and s:
         try:
             s = validate_email(s, check_deliverability=False).normalized.lower()
         except EmailNotValidError as exc:
-            raise ValueError("email: dirección inválida") from exc
+            raise ValueError("email: invalid address") from exc
         if len(s) > b:
-            raise ValueError("email: demasiado extenso")
+            raise ValueError("email: too extensive")
     if field == "website":
         s = _safe_url(s, maps=False)
     if field == "maps_url":
@@ -110,7 +110,7 @@ def normalized_contact(value: str, field: str) -> str:
     if field == "instagram" and s:
         s = s.lstrip("@")
         if not re.fullmatch(r"[A-Za-z0-9._]{1,30}", s):
-            raise ValueError("instagram: usuario inválido")
+            raise ValueError("instagram: invalid user")
     return s
 
 
@@ -131,7 +131,7 @@ class SupplierPromotion(BaseModel):
     @classmethod
     def unique_weekdays(cls, v: list[int]) -> list[int]:
         if len(v) != len(set(v)):
-            raise ValueError("Días duplicados en promoción")
+            raise ValueError("Duplicate days in promotion")
         return sorted(v)
 
 
@@ -161,10 +161,10 @@ class SupplierFields(BaseModel):
     def check_unique_entries(self):
         normalized_name_key(self.name)
         if len(self.payment_methods) != len(set(self.payment_methods)):
-            raise ValueError("Medios de pago duplicados")
+            raise ValueError("Duplicate payment means")
         ids = [p.id for p in self.promotions]
         if len(ids) != len(set(ids)):
-            raise ValueError("Promociones duplicadas")
+            raise ValueError("Duplicate promotions")
         return self
 
 
@@ -198,7 +198,7 @@ class UpdateSupplierRequest(BaseModel):
     @model_validator(mode="after")
     def check_patch(self):
         if not self.model_fields_set:
-            raise ValueError("PATCH vacío")
+            raise ValueError("Empty PATCH")
         for field in self.model_fields_set:
             if getattr(self, field) is None:
                 raise ValueError(f"{field}: usar valor explícito, no null")
@@ -206,11 +206,11 @@ class UpdateSupplierRequest(BaseModel):
             normalized_name_key(self.name)
         if "payment_methods" in self.model_fields_set:
             if len(self.payment_methods) != len(set(self.payment_methods)):
-                raise ValueError("Medios de pago duplicados")
+                raise ValueError("Duplicate payment means")
         if "promotions" in self.model_fields_set:
             ids = [p.id for p in self.promotions]
             if len(ids) != len(set(ids)):
-                raise ValueError("Promociones duplicadas")
+                raise ValueError("Duplicate promotions")
         return self
 
 

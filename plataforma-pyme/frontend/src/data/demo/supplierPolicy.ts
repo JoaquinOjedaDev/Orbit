@@ -5,13 +5,13 @@
 import { validateGoogleMapsLink } from './mapsLinks.ts'
 
 export const supplierPaymentLabels = {
-  EFECTIVO: 'Efectivo',
+  EFECTIVO: 'Cash',
   TRANSFERENCIA: 'Transferencia',
   MERCADO_PAGO: 'Mercado Pago',
-  CUENTA_DNI: 'Cuenta DNI',
+  CUENTA_DNI: 'ID account',
   TARJETA: 'Tarjeta',
   CHEQUE: 'Cheque',
-  CUENTA_CORRIENTE: 'Cuenta corriente',
+  CUENTA_CORRIENTE: 'Current account',
 } as const
 export type SupplierPayment = keyof typeof supplierPaymentLabels
 export const supplierPayments = Object.keys(supplierPaymentLabels) as SupplierPayment[]
@@ -46,11 +46,11 @@ export const blankSupplier: SupplierInput = {
 }
 
 function textValue(value: unknown, field: string, max: number, min = 0): string {
-  if (typeof value !== 'string') throw new Error(field + ': formato inválido.')
+  if (typeof value !== 'string') throw new Error(field + ': Invalid format.')
   const text = value.trim().replace(/[\t ]+/g, ' ')
-  if (text.length < min || text.length > max) throw new Error(field + ': debe tener entre ' + min + ' y ' + max + ' caracteres.')
+  if (text.length < min || text.length > max) throw new Error(field + ': must have between ' + min + ' y ' + max + ' caracteres.')
   if ([...text].some((char) => { const code = char.charCodeAt(0); return code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127 })) {
-    throw new Error(field + ': contiene caracteres inválidos.')
+    throw new Error(field + ': contains invalid characters.')
   }
   return text
 }
@@ -65,12 +65,12 @@ export function validateSupplierWebsite(value: string): string {
   let url: URL
   try { url = new URL(text) } catch { throw new Error('Ingresá una URL de sitio web completa con https://') }
   if (url.protocol !== 'https:' || url.username || url.password || url.port || !url.hostname.includes('.')) {
-    throw new Error('Se admiten solamente enlaces HTTPS sin usuario, contraseña ni puerto.')
+    throw new Error('Only HTTPS links are supported without user, password or port.')
   }
   const host = url.hostname.toLowerCase()
   if (host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
       host === '127.0.0.1' || host === '0.0.0.0' || host === '[::1]') {
-    throw new Error('No se permiten direcciones locales como sitio web.')
+    throw new Error('Local addresses as a website are not allowed.')
   }
   return url.href
 }
@@ -101,47 +101,47 @@ export function instagramUrl(handle: string): string | null {
 }
 
 export function normalizeSupplierInput(input: SupplierInput): SupplierInput {
-  const name = textValue(input.name, 'Nombre del proveedor', 90, 2)
-  const offerings = textValue(input.offerings, 'Productos o servicios ofrecidos', 240)
-  const contactPerson = textValue(input.contactPerson, 'Persona de contacto', 100)
-  const phone = textValue(input.phone, 'Teléfono', 35)
+  const name = textValue(input.name, 'Supplier name', 90, 2)
+  const offerings = textValue(input.offerings, 'Products or services offered', 240)
+  const contactPerson = textValue(input.contactPerson, 'Contact person', 100)
+  const phone = textValue(input.phone, 'Phone', 35)
   const whatsapp = textValue(input.whatsapp, 'WhatsApp', 35)
-  if (phone && !/^\+?[\d\s().-]{6,35}$/.test(phone)) throw new Error('El teléfono sólo admite números y signos telefónicos.')
-  if (whatsapp && !whatsappUrl(whatsapp)) throw new Error('WhatsApp requiere formato internacional, por ejemplo +5491112345678.')
-  const email = textValue(input.email, 'Correo electrónico', 120).toLowerCase()
-  if (email && !emailUrl(email)) throw new Error('Ingresá un correo electrónico válido.')
-  const address = textValue(input.address, 'Dirección o referencia', 160)
+  if (phone && !/^\+?[\d\s().-]{6,35}$/.test(phone)) throw new Error('The phone only supports numbers and telephone signs.')
+  if (whatsapp && !whatsappUrl(whatsapp)) throw new Error('WhatsApp requires international format, for example +5491112345678.')
+  const email = textValue(input.email, 'Email', 120).toLowerCase()
+  if (email && !emailUrl(email)) throw new Error('Enter a valid email.')
+  const address = textValue(input.address, 'Address or reference', 160)
   const mapsUrl = validateGoogleMapsLink(input.mapsUrl)
   const website = validateSupplierWebsite(input.website)
   const instagram = textValue(input.instagram, 'Instagram', 31)
   if (instagram && !instagramUrl(instagram)) throw new Error('Instagram debe ser un usuario válido, por ejemplo @empresa.')
-  const notes = textValue(input.notes, 'Observaciones comerciales', 650)
+  const notes = textValue(input.notes, 'Trade observations', 650)
   if (!Array.isArray(input.paymentMethods) || input.paymentMethods.length > supplierPayments.length ||
       input.paymentMethods.some((m) => !Object.hasOwn(supplierPaymentLabels, m)) ||
       new Set(input.paymentMethods).size !== input.paymentMethods.length) {
-    throw new Error('Medios de pago inválidos o duplicados.')
+    throw new Error('Invalid or duplicate payment means.')
   }
   if (!Array.isArray(input.promotions) || input.promotions.length > 8) {
-    throw new Error('Se admiten hasta ocho condiciones comerciales informativas.')
+    throw new Error('Up to eight commercial information conditions are allowed.')
   }
   const usedIds = new Set<string>()
   const promotions = input.promotions.map((raw) => {
     if (!raw || typeof raw !== 'object' || typeof raw.id !== 'string' ||
         !/^demo-promo-[a-f0-9-]{36}$/.test(raw.id) || usedIds.has(raw.id)) {
-      throw new Error('Identificador de promoción inválido o duplicado.')
+      throw new Error('Invalid or duplicate promotion identifier.')
     }
     usedIds.add(raw.id)
     if (!Array.isArray(raw.days) || raw.days.length > 7 ||
         raw.days.some((day) => !Number.isInteger(day) || day < 0 || day > 6) ||
-        new Set(raw.days).size !== raw.days.length) throw new Error('Días de promoción inválidos.')
+        new Set(raw.days).size !== raw.days.length) throw new Error('Invalid promotion days.')
     if (raw.paymentMethod !== '' && !Object.hasOwn(supplierPaymentLabels, raw.paymentMethod)) {
-      throw new Error('Medio de pago de la promoción inválido.')
+      throw new Error('Means of payment for invalid promotion.')
     }
     return {
       id: raw.id,
       days: [...raw.days].sort((a, b) => a - b),
       paymentMethod: raw.paymentMethod,
-      benefit: textValue(raw.benefit, 'Condición o beneficio', 160, 3),
+      benefit: textValue(raw.benefit, 'Condition or benefit', 160, 3),
     }
   })
   return { name, offerings, contactPerson, phone, whatsapp, email, address,

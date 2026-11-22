@@ -1,40 +1,40 @@
-# 05 — Matriz de API, permisos y trazabilidad
+# 05 — API matrix, permissions and traceability
 
-**Versión vigente de consulta:** E2-7/T12-B, 11/11/2026. **Código auditado:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45).  
-**Estado:** API v1 REAL + React REAL para RF-01 a RF-07, con **46 endpoints declarados en routers** y 12 CU nucleares. RF-08–RF-10 permanecen exclusivamente DEMO/diferidos.  
-**Alcance de la revisión:** reconciliar rutas concretas de FastAPI, pantalla React y test reproducible. Esta matriz **no autoriza** funcionalidades bancarias ni cambios de permisos.
+**Current version of query:** E2-7/T12-B, 11/11/2026. **Audited code:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45).  
+**Status:** Real API v1 + REAL React for RF-01 to RF-07, with **46 endpoints declarados en routers** and 12 nuclear CU. RF-08–RF-10 remain exclusively DEMO/deferred.  
+**Scope of the review:** reconcile concrete FastAPI paths, React screen and reproducible test. This matrix **does not authorise** banking functionalities or changes in permits.
 
-> **Precedencia documental:** el inventario y las matrices siguientes son la vista **AS-IMPLEMENTED** de T12-B. El material original completo figura después como **histórico E2-1 a E2-5**, incluso cuando usa expresiones «vigente», «RF-07 diferido», «React sigue DEMO» o tablas TO-BE: esas afirmaciones fueron correctas *a su fecha de corte*, pero ya no representan el estado de `main` post-T11. El mapa conceptual ↔ ORM ↔ SQL fue conciliado en el [Documento 03 v2.1](03_MODELO_DE_DOMINIO_Y_UML.md) y en 03A/03B/03C (T12-C). El alcance de esta matriz sigue siendo RF/CU→API→UI→test; no equivale a ejecución adicional de pruebas.
+> **Documentary Precedence:** the inventory and the following matrices are the view **AS-IMPLEMENTED** from T12-B. The complete original material is later shown as **historical E2-1 to E2-5**, even when using "current", "RF-07" or "React follows DEMO" expressions or TO-BE tables: these statements were correct * at their cut-off date*, but no longer represent the status of `main` post-T11. Conceptual map ↔ ORM ★ SQL was reconciled in the [Document 03 v2.1](03_MODELO_DE_DOMINIO_Y_UML.md) and in 03A/03B/03C (T12-C). The scope of this matrix remains RF/CU→API→UI→test; it does not amount to additional testing.
 
-## 1. Tabla maestra vigente — RF → CU → API → UI → prueba
+## 1. Current master table — RF → CU → API → UI → test
 
-Convención: `B` = `/api/v1/businesses/{business_id}`; `E` = `/real/empresas/{business_id}`. Las rutas en la columna API son **representativas**: el inventario exhaustivo de métodos y rutas está en la sección 2.
+Convention: `B` = `/api/v1/businesses/{business_id}`; `E` = `/real/empresas/{business_id}`. The paths in the API column are **representative**: the comprehensive inventory of methods and routes is in section 2.
 
-| RF | CU / resultado comprobable | API y autorización efectiva | React REAL | Evidencia principal |
+| RF | CU/verifiable result | API and effective authorization | React REAL | Main evidence |
 |---|---|---|---|---|
-| **RF-01** | **CU-01** registro de identidad | `POST /api/v1/auth/register`; validación pública, email único | `/real/registro`, `RealAuthApp.tsx` | `auth-registration-ui.spec.ts`; tests de registro |
-| **RF-01** | **CU-02** login, identidad, logout | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`; Bearer revocable | `/real/login`, `/real/perfil` | `auth-registration-ui.spec.ts`, `security-navigation.spec.ts` |
-| **RF-02** | **CU-03** crear/consultar/editar empresa | `POST/GET /businesses`, `GET/PATCH B`; membresía/tenant/rol, creación idempotente | `/real/empresas`, `/real/empresas/nueva`, `E` | `security-navigation.spec.ts`, backend de empresas |
-| **RF-02** | **CU-12** invitaciones, aceptación, equipo | `POST B/invitations`, `POST /invitations/accept`, `GET/PATCH B/memberships...`, `GET/PUT B/locations/{location_id}/assignments...`; roles protegidos | `E/equipo`, `/real/invitaciones/aceptar` | `test_business_acceptance_*.py`, `test_business_team_*.py`, manual T11 |
-| **RF-03** | **CU-04** sedes, estados, principal, asignación | `B/locations` (GET/POST/PATCH/PUT según ruta); SELL/STORE y asignaciones propias | `E/ubicaciones`, `RealLocationsPage.tsx` | `business-crud-persistence.spec.ts`, `assigned-location-visibility.spec.ts` |
-| **RF-04** | **CU-05** catálogo bienes/servicios con estado y precio | `B/catalog` (GET/POST/PATCH); nombre/SKU por empresa, roles y paginación | `E/catalogo`, `RealCatalogPage.tsx` | `business-crud-persistence.spec.ts`, `pos-draft.spec.ts` |
-| **RF-05** | **CU-06** proveedor y compra sin stock | `B/suppliers` (CRUD y estado), `B/purchases` (POST/GET); proveedor y snapshots | `E/proveedores`, `E/compras` | `purchase-ui-persistence.spec.ts`, `business-crud-persistence.spec.ts` |
-| **RF-05+RF-06** | **CU-07** recepción física completa | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt`; sede STORE y replay | `E/compras`, `RealReceiptDetail.tsx` | `flow-purchase-to-sale.spec.ts`, `purchase-ui-persistence.spec.ts` |
-| **RF-06** | **CU-08** saldo/version/ledger | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario`, `RealInventoryPage.tsx` | `inventory.spec.ts`; conciliación manual T11 |
-| **RF-06** | **CU-09** traslado atómico | `POST B/inventory/transfers`, `GET .../{transfer_id}`; STORE en origen y destino | `E/inventario`, `RealTransferPanel.tsx` | `inventory.spec.ts`, `assigned-location-visibility.spec.ts` |
-| **RF-06** | **CU-11** ajuste con versión y stock inicial | `POST B/inventory/adjustments`, `GET .../{adjustment_id}`; STORE, rol, `expected_version` | `E/inventario`, `RealAdjustmentPanel.tsx` | `inventory.spec.ts`, `security-errors.spec.ts` |
-| **RF-07** | **CU-10** POS, venta, comprobante y recuperación | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}`; SELL, rol/precio y clave idempotente | `E/pos`, `E/ventas`, `RealPosPage.tsx`, `RealSalesPage.tsx` | `pos-draft.spec.ts`, `flow-purchase-to-sale.spec.ts`, `sales-recovery.spec.ts`, `sales-invalid-payment-policy.spec.ts` |
-| **RF-08** | Gastos y jornadas de caja | **Sin router real equivalente** | `/b/{demoId}/gastos`, `/b/{demoId}/jornadas` | `demo-money-isolation.spec.ts`; DEMO |
-| **RF-09** | Cuentas financieras referenciales | **Sin router real equivalente** | `/b/{demoId}/cuentas` | `demo-money-isolation.spec.ts`; DEMO |
-| **RF-10** | Intentos QR ilustrativos | **Sin cobro REAL ni endpoints OAuth/webhook MP** | `/b/{demoId}/ventas`, `QrDemoPanel.tsx` | `demo-money-isolation.spec.ts`; DEMO |
+| **RF-01** | **CU-01** identity registration | `POST /api/v1/auth/register`; public validation, single email | `/real/registro`, `RealAuthApp.tsx` | `auth-registration-ui.spec.ts`; tests de registro |
+| **RF-01** | **CU-02** login, identity, logout | `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`; Revocable Bearer | `/real/login`, `/real/perfil` | `auth-registration-ui.spec.ts`, `security-navigation.spec.ts` |
+| **RF-02** | **CU-03** create/consult/edit company | `POST/GET /businesses`, `GET/PATCH B`; membership/tenant/rol, creation of the idempotent | `/real/empresas`, `/real/empresas/nueva`, `E` | `security-navigation.spec.ts`, backend of companies |
+| **RF-02** | **CU-12** invitations, acceptance, equipment | `POST B/invitations`, `POST /invitations/accept`, `GET/PATCH B/memberships...`, `GET/PUT B/locations/{location_id}/assignments...`; protected roles | `E/equipo`, `/real/invitaciones/aceptar` | `test_business_acceptance_*.py`, `test_business_team_*.py`, manual T11 |
+| **RF-03** | **CU-04** headquarters, states, principal, assignment | `B/locations` (GET/POST/PATCH/PUT according to route); SELL/STORE and own allocations | `E/ubicaciones`, `RealLocationsPage.tsx` | `business-crud-persistence.spec.ts`, `assigned-location-visibility.spec.ts` |
+| **RF-04** | **CU-05** catalogue goods/services with status and price | `B/catalog` (GET/POST/PATCH); name/SKU by company, roles and pagination | `E/catalogo`, `RealCatalogPage.tsx` | `business-crud-persistence.spec.ts`, `pos-draft.spec.ts` |
+| **RF-05** | **CU-06** supplier and purchase without stock | `B/suppliers` (Credit and status), `B/purchases` (POST/GET); proveedor y snapshots | `E/proveedores`, `E/compras` | `purchase-ui-persistence.spec.ts`, `business-crud-persistence.spec.ts` |
+| **RF-05+RF-06** | **CU-07** Full physical reception | `POST B/purchases/{purchase_id}/receive`, `GET .../receipt`; sede STORE y replay | `E/compras`, `RealReceiptDetail.tsx` | `flow-purchase-to-sale.spec.ts`, `purchase-ui-persistence.spec.ts` |
+| **RF-06** | **CU-08** saldo/version/ledger | `GET B/inventory/balances`, `GET B/inventory/movements` | `E/inventario`, `RealInventoryPage.tsx` | `inventory.spec.ts`; manual reconciliation T11 |
+| **RF-06** | **CU-09** atomic transfer | `POST B/inventory/transfers`, `GET .../{transfer_id}`; STORY at origin and destination | `E/inventario`, `RealTransferPanel.tsx` | `inventory.spec.ts`, `assigned-location-visibility.spec.ts` |
+| **RF-06** | **CU-11** adjustment with version and initial stock | `POST B/inventory/adjustments`, `GET .../{adjustment_id}`; STORE, ROLE, `expected_version` | `E/inventario`, `RealAdjustmentPanel.tsx` | `inventory.spec.ts`, `security-errors.spec.ts` |
+| **RF-07** | **CU-10** POS, sale, voucher and recovery | `POST/GET B/sales`, `GET B/sales/{sale_id}`, `GET B/sales/by-request/{request_id}`; SELL, role/price and key idempotent | `E/pos`, `E/ventas`, `RealPosPage.tsx`, `RealSalesPage.tsx` | `pos-draft.spec.ts`, `flow-purchase-to-sale.spec.ts`, `sales-recovery.spec.ts`, `sales-invalid-payment-policy.spec.ts` |
+| **RF-08** | Cash and cash-flows | **Sin router real equivalente** | `/b/{demoId}/gastos`, `/b/{demoId}/jornadas` | `demo-money-isolation.spec.ts`; DEMO |
+| **RF-09** | Reference financial accounts | **Sin router real equivalente** | `/b/{demoId}/cuentas` | `demo-money-isolation.spec.ts`; DEMO |
+| **RF-10** | Illustrative QR attempts | **Sin cobro REAL ni endpoints OAuth/webhook MP** | `/b/{demoId}/ventas`, `QrDemoPanel.tsx` | `demo-money-isolation.spec.ts`; DEMO |
 
-**Precisiones de CU:** CU-11 corresponde a **RF-06** (no RF-07); CU-07 soporta RF-05+RF-06, pero no implica segunda recepción parcial; CU-12 abarca invitación, aceptación y gestión del equipo, no alta pública por QR. En operaciones SELL/STORE de trabajadores, **asignación activa a cada sede** es condición adicional al rol: un trabajador que solo opera en una sede no puede hacer traslado con otra. Consulta general de balances por empresa ≠ autorización para modificar sus saldos.
+**UC precisions:** CU-11 corresponds to **RF-06** (No RF-07); CU-07 supports RF-05+RF-06, but does not involve second partial reception; CU-12 encompasses invitation, acceptance and management of equipment, not public discharge by QR. In worker SELL/STORE operations, **active assignment to each headquarters** is additional to the role: a worker who only operates at one headquarters cannot make transfer with another. General consultation of balance sheets per company
 
-## 2. Inventario completo de rutas FastAPI v1 implementadas
+## 2. Complete inventory of FastAPI v1 routes implemented
 
-**Fuente de verdad:** los `APIRouter(prefix=...)` y decoradores `@router.get/post/patch/put` en los **13 routers realmente montados** por [`backend/app/api/v1/router.py`](../backend/app/api/v1/router.py). Las rutas siguientes son **relativas a `/api/v1`**. Por ejemplo, `GET /businesses` significa `GET /api/v1/businesses`. Se incluyen **46 operaciones**; métodos distintos en la misma URL cuentan como operaciones distintas. Fuera de este mapa de negocio quedan `GET /health` (liveness) y `GET /ready` (readiness de BD), no prefijados con `/api/v1`.
+**Source of truth:** los `APIRouter(prefix=...)` and decorators `@router.get/post/patch/put` in the **13 routers really mounted** por [`backend/app/api/v1/router.py`](../backend/app/api/v1/router.py). The following routes are **relativas a `/api/v1`**. For example, `GET /businesses` means `GET /api/v1/businesses`. Included **46 operations**; different methods in the same URL count as distinct operations. Outside this business map they are `GET /health` (liveness) y `GET /ready` (BD re-admission), not prefixed with `/api/v1`.
 
-| Método | Ruta bajo `/api/v1` | RF / CU | Archivo de definición |
+| Method | Low path `/api/v1` | RF / CU | Definition file |
 |---|---|---|---|
 | `POST` | `/auth/register` | RF-01; CU-01/02 | [`auth/router.py`](../backend/app/modules/auth/router.py) |
 | `POST` | `/auth/login` | RF-01; CU-01/02 | [`auth/router.py`](../backend/app/modules/auth/router.py) |
@@ -83,393 +83,393 @@ Convención: `B` = `/api/v1/businesses/{business_id}`; `E` = `/real/empresas/{bu
 | `GET` | `/businesses/{business_id}/sales/by-request/{request_id}` | RF-07; CU-10 | [`sales/router.py`](../backend/app/modules/sales/router.py) |
 | `GET` | `/businesses/{business_id}/sales/{sale_id}` | RF-07; CU-10 | [`sales/router.py`](../backend/app/modules/sales/router.py) |
 
-### Contrato de seguridad y consistencia (transversal)
+### Safety and consistency contract (transverse)
 
-- **Identidad:** `/auth/register` pública; `/auth/login` devuelve token opaco; `/auth/me` y `/auth/logout` requieren sesión válida. React mantiene token **en memoria**, sin conservarlo tras F5. No se presume correo verificado ni refresh token.
-- **Tenant:** los UUID no conceden acceso. Cada operación real verifica la empresa y la membresía, protege estados y actor. `404` puede ocultar recurso ajeno; `403` deniega una acción de rol/permisos; `401` invalida credenciales. Una consulta GET sobre saldos de sedes del mismo tenant puede ser global por política MVP, sin permitir operaciones no asignadas.
-- **Ubicaciones:** `can_sell` y `can_store` son capacidades independientes. El nuevo `GET /businesses/{business_id}/locations/my-assignments` solo consulta IDs asignados al actor, no permite administrar equipo; `GET/PUT .../{location_id}/assignments` sigue restringido por privilegios administrativos.
-- **Compras:** `POST /purchases` guarda snapshots; no elige recepción ni altera inventario. `POST /receive` confirma **una recepción completa** y entradas únicamente de líneas físicas. El servicio no se transforma artificialmente en stock ni se admite recepción vacía.
-- **Stock:** se mantiene saldo atómico + ledger firmado, cantidad en milésimas y versionado. Los traslados debitan y acreditan en un único commit; ajustes con versión obsoleta, stock insuficiente o stock inicial repetido responden conflicto sin movimiento falso.
-- **Ventas:** POS REAL requiere sede SELL autorizada para bienes. Los precios/descuentos se verifican también en FastAPI; pagos declarados suman exactamente el total. Se almacena dinero en centavos enteros y totales por renglón HALF_UP; **no hay acreditación bancaria automática**.
-- **Idempotencia y recuperación:** `Idempotency-Key` UUID4 para altas/comandos transaccionales que lo requieren; mismo key y cuerpo recupera resultado `200`, operación inicial `201`; key reutilizada con otro contenido o actor se rechaza. Pérdida de respuesta/timeout: consultar comprobante por `request_id`, nunca reenviar un comando automáticamente con otro key.
-- **Errores esperables según operación:** `401` sesión, `403` autorización, `404` recurso fuera de alcance, `409` conflicto transaccional/idempotencia/stock/versión, `422` esquema/campos, y `5xx`/red como fallo incierto. Esta lista es **transversal**: no afirma que cada endpoint produzca todos estos códigos.
-- **DEMO:** rutas `/b/{demoId}/...` conservan almacenamiento local e intenciones QR **ilustrativas**, sin pagar ni consultar la API REAL. No realizar migración ficticia de IDs DEMO a UUID FastAPI.
+- **Identity:** `/auth/register` public; `/auth/login` returns token opaque; `/auth/me` y `/auth/logout` require valid session. React maintains token **en memoria**, without keeping it after F5. No verified mail or refresh token is presumed.
+- **Tenant:** UUIDs do not grant access. Each real operation verifies the company and membership, protects states and actor. `404` may conceal another's resource; `403` denies a role/permit action; `401` invalid credentials. A GET query on seat balances of the same tenant may be global by MVP policy, without allowing unallocated operations.
+- **Locations:** `can_sell` y `can_store` are independent capabilities. `GET /businesses/{business_id}/locations/my-assignments` only consults IDs assigned to the actor, does not allow to manage equipment; `GET/PUT .../{location_id}/assignments` remains restricted by administrative privileges.
+- **Purchases:** `POST /purchases` save snapshots; do not choose reception or alter inventory. `POST /receive` confirms **a full reception** The service is not artificially transformed into stock and there is no empty reception.
+- **Stock:** atomic balance + ledger is maintained signed, quantity in thousandths and versioned. The transfers debit and credit in a single commit; adjustments with obsolete version, insufficient stock or repeated initial stock respond conflict without false movement.
+- **Sales:** REAL POS requires SELL headquarters authorized for goods. Prices/discounts are also verified in FastAPI; stated payments add up to exactly the total. Money is stored in whole and total cents per line HALF_UP; **no automatic bank accreditation**.
+- **Idempotency and recovery:** `Idempotency-Key` UUID4 for high/transactional commands requiring it; same key and body recovers result `200`initial operation `201`; re-used key with other content or actor is rejected. Loss of response/timeout: check proof by `request_id`never forward a command automatically with another key.
+- **Expected errors according to operation:** `401` session, `403` authorisation, `404` out of reach, `409` conflict transactional/idempotency/stock/version, `422` scheme/fields; and `5xx`/red as uncertain failure. This list is **cross-sectional**: does not state that each endpoint produces all these codes.
+- **DEMO:** routes `/b/{demoId}/...` preserve local storage and QR intentions **illustrative**, without paying or consulting the REAL API. Do not perform fictional migration of DEMO IDs to UUID FastAPI.
 
-## 3. Matriz de pruebas trazables por capacidad
+## 3. Capability traceable test matrix
 
-| Cobertura | Archivos / evidencia | Resultado acreditado |
+| Coverage | Files / Evidence | Accredited result |
 |---|---|---|
-| Identidad, registro, sesión, logout, F5 | `frontend/e2e/real/auth-registration-ui.spec.ts`, `security-navigation.spec.ts`, `responsive-keyboard.spec.ts` | REAL navegador → API/BD, tokens en memoria |
-| Tenancy, respuestas tardías, 401/403/404, roles y sedes | `security-navigation.spec.ts`, `security-errors.spec.ts`, `assigned-location-visibility.spec.ts` | Cambio A/B sin fuga, acceso ajeno denegado, sedes SELL/STORE filtradas |
-| Sede, catálogo, proveedor CRUD y persistencia | `business-crud-persistence.spec.ts`, `mobile-core-navigation.spec.ts` | Altas/estados y F5 en REAL; smoke móvil |
-| Compra bien+concepto libre, recepción e idempotencia | `purchase-ui-persistence.spec.ts`, `flow-purchase-to-sale.spec.ts` | Sin stock previo, recepción una vez, ledger físico |
-| Saldos, traslado, conteo, ajuste y concurrencia | `inventory.spec.ts`; `backend/tests/test_*concurrency_integration.py` | Par firmado, versión, rollback, un solo efecto |
-| Venta física y mixta, dos pagos, price/discount, replay 201 perdido | `pos-draft.spec.ts`, `sales-recovery.spec.ts`, `sales-invalid-payment-policy.spec.ts`, `flow-purchase-to-sale.spec.ts` | Comprobante, débito físico, 409 y 422, recuperación sin duplicación |
-| Aislamiento DEMO QR/caja/cuentas | `demo-money-isolation.spec.ts`, pruebas DEMO | Cero operaciones reales desde UI DEMO |
-| Manual dueño/trabajador y retest de sedes | [Acta de 39 pasos](../docs/E2-7_T11_D2_ACTA_PRUEBA_MANUAL_REAL.md) y [T11-E fix](../docs/E2-7_T11_E_FIX_SEDES_ASIGNADAS_QA.md) | Dos defectos de permisos corregidos; capturas revisadas en conversación, no versionadas |
+| Identity, registration, session, logout, F5 | `frontend/e2e/real/auth-registration-ui.spec.ts`, `security-navigation.spec.ts`, `responsive-keyboard.spec.ts` | REAL browser → API/BD, tokens in memory |
+| Tenancy, late responses, 401/403/404, roles and venues | `security-navigation.spec.ts`, `security-errors.spec.ts`, `assigned-location-visibility.spec.ts` | Change A/B without leak, denied access by others, filtered SELL/STORE headquarters |
+| Headquarters, catalog, CRUD supplier and persistence | `business-crud-persistence.spec.ts`, `mobile-core-navigation.spec.ts` | High/states and F5 in REAL; mobile smoke |
+| Buy well+free concept, reception and power | `purchase-ui-persistence.spec.ts`, `flow-purchase-to-sale.spec.ts` | No stock previous, reception once, physical leader |
+| Balances, transfer, counting, adjustment and attendance | `inventory.spec.ts`; `backend/tests/test_*concurrency_integration.py` | Par signed, version, rollback, one effect |
+| Physical and mixed sale, two payments, price/discount, replay 201 lost | `pos-draft.spec.ts`, `sales-recovery.spec.ts`, `sales-invalid-payment-policy.spec.ts`, `flow-purchase-to-sale.spec.ts` | Checker, physical debit, 409 and 422, recovery without duplication |
+| DEMO QR/box/accounts isolation | `demo-money-isolation.spec.ts`DEMO tests | Zero actual operations from IU DEMO |
+| Owner/worker manual and headquarters retest | [39 steps Minutes](../docs/E2-7_T11_D2_ACTA_PRUEBA_MANUAL_REAL.md) y [T11-E fix](../docs/E2-7_T11_E_FIX_SEDES_ASIGNADAS_QA.md) | Two corrected permissions defects; revised conversational captures, not reversed |
 
-**Regresión de referencia:** PR #45 fusionado, full-stack #43015544889 — **892 Pytest, 38 Playwright REAL, 6 Playwright DEMO PASS**. CI frontend #43015544947 y backend #43015544819 SUCCESS. Matriz de [26 escenarios E27](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) aprobada **en su alcance funcional/smoke**, no garantía universal de seguridad/WCAG. Las capturas de QA manual se observaron en conversación; no se adjuntaron al repositorio.
+**Reference regression:** PR #45 fusionado, full-stack #43015544889 — **892 Pytest, 38 Playwright REAL, 6 Playwright DEMO PASS**. CI frontend #43015544947 y backend #43015544819 SUCCESS. Matriz de [26 scenarios E27](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) Approved **in its functional scope/smoke**, not universal security guarantee/WCAG. Manual QA captures were observed in conversation; they were not attached to the repository.
 
-## 4. Riesgos, declaraciones de alcance y continuidad T12
+## 4. Risks, declarations of scope and continuity T12
 
-1. **RF-01 a RF-07** son núcleo académico REAL; **RF-08 a RF-10** DEMO/diferido; transferencia con recepción logística asincrónica, devoluciones, producción por receta, reservas y pagos MP webhooks permanecen fuera del MVP.
-2. El POS REAL local permanece deshabilitado para registrar ventas por defecto salvo `VITE_PYME_ENABLE_REAL_SALES` en entorno explícitamente autorizado. Los tests con escritura corrieron en PostgreSQL **descartable**, no en la base persistente `TEST Empresa A`.
-3. Los pagos REAL son **declarados**, no acreditados. IndexedDB conserva algunas intenciones comerciales pendientes sin cifrado; no almacenar tokens allí; evitar dispositivos compartidos. Quedan advertencias Pydantic `UnsupportedFieldAttributeWarning` no bloqueantes.
-4. No inferir paridad UML a partir de nombres conceptuales. **T12-C** confrontará 03A/03B/03C con tablas SQLAlchemy/Alembic y su representación gráfica; **T12-D** actualizará README, arquitectura y procedimientos reproducibles; **T12-E** comprobará que los documentos no contradigan el último SHA de `main`.
+1. **RF-01 a RF-07** are REAL academic core; **RF-08 a RF-10** DEMO/deferred; transfer with asynchronous logistics reception, returns, prescription production, bookings and MP payments webhooks remain outside the MVP.
+2. Local REAL POS remains disabled for recording default sales except `VITE_PYME_ENABLE_REAL_SALES` in explicitly authorized environment. Tests with writing ran on PostgreSQL **disposable**, not on the persistent basis `TEST Empresa A`.
+3. REAL payments are **declared**IndexedDB retains some pending business intentions without encryption; do not store tokens there; avoid shared devices. Pydatic warnings remain `UnsupportedFieldAttributeWarning` not blocking.
+4. Do not infer UML parity from conceptual names. **T12-C** confront 03A/03B/03C with SQLAlchemy/Allembic tables and their graphic representation; **T12-D** update README, architecture and reproducible procedures; **T12-E** shall verify that the documents do not contradict the last `main`.
 
 ---
 
-## Archivo histórico — matriz incremental anterior al cierre T12 (preservada)
+## History file — incremental matrix prior to closure T12 (preserved)
 
-La siguiente matriz es el **documento previo íntegro**, incluyendo adendas y tablas por corte E2-1..E2-5. Está preservado para auditoría de evolución; «pendiente» o «estado vigente» en sus párrafos se refiere **solo** al corte temporal indicado y no sustituye las secciones actuales de T12-B anteriores.
+The next matrix is the **full pre-document**, including additions and tables by cut E2-1..E2-5. It is preserved for an audit of evolution; ‘pending’ or ‘existing status’ in its paragraphs refers **only** the specified time cut and does not replace the current sections of T12-B above.
 
-> **ADENDA VIGENTE E2-5 (09/11/2026; prevalece sobre estados históricos de esta matriz):** RF-06/CU-08 (balances y ledger), **CU-09 (traslados)** y **CU-11 (ajustes y stock inicial)** están implementados en backend y probados en el corte `main` `748e69319d8d04900c009d5184168a264a9deeac` (PR #21–#23), `e25a_inventory_ops`, CI 816/826/840 pruebas por corte en Python3.12/3.14 y Windows E2-5 C 840 pruebas reportadas. **CU-11 pertenece a RF-06**, no a RF-07: cualquier fila histórica de esta matriz que etiquete CU-11 bajo RF-07 está desactualizada. **RF-07/CU-10 ventas reales continúa DIFERIDO**. Los endpoints de E2-5 añadidos son `GET /inventory/balances`, `GET /inventory/movements`, `POST/GET /inventory/transfers` y `POST/GET /inventory/adjustments` bajo `/api/v1/businesses/{business_id}`. Esta adenda **no reescribe las tablas históricas** de versiones anteriores; consultar el [cierre E2-5](../docs/revisiones/E2-5_CIERRE/00_LEEME.md) y el [encargo de auditoría pendiente de ejecución](../docs/revisiones/E2-5_ENTREGA_PARA_REVISION.md). **La integración React ↔ backend, el hardening de producción y la auditoría independiente no están completados**.
+> **ADENDA VIGENTE E2-5 (09/11/2026; prevails over historical states of this matrix):** RF-06/CU-08 (balances y ledger), **CU-09 (transfers)** y **CU-11 (ajustes y stock inicial)** are implemented in backend and tested in the cut `main` `748e69319d8d04900c009d5184168a264a9deeac` (PR #21–#23), `e25a_inventory_ops`, CI 816/826/840 tests per cut in Python3.12./3.14 and Windows E2-5 C 840 tests reported. **CU-11 belongs to RF-06**, not to RF-07: any historical row of this matrix that labels CU-11 under RF-07 is outdated. **RF-07/CU-10 Real sales continue DIFFERENT**. The E2-5 endpoints added are `GET /inventory/balances`, `GET /inventory/movements`, `POST/GET /inventory/transfers` y `POST/GET /inventory/adjustments` low `/api/v1/businesses/{business_id}`. Esta adenda **does not rewrite historical tables** previous versions; consult the [closure E2-5](../docs/revisiones/E2-5_CIERRE/00_LEEME.md) y el [audit commission pending implementation](../docs/revisiones/E2-5_ENTREGA_PARA_REVISION.md). **React ↔ backend integration, production hardening and independent auditing are not completed**.
 
-### 05 — Matriz de API, permisos y trazabilidad (versión histórica)
+### 05 — API matrix, permissions and traceability (historical version)
 
-**Proyecto:** Orbit — Programación 2  
-**Versión:** 1.5 — E2-3 E, catálogo real y 580 pruebas Windows
-**Fecha:** 8 de noviembre de 2026  
-**Estado:** publicación técnica incremental; aprobación académica del equipo pendiente  
-**Referencia:** `main` del repositorio, carpeta exclusiva `plataforma-pyme/`.
+**Project:** Orbit — Programming 2  
+**Version:** 1.5 — E2-3 E, real catalogue and 580 Windows tests
+**Date:** 8 November 2026  
+**Status:** incremental technical publication; academic approval of pending equipment  
+**Reference:** `main` repository, exclusive folder `plataforma-pyme/`.
 
-> **Estado vigente E2-2 (08/11/2026):** RF-03/CU-04 y E2-2 A/A.1/B/C/D implementados, con ubicaciones, asignaciones de colaboradores, autorización por tenant y política operacional reutilizable. **371/371 pruebas en Windows (47.57s)**; `e22d_assignments (head)`; Alembic sin operaciones pendientes; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. CI del código E2-2 D: 3/3 y 371 pruebas en Python 3.12 y 3.14. **No** existe todavía integración React–API ni operaciones comerciales de compras/stock/ventas que consuman la política; corresponden a bloques posteriores. Los párrafos de cortes previos que mencionan validaciones o funciones «pendientes» se conservan como **histórico**, no como estado actual. El TP integral no se declara terminado.
+> **State in force E2-2 (08/11/2026):** RF-03/CU-04 and E2-2 A/A.1/B/C/D implemented, with locations, partner assignments, tenant authorization and reusable operational policy. **371/371 tests on Windows (47.57s)**; `e22d_assignments (head)`; Alembic without pending operations; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready/ok`. IC code E2-2 D: 3/3 and 371 tests in Python 3.12 and 3.14. **No** React–API integration and commercial purchases/stock/sales transactions that consume the policy are still in place; they correspond to later blocks. The previous cut-off paragraphs that mention validations or "pending" functions are retained as **history**, not as current state. The integral TP is not declared finished.
 
 
-## 1. Propósito y vocabulario de evidencia
+## 1. Purpose and vocabulary of evidence
 
-Este archivo une requisitos (01), casos de uso (02), modelos/UML (03), decisiones de arquitectura (04), endpoints, controles de acceso y pruebas reales. No confundir **IMPLEMENTADO** (código en Git), **VALIDADO LOCALMENTE** (evidencia del desarrollador), **CI VERIFICADO** (GitHub Actions comprobado en una ejecución concreta) y **PLANIFICADO** (TO-BE). El frontend React continúa como DEMO independiente del backend. WALOS es solo un cliente de ejemplo.
+This file combines requirements (01), use cases (02), models/UML (03), architecture decisions (04), endpoints, access controls and actual tests. **IMPLEMENTED** (code in Git), **LOCALLY VALUE** (Developer evidence), **CITIZENED** (GitHub Actions checked in a specific execution) and **PLANNING** (TO-BE). The Frontend React continues as DEMO independent of the backend. WALOS is just an example client.
 
-**Cierre E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y **C.4b (195/195 pruebas locales aprobadas; `195 passed in 23.86s`)**. Alembic `e213c4_acceptance (head)`, `No new upgrade operations detected.`; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready`/`ok`. GitHub Actions **3/3** corresponde al commit funcional `8cd1674`. C.5 es **exclusivamente documental**; no se reejecutaron pruebas ni cambiaron endpoints, modelos SQL o migraciones. React sigue DEMO; RF-03–RF-07 no tienen backend; transferencia de titularidad, verificación de correo y endurecimiento para producción siguen pendientes.
+**Closing E2-1 / C.5 — 08/11/2026:** C.1 (98), C.2 (125), C.3 (147), C.4a (171) y **C.4b (195/195 approved local tests; `195 passed in 23.86s`)**. Alembic `e213c4_acceptance (head)`, `No new upgrade operations detected.`; Docker FastAPI/PostgreSQL `healthy` y `/ready` = `ready`/`ok`. GitHub Actions **3/3** corresponde al commit funcional `8cd1674`. C.5 es **documentary only**; no re-execution of evidence or change of endpoints, SQL models or migrations. React follows DEMO; RF-03–RF-07 has no backend; title transfer, mail verification and hardening for production remain pending.
 
-## 2. Estado por requerimiento y caso de uso
+## 2. State by request and case of use
 
-| RF | CU | Estado API | Alcance comprobable / pendiente |
+| RF | CU | API Status | Verifiable scope/outstanding |
 |---|---|---|---|
-| RF-01 | CU-01 | Implementado; validado localmente | `POST /api/v1/auth/register`; hash Argon2id, email único, 201/409/422 |
-| RF-01 | CU-02 | Implementado; validado localmente | `POST /api/v1/auth/login`, `GET /me`, `POST /logout`; sesiones revocables, 401 |
-| RF-02 | CU-03 | Alta, lectura y PATCH empresarial validados localmente | Empresa con titular inicial, idempotencia y edición autorizada por tenant/rol |
-| RF-02 | CU-12a / CU-12b y gestión | Emisión/aceptación validadas localmente; **equipo C.4b validado localmente con 195 pruebas y CI 3/3** | Emitir, aceptar, consultar equipo y editar roles/estados operativos con titularidad protegida |
-| RF-03 | CU-04 | **E2-2 B/C/D: ubicación y asignaciones por sede con 371 pruebas CI** | Seis rutas de ubicación + GET/PUT de asignaciones; FK compuesta por empresa; uso comercial de la política aún pendiente |
-| RF-04 | CU-05 | **E2-3 B: cuatro rutas CRUD iniciales, CI 498 pruebas aprobado; Windows pendiente** | Catálogo empresarial, RBAC, nombre/SKU únicos, bienes/servicios y precio nullable; activar/desactivar pendiente C |
-| RF-05 | CU-06, CU-07 | Planificado | Compra separada de recepción física completa |
-| RF-06 | CU-08, CU-09 | Planificado | Saldos, movimientos, stock no negativo, concurrencia |
-| RF-07 | CU-10, CU-11 | Planificado | Ventas, pagos declarados y restricciones monetarias |
-| RF-08–10 | Fuera primer backend MVP | Diferido | Gastos/caja, cuentas y QR DEMO |
+| RF-01 | CU-01 | Implemented; locally validated | `POST /api/v1/auth/register`; hash Argon2id, single email, 201/409/422 |
+| RF-01 | CU-02 | Implemented; locally validated | `POST /api/v1/auth/login`, `GET /me`, `POST /logout`; revocable meetings, 401 |
+| RF-02 | CU-03 | Locally validated high, reading and PATCH | Company with initial holder, idempotency and editing authorized by tenant/rol |
+| RF-02 | CU-12a / CU-12b and management | Locally validated emission/acceptance; **C.4b locally validated with 195 tests and CI 3/3** | Issue, accept, consult equipment and edit protected title roles/states |
+| RF-03 | CU-04 | **E2-2 B/C/D: location and assignments by headquarters with 371 CI tests** | Six location routes + GET/PUT allocations; FK composed by company; commercial use of policy still pending |
+| RF-04 | CU-05 | **E2-3 B: four initial CRUD routes, CI 498 approved tests; Windows pending** | Business catalogue, RBAC, unique name/SKU, goods/services and nullable price; enable/disable pending C |
+| RF-05 | CU-06, CU-07 | Planned | Separate purchase from full physical reception |
+| RF-06 | CU-08, CU-09 | Planned | Balances, movements, non-negative stock, concurring |
+| RF-07 | CU-10, CU-11 | Planned | Sales, declared payments and monetary restrictions |
+| RF-08–10 | Out first MVP backend | Deferred | Expenditure/box, accounts and QR DEMO |
 
-## 3. Contratos HTTP realmente existentes
+## 3. Actually existing HTTP contracts
 
-| Método | Ruta | Seguridad real vigente | Respuesta principal | Prueba |
+| Method | Path | Actual security in force | Main response | Test |
 |---|---|---|---|---|
-| GET | `/health` | Pública, liveness | 200 `status=ok` | `test_health.py` |
-| GET | `/ready` | Pública local, conectividad PostgreSQL | 200/503 | `test_readiness.py` |
-| POST | `/api/v1/auth/register` | Pública, validación Pydantic/SQL | 201, 409, 422 | `test_auth_registration_integration.py` |
-| POST | `/api/v1/auth/login` | Credenciales, Argon2id | 200 bearer/401 | `test_auth_session_integration.py` |
-| GET | `/api/v1/auth/me` | Bearer vigente y cuenta activa | 200/401 | `test_auth_session_integration.py` |
-| POST | `/api/v1/auth/logout` | Bearer vigente | 204/401 | `test_auth_session_integration.py` |
-| POST | `/api/v1/businesses` | Bearer vigente, usuario global activo; **sin membresía previa** | 201 nuevo; 200 reintento; 409 payload diferente | `test_business_creation_integration.py` |
-| GET | `/api/v1/businesses` | Bearer + filtro de membresía `ACTIVA` | 200 lista propia | `test_business_creation_integration.py` |
-| GET | `/api/v1/businesses/{business_id}` | Bearer + membresía activa en ese tenant | 200 propio; 404 ajeno | `test_business_creation_integration.py` |
-| PATCH | `/api/v1/businesses/{business_id}` | Bearer + revalidación transaccional de sesión y membresía + `business.profile.edit` | 200; 401/403/404/409/422 | `test_business_update_*.py`, **125 pruebas locales aprobadas en C.2** |
-| POST | `/api/v1/businesses/{business_id}/invitations` | Bearer + membresía activa/rol autorizado + empresa activa + correo/rol validado en transacción | 201; 401/403/404/409/422 | `test_business_invitation_schemas.py` y `test_business_invitation_integration.py`; **147 pruebas locales aprobadas en C.3** |
-| POST | `/api/v1/invitations/accept` | Bearer + cuenta destinataria coincide con correo invitado + invitación PENDIENTE vigente + empresa ACTIVA; commit único | 200; 401/404/409/422 | `test_business_acceptance_*.py`, **171 pruebas locales en C.4a** |
-| GET | `/api/v1/businesses/{business_id}/memberships` | Bearer + membresía propia activa; permiso `members.read` (titular/administrador); empresa activa | 200; 401/403/404/409 | `test_business_team_schemas.py`, `test_business_team_integration.py` **(195 pruebas locales; CI 3/3)** |
-| PATCH | `/api/v1/businesses/{business_id}/memberships/{membership_id}` | Bearer + rol titular vigente; miembro objetivo del mismo tenant no titular; permiso `members.manage`; transacción con bloqueo | 200; 401/403/404/409/422 | `test_business_team_schemas.py`, `test_business_team_integration.py` **(195 pruebas locales; CI 3/3)** |
-| POST | `/api/v1/businesses/{business_id}/locations` | Bearer + membresía `ACTIVA` y rol titular/administrador + empresa `ACTIVA` + DTO estricto | 201; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_http.py`, `test_location_api_integration.py` **(277 pruebas CI; local pendiente)** |
-| GET | `/api/v1/businesses/{business_id}/locations` | Bearer + membresía activa propia; empresa `ACTIVA`/`SUSPENDIDA` (lectura) | 200 lista propia; 401/403/404 | `test_location_http.py`, `test_location_api_integration.py` |
-| GET | `/api/v1/businesses/{business_id}/locations/{location_id}` | Bearer + membresía activa y filtro simultáneo de empresa y ubicación | 200 propio; 401/403/404 | `test_location_http.py`, `test_location_api_integration.py` |
-| PATCH | `/api/v1/businesses/{business_id}/locations/{location_id}` | Bearer + rol titular/administrador, empresa activa; DTO parcial sin campos protegidos | 200; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_http.py`, `test_location_api_integration.py` |
-| PATCH | `/api/v1/businesses/{business_id}/locations/{location_id}/status` | Bearer + rol autorizado; `ACTIVA/PAUSADA`; pausar revoca principal | 200; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_api_integration.py` |
-| PUT | `/api/v1/businesses/{business_id}/locations/{location_id}/primary` | Bearer + rol autorizado; ubicación ACTIVA; transferencia dentro de un tenant y una transacción | 200; 401/403/404/409 | `test_location_http.py`, `test_location_api_integration.py` |
-| GET | `/api/v1/businesses/{business_id}/locations/{location_id}/assignments` | Bearer + titular/administrador; sede del mismo tenant | 200; 401/403/404 | `test_location_assignment_http.py`, `test_location_assignment_integration.py` |
-| PUT | `/api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` | Bearer + titular/administrador; `status` ACTIVA/REVOCADA; objetivo del mismo tenant | 200; 401/403/404/409/422 | `test_location_assignment_schemas.py`, `test_location_assignment_integration.py` |
-| POST | `/api/v1/businesses/{business_id}/catalog` | Bearer + titular/administrador + empresa ACTIVA; SKU/nombre normalizados | 201; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py` |
-| GET | `/api/v1/businesses/{business_id}/catalog` | Bearer + membresía ACTIVA; empresa propia, permite suspendida | 200; 401/403/404/422 | `test_catalog_http.py`, `test_catalog_api_integration.py` |
-| GET | `/api/v1/businesses/{business_id}/catalog/{item_id}` | Bearer + membresía ACTIVA, UUID artículo dentro de la empresa | 200; 401/403/404 | `test_catalog_api_integration.py` |
-| PATCH | `/api/v1/businesses/{business_id}/catalog/{item_id}` | Bearer + titular/administrador, empresa ACTIVA; DTO parcial sin estado ni tenant | 200; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_api_integration.py` |
-| PATCH | `/api/v1/businesses/{business_id}/catalog/{item_id}/status` | Bearer + titular/administrador, tenant ACTIVO, status ACTIVO/INACTIVO exclusivo | 200; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py` |
+| GET | `/health` | Public, livingness | 200 `status=ok` | `test_health.py` |
+| GET | `/ready` | Local public, PostgreSQL connectivity | 200/503 | `test_readiness.py` |
+| POST | `/api/v1/auth/register` | Public, Pydatic/SQL validation | 201, 409, 422 | `test_auth_registration_integration.py` |
+| POST | `/api/v1/auth/login` | Credentials, Argon2id | 200 bearer/401 | `test_auth_session_integration.py` |
+| GET | `/api/v1/auth/me` | Current Bearer and active account | 200/401 | `test_auth_session_integration.py` |
+| POST | `/api/v1/auth/logout` | Bearer in force | 204/401 | `test_auth_session_integration.py` |
+| POST | `/api/v1/businesses` | Current global active user Bearer; **no previous membership** | 201 new; 200 retry; 409 different payload | `test_business_creation_integration.py` |
+| GET | `/api/v1/businesses` | Bearer + membership filter `ACTIVA` | 200 own list | `test_business_creation_integration.py` |
+| GET | `/api/v1/businesses/{business_id}` | Bearer + active membership in that tenant | 200 of its own; 404 of its own | `test_business_creation_integration.py` |
+| PATCH | `/api/v1/businesses/{business_id}` | Bearer + session and membership transactional revalidation + `business.profile.edit` | 200; 401/403/404/409/422 | `test_business_update_*.py`, **125 local tests approved in C.2** |
+| POST | `/api/v1/businesses/{business_id}/invitations` | Bearer + Active membership/licensed roll + active company + mail/rol validated in transaction | 201; 401/403/404/409/422 | `test_business_invitation_schemas.py` y `test_business_invitation_integration.py`; **147 local tests approved in C.3** |
+| POST | `/api/v1/invitations/accept` | Bearer + recipient account matches guest mail + current PENDENT invitation + active company; commit unique | 200; 401/404/409/422 | `test_business_acceptance_*.py`, **171 local tests in C.4a** |
+| GET | `/api/v1/businesses/{business_id}/memberships` | Bearer + active own membership; permission `members.read` (holder/manager); active undertaking | 200; 401/403/404/409 | `test_business_team_schemas.py`, `test_business_team_integration.py` **(195 local tests; CI 3/3)** |
+| PATCH | `/api/v1/businesses/{business_id}/memberships/{membership_id}` | Bearer + current title role; objective member of the same non-holder tenant; permission `members.manage`; transaction with lockdown | 200; 401/403/404/409/422 | `test_business_team_schemas.py`, `test_business_team_integration.py` **(195 local tests; CI 3/3)** |
+| POST | `/api/v1/businesses/{business_id}/locations` | Bearer + membership `ACTIVA` and role holder/manager + company `ACTIVA` + DTO estricto | 201; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_http.py`, `test_location_api_integration.py` **(277 CI tests; pending premises)** |
+| GET | `/api/v1/businesses/{business_id}/locations` | Bearer + own active membership; company `ACTIVA`/`SUSPENDIDA` (reading) | 200 own list; 401/403/404 | `test_location_http.py`, `test_location_api_integration.py` |
+| GET | `/api/v1/businesses/{business_id}/locations/{location_id}` | Bearer + Active membership and simultaneous company and location filter | 200 of its own; 401/403/404 | `test_location_http.py`, `test_location_api_integration.py` |
+| PATCH | `/api/v1/businesses/{business_id}/locations/{location_id}` | Bearer + holder/manager role, active company; partial DTO without protected fields | 200; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_http.py`, `test_location_api_integration.py` |
+| PATCH | `/api/v1/businesses/{business_id}/locations/{location_id}/status` | Bearer + authorized role; `ACTIVA/PAUSADA`; pause main recall | 200; 401/403/404/409/422 | `test_location_schemas.py`, `test_location_api_integration.py` |
+| PUT | `/api/v1/businesses/{business_id}/locations/{location_id}/primary` | Bearer + Authorized Role; Active Location; Transfer within a Tenant and Transaction | 200; 401/403/404/409 | `test_location_http.py`, `test_location_api_integration.py` |
+| GET | `/api/v1/businesses/{business_id}/locations/{location_id}/assignments` | Bearer + holder/manager; seat of same tenant | 200; 401/403/404 | `test_location_assignment_http.py`, `test_location_assignment_integration.py` |
+| PUT | `/api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` | Bearer + holder/manager; `status` ACTIVA/REVOCADA; objective of the same tenant | 200; 401/403/404/409/422 | `test_location_assignment_schemas.py`, `test_location_assignment_integration.py` |
+| POST | `/api/v1/businesses/{business_id}/catalog` | Bearer + holder/manager + ACTIVA company; SKU/standard name | 201; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py` |
+| GET | `/api/v1/businesses/{business_id}/catalog` | Bearer + Active membership; own company, allows suspended | 200; 401/403/404/422 | `test_catalog_http.py`, `test_catalog_api_integration.py` |
+| GET | `/api/v1/businesses/{business_id}/catalog/{item_id}` | Bearer + Active Membership, UUID article within the company | 200; 401/403/404 | `test_catalog_api_integration.py` |
+| PATCH | `/api/v1/businesses/{business_id}/catalog/{item_id}` | Bearer + holder/manager, active company; partial DTO without state or tenant | 200; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_api_integration.py` |
+| PATCH | `/api/v1/businesses/{business_id}/catalog/{item_id}/status` | Bearer + holder/manager, tenant ASSETS, exclusive ASSETS/INACTIVA | 200; 401/403/404/409/422 | `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py` |
 
-**Idempotencia CU-03:** `Idempotency-Key` UUID4, ámbito `actor_user_id` + clave; `business_creation_requests` conserva hash canónico y `business_id`. La **PK compuesta** mantiene la unicidad incluso con concurrencia. Reutilizar la clave con otro contenido devuelve 409; se corrigió la recuperación tras conflictos concurrentes sobre `pk_business_creation_requests` en E2-1.3C.1.
+**Idempotency CU-03:** `Idempotency-Key` UUID4, scope `actor_user_id` + clave; `business_creation_requests` preserves canonical hash and `business_id`. La **Composite PK** maintain the uniqueness even with concurring. Reusing the key with other content returns 409; recovery was corrected after concurrent conflicts over `pk_business_creation_requests` en E2-1.3C.1.
 
-**Sesiones:** El token Bearer es un secreto; se guarda solo la huella SHA-256 para buscar/revocar sesiones. La cuenta deshabilitada o sesión vencida no puede leer ni crear empresas.
+**Sesiones:** The token Bearer is a secret; only the SHA-256 footprint is kept to search for/remove sessions. The disabled account or expired session cannot read or create businesses.
 
-## 4. Política RBAC E2-1.3C.1 y primera aplicación real E2-1.3C.2
+## 4. RBAC E2-1.3C.1 policy and first actual implementation E2-1.3C.2
 
-| Capacidad | TITULAR_ADMINISTRATIVO | ADMINISTRADOR | ENCARGADO | TRABAJADOR | Estado HTTP |
+| Capacity | ADMINISTRATIVE SERVICE | ADMINISTRATOR | MANAGER | STAFF MEMBER | HTTP status |
 |---|---|---|---|---|---|
-| `business.view` | Sí | Sí | Sí | Sí | Lectura vigente filtra por membresía activa; integración de política pura en C.2 |
-| `business.profile.edit` | Sí | Sí | No | No | **Implementado/validado C.2 (125 pruebas)** |
-| `members.invite` | Sí | Sí | No | No | **Implementado/validado C.3 (147 pruebas)** |
-| `members.read` | Sí | Sí | No | No | **C.4b GET validado (195 pruebas y CI 3/3)** |
-| `members.manage` | Sí | No | No | No | **C.4b PATCH validado (195 pruebas y CI 3/3)** |
+| `business.view` | Yes | Yes | Yes | Yes | Current reading filters by active membership; pure policy integration in C.2 |
+| `business.profile.edit` | Yes | Yes | No | No | **Implemented/validated C.2 (125 tests)** |
+| `members.invite` | Yes | Yes | No | No | **Implemented/validated C.3 (147 tests)** |
+| `members.read` | Yes | Yes | No | No | **C.4b GET validated (195 tests and CI 3/3)** |
+| `members.manage` | Yes | No | No | No | **C.4b Validated PATCH (195 tests and CI 3/3)** |
 
-**Estados:** la membresía `INACTIVA` nunca autoriza; un rol desconocido o permiso nuevo se deniega por defecto (*fail closed*). La empresa `SUSPENDIDA` permite únicamente lectura informativa a miembros activos; no modificaciones, invitaciones ni administración de miembros. Esta función **no reemplaza** comprobar la empresa exacta en SQL ni la vigencia del token. Un titular de la empresa A no adquiere permisos en la empresa B por el nombre de su rol.
+**States:** membership `INACTIVA` never authorizes; an unknown role or new permission is denied by default (*fail closed*). `SUSPENDIDA` allows only information reading to active members; no modifications, invitations or member administration. **does not replace** check the exact company in SQL or the validity of the token. A holder of Company A does not acquire permits in Company B by name of its role.
 
-**Decisión MVP:** el rol `ENCARGADO` no es un permiso universal. Las capacidades futuras de catálogo, inventario, compras y ventas deberán tener permisos específicos propios, con pruebas y documentación por CU; no se deducen automáticamente de este cuadro.
+**MVP decision:** el rol `ENCARGADO` future capabilities of catalog, inventory, purchases and sales should have specific permissions of their own, with tests and documentation by CU; they are not automatically deduced from this table.
 
-### Comportamiento HTTP implementado y validado desde C.2
+### HTTP behavior implemented and validated from C.2
 
-| Caso | HTTP esperado | Motivo |
+| Case | HTTP expected | Reason |
 |---|---|---|
-| Sin sesión, token vencido/revocado | 401 | No autenticado |
-| Empresa ajena, inexistente o sin membresía activa | 404 | No exponer empresas ajenas |
-| Miembro activo sin permiso de edición | 403 | Empresa propia, acción denegada |
-| Miembro activo con permiso, empresa `SUSPENDIDA` | 409 | Estado no editable |
-| Titular/administrador, empresa activa, cambios válidos | 200 | Actualización atómica |
-| Datos inválidos / cuerpo vacío | 422 | Validación de contrato |
+| No session, token expired/revocated | 401 | Not authenticated |
+| Non-existent or non-active member company | 404 | Do not expose foreign companies |
+| Active Member without editing permission | 403 | Own company, action refused |
+| Active member with permission, company `SUSPENDIDA` | 409 | Non-editable status |
+| Holder/Manager, Active Company, Valid Changes | 200 | Atomic update |
+| Invalid data / empty body | 422 | Validation of contract |
 
-Los códigos precedentes están definidos en el router de C.2 y cuentan con pruebas escritas; **se validaron en C.2 (125 pruebas) y regresiones posteriores hasta 195**. Para 403 se exige una membresía activa sin permiso; para 409 se exige rol apto pero empresa `SUSPENDIDA`.
+The above codes are defined in the C.2 router and have written proofs; **were validated in C.2 (125 tests) and subsequent regressions up to 195**. 403 requires active membership without permission; 409 requires apt role but company `SUSPENDIDA`.
 
-## 5. Entidades, migraciones y reglas de integridad
+## 5. Entities, migrations and rules of integrity
 
-| Revisión | Tablas / restricción | Estado |
+| Review | Tables/Restriction | Status |
 |---|---|---|
-| `e2003_baseline` | `alembic_version`, sin dominio | Validada |
-| `e2101_users` | `users`, email UNIQUE, hash y estados | Validada |
-| `e212b_sessions` | `auth_sessions`, token hash UNIQUE, FK y vencimiento | Validada |
-| `e213a_business_members` | `businesses`, `memberships`, UNIQUE empresa/usuario, índice titular activo único | Validada |
-| `e213b_business_creation` | `business_creation_requests`, PK compuesta actor/clave, digest SHA-256 y negocio único por comando | Validada |
-| `e213c3_invitations` | `business_invitations`, token SHA-256 único, FK empresa/invitador, estados, expiración e índice parcial correo pendiente por tenant | Validada localmente C.3 |
-| `e213c4_acceptance` | Columnas `accepted_by_user_id`, `accepted_at`, FK usuario y CHECK de auditoría consistente | Localmente validada C.4a; C.4b sin migraciones |
-| `e22a_locations` | Tabla `locations`, FK a empresa, CHECK de estados/tipos/principal, índice parcial único de principal por empresa | E2-2 A: 212 pruebas locales aprobadas, CI 3/3 |
-| `e22b_location_casa` | Amplía CHECK de tipo para admitir `CASA` sin modificar esquema previo | E2-2 A.1: 217 pruebas CI backend; frontend 2/2; Windows pendiente |
-| `e22d_assignments` | Tabla `location_assignments`, FK compuestas, UNIQUE auxiliar en `locations` y CHECK de revocación | 371 pruebas CI / Windows por comprobar |
+| `e2003_baseline` | `alembic_version`, sin dominio | Validate |
+| `e2101_users` | `users`, email UNIQUE, hash and states | Validate |
+| `e212b_sessions` | `auth_sessions`, token hash UNIQUE, FK and expiration | Validate |
+| `e213a_business_members` | `businesses`, `memberships`, UNIQUE company/user, single active index | Validate |
+| `e213b_business_creation` | `business_creation_requests`, PK composed actor/key, digest SHA-256 and single business by command | Validate |
+| `e213c3_invitations` | `business_invitations`, unique token SHA-256, FK company/inviter, states, expiration and partial index mail pending per tenant | Locally valid C.3 |
+| `e213c4_acceptance` | Columns `accepted_by_user_id`, `accepted_at`, FK user and consistent audit CHECK | Locally validated C.4a; C.4b without migration |
+| `e22a_locations` | Tabla `locations`, FK to company, CHECK of states/types/main, single partial index of principal per company | E2-2 A: 212 approved local tests, CI 3/3 |
+| `e22b_location_casa` | Type-enhanced CHECK to support `CASA` without modifying previous outline | E2-2 A.1: 217 CI backend tests; frontend 2/2; Windows pending |
+| `e22d_assignments` | Tabla `location_assignments`, FK composites, UNIQUE auxiliary in `locations` and CHECK of revocation | 371 CI / Windows tests to be checked |
 
-En E2-1.3C.1 y C.2 **no se añadieron tablas ni migraciones**; C.3 incorpora la nueva tabla `business_invitations` mediante una migración aditiva. El UML 03A representa vínculos conceptuales; no debe dibujarse la política como una entidad persistente ni regenerar 03B por esta etapa.
+En E2-1.3C.1 y C.2 **no tables or migrations added**; C.3 incorporates new table `business_invitations` The UML 03A represents conceptual links; politics should not be drawn as a persistent entity or regenerate 03B at this stage.
 
-## 6. Estrategia de pruebas y cumplimiento académico
+## 6. Academic testing and compliance strategy
 
-- **Unitarias puras:** políticas de permisos con las cuatro combinaciones de roles y los estados, normalización y criptografía donde corresponda. Pruebas del mapeo de conflicto de PK para la carrera de idempotencia.
-- **Integración HTTP/PostgreSQL:** autenticación, negocio idempotente, aislamiento entre empresas, protección de sesiones y rollback. Las pruebas reales existentes usan `RUN_DB_INTEGRATION=1` y transacciones externas revertidas.
-- **Migraciones:** `alembic upgrade head`, `alembic current` y `alembic check`; no usar `stamp` ni downgrades destructivos para silenciar errores.
-- **CI:** workflow `.github/workflows/plataforma-pyme-backend.yml`, jobs Python y Docker con PostgreSQL efímero. Un commit publicado no equivale a CI verde; verificar la ejecución de ese SHA.
-- **TP:** tener más de diez tests de infraestructura/identidad no sustituye construir, probar y desplegar el conjunto de **al menos cinco RF completos de alto nivel**. RF-03–07 siguen pendientes en la API.
-- **Deploy público:** pendiente, con medidas de protección y configuración seguras antes de exponer auth y datos.
+- **Pure unitary:** permission policies with the four combinations of roles and states, standardization and cryptography where applicable. PK conflict mapping tests for the race of idempotence.
+- **HTTP/PostgreSQL integration:** authentication, business idempotent, isolation between companies, session protection and rollback. Existing real tests use `RUN_DB_INTEGRATION=1` and reverse external transactions.
+- **Migration:** `alembic upgrade head`, `alembic current` y `alembic check`; not to use `stamp` nor destructive downgrades to silence errors.
+- **CI:** workflow `.github/workflows/plataforma-pyme-backend.yml`, jobs Python and Docker with PostgreSQL ephemeral. A published commit does not amount to green CI; verify the execution of that SHA.
+- **TP:** having more than ten infrastructure/identity tests does not replace building, testing and deploying the set of **at least five full high-level RF**RF-03–07 are still pending in the API.
+- **Public Deploy:** pending, with secure protection and configuration measures before displaying auth and data.
 
-## 7. Protocolo de actualización documental por entregas
+## 7. Documentary Update Protocol by Delivery
 
-| Evento | Documentos a actualizar |
+| Event | Documents to be updated |
 |---|---|
-| Cambio de comportamiento, RF o CU | 01, 02 y 05 |
-| Nueva tabla, FK, estado o cardinalidad | 03 y fuentes UML 03A cuando cambie el concepto, migración, 05 |
-| Cambio de arquitectura, transacción, patrón o autorización | 04, 05 y README técnico |
-| Nuevo endpoint o error | 05 con método/ruta, contrato, permiso, tests, estado real |
-| Nueva prueba, CI o deploy | 05 y 06 cuando se publique, con evidencia verificable |
-| Cada etapa validada por el desarrollador | Actualizar estado real sin inventar tests ni adelantar funcionalidades |
+| Behavioral change, RF or CU | 01, 02 y 05 |
+| New table, FK, status or cardinality | 03 and UML 03A sources when changing concept, migration, 05 |
+| Change of architecture, transaction, pattern or authorization | 04, 05 and Technical README |
+| Nuevo endpoint o error | 05 with method/path, contract, permission, tests, real status |
+| New test, IC or deploy | 05 and 06 when published, with verifiable evidence |
+| Each stage validated by the developer | Update real status without inventing tests or advancing functionalities |
 
-### Próximos pasos cerrados
+### Next closed steps
 
-1. **C.1 — publicado y validado localmente:** política pura RBAC, regresión de idempotencia, 98 pruebas aprobadas.
-2. **C.2 — validado localmente y por CI:** PATCH de perfil empresarial, permisos por rol/tenant y pruebas; 125 casos aprobados, Docker/DB saludables.
-3. **C.3 — validado localmente:** emisión dirigida sin crear miembro, rol seguro, 7 días y 147 pruebas aprobadas.
-4. **C.4a — validado localmente (171 pruebas):** aceptación autenticada y atómica. **C.4b — validado localmente con 195 pruebas y CI 3/3:** consulta de equipo y actualización de roles operativos/estado con titularidad protegida.
-5. **Cierre de RF-02:** actualizar contratos y diagramas 03A sobre implementación confirmada; posteriormente abordar RF-03 Ubicaciones y RF-04 Catálogo.
+1. **C.1 — published and locally validated:** pure RBAC policy, regression of idempotency, 98 approved tests.
+2. **C.2 — Locally validated and by IC:** Business profile PATCH, role/tenant permissions and tests; 125 approved cases, healthy Docker/DB.
+3. **C.3 — locally validated:** directed broadcast without creating member, safe role, 7 days and 147 tests approved.
+4. **C.4a — locally validated (171 tests):** Authenticated and atomic acceptance. **C.4b — locally validated with 195 tests and CI 3/3:** team query and update operational/state roles with protected title.
+5. **Closing of RF-02:** update contracts and diagrams 03A on confirmed implementation; then address RF-03 Locations and RF-04 Catalogue.
 
-Este documento es vivo: mantener los nombres de entidad, UUID, rutas y pruebas exactamente como están en `main` a la fecha del corte. No extrapolar funciones del frontend DEMO a endpoints inexistentes.
+This document is alive: maintain entity names, UUIDs, routes and tests exactly as they are in `main` to the cut date. Do not extrapolate DEMO frontend functions to non-existent endpoints.
 
-## 8. Evidencia específica para verificar E2-1.3C.2
+## 8. Specific evidence for verification E2-1.3C.2
 
-**Objeto de prueba:** `PATCH /api/v1/businesses/{business_id}` con JSON de una o varias claves (`name`, `category`, `activity_kind`). Todos los demás campos, `null`, y el objeto vacío devuelven 422. Se deriva el actor del Bearer; ninguna petición permite asignar rol/fundador/estado. Se devuelve `BusinessView` con la membresía que habilitó la edición.
+**Subject matter of test:** `PATCH /api/v1/businesses/{business_id}` with JSON of one or more keys (`name`, `category`, `activity_kind`) All other fields, `null`, and the empty object returns 422. The actor of the Bearer is derived; no request allows assigning role/founder/state. `BusinessView` with the membership that enabled editing.
 
-**Evidencia de autorización:** `test_business_update_integration.py` ensaya titular y administrador con escritura persistida, encargado/trabajador con 403, empresa ajena con 404, membresía inactiva con 404, empresa suspendida con 409, sesión revocada y usuario deshabilitado con 401, DTO inválido con 422 y rollback si falla la respuesta después del `flush`. Los datos de prueba se revierten con una transacción externa. Se complementa con `test_business_update_schemas.py` y `test_business_update_http.py`.
+**Evidence of authorisation:** `test_business_update_integration.py` host and administrator with persistent writing, maintainer/worker with 403, non-member company with 404, inactive membership with 404, company suspended with 409, session revoked and user disabled with 401, invalid DTO with 422 and rollback if response fails after the `flush`. Test data are reversed with an external transaction. It is complemented by `test_business_update_schemas.py` y `test_business_update_http.py`.
 
-**Estado actualizado en C.5:** las pruebas C.2 fueron ejecutadas y **125 pasaron localmente**; las regresiones posteriores culminaron con **195 aprobadas** al cerrar C.4b, con CI funcional 3/3. C.2 no requirió migración. El `GET` empresarial filtra por membresía activa y `PATCH` aplica efectivamente la autorización RBAC. La referencia antigua a 98 casos correspondía al corte histórico C.1.
+**Status updated in C.5:** C.2 tests were executed and **125 passed locally**; subsequent regressions culminated in **195 approved** when closing C.4b, with functional CI 3/3. C.2 did not require migration. `GET` Business Filters by Active Membership and `PATCH` The old reference to 98 cases was made by historical court C.1.
 
-**Dependencias:** C.3 emisión de invitaciones y C.4 aceptación/gestión de membresías usarán políticas `members.invite` / `members.manage`, sin dar permiso tácito a trabajador o encargado. El código React sigue exclusivamente DEMO.
+**Units:** C.3 issuing invitations and C.4 accepting/management memberships will use policies `members.invite` / `members.manage`The React code is followed exclusively by DEMO.
 
-## 9. Contrato de invitaciones reales C.3 y evidencia
+## 9. Contract for actual C.3 invitations and evidence
 
-**Ruta:** `POST /api/v1/businesses/{business_id}/invitations`. Requiere Bearer, pertenencia al tenant activo, permiso `members.invite` (titular o administrador), body `{"email":"persona@example.com","role":"ENCARGADO"}` o `TRABAJADOR`. **No** admite `ADMINISTRADOR`, `TITULAR_ADMINISTRATIVO`, otros estados, `business_id` dentro del body ni campos extra. El destinatario puede no poseer cuenta al emitir la invitación.
+**Path:** `POST /api/v1/businesses/{business_id}/invitations`. Requires Bearer, belonging to the active tenant, permission `members.invite` (holder or administrator), body `{"email":"persona@example.com","role":"ENCARGADO"}` o `TRABAJADOR`. **No** admite `ADMINISTRADOR`, `TITULAR_ADMINISTRATIVO`other states, `business_id` within the body or extra fields. The recipient may not hold an account when issuing the invitation.
 
-**Respuesta 201:** `id`, `business_id`, `email` normalizado, `role`, `status=PENDIENTE`, `expires_at` y `invitation_token` (solo disponible en esta respuesta). El token es aleatorio y confidencial; la base conserva `token_hash` SHA-256, no texto claro. **No existe GET de invitaciones; el endpoint de aceptación se implementó después, en C.4a (`POST /api/v1/invitations/accept`).**
+**Answer 201:** `id`, `business_id`, `email` standard, `role`, `status=PENDIENTE`, `expires_at` y `invitation_token` (only available in this answer).The token is random and confidential; the base retains `token_hash` SHA-256, not clear text. **There is no invitation GET; the acceptance endpoint was implemented later, in C.4a (`POST /api/v1/invitations/accept`).**
 
-**Errores:** 401 token de sesión inválido, 404 empresa ajena/inexistente/membresía inactiva, 403 rol de miembro no autorizado, 409 empresa suspendida, destinatario ya activo o invitación vigente duplicada, 422 correo/rol/cuerpo incorrecto. El envío repetido de la misma invitación **no** recupera el token: responde 409, evitando crear una segunda. Una invitación vencida puede reemplazarse, marcando `EXPIRADA` el registro previo dentro de la misma transacción.
+**Errors:** 401 invalid session token, 404 non-existent/non-existent/inactive membership, 403 role of unauthorized member, 409 suspended company, already active recipient or duplicate invitation, 422 mail/rol/incorrect body. Repeated sending of the same invitation **no** recovers token: responds 409, avoiding creating a second. A expired invitation can be replaced, dialing `EXPIRADA` the prior registration within the same transaction.
 
-**Nueva migración:** `20261108_0006_business_invitations.py` → `e213c3_invitations`; nueva entidad `BusinessInvitation`, índice parcial `uq_business_invitations_pending_email` y FK a invitador/empresa. Sin alteraciones a membresías ni al UML 03B.
+**New migration:** `20261108_0006_business_invitations.py` → `e213c3_invitations`; new entity `BusinessInvitation`, partial index `uq_business_invitations_pending_email` and FK to invite/company. No changes to memberships or UML 03B.
 
-**Tests:** `tests/test_business_invitation_schemas.py` y `tests/test_business_invitation_integration.py` comprueban normalización, roles, seguridad, pertenencia, duplicados, expiración, persistencia del hash, no alta de membresía y rollback. En CI aprobaron Pytest con PostgreSQL real, `alembic upgrade head` y `alembic check` en Python 3.12/3.14, además de Docker. **La cantidad de pruebas y la migración local deben confirmarse por el desarrollador** tras `git pull`.
+**Tests:** `tests/test_business_invitation_schemas.py` y `tests/test_business_invitation_integration.py` verify normalization, roles, security, belonging, duplicates, expiration, hash persistence, not high membership and rollback. In CI they approved Pytest with real PostgreSQL, `alembic upgrade head` y `alembic check` in Python 3.12/3.14, plus Docker. **The amount of tests and local migration should be confirmed by the developer** after `git pull`.
 
-**Pendiente C.4:** validar secreto mediante comparación de hash, audiencia por correo de cuenta autenticada, estado/fecha, aceptación transaccional exactamente una vez, membresía única, activación de membresía inactiva y protección de concurrencia. El envío automático, reenvío/cancelación y protección antispam para producción quedan sin construir.
+**Pending C.4:** validate secret by comparing hash, authenticated account mail hearing, status/date, transactional acceptance exactly once, unique membership, inactive membership activation and concurrent protection. Automatic sending, forwarding/cancellation and spam protection for production remain unbuilt.
 
-## 10. Contrato de aceptación C.4a: invitar ≠ aceptar ≠ administrar
+## 10. Acceptance contract C.4a: invite
 
-**POST `/api/v1/invitations/accept`** — requiere `Authorization: Bearer` global y cuerpo exclusivamente `{"invitation_token":"<token-opaco>"}`. La cuenta debe tener exactamente el correo normalizado para el que se emitió la invitación. El servidor busca **SHA-256 del token**, no el texto claro, bloquea la invitación, comprueba `PENDIENTE` y expiración, bloquea empresa `ACTIVA`, y crea o reactiva una sola Membresía para `(business_id,user_id)` con el rol operativo que se propuso al emitir. Marca `ACEPTADA` y `accepted_by_user_id/accepted_at` en el mismo commit; responde `200 BusinessView`, sin token ni datos privados de otras empresas.
+**POST `/api/v1/invitations/accept`** — required `Authorization: Bearer` global and body only `{"invitation_token":"<token-opaco>"}`. The account must have exactly the standard mail for which the invitation was issued. The server searches **SHA-256 from token**, not the clear text, blocks the invitation, checks `PENDIENTE` and expiration, blocks company `ACTIVA`, and creates or reactivates a single Membership to `(business_id,user_id)` with the operational role that was proposed when issuing. `ACEPTADA` y `accepted_by_user_id/accepted_at` in the same commit; replies `200 BusinessView`without token or private data from other companies.
 
-**Errores:** 401 cuenta/sesión inválida, 404 token desconocido o ajeno al email (misma respuesta), 409 token vencido o consumido, negocio suspendido, membresía ya activa o rol histórico de titular administrativo inactivo incompatible, 422 formato de token inválido/campos extra. La operación no otorga permisos antes de confirmar aceptación. No se asignan `ADMINISTRADOR` ni `TITULAR_ADMINISTRATIVO` mediante invitación básica. Ante error después del `flush` se revierte membresía y aceptación. El reintento de token consumido da 409, sin duplicaciones.
+**Errors:** 401 invalid account/session, 404 unknown token or foreign to email (same answer), 409 token expired or consumed, business suspended, membership already active or historical role of inactive administrative holder incompatible, 422 format invalid token/extra camps. The operation does not grant permissions before confirming acceptance. `ADMINISTRADOR` ni `TITULAR_ADMINISTRATIVO` by basic invitation. `flush` the re-entry of membership and acceptance. Token re-tryment consumed gives 409, without duplication.
 
-**Entidad y Alembic:** `business_invitations` suma `accepted_by_user_id` (FK a usuario, nullable), `accepted_at` (nullable) y CHECK `ck_business_invitation_acceptance_audit` que exige ambas columnas cuando `status=ACEPTADA` y prohíbe consignarlas en otro estado. Migración aditiva `e213c4_acceptance` (sin editar migraciones previas).
+**Entity and Alembic:** `business_invitations` sum `accepted_by_user_id` (FK to user, nullable), `accepted_at` (nullable) and CHECK `ck_business_invitation_acceptance_audit` that both columns require when `status=ACEPTADA` and prohibits the recording of them in another state. `e213c4_acceptance` (without editing previous migrations).
 
-**Evidencia:** C.4a se probó localmente con **171 pruebas** y en CI con PostgreSQL/Alembic (Python 3.12/3.14, Docker); C.4b amplió la validación local a **195 pruebas**, CI funcional **3/3** y Docker saludable, sin nueva migración. La consulta y administración básica del equipo **sí están implementadas** desde C.4b. Permanecen pendientes la cancelación/rechazo/reenvío de invitaciones, correo/QR automático, verificación del email, rate limiting para internet y transferencia de titularidad. El UML 03A ya fue actualizado en C.5; la hoja para el compañero se redactará después, por separado.
+**Evidence:** C.4a was tested locally with **171 tests** and in IC with PostgreSQL/Alembic (Python 3.12/3.14, Docker); C.4b extended local validation to **195 tests**, Functional CI **3/3** and healthy Docker, without new migration. The basic consultation and management of the team **are implemented** from C.4b. Cancellation/rejection/return of invitations, automatic mail/QR, email verification, internet rate limiting and title transfer are pending. UML 03A has already been updated in C.5; the sheet for the companion will be written later, separately.
 
-## 11. C.4b — Contrato de equipo y decisiones de autorización
+## 11. C.4b — Equipment contract and authorization decisions
 
-**GET `/api/v1/businesses/{business_id}/memberships`:** directorio limitado a titular/administrador activos de empresa ACTIVA; lista los miembros activos e inactivos de **ese tenant**, con `id`, `user_id`, `email`, `display_name`, `role`, `status`, `job_title`. No expone password_hash, contacto telefónico o tokens. 401 sesión inválida; 403 encargado/trabajador; 404 empresa ajena/inexistente o membresía del actor inactiva; 409 empresa suspendida. El rol de otra empresa no concede lectura. La capacidad `members.read` es nueva y distinta de `business.view`.
+**GET `/api/v1/businesses/{business_id}/memberships`:** directory limited to active owner/manager of the company ACTIVA; lists active and inactive members of **That tenant**, con `id`, `user_id`, `email`, `display_name`, `role`, `status`, `job_title`. Does not expose password_hash, telephone contact or tokens. 401 session invalid; 403 manager/worker; 404 company external/non-existent or member of the inactive actor; 409 company suspended. The role of another company does not grant reading. `members.read` is new and different from `business.view`.
 
-**PATCH `/api/v1/businesses/{business_id}/memberships/{membership_id}`:** solo titular administrativo vigente, empresa ACTIVA, target existente de esa misma empresa con rol **distinto de TITULAR_ADMINISTRATIVO**. Body parcial exige al menos un campo `role: ADMINISTRADOR|ENCARGADO|TRABAJADOR` o `status: ACTIVA|INACTIVA`, sin nulls ni campos adicionales. Una edición puede ascender un colaborador a ADMINISTRADOR; un administrador no puede ejecutar PATCH sobre equipo. El titular no puede auto-desactivarse/degradarse ni modificar una membresía titular histórica inactiva. 200 retorna `BusinessTeamMemberView` del target; 401 auth, 403 permiso, 404 tenant/target desconocidos, 409 estado suspendido o titular protegido, 422 cuerpo inválido. El servidor bloquea identidad/sesión, empresa/membresía del actor y objetivo en una única transacción y revierte ante error.
+**PATCH `/api/v1/businesses/{business_id}/memberships/{membership_id}`:** only current administrative holder, company ACTIVA, existing target of that same company with role **other than AMINISTRATIVE VEHICLE**. Partial body requires at least one field `role: ADMINISTRADOR|ENCARGADO|TRABAJADOR` o `status: ACTIVA|INACTIVA`, without additional nulls or fields. An edition can be promoted by a contributor to ADMINISTRATOR; an administrator cannot run PATCH on computer. The holder cannot self-deactivate/degrade or modify an inactive historic membership. 200 returns `BusinessTeamMemberView` Target; 401 auth, 403 permission, 404 tenant/target unknown, 409 state suspended or protected holder, 422 invalid body. The server blocks identity/session, company/membership of the actor and target in a single transaction and reverses when error occurs.
 
-**Evidencia:** `tests/test_business_team_schemas.py`, `tests/test_business_team_integration.py` y actualización de matriz en `test_business_permissions.py`. GitHub Actions en código de C.4b aprobó Pytest PostgreSQL Python 3.12 y 3.14, y Docker. **Validación Windows: `195 passed in 23.86s`; Alembic `e213c4_acceptance (head)` sin deriva y Docker saludable.** Sin nueva tabla ni migración; `e213c4_acceptance` sigue como head.
+**Evidence:** `tests/test_business_team_schemas.py`, `tests/test_business_team_integration.py` and matrix update in `test_business_permissions.py`GitHub Actions in C.4b code approved Python PostgreSQL Python 3.12 and 3.14, and Docker. **Windows Validation: `195 passed in 23.86s`; Alembic `e213c4_acceptance (head)` sin deriva y Docker saludable.** No new table or migration; `e213c4_acceptance` Keep it going.
 
-**Pendientes conscientemente fuera de este corte:** transferencia/revocación de titularidad (caso sensible separado), auditoría histórica de cambios de rol, edición de `job_title`, eliminación física, listado/rechazo/cancelación/reenvío de invitaciones, confirmación de email y frontend React conectado. El cierre documental y revisión de 03A corresponden a C.5, después de validar C.4b. Las funciones comerciales RF-03–RF-07 no se atribuyen a este bloque.
+**Earrings consciously outside this court:** transfer/revocation of title (separate sensitive case), historical audit of role changes, editing of `job_title`, physical removal, listing/rejection/cancellation/re forwarding of invitations, email confirmation and frontend React connected. The documentary closing and revision of 03A correspond to C.5, after validating C.4b. Commercial functions RF-03–RF-07 are not attributed to this block.
 
-## 12. Matriz de cierre de evidencias C.5 (08/11/2026)
+## 12. C.5 evidence-closure matrix (08/11/2026)
 
-| RF / CU | Operación real | Evidencia al cierre | Estado |
+| RF / CU | Actual operation | Evidence at closure | Status |
 |---|---|---|---|
-| RF-01 / CU-01–02 | Registro, login, `/me`, logout | Regresión PostgreSQL 195/195 | Implementado en API |
-| RF-02 / CU-03 | Empresas: alta, consulta y PATCH | Regresión PostgreSQL 195/195 | Implementado en API |
-| RF-02 / CU-12 | Invitación, aceptación y equipo (`GET`/`PATCH` de membresías) | Regresión 195/195; CI 3/3 del commit `8cd1674` | Implementado, titular protegido |
-| Infraestructura | Alembic, API/PostgreSQL Docker, `/ready` | `e213c4_acceptance (head)`, sin deriva; ambos `healthy`; `ready`/`ok` | Verificado localmente |
-| RF-03–RF-07 | Ubicaciones, catálogo, compras, stock y ventas | No hay endpoints ni pruebas backend | TO-BE |
+| RF-01 / CU-01–02 | Log, login, `/me`, logout | PostgreSQL regression 195/195 | Implemented in API |
+| RF-02 / CU-03 | Companies: High, Consultation and PATCH | PostgreSQL regression 195/195 | Implemented in API |
+| RF-02 / CU-12 | Invitation, acceptance and equipment (`GET`/`PATCH` of membership) | Regression 195/195; CI 3/3 of the commit `8cd1674` | Implemented, protected holder |
+| Infrastructure | Alembic, API/PostgreSQL Docker, `/ready` | `e213c4_acceptance (head)`, no drift; both `healthy`; `ready`/`ok` | Locally verified |
+| RF-03–RF-07 | Locations, catalog, purchases, stock and sales | No hay endpoints ni pruebas backend | TO-BE |
 
-**Precisiones:** la salida `195 passed in 23.86s` corresponde al código funcional `8cd1674`, **no a una ejecución posterior al commit documental C.5**. Frontend React, transferencia de titularidad, verificación de email, auditoría histórica de rol, seguridad de producción y deploy público siguen pendientes. La hoja de revisión del compañero se redactará después, antes de RF-03.
+**Precision:** the exit `195 passed in 23.86s` corresponds to the functional code `8cd1674`, **No post-commitment execution C.5**. Frontend React, transfer of title, email verification, historical role audit, production security and public deployment are still pending. The peer review sheet will be written later, before RF-03.
 
-## 13. E2-2 A — Matriz de trazabilidad para persistencia RF-03
+## 13. E2-2 A — Tracer matrix for persistence RF-03
 
-| RF/CU | Implementación | Pruebas | Estado |
+| RF/CU | Implementation | Evidence | Status |
 |---|---|---|---|
-| RF-03 / CU-04, tabla | `models/location.py`, migración `20261108_0008_business_locations.py` | `test_location_model.py`, `test_location_integration.py` | **Persistencia implementada; CI validado** |
-| RF-03 / CU-04, HTTP | CRUD y cambios de principal / pausa | Pruebas HTTP y RBAC todavía inexistentes | **Pendiente E2-2 B/C** |
-| RF-03, permisos por ubicación | Controles tenant + membresía + capacidad concreta | Pruebas de autorización futuras | **Pendiente E2-2 C** |
-| RF-05/06/07, uso comercial | Validaciones de stock, recepción y venta con ubicación ACTIVA | Pruebas comerciales futuras | **Fuera de este corte** |
+| RF-03 / CU-04, tabla | `models/location.py`, migration `20261108_0008_business_locations.py` | `test_location_model.py`, `test_location_integration.py` | **Persistence implemented; IC validated** |
+| RF-03 / CU-04, HTTP | CRUD and main / pause changes | HTTP and RBAC tests still missing | **E2-2 B/C pending** |
+| RF-03, permissions by location | Tenant controls + membership + specific capacity | Future approval tests | **E2-2 C earring** |
+| RF-05/06/07, commercial use | Stock validations, reception and sale with active location | Future commercial testing | **Out of this cut.** |
 
-**E2-2 A — persistencia de Ubicaciones (08/11/2026):** se publicó `Location`/`locations` con FK obligatoria `business_id → businesses.id` (`RESTRICT`), seis tipos, `can_sell`/`can_store` independientes, campos de referencia opcionales, `ACTIVA/PAUSADA`, `is_primary`, índice parcial que permite como máximo una principal activa por tenant y CHECK que impide principal pausada. Migración aditiva `20261108_0008_business_locations.py` (`e22a_locations`, descendiente de `e213c4_acceptance`). La empresa continúa iniciándose **sin ubicaciones**. **No hay todavía rutas HTTP de ubicaciones**, ni inventario/compra/venta conectado, ni permisos de ubicación; esos cambios pertenecen a E2-2 B/C y bloques siguientes. El CI del código del corte se verificó en `300fa6f` (GitHub Actions run 42491816481): resultado `success`. La validación local Windows del nuevo corte aún se requiere; los 195 tests anteriores correspondían a E2-1.
+**E2-2 A — Persistence of Locations (08/11/2026):** Published `Location`/`locations` with FK required `business_id → businesses.id` (`RESTRICT`), six types, `can_sell`/`can_store` independent, optional reference fields, `ACTIVA/PAUSADA`, `is_primary`, partial index that allows at most a main active per tenant and CHECK that prevents main paused. Additive migration `20261108_0008_business_locations.py` (`e22a_locations`, descendant of `e213c4_acceptance`) The company continues to start **no locations**. **No HTTP Location Routes yet**, no inventory/purchase/connected sale, no location permits; these changes belong to E2-2 B/C and subsequent blocks. The IC of the cut code was verified in `300fa6f` (GitHub Actions run 42491816481): result `success`. Local Windows validation of the new cut is still required; the previous 195 tests corresponded to E2-1.
 
-**Observación:** el antiguo renglón de cierre E2-1 que describe `e213c4_acceptance (head)` es evidencia histórica de E2-1 y no el head nuevo. El head original E2-2 A fue `e22a_locations`, pero después de incorporar CASA el nuevo head es `e22b_location_casa`; el backend aún no expone nuevas rutas. No presentar los resultados del CI como pruebas locales de Windows.
+**Comment:** the old line of closure E2-1 describing `e213c4_acceptance (head)` is historical evidence of E2-1 and not the new head. Original head E2-2 A was `e22a_locations`but after incorporating CASA the new head is `e22b_location_casa`; the backend still does not expose new paths. Do not present IC results as local Windows tests.
 
 
-### E2-2 A.1 — CASA y nuevo head (08/11/2026)
+### E2-2 A.1 — CASA and new head (08/11/2026)
 
-`CASA` se añade a los tipos admitidos; las capacidades `can_sell`/`can_store` continúan independientes. Migración aditiva `e22b_location_casa` tras `e22a_locations`, sin cambios a datos anteriores, y reversión protegida cuando existen ubicaciones CASA. **CI backend** (run): **217 pruebas aprobadas, Python 3.12/3.14, Alembic `e22b_location_casa (head)` sin deriva, Docker 3/3**. **CI frontend** (run): **2/2 trabajos exitosos, incluidos build/lint y E2E**. Resultado Windows precedente de E2-2 A: 212 pruebas; **la migración adicional CASA y los 217 tests todavía deben reproducirse localmente**. Sin endpoints de ubicación hasta E2-2 B/C y sin conexión React–API.
+`CASA` is added to the rates accepted; `can_sell`/`can_store` still independent. Additive migration `e22b_location_casa` after `e22a_locations`, no changes to previous data, and protected reversal when CASA locations exist. **CI backend** (run): **217 tests approved, Python 3.12.3.14, Alembic `e22b_location_casa (head)` sin deriva, Docker 3/3**. **CI frontend** (run): **2/2 successful jobs including build/lint and E2E**. Previous Windows result of E2-2 A: 212 tests; **Additional migration CASA and 217 tests must still be replicated locally**. No location endpoints up to E2-2 B/C and no React–API connection.
 
-## 14. E2-2 B — Contratos y evidencia de RF-03 parcial
+## 14. E2-2 B — Contracts and evidence of partial RF-03
 
-**Estado E2-2 B (08/11/2026):** se publicaron tres rutas reales para ubicaciones bajo `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` lista 200, `GET /{location_id}` 200). La creación valida DTO sin campos protegidos, revalida identidad/sesión, bloquea la empresa y membresía del actor, exige tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, y confirma una única transacción. Una primera ubicación recibe `is_primary=true`; las posteriores no la reemplazan. Los miembros activos de cualquier rol reconocido pueden consultar las ubicaciones propias, incluso con empresa suspendida; una empresa suspendida no permite crear. Empresa ajena o membresía inactiva devuelve 404; rol sin permiso 403; sesión inválida 401; empresa suspendida al crear 409; cuerpo incorrecto 422. `CASA` y Google Maps HTTPS validado están incluidos. **No hay PATCH/DELETE, ni pausa/reactivación, cambio de principal, asignación individual de personal o consumo comercial de ubicaciones todavía.** La DEMO permanece independiente. Backend sin migración nueva respecto de `e22b_location_casa`.
+**State E2-2 B (08/11/2026):** Three real routes were published for low locations `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` ready 200, `GET /{location_id}` 200). The creation valid DTO without protected fields, revalidates identity/session, blocks the company and membership of the actor, demands tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, and confirms a single transaction. A first location receives `is_primary=true`; the subsequent ones do not replace it. Active members of any recognized role can consult their own locations, even with suspended company; a suspended company does not allow to create. A third party or inactive membership returns 404; role without permission 403; invalid session 401; company suspended when creating 409; incorrect body 422. `CASA` and Google Maps HTTPS validated are included. **There is no PATCH/DELETE, no pause/reactivation, change of principal, individual staff assignment or commercial consumption of locations yet.** DEMO remains independent. Backend without new migration from `e22b_location_casa`.
 
-**Matriz de capacidades del corte:** leer ubicaciones (cualquier rol empresarial reconocido con membresía activa); crear (titular y administrador); empresa suspendida solo permite leer. No se implementa autorización por ubicación asignada ni edición/pausa. Los nombres de los endpoints son los definidos en la tabla de contratos HTTP. **Los GET no son inventario ni habilitan operar stock**, y una empresa sin ubicaciones devuelve lista vacía.
+**Cutting capacity matrix:** read locations (any recognized business role with active membership); create (holder and administrator); suspend company only allows reading. No authorization is implemented by assigned location or editing/pause. Endpoint names are defined in the HTTP contract table. **Geths are not inventory or enable to operate stock**and an unlocated company returns empty list.
 
-**Evidencia de CI:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 pruebas aprobadas**, `e22b_location_casa (head)` y Alembic sin deriva. La salida local de Windows aportada previamente para **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **fue validado en Windows con `277 passed in 31.22s`**, Alembic sin deriva y Docker saludable; E2-2 C agrega nuevas pruebas por verificar localmente. La revisión de E2-1 por el compañero sigue anclada en el commit entregado.
+**Evidence of IC:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 approved tests**, `e22b_location_casa (head)` and Alembic without drift. The local Windows output provided previously for **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **was validated in Windows with `277 passed in 31.22s`**, Alembic without drift and healthy Docker; E2-2 C adds new tests to be verified locally. The peer review of E2-1 remains anchored in the commit delivered.
 
-## 15. E2-2 C — Matriz de edición, estados y principal
+## 15. E2-2 C — Editor, states and principal matrix
 
-**E2-2 C (08/11/2026) — operaciones reales sobre ubicaciones:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` permite editar únicamente `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (campos opcionales en el cuerpo, pero se rechazan `null`, cuerpos vacíos, valores inválidos y campos protegidos). `PATCH /{location_id}/status` recibe solo `ACTIVA` o `PAUSADA`: pausar revoca `is_primary` en la misma transacción y reactivar **no** recupera la titularidad de ubicación automáticamente. `PUT /{location_id}/primary` designa una ubicación `ACTIVA`, desmarca la anterior y marca la elegida dentro del **mismo tenant y de una transacción única**, serializada por bloqueo de empresa y protegida con el índice SQL `uq_locations_one_active_primary`. La operación sobre una ubicación ya principal no realiza cambios adicionales. Titular/administrador con membresía ACTIVA pueden administrar; encargado/trabajador solo consultan. Empresa `SUSPENDIDA` admite lectura pero no cambios; recurso ajeno/inexistente 404, rol sin permiso 403, sesión inválida 401, estado incompatible 409 y cuerpo inválido 422. No se habilitó DELETE ni se crearon tablas nuevas.
+**E2-2 C (08/11/2026) — actual location operations:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` allows editing only `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (optional fields in the body, but rejected `null`, empty bodies, invalid values and protected fields). `PATCH /{location_id}/status` receive only `ACTIVA` o `PAUSADA`: pause revoke `is_primary` in the same transaction and reactivate **no** recovers location ownership automatically. `PUT /{location_id}/primary` designates a location `ACTIVA`, unmarks the previous one and marks the one chosen within the **and a single transaction**, serialized by company lock and protected with the SQL index `uq_locations_one_active_primary`. The operation on an already main location does not make any additional changes. Owner/Manager with Active Membership can manage; maintainer/worker only consult. `SUSPENDIDA` read but no change; other/non-existent resource 404, role without permission 403, invalid session 401, incompatible status 409 and invalid body 422. DELETE was not enabled nor new tables were created.
 
-| Capacidad | TITULAR_ADMINISTRATIVO | ADMINISTRADOR | ENCARGADO | TRABAJADOR |
+| Capacity | ADMINISTRATIVE SERVICE | ADMINISTRATOR | MANAGER | STAFF MEMBER |
 |---|---|---|---|---|
-| Leer ubicaciones propias | Sí | Sí | Sí | Sí |
-| Crear ubicación | Sí | Sí | No | No |
-| Editar datos/capacidades | Sí | Sí | No | No |
-| Pausar/reactivar | Sí | Sí | No | No |
-| Designar principal ACTIVA | Sí | Sí | No | No |
+| Read your own locations | Yes | Yes | Yes | Yes |
+| Create Location | Yes | Yes | No | No |
+| Edit Data/Capabilities | Yes | Yes | No | No |
+| Pause/reactivate | Yes | Yes | No | No |
+| Main designator | Yes | Yes | No | No |
 
-**Evidencia:** código funcional `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 exitoso**, 325/325 pruebas en Python 3.12 y 3.14 con PostgreSQL, Alembic `e22b_location_casa (head)` sin deriva y Docker correcto. Windows había validado previamente E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **Los 325 tests todavía deben reproducirse en Windows para dar por cerrado localmente E2-2 C.** La integración React/API, la asignación individual de miembros a ubicaciones, control de existencias al quitar `can_store`, recepciones/ventas y gestión de cajas operativas son trabajos futuros; no se atribuyen a este incremento. E2-1 y UML 03B/03C no fueron modificados.
+**Evidence:** functional code `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 successful**, 325/225 Python 3.12 and 3.14 tests with PostgreSQL, Alembic `e22b_location_casa (head)` no drift and correct Docker. Windows had previously validated E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **The 325 tests must still be played on Windows to close locally E2-2 C.** React/API integration, individual assignment of members to locations, inventory control when removing `can_store`, receptions/sales and operating fund management are future works; they are not attributed to this increase. E2-1 and UML 03B/03C were not modified.
 
-## 16. E2-2 D — Trazabilidad de asignaciones por ubicación
+## 16. E2-2 D — Location mapping
 
-**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` y FK compuesta hacia `Location` y `Membership` del MISMO tenant. Migración aditiva `e22d_assignments`, índice único auxiliar de ubicación `(business_id,id)`. Estados administrativos `ACTIVA`/`REVOCADA`; fecha `revoked_at`, sin borrado físico. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` lista asignaciones de una sede (titular/administrador); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` recibe JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` y activa/revoca idempotentemente. Solo se activa una membresía ENCARGADO/TRABAJADOR activa hacia ubicación ACTIVA; revocar permite sede pausada o miembro inactivo. Empresa SUSPENDIDA solo lectura. La política pura `can_operate_at_location` obliga a tenant, membresía, sede y capacidad `SELL/STORE` vigentes, además de asignación ACTIVA a encargados/trabajadores. **La política todavía no se consume en compras, inventario ni ventas**, fuera de este corte. Sin nuevas funciones de E2-1 ni conexión del frontend.
+**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` and FK composed towards `Location` y `Membership` of the same tenant. Additive migration `e22d_assignments`, single location index `(business_id,id)`. Administrative States `ACTIVA`/`REVOCADA`; date `revoked_at`No physical deletion. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` list of assignments from a headquarters (holder/manager); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` receive JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` and actively/revolves. Only one member is activated ENTRY/TRAWER active towards the active location; revoke allows for paused headquarters or inactive member. Company SUSPENDED read only. Pure policy `can_operate_at_location` obliging tenant, membership, headquarters and capacity `SELL/STORE` in force, besides the active assignment to managers/workers. **The policy is not yet consumed in purchases, inventory or sales**, outside this cut. No new E2-1 functions or frontend connection.
 
-**CI comprobado para código funcional `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 y 3.14, 3/3 trabajos aprobados**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Windows local E2-2 D está pendiente:** la última ejecución aportada corresponde a E2-2 C, 325 passed. No atribuir al último commit documental ejecución propia de tests.
+**IC checked for functional code `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 and 3.14, 3/3 jobs approved**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Local Windows E2-2 D is pending:** the last execution contributed corresponds to E2-2 C, 325 passed. Do not attribute to the last commit documentary own execution of tests.
 
-## 17. E2-3 A — Trazabilidad de esquema de Catálogo (RF-04)
+## 17. E2-3 A — Catalog Scheme Traceability (RF-04)
 
-| Capa | Artefacto | Prueba | Estado |
+| Layer | Artifact | Test | Status |
 |---|---|---|---|
-| SQL y ORM | `models/catalog_item.py`, `alembic/versions/20261108_0011_catalog_items.py` | `test_catalog_item_model.py`, `test_catalog_item_integration.py` | **407 pruebas CI aprobadas, local pendiente** |
-| SKU/nombre por empresa | Índices/UNIQUE, normalización posterior por servicio | Duplicados del mismo tenant/inactivos y reutilización en otro tenant | **Restricción SQL implementada; API pendiente** |
-| Tipo/unidad | CHECK para clases DEMO y exclusividad `SERVICIO` | Combinaciones válidas e inválidas en PostgreSQL | **Implementado** |
-| API, RBAC y CRUD | Endpoints bajo `/businesses/{business_id}/items` (propuesta previa) | Tests HTTP, sesiones, concurrencia y errores | **Pendiente E2-3 B/C** |
-| Inventario/compras/ventas | FK compuestas futuras y snapshots históricos | Tests comerciales futuros | **Fuera de E2-3 A** |
+| SQL and ORM | `models/catalog_item.py`, `alembic/versions/20261108_0011_catalog_items.py` | `test_catalog_item_model.py`, `test_catalog_item_integration.py` | **407 IC tests approved, premises pending** |
+| SKU/name per company | Indices/UNIQUE, later standardisation by service | Duplicates of the same tent/inactive and reuse in another tenant | **Implemented SQL restriction; pending API** |
+| Type/unit | CHECK for DEMO and exclusivity classes `SERVICIO` | Valid and invalid combinations in PostgreSQL | **Implemented** |
+| API, RBAC y CRUD | Endpoints bajo `/businesses/{business_id}/items` (pre-proposal) | HTTP tests, sessions, attendance and errors | **E2-3 B/C pending** |
+| Inventory/purchases/sales | Future composite FK and historical snapshots | Future commercial tests | **Outside E2-3 A** |
 
-**Corte E2-3 A (08/11/2026), persistencia parcial de RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` obligatorio, FK a Empresa (`RESTRICT`) y par UNIQUE `(business_id,id)` para futuras FK comerciales del mismo tenant. Cuatro clases de ficha según la DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (bienes físicos) y `SERVICIO` (conceptualmente un servicio). Un servicio obliga unidad `SERVICIO`; un bien físico la prohíbe. Unidades físicas: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Se almacenan nombre, clave normalizada `name_key`, categoría, SKU opcional, descripción, observaciones internas, estado `ACTIVO`/`INACTIVO`, condición `sellable`, `price_cents` y `reference_cost_cents` opcionales. Importes enteros BIGINT entre 0 y 99.999.999.999 centavos, sin Float. Dos restricciones independientes impiden repetir `name_key` y SKU no nulo **dentro de la empresa**, también en fichas inactivas; distintos tenants pueden reutilizarlos. En E2-3 B el servicio deberá calcular `name_key` de forma canónica (NFKC, espacios colapsados, equivalencia de mayúsculas) y normalizar SKU a mayúsculas **antes de insertar/editar**: SQL impone la unicidad de las claves guardadas y el formato de SKU, pero no deriva `name_key` automáticamente. Crear ficha no crea ubicación, stock, compras, ventas ni movimientos.
+**Cut E2-3 A (08/11/2026), partial persistence of RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` Compulsory, FK to Company (`RESTRICT`) y par UNIQUE `(business_id,id)` for future commercial FK of the same tenant. Four kinds of tab according to DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (physical property) and `SERVICIO` (conceptually a service). `SERVICIO`; physical property prohibits it. `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Name, standardized key is stored `name_key`, category, optional SKU, description, internal observations, status `ACTIVO`/`INACTIVO`, condition `sellable`, `price_cents` y `reference_cost_cents` optional. Whole amounts BIGINT between 0 and 99,999,999.999 cents, without Float. Two independent restrictions prevent repeat `name_key` and SKU not null **within the company**, also in inactive chips; different tenants can reuse them. In E2-3 B the service must calculate `name_key` canonically (NFKC, collapsed spaces, capital equivalence) and normalize SKU to uppercase **before inserting/editing**: SQL imposes the uniqueness of saved keys and SKU format, but does not derive `name_key` Create tab does not create location, stock, purchases, sales or movements.
 
-**Evidencia:** corte de código/pruebas `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 pruebas aprobadas** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` sin cambios pendientes de Alembic. **Validación local de Windows pendiente para E2-3 A**; los 371 tests anteriores corresponden al cierre de E2-2. **No existen rutas HTTP de Catálogo** en este corte; CRUD, RBAC de catálogo, SKU/name normalization de entrada y protección de historias comerciales se implementarán en E2-3 B/C/D. No hay integración React API ni revisión independiente de E2-3 todavía. No se modificó E2-1 ni E2-2 ni frontend DEMO.
+**Evidence:** code/test cut `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 approved tests** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` no pending changes from Alembic. **Local Windows Validation Pending for E2-3 A**; the above 371 tests correspond to the closure of E2-2. **No HTTP Catalog paths** in this cut; CRUD, catalog RBAC, SKU/name standardization of entry and protection of business stories will be implemented in E2-3 B/C/D. No React API integration or independent review of E2-3 yet. No change to E2-1 or E2-2 or DEMO frontend.
 
-## 18. E2-3 B — Trazabilidad HTTP Catálogo
+## 18. E2-3 B — HTTP Traceability Catalogue
 
-**E2-3 B — API real de Catálogo (RF-04/CU-05, 08/11/2026):** cuatro rutas bajo `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 alta), `GET /catalog` (200 lista con `offset>=0`, `1<=limit<=500`; por defecto `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 edición parcial). Cada operación requiere Bearer válido, revalidación de sesión, usuario y membresía de la empresa solicitada. Titular/administrador pueden leer y escribir; encargado/trabajador con membresía activa solo leen; empresa SUSPENDIDA solo lectura; empresa o artículo ajenos/inexistentes 404. El servidor normaliza los nombres Unicode NFKC, colapsa espacios y genera `name_key` con `casefold`; normaliza SKU a mayúsculas ASCII y convierte SKU vacío en NULL. PostgreSQL conserva la unicidad por empresa de `name_key`/SKU incluso con fichas INACTIVO, y la API traduce esa colisión a 409. Datos inválidos o campos protegidos (id, tenant, status, clave derivada) reciben 422. Tipo SERVICIO exige unidad SERVICIO; ninguna otra clasificación puede usarla. Son válidos `price_cents` y `reference_cost_cents` NULL o enteros desde 0 hasta 99.999.999.999. El PATCH permite eliminar SKU/precio/costo con NULL, pero no editar estado. La ficha conserva su `status` y timestamps SQL. La creación no crea ubicación, saldo de stock, compras, ventas ni movimientos.
+**E2-3 B — Real Catalogue API (RF-04/CU-05, 08/11/2026):** four low routes `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 high), `GET /catalog` (200 list with `offset>=0`, `1<=limit<=500`; default `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 part edition). Each operation requires valid Bearer, session revalidation, user and membership of the requested company. Owner/manager can read and write; maintainer/worker with active membership only read; company SUSPENDED read only; enterprise or article other/non-existent 404. The server normalizes Unicode NFKC names, collapses spaces and generates `name_key` con `casefold`; normalizes SKU to ASCII capital letters and converts empty SKU into NULL. PostgreSQL retains the uniqueness per company of `name_key`/SKU even with INACTIVE tabs, and the API translates that collision to 409. Invalid data or protected fields (id, tenant, status, derivative key) receive 422. SERVICE type requires SERVICE unit; no other classification can use it. They are valid `price_cents` y `reference_cost_cents` NULL or integers from 0 to 99.999.999.999. The PATCH allows you to remove SKU/price/cost with NULL, but do not edit status. `status` and timestamps SQL. Creation does not create location, stock balance, purchases, sales or movements.
 
-| Capacidad | Titular | Administrador | Encargado | Trabajador |
+| Capacity | Owner | Administrator | Manager | Staff member |
 |---|---|---|---|---|
-| Crear / editar ficha | Sí | Sí | No | No |
-| Listar / consultar ficha propia | Sí | Sí | Sí | Sí |
-| Editar estado ACTIVO/INACTIVO | **Pendiente E2-3 C** | **Pendiente E2-3 C** | No | No |
+| Create / edit tab | Yes | Yes | No | No |
+| List / consult own tab | Yes | Yes | Yes | Yes |
+| Edit ASSETS/INACTIVE Status | **E2-3 C earring** | **E2-3 C earring** | No | No |
 
-**Límites explícitos:** E2-3 B no expone todavía `PATCH /status` ni borrado físico (se evaluarán en E2-3 C). No existe integración del frontend React con esta API; no se implementan recepción, ventas, snapshots comerciales ni protección de edición de unidad con historia, pues esos módulos son posteriores. Los tests nuevos comprueban permisos, rollback de duplicados, SKU/nombres normalizados, aislamiento multiempresa, lectura bajo suspensión y fallas 401/403/404/409/422. **Evidencia CI E2-3 B:** GitHub Actions 42506409757 finalizó **3/3 trabajos exitosos**, **498 pruebas aprobadas** tanto en Python 3.12 (53.96s) como Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` sin operaciones, imagen Docker/liveness aprobado. Código funcional validado: `35ff901855397c024cee50fa590c6c05a7f04cfe`. El CI anterior `42506050141` había detectado dos fallos de mapeo HTTP en PATCH con tipo/unidad incompatible; se corrigieron y ambos casos pasan ahora. **La validación Windows local de E2-3 B sigue pendiente**; el último resultado local confirmado es 407/407 de E2-3 A.
+**Explicit limits:** E2-3 B not yet exposed `PATCH /status` No integration of frontend React with this API; no reception, sales, commercial snapshots or history unit editing protection are implemented as these modules are later. New tests check permissions, duplicate rollbacks, SKU/standard names, multi-company isolation, suspended reading and fault 401/403/404/409/422. **Evidence CI E2-3 B:** GitHub Actions 42506409757 finished **3/3 successful jobs**, **498 approved tests** both in Python 3.12 (53.96s) and Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` No operations, Docker/liveness image approved. Validated functional code: `35ff901855397c024cee50fa590c6c05a7f04cfe`. Previous IQ `42506050141` had detected two HTTP mapping failures in PATCH with incompatible type/unit; they were corrected and both cases are now happening. **Local Windows validation of E2-3 B is still pending**; the last confirmed local result is 407/407 of E2-3 A.
 
-## 19. E2-3 C — Matriz HTTP de estado
+## 19. E2-3 C — HTTP status matrix
 
-**E2-3 C (08/11/2026):** se implementó `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` con cuerpo exclusivo `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, validación estricta y rechazo de atributos extra (422). La ruta revalida sesión y membresía y exige titular/administrador de empresa ACTIVA para escribir (401/403/404/409 según caso). El artículo se bloquea dentro del tenant y se cambia de estado en una sola transacción. El cambio repetido es idempotente, sin alterar `updated_at`. El artículo inactivo continúa visible en GET/listados, con UUID, nombre y SKU reservados incluso ante altas duplicadas; no hay DELETE ni stock ficticio. El PATCH genérico mantiene `status` protegido. Esta funcionalidad tampoco modifica el campo independiente `sellable`.
+**E2-3 C (08/11/2026):** implemented `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` with exclusive body `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, strict validation and rejection of extra attributes (422). The path revalidates session and membership and requires an ACTIVA company owner/manager to write (401/403/404/409 as the case may be).The article is blocked inside the tenant and changed status in a single transaction.The repeated change is idepotent, without altering `updated_at`. The inactive article remains visible on GET/listed, with UUID, name and SKU reserved even for duplicate highs; there is no DELETE or fictitious stock. Generic PATCH maintains `status` This functionality also does not modify the independent field `sellable`.
 
-**Dependencias:** las futuras compras/ventas deben prohibir nuevos movimientos con fichas INACTIVO y conservar snapshots históricos reales. Todavía no hay operaciones comerciales ni frontend integrado; por lo tanto, tampoco existe una restricción real de cambio de unidad por transacciones anteriores. Ninguna migración nueva: se reutiliza CHECK `ACTIVO/INACTIVO` de `e23a_catalog`.
+**Units:** future purchases/sales must prohibit new movements with INACTIVE chips and keep real historical snapshots. There are still no commercial operations or integrated frontend; therefore, there is no real restriction on unit change for previous transactions either. No new migration: CHECK reused `ACTIVO/INACTIVO` de `e23a_catalog`.
 
-**Pruebas:** CI E2-3 C **3/3 trabajos aprobados**, **527 passed** en Python 3.12 y 3.14 con PostgreSQL, `e23a_catalog (head)`, `alembic check` sin operaciones y Docker correcto; código `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pendiente**. El commit documental posterior no equivale a otra ejecución CI.
+**Tests:** CI E2-3 C **3/3 work adopted**, **527 passed** in Python 3.12 and 3.14 with PostgreSQL, `e23a_catalog (head)`, `alembic check` no operations and correct Docker; code `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pending**. The subsequent documentary committ is not equivalent to another IC execution.
 
-## 20. E2-3 D — Matriz de cobertura, límites y seguimiento
+## 20. E2-3 D — Covering, Limits and Monitoring Matrix
 
-**E2-3 D (08/11/2026):** se reforzó el Catálogo existente, **sin agregar tablas ni migraciones**. Los tests nuevos verifican equivalencias Unicode NFKC + `casefold` en nombres, SKU NFKC y mayúsculas ASCII, rechazo de controles y formas inválidas, desbordamiento de `name_key` por expansión Unicode, importes enteros estrictos (sin booleanos ni decimales), diferenciación entre `PATCH` con campo omitido y con `null` explícito, incompatibilidad SERVICIO/unidad física, campos protegidos de `/status`, colisiones de nombre/SKU incluso en fichas INACTIVO, independencia entre dos empresas del mismo usuario, recuperación de la sesión tras 409, y rollback provocado después de `flush` tanto en alta como en edición. Se añadió un límite máximo a `offset` de catálogo (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): excederlo produce 422 antes de ejecutar SQL, manteniendo `limit` de 1 a 500 y `offset` no negativo. Los cinco endpoints de Catálogo conservan sus contratos y permisos empresariales; no se crea stock.
+**E2-3 D (08/11/2026):** the existing Catalogue was strengthened, **without adding tables or migrations**. New tests verify Unicode NFKC+ equivalences `casefold` in names, SKU NFKC and ASCII capitals, rejection of invalid controls and forms, overflowing `name_key` per Unicode expansion, strict integer amounts (no booleans or decimals), differentiation between `PATCH` field and with `null` Explicit, incompatibility SERVICE/physical unit, protected fields of `/status`, name/SKU collisions even in INACTIVE chips, independence between two companies of the same user, session recovery after 409, and rollback provoked after `flush` both in high and in edition. A ceiling was added to `offset` catalogue (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): exceed it produces 422 before running SQL, maintaining `limit` de 1 a 500 y `offset` The five Catalog endpoints retain their contracts and business permits; no stock is created.
 
-**Alcance y límites:** las UNIQUE por `(business_id,name_key)` y `(business_id,sku)` y las transacciones/bloqueos existentes protegen ante colisiones; los tests ejercen duplicados y recuperaciones reales en PostgreSQL, **pero no son una prueba simultánea de carga/concurrencia con múltiples conexiones independientes**. Esta última queda registrada como verificación futura antes de producción. No hay aún compras, ventas, movimientos ni snapshots, por lo que no se puede comprobar una regla de cambio de unidad/estado con historial comercial real. `sellable` no sustituye `status`. No conectar frontend DEMO ni E2-1/E2-2 para este corte.
+**Scope and limits:** NICK `(business_id,name_key)` y `(business_id,sku)` and existing transactions/blocks protect against collisions; tests exercise actual duplicates and recoveries in PostgreSQL, **but are not simultaneous load/concurrence testing with multiple independent connections**. The latter is registered as future verification before production. There are not yet purchases, sales, movements or snapshots, so you cannot check a unit/state change rule with real business history. `sellable` does not replace `status`. Do not connect frontend DEMO or E2-1/E2-2 for this cut.
 
-**Evidencia CI del código D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 trabajos aprobados**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` sin diferencias. **Validación local Windows E2-3 C:** 527 passed in 59.60s, contenedores saludables y `/ready` correcto. **Validación local Windows E2-3 D:** todavía pendiente. No confundir CI remoto con pruebas ejecutadas en la computadora del autor.
+**IC evidence of code D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 work adopted**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` No difference. **Local Validation Windows E2-3 C:** 527 passed in 59.60s, healthy containers and `/ready` Right. **Local Validation Windows E2-3 D:** Do not confuse remote IC with tests performed on the author's computer.
 
-## E2-3 E — Trazabilidad final del Catálogo: modelo, pruebas y límites reconciliados
+## E2-3 E — Final Traceability of the Catalogue: model, tests and bounds reconciled
 
-**E2-3 E (08/11/2026) — cierre funcional:** E2-3 A/B/C/D implementó `CatalogItem`/`catalog_items`, migración `e23a_catalog`, cinco operaciones REST (GET/POST colección, GET/PATCH detalle, PATCH estado), permisos por tenant y rol, nombre canónico y SKU únicos dentro de la empresa, cuatro clases ELABORADO/REVENTA/INSUMO/SERVICIO, tipo BIEN/SERVICIO derivado sin columna duplicada, importes opcionales en centavos y desactivación reversible sin borrar fichas ni liberar claves. No se crean existencias al registrar un artículo. **La fuente PlantUML 03A v0.7 y su SVG editorial ya se conciliaron** con el Catálogo real; `Proveedor` sigue TO-BE.
+**E2-3 E (08/11/2026) — functional closure:** E2-3 A/B/C/D implemented `CatalogItem`/`catalog_items`, migration `e23a_catalog`, five REST operations (GET/POST collection, GET/PATCH detail, PATCH status), permissions for tenant and role, canonical name and SKU unique within the company, four classes ELABORATED/REVENT/INSUMO/SERVICE, type GOOD/SERVICE derivative without duplicate column, optional amounts in cents and reversible deactivation without erasing chips or releasing keys. No stock is created when registering an item. **PlantUML 03A v0.7 source and its editorial SVG have already been reconciled** with the actual Catalogue; `Proveedor` Go on, TO-BE.
 
-**Windows D comprobado por el desarrollador:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 tests Python 3.12 y 3.14, 3/3 jobs aprobados. Cambios posteriores solo de UML/documentos no constituyen nueva ejecución CI.
+**Windows D checked by the developer:** 580 passed in 66.45 s, `e23a_catalog (head)`, `No new upgrade operations detected.`, API y PostgreSQL Docker `healthy`, `/ready` → `ready/ok`. **CI D:** run 42508771222, SHA `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, 580 Python tests 3.12 and 3.14, 3/3 jobs approved. Subsequent changes only of UML/documents do not constitute new IC execution.
 
-**Pendientes explícitos:** no se ejecutó una prueba de doble alta concurrente con dos conexiones independientes ni carga sostenida. Aún no hay compras, stock, ventas, snapshots comerciales ni uso de permisos SELL/STORE en operaciones reales. Las reglas sobre cambios de tipo/unidad con historial comercial deberán aplicarse cuando existan esos módulos. React continúa DEMO sin integración HTTP. E2-1/E2-2 y diagramas 03B/03C permanecen fuera del alcance. El bloque está preparado para **auditoría independiente** y no se declara auditado ni listo para producción.
+**Explicit pending:** no double-high test was performed at the same time with two independent connections and no sustained load. There are still no purchases, stock, sales, commercial snapshots or use of SELL/STORE permissions in real operations. The rules on type/unit changes with business history should be applied when these modules exist. React continues DEMO without HTTP integration. E2-1/E2-2 and diagrams 03B/03C remain out of reach. The block is prepared for **independent audit** and is not declared audited or ready for production.
 
-| Acción real | Ruta HTTP | Autorización |
+| Actual action | HTTP Path | Authorisation |
 |---|---|---|
-| Listar fichas, incluidas INACTIVO | `GET /api/v1/businesses/{business_id}/catalog` | Miembro activo con lectura |
-| Crear ficha sin stock | `POST /api/v1/businesses/{business_id}/catalog` | Titular/administrador, empresa ACTIVA |
-| Ver detalle propio | `GET /api/v1/businesses/{business_id}/catalog/{item_id}` | Miembro activo con lectura |
-| Modificar campos válidos | `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}` | Titular/administrador, empresa ACTIVA |
-| Desactivar/reactivar | `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` | Titular/administrador, empresa ACTIVA |
+| Listing files, including INACTIVE | `GET /api/v1/businesses/{business_id}/catalog` | Active member with reading |
+| Crear ficha sin stock | `POST /api/v1/businesses/{business_id}/catalog` | Holder/Manager, Active Company |
+| See details of your own | `GET /api/v1/businesses/{business_id}/catalog/{item_id}` | Active member with reading |
+| Modify Valid Fields | `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}` | Holder/Manager, Active Company |
+| Disable/reactivate | `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` | Holder/Manager, Active Company |
 
-**Fuente real:** `backend/app/infrastructure/models/catalog_item.py`, `backend/alembic/versions/20261108_0011_catalog_items.py`, `backend/app/modules/catalog/{schemas,repository,service,router}.py` y `backend/tests/test_catalog*.py`. Las rutas comerciales de Compras/Stock/Ventas son metas posteriores, no implementaciones.
+**Actual source:** `backend/app/infrastructure/models/catalog_item.py`, `backend/alembic/versions/20261108_0011_catalog_items.py`, `backend/app/modules/catalog/{schemas,repository,service,router}.py` y `backend/tests/test_catalog*.py`. Shopping/Stock/Sales trade routes are later goals, not implementations.
 
-## 21. E2-4 — Actualización de trazabilidad AS-IMPLEMENTED (cierre 08/11/2026)
+## 21. E2-4 — AS-IMPLEMENTED traceability update (closure 08/11/2026)
 
-> **Precedencia:** esta sección documenta las operaciones existentes tras PR #18. Las frases `pendiente E2-4` de E2-3 y bloques previos se conservan como **historia** de aquellos cortes, no como estado actual. Código de cierre: `4f88416141c09a82e744990b1aee8c00b9f31dfd`. Cierre exhaustivo con 17 casos manuales, CI y backlog: [docs/revisiones/E2-4_CIERRE](../docs/revisiones/E2-4_CIERRE/00_LEEME.md).
+> **Precedence:** This section documents the operations that exist after PR #18. `pendiente E2-4` E2-3 and previous blocks are preserved as **history** of those cuts, not as current state. Closing code: `4f88416141c09a82e744990b1aee8c00b9f31dfd`. Complete closure with 17 manual cases, IC and backlog: [docs/revisions/E2-4_CLOSURE](../docs/revisiones/E2-4_CIERRE/00_LEEME.md).
 
-| RF / CU | Endpoint real (bajo `/api/v1/businesses/{business_id}`) | Roles/condiciones | Evidencia |
+| RF / CU | Endpoint real (bajo `/api/v1/businesses/{business_id}`) | Roles/conditions | Evidence |
 |---|---|---|---|
-| RF-05 / CU-06, Proveedor | `GET/POST /suppliers`; `GET/PATCH /suppliers/{supplier_id}`; `PATCH /suppliers/{supplier_id}/status` | Miembro activo lee; titular/admin escriben en empresa ACTIVA | CI E2-4 B, 693 tests |
-| RF-05 / CU-06, Compra | `POST/GET /purchases`; `GET /purchases/{purchase_id}` | Compra: titular/admin, empresa ACTIVA, clave idempotente; lectura de membresía activa | CI E2-4 D, 772 tests; bitácora U-01–U-07 |
-| RF-05 / CU-07, Recepción | `POST /purchases/{purchase_id}/receive`; `GET /purchases/{purchase_id}/receipt` | Sesión válida, compra REGISTRADA, destino ACTIVA/`can_store`; permiso `STORE` y una sola recepción | CI E2-4 E, 796 tests; U-08–U-14 |
-| RF-06 / CU-08 (parcial) | `GET /inventory/balances`, `GET /inventory/movements` | Lectura por empresa, filtros y paginación | U-15–U-17; saldo 10000, ledger una entrada |
-| RF-03/RF-04 (dependencias) | `GET/POST /locations`, `POST /catalog`; catálogo valida tipo/unidad históricos | Roles y tenant; ubicación `can_store`, artículo activo | U-06 y U-08–U-11 |
-| Calidad técnica | Sin endpoints nuevos en PR #18; corrección `test_purchase_integration.py` | Los tests no suponen DB vacía | CI final, **797/797**; Windows 797/797 |
+| RF-05 / CU-06, Supplier | `GET/POST /suppliers`; `GET/PATCH /suppliers/{supplier_id}`; `PATCH /suppliers/{supplier_id}/status` | Active member reads; holder/admin writes in company ACTIVA | CI E2-4 B, 693 tests |
+| RF-05 / CU-06, Shopping | `POST/GET /purchases`; `GET /purchases/{purchase_id}` | Purchase: holder/admin, company ACTIVA, key idempotente; active membership reading | CI E2-4 D, 772 tests; U-01–U-07 log |
+| RF-05 / CU-07, Reception | `POST /purchases/{purchase_id}/receive`; `GET /purchases/{purchase_id}/receipt` | Valid session, purchase REGISTRADA, active destination/`can_store`; permission `STORE` and one reception | CI E2-4 E, 796 tests; U-08–U-14 |
+| RF-06 / CU-08 (partial) | `GET /inventory/balances`, `GET /inventory/movements` | Reading by company, filters and pagination | U-15–U-17; balance 10000, leader one entry |
+| RF-03/RF-04 (units) | `GET/POST /locations`, `POST /catalog`; valid historical type/unit catalogue | Roles and tenant; location `can_store`, active article | U-06 y U-08–U-11 |
+| Technical quality | No new endpoints in PR #18; correction `test_purchase_integration.py` | Tests do not mean empty DB | Final CI, **797/797**; Windows 797/797 |
 
-**Implementado:** compra sin stock, centavos/milésimas enteros, snapshots, recepción física completa 1:1, balance UPSERT, movimiento histórico y permisos tenant/STORE. **Pendiente:** recepción parcial 1:N, cancelación HTTP, compensaciones, transferencias, ajustes, multimoneda, ventas, Mercado Pago, frontend integrado, hardening de DB y pruebas de carga. Los tests se ejecutaron correctamente con datos QA locales después de PR #18, **pero la DB de pruebas local continúa compartiendo entorno con desarrollo** hasta aislarla mediante infraestructura dedicada.
+**Implemented:** stockless purchase, whole cents/thousandths, snapshots, full physical reception 1:1, UPSERT balance, historical movement and tenant/STORE permissions. **Pending:** partial reception 1:N, HTTP cancellation, offsets, transfers, adjustments, multicurrency, sales, Payment Market, integrated frontend, DB hardening and load testing. Tests were executed correctly with local QA data after PR #18, **but local testing DB continues to share an environment with development** until isolated by dedicated infrastructure.
 
-**Criterio académico:** cierre del bloque E2-4 para su alcance acordado, **no** finalización de RF-06 completo, TP completo ni certificación productiva.
+**Academic criterion:** block E2-4 closure for agreed range, **no** Complete RF-06 completion, complete TP or productive certification.
 
-## E2-5 A — Preparación de RF-06/CU-09 y CU-11: modelo implementado, API diferida
+## E2-5 A — Preparation of RF-06/CU-09 and CU-11: implemented model, deferred API
 
-**Corte:** 09/11/2026; base E2-4 validada (`797/797` Windows y CI, migración `e24e_receipt_stock`). Se agrega `inventory_operations` con FK compuestas por tenant (artículo, origen/destino, actor), motivo, cantidad y huella/idempotencia. El ledger `stock_movements` admite tipos firmados para traslados, ajustes y stock inicial, con FK compuesta de origen y nuevo CHECK de signo y exclusión; `stock_balances` y `purchase_receipts` permanecen intactos. Migración propuesta `e25a_inventory_ops` sobre la histórica E2-4.
+**Cut:** 09/11/2026; validated E2-4 base (`797/797` Windows and IC, migration `e24e_receipt_stock`). Added `inventory_operations` with FK composed of tenant (art, origin/destiny, actor), motive, quantity and footprint/idempotence. `stock_movements` supports signed types for shipments, adjustments and initial stock, with FK composed of origin and new sign CHECK and exclusion; `stock_balances` y `purchase_receipts` remain intact. `e25a_inventory_ops` on historical E2-4.
 
-| RF / CU | Contrato implementado en E2-5 A | Endpoint HTTP | Estado |
+| RF / CU | Contract implemented in E2-5 A | Endpoint HTTP | Status |
 |---|---|---|---|
-| RF-05 / CU-07, recepción histórica | `COMPRA_RECEPCION` y snapshots E2-4 compatibles; FK y signo preservados | `POST /purchases/{id}/receive`, `GET /purchases/{id}/receipt` | **Implementado E2-4; regresión exigida E2-5 A** |
-| RF-06 / CU-08, lectura | `stock_balances` sin cambios; consulta actual de entradas por recepción | `GET /inventory/balances`, `GET /inventory/movements` | **Parcial E2-4** |
-| RF-06 / CU-09, traslado | Cabecera `TRASLADO` y deltas `TRASLADO_SALIDA/ENTRADA` con integridad SQL | **No disponible todavía** | **E2-5 A: modelo; E2-5 B: comando transaccional y pruebas** |
-| RF-06 / CU-11, ajustes e inicial | Cabeceras `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`; motivo obligatorio y signos | **No disponible todavía** | **E2-5 A: modelo; E2-5 C: comando transaccional y pruebas** |
+| RF-05 / CU-07, historical reception | `COMPRA_RECEPCION` and compatible E2-4 snapshots; FK and preserved sign | `POST /purchases/{id}/receive`, `GET /purchases/{id}/receipt` | **Implemented E2-4; regression required E2-5 A** |
+| RF-06 / CU-08, reading | `stock_balances` no change; current check-in by reception | `GET /inventory/balances`, `GET /inventory/movements` | **Partial E2-4** |
+| RF-06 / CU-09, transfer | Header `TRASLADO` and deltas `TRASLADO_SALIDA/ENTRADA` with SQL integrity | **Not yet available** | **E2-5 A: model; E2-5 B: transactional command and tests** |
+| RF-06 / CU-11, adjustments and initial | Headers `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`; mandatory reason and signs | **Not yet available** | **E2-5 A: model; E2-5 C: transactional command and tests** |
 
-La migración no ejecuta traslados por sí misma: el saldo debe actualizarse atómicamente junto con ambos movimientos y comprobar no negatividad en E2-5 B/C. El futuro GET de movimientos requerirá respuestas compatibles con orígenes opcionales antes de registrar nuevas operaciones manuales. La revisión de BD dedicada para pruebas locales, hardening del ledger y conciliación de saldos quedan como deuda controlada antes de producción.
+Migration does not execute transfers by itself: the balance must be updated atomically along with both movements and check non-negativity in E2-5 B/C. The future move GET will require responses compatible with optional origins before registering new manual operations. The revision of dedicated DB for local testing, ledger handing and balance reconciliation are left as controlled debt before production.
 
-**Fuente técnica:** [E2-5 A — Modelo de operaciones de inventario](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md) y `backend/tests/test_inventory_operation_{model,integration}.py`. **CI E2-5 A verificado:** run 42599668128, **3/3 trabajos exitosos**, **816 tests tanto en Python 3.12 como 3.14** con PostgreSQL 16, migración `e25a_inventory_ops (head)` y `alembic check` sin diferencias. **Validación local Windows pendiente**, no equipararla con CI.
+**Technical source:** [E2-5 A — Inventory operations model](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md) y `backend/tests/test_inventory_operation_{model,integration}.py`. **CI E2-5 A verified:** run 42599668128, **3/3 successful jobs**, **816 tests in both Python 3.12 and 3.14** with PostgreSQL 16, migration `e25a_inventory_ops (head)` y `alembic check` No difference. **Local validation Windows pending**Not to equate it with IQ.
 
-## E2-5 B — CU-09: transferencia de existencias con movimientos dobles
+## E2-5 B — CU-09: transfer of stocks with double movements
 
-El endpoint nuevo `POST /api/v1/businesses/{business_id}/inventory/transfers` exige sesión, membresía, permiso STORE en ambas ubicaciones de un solo tenant, artículo físico activo, cantidad en milésimas y `Idempotency-Key` UUID4. Descuenta de origen condicionalmente y acredita destino mediante UPSERT, registra cabecera y dos movimientos firmados y confirma todo en una transacción. Misma clave/actor/carga retorna 200 y la operación histórica, sin doble stock. `GET /inventory/transfers/{transfer_id}` permite consultar esa operación; `GET /inventory/movements` lee tanto recepciones E2-4 como transferencias.
+The new endpoint `POST /api/v1/businesses/{business_id}/inventory/transfers` requires session, membership, permission STORE in both locations of single tenant, active physical item, amount in thousandths and `Idempotency-Key` UUID4. Unaccounted for conditionally and credited destination through UPSERT, records header and two signed moves and confirms everything in a transaction. Same key/actor/load returns 200 and historical operation, without double stock. `GET /inventory/transfers/{transfer_id}` allows for consultation of this operation; `GET /inventory/movements` read both E2-4 receptions and transfers.
 
-**Límites:** RF-06/CU-09 ahora tiene API de transferencia básica. No equivale a CU-11 (ajustes), stock inicial, transferencias multiartículo, frontend integrado ni inventario productivo completo. Migración no cambia respecto de E2-5 A (`e25a_inventory_ops`). Pruebas HTTP/PostgreSQL del corte: `backend/tests/test_transfer_api_integration.py`; **CI E2-5 B verificado:** run #42602232103, 3/3 trabajos exitosos, **826 tests en Python 3.12 y 3.14**, PostgreSQL 16, Alembic `e25a_inventory_ops (head)` sin deriva y Docker aprobado. Pruebas SQL/HTTP y tres carreras concurrentes en sesiones independientes; **Windows pendiente de validar**, no confundir con CI. Contrato: [docs/E2-5_B_TRASLADOS_ATOMICOS.md](../docs/E2-5_B_TRASLADOS_ATOMICOS.md).
+**Limits:** RF-06/CU-09 now has basic transfer API. It does not equal CU-11 (adjustments), initial stock, multi-purpose transfers, integrated frontend or complete productive inventory. Migration does not change with respect to E2-5 A (`e25a_inventory_ops`). HTTP/PostgreSQL cutting tests: `backend/tests/test_transfer_api_integration.py`; **CI E2-5 B verified:** run #42602232103, 3/3 successful jobs, **826 tests en Python 3.12 y 3.14**, PostgreSQL 16, Alembic `e25a_inventory_ops (head)` no drift and approved Docker. SQL/HTTP tests and three concurrent runs in independent sessions; **Windows Pending Validation**, not to be confused with IC. Contract: [docs/E2-5_B_TRASLADOS_ATOMICOS.md](../docs/E2-5_B_TRASLADOS_ATOMICOS.md).
 
 
-## E2-5 C — RF-06 / CU-11: API de ajustes justificados y stock inicial
+## E2-5 C — RF-06 / CU-11: justified adjustment API and initial stock
 
-Se suman **`POST /api/v1/businesses/{business_id}/inventory/adjustments`** (nuevo evento `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`) y **`GET /api/v1/businesses/{business_id}/inventory/adjustments/{adjustment_id}`**. Exigen Bearer, membresía activa, permiso STORE, motivo obligatorio, artículo físico, idempotencia por empresa y `expected_version` tomada del GET de saldos. Stock inicial: solo titular/admin y solo par ubicación/artículo nunca utilizado; un saldo cero con historial no habilita segunda carga inicial. Ajuste de salida: saldo insuficiente → 409 y rollback; versión obsoleta → 409. Los movimientos firmados se integran al ledger general ya disponible.
+They add up. **`POST /api/v1/businesses/{business_id}/inventory/adjustments`** (new event `AJUSTE_ENTRADA`, `AJUSTE_SALIDA`, `STOCK_INICIAL`) y **`GET /api/v1/businesses/{business_id}/inventory/adjustments/{adjustment_id}`**. They demand Bearer, active membership, STORE permission, mandatory motive, physical item, enterprise-specific and `expected_version` starting stock: only holder/admin and only pair location/article never used; a zero balance with history does not enable second initial charge. Output adjustment: insufficient balance → 409 and rollback; obsolete version → 409. The signed movements are integrated into the already available general ledger.
 
-**Modelo y Alembic:** reutiliza `InventoryOperation`, `StockMovement`, `StockBalance` y `e25a_inventory_ops`, sin alterar historial E2-4/E2-5 B. **Limitación:** conteo absoluto de cantidad observada, doble aprobación y conciliación automatizada se diferirán; aquí la variación enviada es firmada por el tipo, no recalculada a partir de un conteo absoluto. Pruebas E2-5 C: `backend/tests/test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py`. **CI E2-5 C:** run #42616213215, 3/3 trabajos exitosos, **840 pruebas en Python 3.12 y 3.14** sobre PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` sin deriva, Docker saludable. **QA local Windows pendiente**, no presentado como ejecutado. [Detalle de contrato](../docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md).
+**Model and Alembic:** reuse `InventoryOperation`, `StockMovement`, `StockBalance` y `e25a_inventory_ops`, without altering history E2-4/E2-5 B. **Limitation:** absolute count of observed quantity, double approval and automated reconciliation will differ; here the variation sent is signed by type, not recalculated from an absolute count. E2-5 C tests: `backend/tests/test_adjustment_api_integration.py` y `test_adjustment_concurrency_integration.py`. **CI E2-5 C:** run #42616213215, 3/3 successful jobs, **840 tests in Python 3.12 and 3.14** about PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` sin deriva, Docker saludable. **QA local Windows pending**Not presented as executed. [Contract details](../docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md).

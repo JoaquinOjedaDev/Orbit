@@ -29,7 +29,7 @@ class AdjustStockRequest(BaseModel):
     def normalize_reason(cls, value: str) -> str:
         cleaned = " ".join(value.strip().split())
         if not 3 <= len(cleaned) <= 500 or any(ord(c) < 32 for c in cleaned):
-            raise ValueError("Motivo de ajuste invalido")
+            raise ValueError("Invalid adjustment reason")
         return cleaned
 
     def payload_digest(self) -> str:

@@ -1,191 +1,191 @@
 ---
-tipo_documento: "INFORME_DE_CIERRE"
-bloque: "E2-4"
-estado: "COMPLETADO_PARA_ALCANCE_BACKEND"
-proyecto: "Plataforma PyME — Programación 2 UNSAM 2C2026"
-fecha_corte_evidencia: "2026-11-08"
+type_document: "INFORME_DE_CLOSURE"
+block: "E2-4"
+status: "COMPLETED_PARA_ALCANCE_BACKEND"
+project: "Platform PyME — Programming 2 UNSAM 2C2026"
+date_cut_evidence: "2026-11-08"
 commit_cierre: "4f88416141c09a82e744990b1aee8c00b9f31dfd"
-pr_funcionales: [12, 13, 14, 15, 17]
-pr_correccion_tests: 18
-pruebas_locales: "797/797"
+p_functional: [12, 13, 14, 15, 17]
+pr_correction_tests: 18
+local_tests: "797/797"
 ci_status: "SUCCESS"
 ci_run: 42530739959
-entorno_manual: "Windows + Swagger UI + PostgreSQL 16"
-clasificacion: "CI verificado / local reportado / Swagger reportado"
+manual environment: "Windows + Swagger UI + PostgreSQL 16"
+classification: "CI verified / local reported / Swagger reported"
 ---
 
-# Informe consolidado de cierre E2-4
+# Consolidated closure report E2-4
 
-**Plataforma de gestión multiempresa para PyMEs**  
-**Trabajo Práctico Final de Programación 2 · UNSAM · 2C2026**  
-**Corte:** 8 de noviembre de 2026 · **Rama:** `main` · **Último merge documentado:** `4f88416141c09a82e744990b1aee8c00b9f31dfd`
+**Multi-company management platform for SMEs**  
+**Final Programming Work 2 · UNSAM · 2C2026**  
+**Cut:** 8 November 2026 · **Rama:** `main` · **Last documented merit:** `4f88416141c09a82e744990b1aee8c00b9f31dfd`
 
-## 1. Resumen ejecutivo
+## 1. Executive summary
 
-El bloque **E2-4** construyó y validó el circuito backend de **proveedores → registro de compras → recepción física completa → saldos de inventario y ledger de movimientos**. El sistema mantiene el aislamiento por empresa y separa de forma explícita el **registro comercial** de una compra de su **efecto físico** sobre existencias. El negocio ejemplo de las pruebas se denomina *Comercio de Prueba QA*; la solución no está restringida a ese rubro ni a WALOS.
+The block **E2-4** built and validated the backend circuit of **suppliers → purchase registration → full physical reception → inventory balances and movement ledger**. The system maintains company isolation and explicitly separates the **commercial registration** of a purchase of its **physical effect** The business example of testing is called *QA Test Trade*; the solution is not restricted to that item or WALOS.
 
-Se integraron los incrementos A–E mediante los **PR #12, #13, #14, #15 y #17**, más el **PR #18** para corregir pruebas SQL que asumían una base vacía. En el cierre local, sobre Windows y PostgreSQL **con datos QA preexistentes**, se obtuvieron **797 pruebas aprobadas de 797** en `95,24 s`. Una ejecución previa había arrojado **781 aprobadas y 15 fallidas** por aserciones SQL no filtradas por tenant; la corrección fue revalidada con **20/20 tests del archivo afectado**, **797/797 globales** y **3/3 trabajos verdes en CI**.
+The A-E increments were integrated through the **PR #12, #13, #14, #15 y #17**, plus the **PR #18** to correct SQL tests that assumed an empty base. In local closing, on Windows and PostgreSQL **with pre-existing QA data**, obtained **797 approved tests of 797** en `95,24 s`. A previous execution had thrown **781 approved and 15 failed** by SQL assertions not filtered by tenant; the correction was revalidated with **20/20 tests of the affected file**, **797/797 global** y **3/3 Green jobs in IC**.
 
-La validación funcional manual utilizó Swagger UI. Se creó una compra de concepto libre por **12.505 centavos** (`CERRADA_SIN_RECEPCION`) y una compra de **10 unidades físicas** por **1.000.000 de centavos** (`REGISTRADA`). Esta última fue recibida una vez en *Depósito QA*: se observó `201 Created`, estado `RECIBIDA`, movimiento `+10000` milésimas y saldo `10000` con versión `1`. El mismo intento con la clave de idempotencia original devolvió `200 OK` sin duplicar la entrada; otra clave devolvió `409 Conflict`, como correspondía. Un GET filtrado confirmó el único movimiento histórico.
+Manual functional validation used Swagger UI. A free concept purchase was created by **12.505 cents** (`CERRADA_SIN_RECEPCION`) and a purchase of **10 physical units** por **1,000,000 cents** (`REGISTRADA`). The latter was received once in *QA deposit*: observed `201 Created`status `RECIBIDA`, movement `+10000` thousandths and balance `10000` with version `1`. The same attempt with the original idempotence key returned `200 OK` without doubling the input; another key returned `409 Conflict`A leaked GET confirmed the only historical movement.
 
-**Conclusión:** el alcance comprometido para E2-4 está implementado y tiene evidencia automatizada y manual suficiente para documentar el cierre académico del bloque. Esto **no** equivale a afirmar que el TP completo, el frontend integrado, las ventas o todo el inventario estén finalizados.
+**Conclusion:** the scope committed to E2-4 is implemented and has sufficient automated and manual evidence to document the academic closure of the block. **no** is equivalent to stating that the complete TP, integrated frontend, sales or entire inventory are completed.
 
-## 2. Objetivos del bloque y correspondencia con los requisitos
+## 2. Block objectives and matching requirements
 
-- **RF-05 / CU-06:** registrar una compra con proveedor opcional, renglones físicos o conceptos, importes exactos y snapshots. El registro **no** modifica stock.
-- **RF-05 / CU-07:** confirmar una **única recepción completa** de una compra con bienes físicos, en una ubicación válida, con permiso `STORE`, cambios transaccionales y reintentos seguros.
-- **RF-06 / CU-08, primera parte:** consultar saldos por empresa/ubicación/artículo y consultar entradas físicas auditables.
-- **RF-03 / CU-04, dependencia:** usar ubicaciones reales, estados y capacidades; no inventar depósitos al crear una empresa.
-- **RF-04 / CU-05, dependencia:** catálogo tipado, activo, con unidades de medida y validación del historial.
+- **RF-05 / CU-06:** record a purchase with optional supplier, physical lines or concepts, exact amounts and snapshots. **no** modifies stock.
+- **RF-05 / CU-07:** confirm a **single full reception** of a purchase with physical goods, in a valid location, with permission `STORE`, transactional changes and secure re-attempts.
+- **RF-06 / CU-08, part one:** consult balances by company/location/article and consult auditable physical entries.
+- **RF-03 / CU-04, dependencia:** use real locations, states and capabilities; not invent deposits when creating a company.
+- **RF-04 / CU-05, dependencia:** catalog typed, active, with units of measurement and validation of history.
 
-La matriz completa aparece en `05_TRAZABILIDAD_Y_PENDIENTES.md`.
+The full matrix appears in `05_TRAZABILIDAD_Y_PENDIENTES.md`.
 
-## 3. Alcance por incremento
+## 3. Scope by increase
 
-| Corte | Entregable | Resultado verificable |
+| Cut | Deliverable | Verifiable outcome |
 |---|---|---|
-| **E2-4 A** | Entidad `Supplier`, restricciones PostgreSQL, migración `e24a_suppliers` y tests | Persistencia aislada por empresa; sin compras ni stock automáticos |
-| **E2-4 B** | API REST de Proveedores (alta, listado, detalle, edición y estado) | Validación de campos, nombre normalizado, permisos y aislamiento multiempresa |
-| **E2-4 C** | Entidades `Purchase`, `PurchaseLine` y migración `e24c_purchases` | Compra y líneas con snapshots, centavos y milésimas, sin recepción implícita |
-| **E2-4 D** | API de Compras y migración `e24d_purchase_hash` | `POST/GET/GET detalle`, idempotencia, cálculo de totales y estados |
-| **E2-4 E** | `PurchaseReceipt`, `StockMovement`, `StockBalance`, migración `e24e_receipt_stock` y endpoints | Recepción única, movimiento por línea, saldo atómico, GET de recibo/saldos/ledger |
-| **PR #18** | Corrección de tests de compras sobre base con datos preexistentes | Tests con consultas por tenant/documento, sin limpiar los datos de QA |
+| **E2-4 A** | Entity `Supplier`, PostgreSQL restrictions, migration `e24a_suppliers` y tests | Persistence isolated by company; no automatic purchases or stock |
+| **E2-4 B** | Providers' REST API (high, listing, detail, editing and status) | Field validation, standard name, permits and multi-company isolation |
+| **E2-4 C** | Entities `Purchase`, `PurchaseLine` migration `e24c_purchases` | Buy and lines with snapshots, cents and thousandths, without implicit reception |
+| **E2-4 D** | Purchase and Migration API `e24d_purchase_hash` | `POST/GET/GET detalle`, idempotency, calculation of totals and statements |
+| **E2-4 E** | `PurchaseReceipt`, `StockMovement`, `StockBalance`, migration `e24e_receipt_stock` y endpoints | Single reception, movement per line, atomic balance, GET receipt/salts/ledger |
+| **PR #18** | Correction of purchase tests based on pre-existing data | Tests with tenant/document queries, without cleaning QA data |
 
-### 3.1 Reglas de negocio efectivamente cubiertas
+### 3.1 Business rules effectively covered
 
-1. Una compra física puede existir **sin ubicación de recepción**. Registrar compra no aumenta existencias.
-2. Las compras sin líneas físicas permanecen `CERRADA_SIN_RECEPCION`; no tienen una recepción inventada.
-3. Una compra con al menos una línea física nace `REGISTRADA`. Al recibirla por completo pasa a `RECIBIDA`.
-4. La recepción se confirma en **una sola ubicación activa** con `can_store=true`. El permiso comercial de venta (`can_sell`) es independiente.
-5. La recepción usa **cantidades históricas** de las líneas, no cantidades reenviadas por el cliente. Un comando no acepta recepción parcial ni multidestino.
-6. Solo bienes físicos generan movimientos. Servicios y conceptos no alteran existencias.
-7. El registro de recepción, los movimientos, las actualizaciones de saldos, el estado de compra y la respuesta idempotente se efectúan en una misma transacción.
-8. Una clave idempotente repetida con la misma compra, carga y actor devuelve el resultado histórico (HTTP `200`); una clave distinta después del éxito no vuelve a ingresar mercadería (`409`).
-9. Las consultas y las FK compuestas restringen las referencias al mismo `business_id`.
-10. Un artículo con historial de compra o stock no puede reinterpretar su **tipo o unidad** mediante edición de Catálogo; los snapshots históricos se mantienen.
+1. A physical purchase may exist **no reception location**. Register purchase does not increase stocks.
+2. Shopping without physical lines remains `CERRADA_SIN_RECEPCION`; they don't have a invented reception.
+3. A purchase with at least one physical line is born `REGISTRADA`. When you receive it completely passes to `RECIBIDA`.
+4. The reception is confirmed in **one active location** con `can_store=true`. Commercial sales permit (`can_sell`) is independent.
+5. The reception uses **historical quantities** of the lines, not amounts forwarded by the client. A command does not accept partial or multi-destiny reception.
+6. Only physical goods generate movement. Services and concepts do not alter stocks.
+7. The receipt record, movements, balances updates, purchase status and idempotent response are made in the same transaction.
+8. A repeated idepotent key with the same purchase, load and actor returns historical result (HTTP `200`); a different key after success does not re-enter merchandise (`409`).
+9. The consultations and composite FKs restrict references to the same `business_id`.
+10. An item with a purchase history or stock cannot reinterpret your **type or unit** by editing Catalogue; historical snapshots are maintained.
 
-## 4. Diseño técnico e integridad
+## 4. Technical design and integrity
 
-**Stack:** FastAPI/Pydantic, SQLAlchemy 2, PostgreSQL 16, Alembic, Docker Compose; frontend React + TypeScript/Vite existente, pero **no conectado a esta API en el corte E2-4**.
+**Stack:** FastAPI/Pydatic, SQLAlchemy 2, PostgreSQL 16, Alembic, Docker Compose; frontend React + Existing TypeScript/Vite, but **not connected to this API in the E2-4 cut**.
 
-**Persistencia comercial.** `suppliers` almacena fichas por tenant, con unicidad canónica del nombre. `purchases` guarda documento, fecha, proveedor opcional, estado, total y actor; `purchase_lines` conserva línea, artículo opcional, descripción/tipo/unidad/SKU históricos, cantidad milésimas y costo/total centavos. No se reescriben retrospectivamente por editar un proveedor o un artículo.
+**Commercial persistence.** `suppliers` stores tokens per tenant, with unique canonical name. `purchases` saves document, date, optional provider, status, total and actor; `purchase_lines` retains line, optional item, historical description/type/unit/SKU, thousandths amount and total cost/cents. They are not rewritten retrospectively for editing a supplier or an item.
 
-**Persistencia física.** `purchase_receipts` registra comprobante, compra, ubicación, actor y una huella para idempotencia; se limita a **0..1 recepción por compra**. `stock_movements` registra un movimiento positivo por renglón físico con referencias a recibo, línea, artículo, ubicación y actor. `stock_balances` proyecta el saldo transaccional por la clave `(empresa, ubicación, artículo)` y una `version` incremental.
+**Physical persistence.** `purchase_receipts` records proof, purchase, location, actor and a footprint for idempotency; is limited to **0.1 Reception per purchase**. `stock_movements` records a positive movement per physical line with references to receipt, line, article, location and actor. `stock_balances` project transactional balance by key `(empresa, ubicación, artículo)` and a `version` incremental.
 
-**Operación atómica.** El servicio de recepción bloquea los registros operacionales pertinentes, revalida estado/permiso y usa `INSERT ... ON CONFLICT DO UPDATE` en PostgreSQL para incrementar saldos, incluso cuando la fila de stock todavía no existe. La unicidad en la recepción y por recibo/línea evita duplicaciones; una falla cancela la transacción completa.
+**Atomic operation.** The reception service blocks relevant operational records, revalidates status/permission and uses `INSERT ... ON CONFLICT DO UPDATE` in PostgreSQL to increase balances, even when the stock row does not yet exist. Uniqueness in receipt and by receipt/line avoids duplication; a failure cancels the entire transaction.
 
-**Cautela conceptual:** el ledger de este corte contiene exclusivamente eventos `COMPRA_RECEPCION` y se presenta como historial *no editable por la API*. La arquitectura posterior prevé otros orígenes (ventas y operaciones), pero no están implementados aquí. No se presume una garantía universal de inmutabilidad frente a modificaciones SQL privilegiadas.
+**Cautela conceptual:** the leader of this cut contains only events `COMPRA_RECEPCION` and is presented as *non-editable history by the API*. The architecture behind it foresees other origins (sales and operations), but they are not implemented here. No universal guarantee of immutability is presumed against privileged SQL modifications.
 
-Los contratos y restricciones se desarrollan en `04_ARQUITECTURA_API_Y_DATOS.md`.
+Contracts and restrictions are developed in `04_ARQUITECTURA_API_Y_DATOS.md`.
 
-## 5. Evidencia de ejecución: automatización y entorno
+## 5. Evidence of execution: automation and environment
 
 ### 5.1 GitHub Actions
 
-Cada corte tuvo ejecución final exitosa con **Python 3.12, Python 3.14, PostgreSQL 16, revisión de Alembic y construcción/healthcheck de Docker**.
+Each cut had successful final execution with **Python 3.12, Python 3.14, PostgreSQL 16, Alembic and Docker construction/healthcheck revision**.
 
-| Corte | PR | Tests por versión en CI | Ejecución de Actions |
+| Cut | PR | Tests by version in IC | Execution of Actions |
 |---|---|---:|---|
 | A | #12 | 598 | 42511812005 |
 | B | #13 | 693 | 42514595377 |
 | C | #14 | 717 | 42520791923 |
 | D | #15 | 772 | 42523855898 |
 | E | #17 | 796 | 42528940012 |
-| Corrección | #18 | **797** | 42530739959 |
+| Corrigendum | #18 | **797** | 42530739959 |
 
-**Revisiones de migración por corte:** A/B `e24a_suppliers`; C `e24c_purchases`; D `e24d_purchase_hash`; E y corrección `e24e_receipt_stock`.
+**Migration reviews by cut:** A/B `e24a_suppliers`; C `e24c_purchases`; D `e24d_purchase_hash`; E and correction `e24e_receipt_stock`.
 
-Todos los trabajos de las seis ejecuciones indicadas finalizaron en **`success` (3/3 por run)**. En el último run Python 3.12 y 3.14 obtuvieron **797 tests aprobados**. Se observó **una advertencia no bloqueante** en los logs de esa ejecución; no hubo fallas.
+All the work of the six executions indicated ended in **`success` (3/3 por run)**. In the last run Python 3.12 and 3.14 obtained **797 tests approved**. Observed **a non-blocking warning** in the log of that execution; there were no faults.
 
-### 5.2 Validación en Windows con datos QA existentes
+### 5.2 Validation in Windows with existing QA data
 
-Tras integrar el PR #17 a `main` y aplicar la migración nueva, el desarrollador observó:
+After integrating PR #17 to `main` and apply new migration, the developer observed:
 
 - `e24e_receipt_stock (head)`.
 - `No new upgrade operations detected.`.
-- `781 passed, 15 failed` al ejecutar toda la suite: **fallaron 15 aserciones antiguas de `test_purchase_integration.py` que consultaban todas las compras de la base en lugar de limitarse al tenant/documento de la prueba**.
-- Docker FastAPI y PostgreSQL `healthy`; `GET /ready` entregó `status=ready`, `database=ok`.
+- `781 passed, 15 failed` al ejecutar toda la suite: **15 old assertions failed `test_purchase_integration.py` that consulted all purchases of the base rather than limited to the tenant/document of the proof**.
+- Docker FastAPI y PostgreSQL `healthy`; `GET /ready` delivered `status=ready`, `database=ok`.
 
-En esta base existían las compras QA creadas manualmente. El test que esperaba una línea encontró tres: **dos renglones QA preexistentes y el renglón creado temporalmente**; otra prueba que usaba `scalar_one()` sin filtro recibió `MultipleResultsFound`. No fue una violación de negocio en la recepción: fue un error de diseño de test que CI, con una base limpia, no había expuesto.
+On this base there were the QA purchases created manually. The test waiting for a line found three: **two pre-existing QA lines and the line created temporarily**; another proof I used `scalar_one()` no filter received `MultipleResultsFound`It was not a business violation at the reception: it was a test design error that IC, with a clean base, had not exposed.
 
-El PR #18 limitó las aserciones a `business_id`, `purchase_id` o al identificador propio de la solicitud, y añadió una regresión con datos de dos empresas. **Sin borrar la base**, después de `git pull` el desarrollador ejecutó:
+PR #18 limited assertions to `business_id`, `purchase_id` or the application identifier, and added a regression with data from two companies. **Undelete base**, after `git pull` the developer executed:
 
 - `pytest -q tests/test_purchase_integration.py` → **20 passed in 6.54s**.
 - `pytest -q` con `RUN_DB_INTEGRATION=1` → **797 passed in 95.24s**.
-- Commit de `main` observado en el merge: `4f88416141c09a82e744990b1aee8c00b9f31dfd`.
+- Commit de `main` observed in the merge: `4f88416141c09a82e744990b1aee8c00b9f31dfd`.
 
-**Alcance de esta evidencia:** la integración local se verificó sobre la base existente; no se eliminaron las compras de QA, y la corrección del PR #18 **solo modifica tests**. Para el detalle técnico, consultar `03_PRUEBAS_AUTOMATIZADAS_Y_CI.md`.
+**Scope of this evidence:** local integration was verified on the existing basis; QA purchases were not eliminated, and PR #18 correction **only modifies tests**. For technical details, consult `03_PRUEBAS_AUTOMATIZADAS_Y_CI.md`.
 
-## 6. Evidencia de pruebas de uso (Swagger UI)
+## 6. Evidence of use tests (Swagger IU)
 
-### 6.1 Preparación
+### 6.1 Preparation
 
-- Se utilizó `http://127.0.0.1:18000/docs`, con autenticación Bearer obtenida mediante login. La sesión de Swagger debió restablecerse tras reabrir la interfaz; **los datos de PostgreSQL seguían persistidos**.
-- Se operó una única empresa QA: `bd4d4e42-4ff6-403a-8633-59cbc001487d`.
-- Se utilizaron los identificadores existentes de proveedor y artículo. Se creó el depósito `Depósito QA` cuando el GET de ubicaciones mostró `[]`.
-- Los comandos `POST` idempotentes requirieron una clave UUID4 de encabezado; **los valores se omiten** deliberadamente en esta entrega.
+- Used `http://127.0.0.1:18000/docs`, with Beerer authentication obtained by login. Swagger session should have been reset after re-opening the interface; **PostgreSQL data remained persistent**.
+- A single company QA was operated: `bd4d4e42-4ff6-403a-8633-59cbc001487d`.
+- Existing supplier and article identifiers were used. The deposit was created `Depósito QA` when the location GET showed `[]`.
+- The Commands `POST` idepotent required a UUID4 header key; **values are omitted** deliberately in this delivery.
 
-### 6.2 Escenario de compra administrativa (sin stock)
+### 6.2 Administrative purchasing scenario (out of stock)
 
-1. `POST /purchases` con un concepto libre *Servicio de limpieza externo*: `quantity_milli=1000`, `unit_cost_cents=12505`, sin proveedor ni catálogo, referencia `QA-COMPRA-001`.
-2. HTTP **201**: compra `b6646fcd-428f-4b9b-ab80-83e7ffb14827`, estado `CERRADA_SIN_RECEPCION`, total `12505` centavos, una línea `CONCEPTO`.
-3. Repetición del mismo comando y clave: **200** con mismo `id`, `created_at` y línea.
-4. Reutilización de la misma clave pero con costo alterado a `20000` centavos: **409**, detalle **«Clave de compra reutilizada con contenido diferente»**. No se creó otra compra.
-5. `GET /purchases?offset=0&limit=100`: **200**, lista de **una compra** en ese momento; `GET /purchases/{id}`: **200** con los datos originales.
+1. `POST /purchases` with a free concept *Outdoor cleaning service*: `quantity_milli=1000`, `unit_cost_cents=12505`, without supplier or catalogue, reference `QA-COMPRA-001`.
+2. HTTP **201**: purchase `b6646fcd-428f-4b9b-ab80-83e7ffb14827`status `CERRADA_SIN_RECEPCION`total `12505` cents, one line `CONCEPTO`.
+3. Repeat the same command and key: **200** with same `id`, `created_at` And line.
+4. Reuse of the same key but with altered cost to `20000` cents: **409**, detalle **‘Reusable purchase key with different content’**No other purchase was created.
+5. `GET /purchases?offset=0&limit=100`: **200**list of **a purchase** at that time; `GET /purchases/{id}`: **200** with the original data.
 
-### 6.3 Escenario de compra física y recepción
+### 6.3 Physical purchasing and reception scenario
 
-1. `POST /catalog`: *Alimento balanceado QA*, `REVENTA`, tipo `BIEN`, SKU `ALIM-QA-001`, unidad `UNIDAD`, costo de referencia `100000`, precio de venta `150000` centavos → **201**. Artículo `881fdae2-18c5-46ae-8037-44a500ca96c0`.
-2. `POST /purchases` con proveedor *Distribuidora QA*, artículo anterior, `quantity_milli=10000` (10 unidades), `unit_cost_cents=100000` ($1.000 por unidad), referencia `QA-COMPRA-002` → **201**. Compra `3e50aff2-c895-49d9-8fe5-d5843438f109`, estado `REGISTRADA`, total `1000000` centavos ($10.000), **todavía sin stock**.
-3. `GET /locations` → **200** y `[]`: la empresa no tenía depósitos.
-4. `POST /locations` con *Depósito QA*, `kind=DEPOSITO`, `can_store=true`, `can_sell=false` → **201**, ubicación `2d6761c4-efec-4b3e-925c-a24ceab8ce9c`, estado `ACTIVA`, `is_primary=true`.
-5. `GET /locations` → **200** y lista con el depósito; `GET /purchases/{id}` → **200** confirmando estado `REGISTRADA` antes de recibir.
-6. `POST /purchases/{id}/receive` con el `location_id` del depósito → **201**: recepción `266bd03e-763b-4f29-8f12-c19c9bc59066`, compra `RECIBIDA`, un movimiento `+10000` y `balances_after.quantity_milli=10000`, `version=1`.
-7. Un segundo POST con **otra** clave fue rechazado con **409** y detalle **«Compra ya recibida, cancelada o sin bienes fisicos recepcionables»**; rechazo esperado, no falla del módulo.
-8. Un POST de reintento con **la clave y el cuerpo originales** devolvió **200**, mismo recibo, movimiento, autor y fecha de recepción.
-9. Un GET inicial de saldos con un `location_id` de ejemplo incorrecto devolvió **200, `[]`**: filtro sin coincidencias, no pérdida de stock.
-10. `GET /inventory/balances` filtrado por el depósito y artículo correctos → **200**, **un saldo** de `10000` milésimas y `version=1`.
-11. `GET /inventory/movements` con los mismos filtros → **200**, **un único movimiento** `COMPRA_RECEPCION`, `delta_milli=10000`, con referencia a compra, recibo, línea, ubicación y actor.
+1. `POST /catalog`: ♪ QA balanced food ♪ `REVENTA`, type `BIEN`, SKU `ALIM-QA-001`unit `UNIDAD`, Reference cost `100000`, sales price `150000` cents → **201**Article `881fdae2-18c5-46ae-8037-44a500ca96c0`.
+2. `POST /purchases` with supplier * QA distribution*, previous article, `quantity_milli=10000` (10 units), `unit_cost_cents=100000` ($1,000 per unit), reference `QA-COMPRA-002` → **201**Purchase `3e50aff2-c895-49d9-8fe5-d5843438f109`status `REGISTRADA`total `1000000` cents ($10,000), **still unstocked**.
+3. `GET /locations` → **200** y `[]`: the company had no deposits.
+4. `POST /locations` with #QA tank #, `kind=DEPOSITO`, `can_store=true`, `can_sell=false` → **201**location `2d6761c4-efec-4b3e-925c-a24ceab8ce9c`status `ACTIVA`, `is_primary=true`.
+5. `GET /locations` → **200** and list with the deposit; `GET /purchases/{id}` → **200** confirming status `REGISTRADA` before you receive.
+6. `POST /purchases/{id}/receive` with `location_id` deposit → **201**: Reception `266bd03e-763b-4f29-8f12-c19c9bc59066`, buy `RECIBIDA`, a movement `+10000` y `balances_after.quantity_milli=10000`, `version=1`.
+7. A second POST with **other** key was rejected with **409** y detalle **‘Buy already received, cancelled or without physical goods receptionable’**; expected rejection, no module failure.
+8. A POST of retrying with **the original key and body** returned **200**, same receipt, movement, author and date of receipt.
+9. An initial set of balances with a `location_id` example incorrect returned **200, `[]`**: filter without matching, no stock loss.
+10. `GET /inventory/balances` filtered by the correct deposit and article → **200**, **balance** de `10000` thousandths and `version=1`.
+11. `GET /inventory/movements` with the same filters → **200**, **one single movement** `COMPRA_RECEPCION`, `delta_milli=10000`, with reference to purchase, receipt, line, location and actor.
 
-**Resultado de negocio:** la compra comercial registró la obligación/documento sin crear existencia; la recepción posterior añadió **exactamente 10 unidades** al depósito; ni el reintento aceptado ni el rechazo por clave distinta duplicaron mercadería.
+**Business result:** the commercial purchase has recorded the obligation/document without creating existence; the subsequent receipt has added **exactly 10 units** The retry accepted and the rejection by different key did not duplicate goods.
 
-El archivo `02_BITACORA_PRUEBAS_SWAGGER.md` conserva los JSON de entrada sin claves, las respuestas de éxito y errores, fechas y el protocolo de ejecución.
+The file `02_BITACORA_PRUEBAS_SWAGGER.md` keeps JSONs input without keys, successful responses and errors, dates and execution protocol.
 
-## 7. Matriz resumida de aceptación
+## 7. Summary acceptance matrix
 
-| Criterio | Evidencia | Dictamen |
+| Criterion | Evidence | Opinion |
 |---|---|---|
-| Registrar concepto sin ubicación ni stock | Compra QA-001, `201`, `CERRADA_SIN_RECEPCION` | Cumplido |
-| Idempotencia y conflicto de compra | Reintento `200` y cambio de carga `409` | Cumplido |
-| Consultas de compras | Listado y detalle `200` | Cumplido |
-| Compra física con proveedor real de QA | Compra QA-002 `201`, `REGISTRADA` | Cumplido |
-| Crear ubicación apta | `POST /locations` `201`, `ACTIVA`, `can_store` | Cumplido |
-| Recibir completa en un destino | `POST /receive` `201`, `RECIBIDA` | Cumplido |
-| Evitar doble ingreso | Segunda clave `409`; misma clave `200` | Cumplido |
-| Ver saldo actual | `GET /balances` `200`, 10000 milésimas | Cumplido |
-| Ver trazabilidad de entrada | `GET /movements` `200`, 1 movimiento | Cumplido |
-| Tests sobre base con datos QA | 20/20 focal y 797/797 general Windows | Cumplido |
-| Integridad/roles/rollback/concurrencia | Suite CI + tests de integración en PostgreSQL | Cubierto por pruebas automatizadas; no recorrido manual exhaustivo |
-| API proveedor CRUD en Swagger | Implementado y probado en CI | Sin transcript manual completo adjunto; no afirmar recorrido manual |
+| Register concept without location or stock | Buy QA-001, `201`, `CERRADA_SIN_RECEPCION` | Implemented |
+| Idempotence and conflict of purchase | Retry `200` and change of load `409` | Implemented |
+| Procurement enquiries | Listing and detail `200` | Implemented |
+| Physical Purchase with Real QA Provider | Purchase QA-002 `201`, `REGISTRADA` | Implemented |
+| Create suitable location | `POST /locations` `201`, `ACTIVA`, `can_store` | Implemented |
+| Receive complete at a destination | `POST /receive` `201`, `RECIBIDA` | Implemented |
+| Avoid double income | Second key `409`; same key `200` | Implemented |
+| View Current Balance | `GET /balances` `200`, 10,000 thousandths | Implemented |
+| See entry traceability | `GET /movements` `200`1 move | Implemented |
+| Tests based on QA data | 20/20 focal and 797/797 general Windows | Implemented |
+| Integrity/roles/rollback/concurrence | Suite CI + integration tests in PostgreSQL | Covered by automated testing; not comprehensive manual travel |
+| API CRUD provider in Swagger | Implemented and tested in IC | No complete manual transcript attached; no manual path statement |
 
-## 8. Limitaciones, riesgos y trabajo posterior
+## 8. Limitations, risks and further work
 
-El bloque no incluye recepción parcial, múltiples depósitos en una sola recepción, cancelación mediante API, devoluciones, transferencias, ajustes, salidas por venta, facturación, pagos efectivamente cobrados, conciliación de cuentas, Mercado Pago operativo, integración React–API ni despliegue de producción. `GET /inventory/balances` y movimientos son **la primera parte de RF-06**, no un módulo completo de inventario.
+The block does not include partial reception, multiple deposits in a single reception, cancellation by API, returns, transfers, adjustments, sales outings, billing, payments actually charged, reconciliation of accounts, Market Operating payment, React-API integration or production deployment. `GET /inventory/balances` and movements are **the first part of RF-06**Not a complete inventory module.
 
-La autorización y concurrencia fueron ejercitadas por la suite automatizada, incluidas pruebas de dos solicitudes simultáneas contra PostgreSQL; la evidencia no equivale a una prueba de carga prolongada ni a una auditoría de seguridad externa. La advertencia no bloqueante de CI queda señalada, sin afirmar un defecto de ejecución.
+The authorization and concurrence were exercised by the automated suite, including evidence of two simultaneous applications against PostgreSQL; the evidence does not amount to a prolonged load test or external security audit. The non-blocking IC warning is noted, without stating a performance defect.
 
-**Próxima etapa sugerida:** preservar esta evidencia, revisar con el compañero y continuar el plan de construcción incremental; antes del siguiente corte conviene acordar en el plan rector si corresponde ampliar operaciones de inventario o avanzar con ventas según prioridades de TP3/TP Final.
+**Next suggested stage:** preserve this evidence, review with the partner and continue the incremental construction plan; before the next cut it is advisable to agree on the governing plan whether to expand inventory operations or advance with sales according to priorities of TP3/TP Final.
 
-## 9. Conclusión de cierre
+## 9. Conclusion of closure
 
-La evidencia documentada demuestra que E2-4 introduce un **circuito físicamente consistente** y reproducible para compras y recepciones en el backend generalista multiempresa. Los datos y respuestas observados concuerdan con las reglas: **compra ≠ recepción**, **recepción única**, **stock por ubicación**, **movimiento trazable** y **reintentos sin duplicados**. El incidente de 15 tests en Windows condujo a una mejora concreta de aislamiento del entorno de pruebas, revalidada con la base poblada.
+The documented evidence shows that E2-4 introduces a **physically consistent circuit** and reproducible for purchases and receptions in the multi-company generalist backend. The observed data and responses match the rules: **purchase**, **single reception**, **stock by location**, **traceable movement** y **retrying without duplicates**The incident of 15 tests on Windows led to a concrete improvement in the isolation of the test environment, revalidated with the populated base.
 
-Se recomienda declarar **E2-4 completado en el alcance backend definido y validado funcionalmente**, con pendientes explícitos; **no** declarar el TP o el sistema productivo finalizados.
+It is recommended to declare **E2-4 completed in the functionally defined and validated backend range**, with explicit earrings; **no** declare the completed TP or production system.
 
-## 10. Fuentes primarias de esta entrega
+## 10. Primary sources of this delivery
 
 - Repositorio y commits: https://github.com/JoaquinOjedaDev/Orbit
 - PR: #12, #13, #14, #15, #17, #18.
-- Documentos del repo: `plataforma-pyme/docs/E2-4_A_PROVEEDORES_MODELO.md`, `E2-4_B_API_PROVEEDORES.md`, `E2-4_D_API_COMPRAS.md`, `E2-4_E_RECEPCION_Y_STOCK.md`.
-- Requisitos: `plataforma-pyme/entrega-programacion-2/02_CASOS_DE_USO.md`, `03_MODELO_DE_DOMINIO_Y_UML.md`, `05_MATRIZ_API_Y_TRAZABILIDAD.md`.
-- Resultados manuales: transcripciones de Swagger y PowerShell aportadas por el desarrollador el 08/11/2026; la bitácora `02` las registra sin credenciales ni claves.
+- Repo documents: `plataforma-pyme/docs/E2-4_A_PROVEEDORES_MODELO.md`, `E2-4_B_API_PROVEEDORES.md`, `E2-4_D_API_COMPRAS.md`, `E2-4_E_RECEPCION_Y_STOCK.md`.
+- Requirements: `plataforma-pyme/entrega-programacion-2/02_CASOS_DE_USO.md`, `03_MODELO_DE_DOMINIO_Y_UML.md`, `05_MATRIZ_API_Y_TRAZABILIDAD.md`.
+- Manual results: Swagger and PowerShell transcripts provided by the developer on 11/08/2026; the logbook `02` records them without credentials or keys.

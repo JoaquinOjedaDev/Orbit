@@ -1,25 +1,25 @@
-# E2-7 T06 — Registro durable de intentos, recuperación segura y límites
+# E2-7 T06 — Durable recording of attempts, safe recovery and limits
 
-**Estado:** PR borrador, sujeto a CI y QA full-stack; no fusionar antes de validación.  
+**Status:** PR draft, subject to CI and QA full-stack; do not merge before validation.  
 **Base:** `main` `474ff6e4086808c5a70da9725c91caa0e3f634ee` (T05).  
 **Rama:** `feature/e2-7-t06-comandos-pendientes`.
 
-## 1. Riesgo que resolvemos
+## 1. Risks we resolve
 
-Si el servidor confirma un comando, pero la respuesta se pierde por timeout o F5, el navegador no puede suponer que falló ni enviar un POST nuevo con otra clave. En backend la **creación de empresas** (`POST /api/v1/businesses`) soporta `Idempotency-Key` UUID4 por actor y body inmutable; repetir la misma clave + mismo cuerpo con sesión nueva del **mismo usuario** produce replay (200) sin empresa duplicada. Usar misma clave con cuerpo diferente devuelve 409.
+If the server confirms a command, but the answer is lost by timeout or F5, the browser cannot assume that it failed or send a new POST with another key. **start-up** (`POST /api/v1/businesses`) supports `Idempotency-Key` UUID4 per actor and immutable body; repeat the same key + same body with new session of **same user** produces replay (200) without duplicate company. Using the same key with different body returns 409.
 
-La reserva de claves se persiste **antes** de enviar el POST mediante IndexedDB. Si el navegador no permite guardar, falla cerrado y no envía el POST. Una vez autenticado el mismo usuario después de F5, el formulario `/real/empresas/nueva` recarga su clave y cuerpo originales y exige decisión humana sobre reintento. **No hay reenvíos automáticos**.
+Key reserve persists **before** to send POST via IndexedDB. If the browser does not allow saving, it fails to close and does not send POST. Once the same user has been authenticated after F5, the form `/real/empresas/nueva` recharges its original key and body and demands human decision on retry. **No automatic forwarding**.
 
-## 2. Alcance de esta implementación
+## 2. Scope of this implementation
 
-- `frontend/src/features/pending/businessIntentJournal.ts`: puerto abstracto de persistencia y adaptador IndexedDB, validación de datos, separación por actor, exclusión mutua de 1 intento por usuario y límite global de 20 usuarios guardados por origen.
-- `frontend/src/features/businesses/RealBusinessesPage.tsx`: lectura y restauración después de F5 y login, consentimiento explícito para la persistencia local, bloqueo de edición mientras haya un intento, reserva durable antes del POST, misma clave para reintentos, borrado tras éxito o descarte manual advertido.
-- `frontend/src/features/auth/RealAuthApp.tsx`: ruta segura de retorno después de re-login en `/real/empresas/nueva`.
-- `frontend/tests/pending-commands.test.mjs`: pruebas deterministas de reserva/recuperación/aislamiento/inmutabilidad y errores sin dependencias nuevas.
-- `frontend/src/features/auth/auth.css`: estados visuales del intento guardado.
+- `frontend/src/features/pending/businessIntentJournal.ts`: Abstract port of persistence and IndexedDB adapter, data validation, separation by actor, mutual exclusion of 1 attempt per user and global limit of 20 users saved by origin.
+- `frontend/src/features/businesses/RealBusinessesPage.tsx`: reading and restoration after F5 and login, explicit consent for local persistence, editing blocking while there is an attempt, durable reserve before POST, same key for retrying, deleted after success or manual discard warned.
+- `frontend/src/features/auth/RealAuthApp.tsx`: safe return route after re-login on `/real/empresas/nueva`.
+- `frontend/tests/pending-commands.test.mjs`: deterministic tests of reserve/recovery/isolation/immutability and errors without new dependencies.
+- `frontend/src/features/auth/auth.css`: visual states of the saved attempt.
 - `frontend/package.json` + workflow de frontend: `npm run test:pending-commands`.
 
-**No se persisten** tokens Bearer, contraseñas, códigos de invitación, credenciales, pagos, datos de ventas, datos personales del trabajador ni contenido del `demoStore`. El registro guarda solo:
+**No persistence** tokens Bearer, passwords, invitation codes, credentials, payments, sales data, worker personal data or content of the `demoStore`. The register only keeps:
 ```json
 {
   "actorId": "UUID del usuario autenticado",
@@ -29,35 +29,35 @@ La reserva de claves se persiste **antes** de enviar el POST mediante IndexedDB.
   "createdAt": "ISO timestamp"
 }
 ```
-El espacio de almacenamiento se llama `asistente-pyme-real-intentos-v1`. El usuario actual solo puede visualizar/reanudar sus propios pendientes tras autenticarse contra FastAPI.
+The storage space is called `asistente-pyme-real-intentos-v1`. The current user can only view/resume his or her own earrings after authenticating against FastAPI.
 
-## 3. Política de privacidad, retención y dispositivos compartidos (P04)
+## 3. Privacy, retention and shared devices policy (P04)
 
-**Decisiones para el MVP:**
+**Decisions for the MVP:**
 
-1. IndexedDB está limitado al origen/navegador, **no es una base remota ni un almacén cifrado**. Cualquiera con acceso a los archivos del perfil del navegador o con JavaScript malicioso en el mismo origen podría inspeccionarlo. No usar la función en dispositivos compartidos. El formulario exige consentimiento explícito.
-2. Un pendiente como máximo por actor; máximo 20 actores en este navegador, sin eliminar registros ajenos al iniciar una operación nueva. Si no hay capacidad o IndexedDB está bloqueado, se interrumpe el alta antes del POST.
-3. A los **30 días** el registro se marca como antiguo y se solicita revisión especialmente cuidadosa. No se purga silenciosamente algo no resuelto; la retención queda bajo control manual del usuario. Esta política debe revisarse en una eventual salida a producción para un límite legal/operativo real.
-4. El registro se borra únicamente tras confirmación del servidor **y** limpieza local exitosa, o mediante descarte explícito después de revisar `Mis empresas`. El borrado local no elimina empresas en PostgreSQL.
-5. Logout/F5 no eliminan pendientes para permitir recuperación, aunque sí descartan el token en memoria. No hay sincronización entre navegadores ni dispositivos.
-6. Borrar datos del sitio, usar un navegador privado, cambiar de perfil de Firefox o perder el disco puede destruir IndexedDB; no hay garantía absoluta ante daño/pérdida del almacenamiento. **No** declarar recuperación infalible.
+1. IndexedDB is limited to the source/navigator, **is not a remote base or an encrypted warehouse**. Anyone with access to browser profile files or malicious JavaScript at the same source could inspect it. Do not use the function on shared devices. The form requires explicit consent.
+2. A maximum slope per actor; maximum 20 actors in this browser, without removing foreign records when starting a new operation. If there is no capacity or IndexedDB is blocked, the discharge is interrupted before POST.
+3. To the **30 days** registration is marked as old and especially careful revision is requested. Something unresolved is not quietly purged; retention is under manual user control. This policy should be reviewed in a possible output to production for an actual legal/operational limit.
+4. Logging is deleted only after server confirmation **y** successful local cleaning, or by explicit discard after review `Mis empresas`. Local deletion does not remove companies in PostgreSQL.
+5. Logout/F5 does not remove pending to allow recovery, although they do rule out token in memory. There is no synchronization between browsers or devices.
+6. Clearing site data, using a private browser, changing Firefox profile or losing disk can destroy IndexedDB; there is no absolute guarantee of damage/loss of storage. **No** declare infallible recovery.
 
-## 4. Cuáles operaciones quedan deliberadamente excluidas
+## 4. Which operations are deliberately excluded
 
-| Operación | Backend | Política T06 |
+| Operation | Backend | Policy T06 |
 |---|---|---|
-| Crear empresa | Idempotency-Key UUID4 + replay en servidor | **Integrada con journal durable y reintento manual** |
-| Crear artículo | No soporta clave/replay de comando | Advertir resultado incierto; consultar catálogo antes de decidir |
-| Emitir invitación | Código de un único uso y sin GET que devuelva secreto | No guardar token claro ni reemitir automáticamente |
-| Crear ubicación / cambiar rol / asignar | No tienen clave de replay según contrato | No reintentar automáticamente; releer estado |
-| Crear compra / recibir compras | Requiere análisis de los contratos por incremento T07 | Sin interfaz REAL habilitada todavía |
-| Confirmar venta | Idempotency-Key y replay, pero no hay recuperación por request-id aprobada | **Diseño pendiente de T09** y aplicación en POS real T10, no se habilita aquí |
+| Create company | Idempotency-Key UUID4 + replay en servidor | **Integrated with durable journal and manual retry** |
+| Create article | No soporta clave/replay de comando | Warning uncertain result; consult catalogue before deciding |
+| Issue invitation | Single-use code without a GET that returns secret | Do not save clear token or reissue automatically |
+| Create location / change role / assign | No replay key according to contract | Do not automatically retry; read status |
+| Create purchase / receive purchases | Requires analysis of contracts by increase T07 | No REAL interface enabled yet |
+| Confirm sale | Idempotency-Key and replay, but no recovery by request-id approved | **T09 pending design** and application in real POS T10, not enabled here |
 
-La infraestructura actual guarda solamente `business.create`. No reutilizar la misma estrategia indiscriminadamente en operaciones no idempotentes. En particular, no informar “no se creó” solo porque un GET devolvió 404 o porque una respuesta se perdió.
+The current infrastructure only saves `business.create`. Do not reuse the same strategy indiscriminately in non-idepotent operations. In particular, do not report “it was not created” just because a GET returned 404 or because an answer was lost.
 
-## 5. Pruebas locales
+## 5. Local testing
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ```powershell
 git pull --ff-only origin feature/e2-7-t06-comandos-pendientes
@@ -80,26 +80,26 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw 'Falló lint' }
 ```
 
-Con `docker compose --profile api up -d --wait` y `PYME_API_PROXY_TARGET=http://127.0.0.1:18000`, ejecutar `npm.cmd run dev` y abrir `http://localhost:5173/real/login`.
+Con `docker compose --profile api up -d --wait` y `PYME_API_PROXY_TARGET=http://127.0.0.1:18000`, ejecutar `npm.cmd run dev` and open `http://localhost:5173/real/login`.
 
-## 6. QA manual, únicamente con cuentas y empresas de prueba
+## 6. Manual QA, with only accounts and test companies
 
-| Escenario | Acción | Esperado |
+| Scenario | Action | Expected |
 |---|---|---|
-| T06-01 | Abrir nueva empresa, sin tildar consentimiento | No se permite enviar POST |
-| T06-02 | Aceptar y crear `TEST T06 OK` | HTTP 201; empresa visible; intento borrado |
-| T06-03 | Crear intento de `TEST T06 PENDIENTE` con red interrumpida, después de guardar la clave | Resultado incierto; no aparece una empresa duplicada automáticamente |
-| T06-04 | F5 en ruta `/real/empresas/nueva` | Pide login; vuelve al formulario, rehidrata clave/cuerpo |
-| T06-05 | Abrir formulario con otro usuario de prueba en el mismo navegador | Nunca ve el pendiente del usuario anterior |
-| T06-06 | Reingresar con actor original | Se recupera el mismo intento, campos bloqueados, se ofrece verificar el listado |
-| T06-07 | Repetir voluntariamente con idéntica clave y contenido | Backend devuelve creación o replay; un solo efecto en PostgreSQL |
-| T06-08 | Descartar pendiente explícitamente | Quita solo IndexedDB después de confirmar advertencia, sin borrar empresa |
-| T06-09 | Bloquear IndexedDB desde ajustes del navegador | La operación NO se envía sin reserva confirmada |
-| T06-10 | Navegar A→B / salir y volver a DEMO | No aparecen datos de otro actor/tenant, ni se crea nada por navegación |
-| T06-11 | 30+ días simulados en pruebas unitarias | Se marca antiguo, nunca se borra de forma silenciosa |
+| T06-01 | Open new company, without consent | Post not allowed |
+| T06-02 | Accept and Create `TEST T06 OK` | HTTP 201; visible enterprise; deleted attempt |
+| T06-03 | Create Try `TEST T06 PENDIENTE` with network interrupted, after saving the key | Uncertain result; no duplicate company automatically appears |
+| T06-04 | F5 en route `/real/empresas/nueva` | Ask for login; return to form, rehydrate key/body |
+| T06-05 | Open form with another test user in the same browser | Never see the slope of previous user |
+| T06-06 | Re-enter with original actor | Recovers the same attempt, blocked fields, offers to verify list |
+| T06-07 | Voluntary repeat with identical key and content | Backend returns creation or replay; a single effect in PostgreSQL |
+| T06-08 | Discard explicitly pending | Remove only IndexedDB after confirming warning, without deleting company |
+| T06-09 | Lock IndexedDB from browser settings | Operation is NOT sent without reservation confirmed |
+| T06-10 | Navigate A→B / exit and return to DEMO | No data from another actor/tenant, no navigational creation |
+| T06-11 | 30+ days simulated in unit tests | It's old, never quietly erased. |
 
-**Precauciones:** el corte de red debe hacerse en entorno de pruebas (idealmente base PostgreSQL efímera), no en una operación importante. Si el POST llegó a servidor, puede existir aun sin respuesta. No asumir resultados por apariencia de red. No recargar ni borrar datos del sitio de manera indiscriminada si existe un pendiente.
+**Precautions:** The network cut must be done in test environment (ideally postgreSQL ephemeral base), not in an important operation. If the POST came to server, it may still exist without response. Do not assume results by appearance of network. Do not reload or delete site data indiscriminately if there is a slope.
 
-## 7. Puerta de cierre
+## 7. Door closing
 
-CI con build, lint y suites previas + `test:pending-commands`; verificaciones locales; pruebas F5/re-login, mismo actor y actor diferente; evidencia de que no se duplica empresa ni se pierde el intento tras corte de red. No fusionar sin ello. Las reglas de recuperación para ventas y la consulta por request-id serán parte de T09/T10, no se infieren aquí.
+CI con build, lint y suites previas + `test:pending-commands`; local checks; F5/re-login tests, same different actor and actor; evidence that no company is duplicated or attempt lost after network cutting. Do not merge without it. The rules of recovery for sales and request-id consultation will be part of T09/T10, do not infer here.

@@ -21,13 +21,13 @@ router = APIRouter(prefix="/businesses/{business_id}/suppliers", tags=["proveedo
 
 def _as_http(error: Exception) -> HTTPException:
     if isinstance(error, (SupplierBusinessUnavailable, SupplierNotFound)):
-        return HTTPException(404, detail="Recurso no disponible")
+        return HTTPException(404, detail="Not available")
     if isinstance(error, SupplierPermissionDenied):
-        return HTTPException(403, detail="Operacion no permitida")
+        return HTTPException(403, detail="Operation not permitted")
     if isinstance(error, SupplierBusinessSuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, SupplierConflict):
-        return HTTPException(409, detail="Nombre de proveedor utilizado en esta empresa")
+        return HTTPException(409, detail="Supplier name used in this company")
     raise TypeError("Excepción sin mapeo HTTP")
 
 
@@ -39,7 +39,7 @@ def _as_http(error: Exception) -> HTTPException:
         404: {"description": "Empresa ajena, inexistente o membresía inactiva"},
         422: {"description": "Paginación inválida"},
     },
-    summary="Listar proveedores propios, activos e inactivos",
+    summary="Listing own, active and inactive suppliers",
 )
 def list_suppliers(
     business_id: UUID,
@@ -66,7 +66,7 @@ def list_suppliers(
         403: {"description": "Sin permiso empresarial"},
         404: {"description": "Proveedor o empresa ajeno/inexistente"},
     },
-    summary="Consultar ficha de proveedor dentro de la empresa",
+    summary="Consult supplier file within the company",
 )
 def get_supplier(
     business_id: UUID, supplier_id: UUID,
@@ -92,7 +92,7 @@ def get_supplier(
         409: {"description": "Nombre duplicado o empresa suspendida"},
         422: {"description": "Campos inválidos o protegidos"},
     },
-    summary="Registrar proveedor sin compras ni movimientos",
+    summary="Register supplier without purchases or movements",
 )
 def create_supplier(
     business_id: UUID, command: CreateSupplierRequest,
@@ -121,7 +121,7 @@ def create_supplier(
         409: {"description": "Nombre duplicado o empresa suspendida"},
         422: {"description": "Edición inválida o campo protegido"},
     },
-    summary="Editar contactos y datos, nunca el estado ni la empresa",
+    summary="Edit contacts and data, never the state or company",
 )
 def update_supplier(
     business_id: UUID, supplier_id: UUID, command: UpdateSupplierRequest,
@@ -151,7 +151,7 @@ def update_supplier(
         409: {"description": "Empresa suspendida"},
         422: {"description": "Estado inválido o campos extra"},
     },
-    summary="Desactivar o reactivar sin borrado ni liberación de nombre",
+    summary="Disable or reactivate without deletion or name release",
 )
 def change_supplier_status(
     business_id: UUID, supplier_id: UUID, command: ChangeSupplierStatusRequest,

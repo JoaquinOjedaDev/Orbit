@@ -36,13 +36,13 @@ test('billetera sin CVU puede usar sólo alias ficticio', () => {
 test('no permite registrar cuentas sin alias ni CBU/CVU de referencia', () => {
   assert.throws(() => normalizeFinancialAccountInput({
     ...bank, alias: '', identifier: '',
-  }), /alias o un CBU/)
+  }), /alias or a fictitious CBU/i)
 })
 
 test('el canal de una cuenta bancaria es sólo transferencia declarada', () => {
   assert.throws(() => normalizeFinancialAccountInput({
     ...bank, channel: 'MERCADO_PAGO_DECLARADO',
-  }), /bancaria DEMO usa Transferencia/)
+  }), /bank account uses Transfer/i)
 })
 
 test('rechaza alias demasiado corto, con espacios internos o caracteres inseguros', () => {
@@ -61,8 +61,8 @@ test('valida 22 dígitos del CBU/CVU sólo por sintaxis, no por acreditación re
 })
 
 test('rechaza tipo y medio arbitrarios', () => {
-  assert.throws(() => normalizeFinancialAccountInput({ ...bank, kind: 'CRIPTOMONEDA' }), /tipo/)
-  assert.throws(() => normalizeFinancialAccountInput({ ...bank, channel: 'EFECTIVO' }), /medio/)
+  assert.throws(() => normalizeFinancialAccountInput({ ...bank, kind: 'CRIPTOMONEDA' }), /type/i)
+  assert.throws(() => normalizeFinancialAccountInput({ ...bank, channel: 'EFECTIVO' }), /collection/i)
   assert.ok(!Object.hasOwn(financialChannelLabels, 'EFECTIVO'))
 })
 

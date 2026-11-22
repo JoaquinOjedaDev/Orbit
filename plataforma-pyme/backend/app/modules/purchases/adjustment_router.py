@@ -33,25 +33,25 @@ def _http_error(error: Exception) -> HTTPException:
         PurchaseBusinessUnavailable, AdjustmentNotFound, AdjustmentLocationUnavailable,
         AdjustmentItemUnavailable,
     )):
-        return HTTPException(404, detail="Empresa, articulo, ubicacion u operacion no disponible")
+        return HTTPException(404, detail="Company, article, location or operation not available")
     if isinstance(error, (PurchasePermissionDenied, AdjustmentPermissionDenied)):
-        return HTTPException(403, detail="Sin permiso para ajustar inventario en esta ubicacion")
+        return HTTPException(403, detail="Without permission to adjust inventory at this location")
     if isinstance(error, AdjustmentCompanySuspended):
-        return HTTPException(409, detail="Empresa suspendida")
+        return HTTPException(409, detail="Company suspended")
     if isinstance(error, AdjustmentLocationIncompatible):
-        return HTTPException(409, detail="Ubicacion inactiva o no apta para almacenar")
+        return HTTPException(409, detail="Inactive or unfit to store location")
     if isinstance(error, AdjustmentVersionConflict):
-        return HTTPException(409, detail="Version de saldo obsoleta o saldo inexistente")
+        return HTTPException(409, detail="Version of obsolete balance or non-existent balance")
     if isinstance(error, AdjustmentInitialConflict):
-        return HTTPException(409, detail="Stock inicial ya establecido en esta ubicacion y articulo")
+        return HTTPException(409, detail="Initial stock already established in this location and article")
     if isinstance(error, AdjustmentInsufficientStock):
-        return HTTPException(409, detail="Stock insuficiente para ajuste de salida")
+        return HTTPException(409, detail="Insufficient stock for output adjustment")
     if isinstance(error, AdjustmentBalanceOverflow):
-        return HTTPException(409, detail="La cantidad supera los limites de inventario")
+        return HTTPException(409, detail="The amount exceeds the inventory limits")
     if isinstance(error, AdjustmentIdempotencyConflict):
-        return HTTPException(409, detail="Clave idempotente reutilizada con otro contenido o actor")
+        return HTTPException(409, detail="Idepotent key reused with other content or actor")
     if isinstance(error, AdjustmentInvalidQuantity):
-        return HTTPException(422, detail="Cantidad fraccionaria para un articulo discreto")
+        return HTTPException(422, detail="Fractional amount for a discrete item")
     raise TypeError("Error de ajuste sin mapeo HTTP")
 
 
@@ -66,7 +66,7 @@ def _http_error(error: Exception) -> HTTPException:
         409: {"description": "Stock/rol/ubicacion incompatible, clave, version u origen previo"},
         422: {"description": "Campos, cantidad, motivo, UUID o version invalidos"},
     },
-    summary="Ajustar entrada/salida o registrar stock inicial con motivo y version",
+    summary="Adjust input/output or register initial stock for motif and version",
 )
 def create_adjustment(
     business_id: UUID, command: AdjustStockRequest, response: Response,
@@ -103,7 +103,7 @@ def create_adjustment(
         403: {"description": "Sin permiso de lectura"},
         404: {"description": "Operacion fuera del tenant o inexistente"},
     },
-    summary="Consultar un ajuste o stock inicial historico sin alterar saldos",
+    summary="Check a historical initial stock or adjustment without altering balances",
 )
 def get_adjustment(
     business_id: UUID, adjustment_id: UUID,

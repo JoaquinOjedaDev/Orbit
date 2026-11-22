@@ -1,46 +1,46 @@
-# E1-B7 — Compras, renglones, recepción y eventos DEMO
+# E1-B7 — Purchases, lines, reception and DEMO events
 
-**Estado:** código integrado en `main` el 06/11/2026. **Build, lint, pruebas automáticas y QA visual local PENDIENTES.**
-**Fuentes de diseño/requisitos:** Plan v4, E0-A Z050/Z070; especificación de Compras/Gastos M2; ADR-004 (estado PROPUESTO); E1-B2-02, DEMO-STK-01 y QA-STK-01. No se reutilizan scripts globales de los HTML originales.
+**Status:** code integrated into `main` el 06/11/2026. **Build, Lint, Automatic Testing and Local Visual QA PENDING.**
+**Design/requirement sources:** Plan v4, E0-A Z050/Z070; Purchase/Expendation specification M2; ADR-004 (Proposed status); E1-B2-02, DEMO-STK-01 and QA-STK-01. Global scripts from the original HTML are not reused.
 
-## Objetivo y alcance
+## Objective and scope
 
-- Ingresar compras **por empresa** sin exigir proveedor, depósito ni artículo del catálogo. Una empresa de servicios puede registrar una compra con concepto libre sin crear almacén.
-- Registrar entre 1 y 30 renglones por operación, cada uno vinculado a artículo/servicio ACTIVO del catálogo **o** concepto libre. Cantidad, unidad y costo unitario obligatorios. Concepto libre usa unidad `CONCEPTO` y no ingresa a stock.
-- Capturar fecha, proveedor opcional, referencia de comprobante y observaciones; información de pagos NO se registra en este corte.
-- **Snapshot histórico** por renglón: nombre, SKU, unidad, cantidad, costo y subtotal al momento de registro. El nombre del proveedor también queda fotografiado. Editar un artículo o proveedor después **no modifica** compras antiguas.
-- Importes en **centavos enteros de ARS**, cantidades en **milésimas enteras de la unidad del catálogo**. `lineTotalCents` calcula mediante `BigInt` y redondeo HALF_UP *por renglón*; luego suma subtotales en enteros, sin pérdida por coma flotante.
-- Las unidades discretas (unidad, paquete, caja, servicio y concepto libre) sólo admiten cantidades enteras; kilogramo, gramo, litro y mililitro admiten hasta tres decimales. No hay conversión automática caja→unidades ni kg→gramo. Cada entrada se expresa en **la misma unidad de control del Catálogo**.
-- Guardar compra no implica recepción ni pago. Se registra con estado de recepción **Pendiente**, **Confirmada** o **Sin recepción física** (servicios/conceptos libres).
-- Ficha/historial de compras con búsqueda y filtros por estado de recepción. No hay edición retrospectiva, ni eliminación de compra. La ausencia de comprobante significa sin referencia, NO que se haya adjuntado una factura.
-- Recepción: una acción posterior, explícita y confirmada, que requiere ubicación **activa con `canStore=true`**. Genera **en un mismo comando** un movimiento positivo por cada renglón de bien físico del catálogo. Servicios y conceptos libres quedan informativos.
-- **Idempotencia en DEMO:** cada submit de compra usa `requestId` estable durante el formulario; un reintento con esa clave devuelve la misma compra. Cada compra acepta **una única recepción**, completa respecto a sus bienes físicos, en una única ubicación. Invocar de nuevo `receivePurchase` devuelve la recepción previa y no añade movimientos.
-- `listDemoReceiptMovements` deriva eventos desde snapshots inmutables; `receiptQuantityMilli` permite derivar cantidades recibidas por empresa, artículo y ubicación. El Inventario vendrá después como proyección de estos eventos; todavía no se presentan saldos operativos de inventario.
+- Enter Shopping **per company** without requiring supplier, deposit or catalog item. A service company may register a purchase with free concept without creating warehouse.
+- Register between 1 and 30 lines per operation, each linked to the active article/service of the catalogue **o** Free concept. Required quantity, unit and unit cost. Free concept uses unit `CONCEPTO` and doesn't enter stock.
+- Capture date, optional provider, voucher reference and observations; payment information is NOT recorded in this court.
+- **Historical Snapshot** by row: name, SKU, unit, quantity, cost and subtotal at time of registration. The provider’s name is also photographed. Edit an item or supplier later **does not change** Old shopping.
+- Amounts in **ARS whole cents**quantities in **one thousandths of the catalog unit**. `lineTotalCents` calculates by `BigInt` and rounding HALF_UP *per row*; then sum subtotals in integers, without loss per floating point.
+- The discrete units (unit, package, box, service and free concept) only support whole quantities; kilogram, gram, liter and milliliter allow up to three decimals. No automatic conversion box→units or kg→gram. Each entry is expressed in **the same control unit as the Catalogue**.
+- Save purchase does not imply receipt or payment. It is registered with receiving status **Pending**, **Confirmed** o **No physical reception** (services/free concepts).
+- Data sheet/story of purchases with search and filters by receiving status. No retrospective edition, no purchase deletion. The absence of proof means without reference, NOT that an invoice has been attached.
+- Reception: a later, explicit and confirmed action requiring location **active with `canStore=true`**Generates **in the same command** a positive movement for every line of physical good in the catalogue. Free services and concepts are informative.
+- **Idempotence in DEMO:** cada submit de compra usa `requestId` stable during the form; a retry with that key returns the same purchase. Each purchase accepts **a single reception**, complete with respect to your physical assets, in a single location. Summon again `receivePurchase` returns the previous reception and does not add movements.
+- `listDemoReceiptMovements` it generates events from immutable snapshots; `receiptQuantityMilli` allows the transfer of amounts received by company, article and location. The Inventory will come later as a projection of these events; no operational inventory balances are presented yet.
 
-## Diseño de datos
+## Data design
 
 `PurchaseInput` = `purchasedOn`, `supplierId|null`, `reference`, `notes`, `lines[]`.
 
 `PurchaseLineInput` = `catalogItemId|null`, `description`, `unit`, `quantityMilli`, `unitCostCents`.
 
-`DemoPurchase` = `PurchaseInput` más `id`, `requestId`, `businessId`, `supplierNameSnapshot`, `createdAt`, `totalCents`, `receipt|null` y los `PurchaseLineSnapshot[]` con IDs estables y clase BIEN/SERVICIO/CONCEPTO.
+`DemoPurchase` = `PurchaseInput` más `id`, `requestId`, `businessId`, `supplierNameSnapshot`, `createdAt`, `totalCents`, `receipt|null` and the `PurchaseLineSnapshot[]` with stable IDs and good/service/conceived class.
 
-`PurchaseReceipt` = `id`, `locationId`, `createdAt`, `movements[]` con IDs de evento, compra/renglón inferidos, catálogo, unidad y cantidad positiva. Se preserva el evento tras F5; al cargar se valida congruencia de movimiento ↔ renglón y ubicación ↔ empresa, para evitar interpretar objetos arbitrarios como existencias.
+`PurchaseReceipt` = `id`, `locationId`, `createdAt`, `movements[]` with event IDs, inferred purchase/reglon, catalog, unit and positive quantity. The event is preserved after F5; when loading it validates movement congruence ↔ line and location ↔ company, to avoid interpreting arbitrary objects as stocks.
 
-**Almacenamiento:** sigue `asistente-pyme.e1a2.demo.v1` con versión 1 y un array **opcional** `purchases`. Se conservan los campos previos `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers`, `catalogItems` y `suppliers`. No se inventan compras preexistentes. El estado del navegador **no tiene seguridad, concurrencia real ni persistencia servidor**.
+**Storage:** Go on. `asistente-pyme.e1a2.demo.v1` with version 1 and an array **optional** `purchases`. Pre-fields are preserved `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers`, `catalogItems` y `suppliers`. No pre-existing purchases are invented. The status of the browser **has no security, actual attendance or server persistence**.
 
-## Archivos
+## Files
 
-- `frontend/src/data/demo/purchasePolicy.ts`: cantidades, total centavos, fechas, clases y validación.
-- `frontend/src/data/demo/demoStore.ts`: comandos `registerPurchase` y `receivePurchase`, historiales y lectura compatible.
-- `frontend/src/features/purchases/PurchaseForm.tsx`: compra con varios renglones y preview calculado.
-- `frontend/src/features/purchases/PurchasesPage.tsx`: historial, filtros, KPIs.
-- `frontend/src/features/purchases/PurchaseDetailDialog.tsx`: snapshots y confirmación de recepción.
-- `frontend/src/App.tsx` + `frontend/src/features/dashboard/Dashboards.tsx`: ruta de Compras y acceso DEMO.
-- `frontend/src/App.css`: diseño responsivo.
-- `frontend/tests/purchase-policy.test.mjs` + script `test:purchases`: pruebas puras de política.
+- `frontend/src/data/demo/purchasePolicy.ts`: total amounts, cents, dates, classes and validation.
+- `frontend/src/data/demo/demoStore.ts`: commands `registerPurchase` y `receivePurchase`, history and compatible reading.
+- `frontend/src/features/purchases/PurchaseForm.tsx`: purchase with several lines and preview calculated.
+- `frontend/src/features/purchases/PurchasesPage.tsx`: history, filters, KPIs.
+- `frontend/src/features/purchases/PurchaseDetailDialog.tsx`: snapshots and confirmation of reception.
+- `frontend/src/App.tsx` + `frontend/src/features/dashboard/Dashboards.tsx`: Shopping route and DEMO access.
+- `frontend/src/App.css`: responsive design.
+- `frontend/tests/purchase-policy.test.mjs` + script `test:purchases`: pure tests of politics.
 
-## Ejecutar desde `plataforma-pyme/frontend`
+## Run from `plataforma-pyme/frontend`
 
 ~~~powershell
 git pull --ff-only origin main
@@ -54,36 +54,36 @@ npm.cmd run test:maps
 npm.cmd run dev
 ~~~
 
-Si Vite ya está activo, omitir el último comando.
+If Vite is already active, skip the last command.
 
-## Validación manual propuesta
+## Proposed manual validation
 
-| Caso | Pasos | Esperado |
+| Case | Steps | Expected |
 |---|---|---|
-| COMP-01 | Abrir Compras en empresa nueva o de servicios | Historial vacío; sin depósito exigido |
-| COMP-02 | Compra con 1 concepto libre y sin proveedor | Se registra; estado **Sin recepción física**, total correcto |
-| COMP-03 | Compra con proveedor y 2 artículos físicos del Catálogo | Muestra snapshot y total, **Pendiente de recepción** |
-| COMP-04 | Cambiar nombre de artículo o proveedor tras registrar | Compra anterior mantiene nombres originales |
-| COMP-05 | Crear ubicación activa que **no** almacena | No se ofrece para recepción |
-| COMP-06 | Crear ubicación activa con **Puede almacenar** | Permite seleccionarla en la compra pendiente |
-| COMP-07 | Confirmar recepción de 2 artículos en esa ubicación | Aparecen 2 eventos positivos y estado Confirmada |
-| COMP-08 | Cerrar/abrir detalle, actualizar F5 | Recepción sigue confirmada, sin botón para recibir otra vez |
-| COMP-09 | Ejecutar recepción desde consola con mismo ID (sólo si QA técnico) | Devuelve mismo receipt ID, no duplica movimientos |
-| COMP-10 | Compra mixta bien + servicio + concepto libre | Sólo el bien físico se recepciona |
-| COMP-11 | Compra sólo de servicios | Sin recepción física y sin ingreso de stock |
-| COMP-12 | Cantidad `0,5` caja | Rechaza fracción para unidad discreta |
-| COMP-13 | Cantidad `0,5` kg | Permite y conserva `500` milésimas de kg, sin convertir a gramos |
-| COMP-14 | Precio `1.250,50` o más de 2 decimales | Error sin generar compra; `1250,50` permitido |
-| COMP-15 | Reintentar registrar con mismo requestId | Una única compra |
-| COMP-16 | Cambiar empresa antes y después de registrar | Los registros y recibos no cruzan empresas |
-| COMP-17 | Volver a Catálogo/Proveedores/Ubicaciones y F5 | Sus registros permanecen intactos |
-| COMP-18 | Abrir detalle y Escape, cerrar, 390px | Modal y formulario utilizables sin desbordes |
-| COMP-19 | Build, lint, tests automáticos | Sin errores ni warnings |
+| COMP-01 | Open Purchases in new company or services | Empty history; no deposit required |
+| COMP-02 | Purchase with 1 free concept and no supplier | Recorded; status **No physical reception**Total correct |
+| COMP-03 | Purchase with supplier and 2 physical items from the Catalogue | Muestra snapshot y total, **Pending receipt** |
+| COMP-04 | Change article or provider name after registering | Previous Purchase Maintains Original Names |
+| COMP-05 | Create active location that **no** store | Not available for reception |
+| COMP-06 | Create active location with **You can store** | Allows selection in pending purchase |
+| COMP-07 | Confirm receipt of 2 items at that location | 2 positive events appear and Confirmed status |
+| COMP-08 | Close/open detail, update F5 | Reception is still confirmed, no button to receive again |
+| COMP-09 | Run receipt from console with the same ID (only if technical QA) | Returns same recipit ID, does not duplicate movements |
+| COMP-10 | Mixed purchase well + service + free concept | Only physical good is received |
+| COMP-11 | Purchase of services only | No physical reception and no stock entry |
+| COMP-12 | Quantity `0,5` box | Reject fraction for discrete unit |
+| COMP-13 | Quantity `0,5` kg | Allows and preserves `500` millimetres of kg, not converted to grams |
+| COMP-14 | Price `1.250,50` or more than 2 decimal places | Error without generating purchase; `1250,50` allowed |
+| COMP-15 | Retry to register with same requestId | A single purchase |
+| COMP-16 | Change company before and after registering | Records and receipts do not cross companies |
+| COMP-17 | Back to Catalogue/Suppliers/Locations and F5 | Your records remain intact. |
+| COMP-18 | Open Detail and Escape, Close, 390px | Modal and form usable without overflows |
+| COMP-19 | Build, Lint, automatic tests | Sin errores ni warnings |
 
-## Fuera de alcance E1-B7
+## Out of range E1-B7
 
-Recepciones **parciales**, destinos múltiples por factura, devoluciones, equivalencias configurables de empaques, adjuntos, OCR, pagos reales, cuentas financieras, deducción automática de promociones, aprobación de órdenes, modificación o anulación con reversión contable, impuestos desglosados, productos de elaboración avanzada, stock disponible/reservado y concurrencia multisucursal. **No** se simula que existan.
+Receptions **partial**, multiple destinations per invoice, returns, configurable packaging equivalences, attachments, OCR, actual payments, financial accounts, automatic deduction of promotions, order approval, modification or cancellation with accounting reversal, disaggregated taxes, advanced processing products, stock available/reserved and multi-branch attendance. **No** They're pretended to exist.
 
-## Próximo corte
+## Next cut
 
-E1-B8 Inventario: consultar movimientos y saldo físico por empresa/ubicación/artículo, calculados desde un ledger único, agregar traslados y conteos con validación de stock no negativo. API PostgreSQL posterior: transacciones, versiones y claves de idempotencia persistentes del servidor; mantener los requisitos de TP3 y los ADR propuestos.
+E1-B8 Inventory: consult movements and physical balance by company/location/article, calculated from a unique leader, add transfers and counts with non-negative stock validation. PostgreSQL API posterior: transactions, versions and persistent server idempotency keys; maintain the proposed TP3 and ADR requirements.

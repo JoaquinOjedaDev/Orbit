@@ -15,10 +15,10 @@ export type JournalPort = {
   remove(actorId: string, key: string): Promise<void>
 }
 export class JournalUnavailableError extends Error {
-  constructor() { super('El registro de pendientes no está disponible en este navegador.') }
+  constructor() { super('The pending log is not available in this browser.') }
 }
 export class JournalConflictError extends Error {
-  constructor() { super('Existe un intento anterior del mismo usuario. No se sobrescribe.') }
+  constructor() { super('There is an earlier attempt by the same user. It is not overwritten.') }
 }
 const validBody = (body: unknown): body is NewBusiness => {
   if (typeof body !== 'object' || body === null || Array.isArray(body)) return false
@@ -29,7 +29,7 @@ const validBody = (body: unknown): body is NewBusiness => {
     && Object.keys(b).length === 3
 }
 function checkActor(actorId: string) {
-  if (!UUID_PATTERN.test(actorId)) throw new TypeError('Actor inválido')
+  if (!UUID_PATTERN.test(actorId)) throw new TypeError('Invalid Actor')
 }
 export function parseBusinessIntent(value: unknown, actorId: string): BusinessCreationIntent {
   checkActor(actorId)
@@ -53,7 +53,7 @@ export function makeBusinessIntentJournal(port: JournalPort) {
     },
     async reserve(actorId: string, body: NewBusiness, key: string): Promise<BusinessCreationIntent> {
       checkActor(actorId)
-      if (!UUID_V4_PATTERN.test(key) || !validBody(body)) throw new TypeError('Intento inválido')
+      if (!UUID_V4_PATTERN.test(key) || !validBody(body)) throw new TypeError('Invalid attempt')
       const record: BusinessCreationIntent = {
         actorId, kind: 'business.create', key, body: { ...body }, createdAt: new Date().toISOString(),
       }
@@ -66,13 +66,13 @@ export function makeBusinessIntentJournal(port: JournalPort) {
     },
     async discard(actorId: string, key: string) {
       checkActor(actorId)
-      if (!UUID_V4_PATTERN.test(key)) throw new TypeError('Clave inválida')
+      if (!UUID_V4_PATTERN.test(key)) throw new TypeError('Invalid key')
       await port.remove(actorId, key)
     },
   }
 }
 
-const DB_NAME = 'asistente-pyme-real-intentos-v1'
+const DB_NAME = 'assistant-pyme-real-intents-v1'
 const STORE = 'business_create'
 const MAX_ACTORS = 20
 

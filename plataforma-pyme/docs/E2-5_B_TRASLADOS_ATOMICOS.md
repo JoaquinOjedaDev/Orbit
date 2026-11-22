@@ -1,10 +1,10 @@
-# E2-5 B — Transferencias físicas atómicas entre ubicaciones
+# E2-5 B — Atomic physical transfers between locations
 
-**Fecha:** 2026-11-09 · **Estado:** backend validado en CI; pendiente de merge y ejecución local Windows.
-**Base:** E2-5 A, commit de main `4268846abc524ebd827b4da930ef58d8d9789ac7`, migración `e25a_inventory_ops`.
-**Alcance:** RF-06, CU-09. Solo backend, datos del tenant, permisos STORE y trazabilidad; no se construye UI React ni ajustes CU-11.
+**Date:** 2026-11-09 · **Status:** validated backend in IC; pending to merit and local execution Windows.
+**Base:** E2-5 A, commit de main `4268846abc524ebd827b4da930ef58d8d9789ac7`, migration `e25a_inventory_ops`.
+**Scope:** RF-06, CU-09. Just backend, tenant data, STORE permissions and traceability; no UI React or CU-11 settings are built.
 
-## Flujo del comando
+## Command Flow
 
 **POST `/api/v1/businesses/{business_id}/inventory/transfers`** (Bearer + `Idempotency-Key` UUID4). Request:
 
@@ -18,46 +18,46 @@
 }
 ```
 
-Los UUID deben pertenecer **a la misma empresa**; ambos depósitos distintos, `ACTIVA` y `can_store=true`. El usuario debe poder operar STORE en ambos: titular/administrador con membresía activa, o encargado/trabajador asignado activamente a **cada una**. Una ubicación `can_sell=true` pero `can_store=false` no sirve para transportar stock. Catálogo físico ACTIVO; cantidad en milésimas, entera y positiva. UNIDAD/PAQUETE/CAJA: múltiplo de 1000. La solicitud debe incluir un motivo normalizado de 3–500 caracteres.
+UUIDs must belong **the same company**; both separate deposits, `ACTIVA` y `can_store=true`. The user must be able to operate STORE in both: owner/manager with active membership, or manager/worker actively assigned to **each**. A location `can_sell=true` but `can_store=false` does not serve to transport stock. ASSISTANT physical catalogue; quantity in milliths, whole and positive. UNIT/PACKET/CARD: multiple of 1000. The application must include a standardized motif of 3–500 characters.
 
-### Pasos técnicos
+### Technical steps
 
-1. Revalidar usuario, sesión revocable, empresa y membresía dentro de la transacción, como en Compras/Recepciones.
-2. Buscar clave de idempotencia del mismo tenant; si coincide actor+carga, devolver el **mismo traslado** y ambos movimientos con HTTP 200, sin recalcular saldos. Si no coincide, 409.
-3. Validar empresa ACTIVA; bloquear los dos depósitos en **orden fijo de UUID** para evitar deadlocks por traslados opuestos; comprobar pertenencia, estado y permiso STORE.
-4. Bloquear catálogo con `FOR SHARE`, confirmar tipo físico, unidad y cantidad.
-5. Descontar del saldo de origen mediante UPDATE condicional `quantity_milli >= solicitado`; un saldo inexistente cuenta como cero → 409. No crear saldo negativo ni descontar parcialmente.
-6. Sumar al destino mediante PostgreSQL `INSERT … ON CONFLICT DO UPDATE`, con cantidad+versión atómicas; controles SQL del límite de cantidad.
-7. Persistir **una** `InventoryOperation(kind=TRASLADO)` y **dos** movimientos trazables: `TRASLADO_SALIDA` = `-quantity_milli` en origen y `TRASLADO_ENTRADA` = `+quantity_milli` en destino.
-8. Confirmar un único commit: saldos, cabecera y ambos movimientos. Ante error, rollback total.
+1. Revalidate user, revocable session, company and membership within the transaction, as in Purchases/Receptions.
+2. Find the same tenant's idempotency key; if actor+load matches, return the **same transfer** and both moves with HTTP 200, without recalculating balances. If not matched, 409.
+3. Validate company ACTIVA; block the two deposits in **UUID fixed order** to avoid deadlocks for opposite transfers; check membership, status and permission STORE.
+4. Block Catalogue with `FOR SHARE`, confirm physical type, unit and quantity.
+5. Uncounting the original balance by conditional UPDATE `quantity_milli >= solicitado`; a non-existent balance counts as zero → 409. Do not create negative balance or partially discount.
+6. Adding to destination via PostgreSQL `INSERT … ON CONFLICT DO UPDATE`, with atomic quantity+version; SQL controls of the amount limit.
+7. Persist **una** `InventoryOperation(kind=TRASLADO)` y **dos** traceable movements: `TRASLADO_SALIDA` = `-quantity_milli` at source and `TRASLADO_ENTRADA` = `+quantity_milli` in destination.
+8. Confirm a single commit: balances, header and both movements.
 
-**Saldo total de empresa:** la suma de los dos saldos no cambia por el traslado. No hay compra, venta, pago ni movimiento de efectivo.
+**Total company balance:** the sum of both balances does not change for the transfer. There is no purchase, sale, payment or movement of cash.
 
-**Respuesta:** 201 al crear; 200 para replay idéntico; 401 sesión inválida; 403 sin permiso STORE; 404 empresa/ubicación/ítem/traslado inexistente o ajeno; 409 empresa suspendida, destino inhabilitado, stock insuficiente o clave distinta; 422 UUID/cantidad/cuerpo no válido. Una clave nueva es una **nueva operación** y se vuelve a validar disponibilidad.
+**Answer:** 201 when creating; 200 for identical replay; 401 invalid session; 403 without STORE permission; 404 company/location/item/transfer missing or other; 409 suspended company, disabled destination, insufficient stock or different key; 422 UUID/quantity/unvalid body. A new key is a **new operation** and revalidation of availability.
 
-El **GET `/api/v1/businesses/{business_id}/inventory/transfers/{transfer_id}`** devuelve cabecera y movimientos históricos de un traslado; no reconstruye los saldos actuales, que se consultan en `GET /inventory/balances`. El estado de depósitos tras el traslado puede cambiar sin alterar el comprobante.
+El **GET `/api/v1/businesses/{business_id}/inventory/transfers/{transfer_id}`** returns historical header and movements of a transfer; does not reconstruct current balances, which are consulted in `GET /inventory/balances`. The status of deposits after the transfer can change without altering the voucher.
 
-### Compatibilidad histórica
+### Historical compatibility
 
-Se conserva `POST /purchases/{purchase_id}/receive` y `GET /purchases/{purchase_id}/receipt` con el esquema E2-4 intacto. El GET general `/inventory/movements` ahora acepta tanto `COMPRA_RECEPCION` como entradas y salidas de traslado. Los campos opcionales del origen ausente se omiten de la respuesta para conservar la forma de los movimientos de recepción ya validada en E2-4. No se reescriben movimientos existentes.
+It's preserved. `POST /purchases/{purchase_id}/receive` y `GET /purchases/{purchase_id}/receipt` with the E2-4 scheme intact. `/inventory/movements` Now accept so much `COMPRA_RECEPCION` optional fields of the missing source are omitted from the response to preserve the form of reception movements already validated in E2-4. Existing movements are not rewritten.
 
-**Sin migración nueva en E2-5 B:** se utiliza `e25a_inventory_ops`; no modifica tablas, FOREIGN KEY ni CHECK históricos de E2-4.
+**No new migration in E2-5 B:** used `e25a_inventory_ops`; does not modify tables, FOREIGN KEY or historical CHECK of E2-4.
 
-### Pruebas y límites
+### Tests and limits
 
-`tests/test_transfer_api_integration.py` cubre traslado 10→6/4, respuesta persistida, replay sin duplicar, clave con carga distinta, rechazo por origen insuficiente sin cambios parciales, unidades físicas y discretas, servicios no transferibles, ubicación ajena o inhabilitada, permisos de encargado/trabajador y lectura inter-tenant. Tres pruebas de concurrencia real con conexiones HTTP/PostgreSQL independientes verifican: (i) dos transferencias competidoras de 7 unidades desde un stock de 10: solo una se confirma (201 y 409), (ii) mismo UUID4 en dos pedidos paralelos: 201 y 200, una sola operación, (iii) transferencias opuestas de ubicaciones A↔B: ambas 201, sin deadlock ni pérdida de stock. `tests/test_transfer_concurrency_integration.py` utiliza un tenant temporal propio y limpieza restringida a ese tenant; la base QA preexistente se conserva.
+`tests/test_transfer_api_integration.py` covers transfer 10→6/4, persistent response, replay without duplicate, different load key, insufficient origin rejection without partial changes, physical and discrete units, non-transferable services, external or disabled location, manager/worker permissions and intertenant reading. Three proofs of actual continuance with independent HTTP/PostgreSQL connections verify: (i) two competing transfers of 7 units from a stock of 10: only one is confirmed (201 and 409), (ii) same UUID4 in two parallel orders: 201 and 200, one operation, (iii) opposite transfers from A/25070B locations: both 201, no deadlock or loss of stock. `tests/test_transfer_concurrency_integration.py` use a temporary tenant of your own and clean up restricted to that tenant; the pre-existing QA base is preserved.
 
-**No implementado en este corte:** ajuste positivo/negativo (E2-5 C), stock inicial, transferencias de múltiples artículos, recepciones parciales, reversión compensatoria, consumos por venta/producción, conciliación SQL periódica, front React conectado. Aunque el movimiento es histórico e inaccesible por PATCH/DELETE en la API, el hardening ante modificaciones SQL directas se sigue debiendo.
+**Not implemented in this court:** positive/negative adjustment (E2-5 C), initial stock, multiple item transfers, partial receptions, compensatory reversal, sales/production consumptions, periodic SQL reconciliation, front React connected. Although movement is historical and inaccessible by PATCH/DELETE in API, hardening to direct SQL modifications is still due.
 
-### Reproducción manual sin alterar el depósito QA existente hasta estar listo
+### Manual reproduction without altering the existing QA tank until ready
 
-Después de merge, reconstruir la API Docker para exponer la nueva ruta y validar `/ready`. Para probar Swagger, crear **un segundo depósito QA** con `can_store=true`. Con el producto existente `881fdae2-18c5-46ae-8037-44a500ca96c0`, el depósito de origen `2d6761c4-efec-4b3e-925c-a24ceab8ce9c` parte de **10 unidades** según último GET manual E2-4. Antes de transferir, **verificar saldo actual**: no asumir que sigue siendo 10 si hubo otras operaciones.
+After merge, rebuild the Docker API to expose the new route and validate `/ready`. Para probar Swagger, crear **a second QA deposit** con `can_store=true`. With the existing product `881fdae2-18c5-46ae-8037-44a500ca96c0`, the deposit of origin `2d6761c4-efec-4b3e-925c-a24ceab8ce9c` part of **10 units** according to last manual GET E2-4. **verify current balance**: not to assume that it is still 10 if there were other operations.
 
-Probar un traslado de `quantity_milli=4000` solo si hay 10 unidades. Esperado: origen 6000, destino 4000 y dos movimientos con suma cero. Repetir **la misma clave y cuerpo**: 200, sin nuevas entradas. Otra clave/traslado superior al disponible: 409, sin cambios. Compartir únicamente respuesta y código HTTP **sin Bearer ni claves**. No utilizar las cuentas/cómputos fuera del entorno QA.
+Prove a transfer of `quantity_milli=4000` only if there are 10 units. Expected: origin 6000, destination 4000 and two moves with zero sum. Repeat **the same key and body**: 200, no new entries. Another key/transfer higher than available: 409, unchanged. Share only reply and HTTP code **sin Bearer ni claves**. Do not use accounts/computes outside the QA environment.
 
-### Validación automatizada local
+### Local automated validation
 
-Desde `plataforma-pyme/` (tras merge en `main`):
+From `plataforma-pyme/` (after merge in `main`):
 
 ```powershell
 git switch main
@@ -75,4 +75,4 @@ cd ..
 docker compose --profile api up -d --build --wait api
 ```
 
-Esperado `e25a_inventory_ops (head)`, Alembic sin deriva y tests aprobados. **CI verificado en GitHub Actions #42602232103**: 3/3 trabajos exitosos; **826 pruebas** en Python 3.12 y **826** en Python 3.14 (PostgreSQL 16); `e25a_inventory_ops (head)`, `alembic check` sin deriva; imagen Docker y liveness aprobados. **Windows aún no ejecutado para E2-5 B**, no se lo presenta como validado. No borrar ningún volumen Docker.
+Expected `e25a_inventory_ops (head)`, Alembic without drift and approved tests. **CI verified in GitHub Actions #42602232103**: 3/3 successful works; **826 tests** en Python 3.12 y **826** en Python 3.14 (PostgreSQL 16); `e25a_inventory_ops (head)`, `alembic check` sin deriva; imagen Docker y liveness aprobados. **Windows not yet executed for E2-5 B**Do not delete any Docker volume.

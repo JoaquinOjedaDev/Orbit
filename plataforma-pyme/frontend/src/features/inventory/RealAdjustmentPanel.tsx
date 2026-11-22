@@ -69,26 +69,26 @@ export function RealAdjustmentPanel({
   try{
    const amount=isCount?countedMilli(quantity,selectedItem.unit):adjustmentMilli(quantity,selectedItem.unit)
    if(isCount){
-    if(!balance)throw new RangeError('El conteo correctivo requiere un saldo existente. Para una ubicación sin historial usá Stock inicial.')
+    if(!balance)throw new RangeError('The correct counting requires an existing balance. For a location without history use initial Stock.')
     const delta=adjustmentFromCount(amount,currentMilli,version)
     if(delta)preview={...delta,next:amount}
    }else{
     const kind=mode
-    if(isInitial&&hasExisting)throw new RangeError('Esta combinación ya tiene stock histórico. No se puede inicializar de nuevo.')
-    if(!isInitial&&!hasExisting)throw new RangeError('Para ajustar se requiere un saldo existente y su versión.')
-    if(kind==='AJUSTE_SALIDA'&&amount>currentMilli)throw new RangeError('No podés descontar más de las existencias consultadas.')
+    if(isInitial&&hasExisting)throw new RangeError('This combination already has historical stock. It cannot be initialized again.')
+    if(!isInitial&&!hasExisting)throw new RangeError('To adjust an existing balance and its version are required.')
+    if(kind==='AJUSTE_SALIDA'&&amount>currentMilli)throw new RangeError('You can\'t discount more from the stocks consulted.')
     if(kind!=='AJUSTE_SALIDA'&&currentMilli+amount>MAX_STOCK_BALANCE_MILLI)
-      throw new RangeError('La cantidad final supera el límite del backend.')
+      throw new RangeError('The final amount exceeds the backend limit.')
     preview={kind,quantity_milli:amount,next:isInitial?amount:currentMilli+(kind==='AJUSTE_SALIDA'?-amount:amount)}
    }
-  }catch(e){draftError=e instanceof Error?e.message:'Cantidad inválida'}
+  }catch(e){draftError=e instanceof Error?e.message:'Invalid amount'}
  }
  useEffect(()=>{
   let alive=true
   void adjustmentJournal.load(scope).then(found=>{
     if(!alive)return
     setPending(found)
-    if(found)setNotice('Recuperamos un ajuste pendiente del navegador. No se envió ninguna operación automáticamente.')
+    if(found)setNotice('We recover an outstanding browser setting. No operation was sent automatically.')
   }).catch((err:unknown)=>{if(alive)setError(adjustmentErrorMessage(err))})
     .finally(()=>{if(alive)setLoading(false)})
   return ()=>{alive=false}
@@ -99,7 +99,7 @@ export function RealAdjustmentPanel({
   void inventoryApi.balances(0,2,{catalogItemId:itemId,locationId},abort.signal)
    .then(rows=>{
       if(abort.signal.aborted)return
-      if(rows.length>1)throw new Error('La API devolvió más de un saldo para el mismo artículo/sede.')
+      if(rows.length>1)throw new Error('The API returned more than one balance for the same item/headquarters.')
       setBalance(rows[0]??null);setBalanceError('')
    }).catch((err:unknown)=>{
       if(abort.signal.aborted)return
@@ -117,8 +117,8 @@ export function RealAdjustmentPanel({
  }
  function command():AdjustmentCommand{
   if(!selectedItem||!selectedLocation||balance===undefined||!preview)
-    throw new RangeError('Revisá artículo, sede, saldo y cantidad antes de confirmar.')
-  if(!roleAllowed)throw new RangeError('Tu rol no permite esta operación.')
+    throw new RangeError('Check article, seat, balance and quantity before confirming.')
+  if(!roleAllowed)throw new RangeError('Your role does not allow this operation.')
   const cmd={
    ...preview, // Remove local projection below: backend accepts only the exact command contract.
    catalog_item_id:selectedItem.id,location_id:selectedLocation.id,
@@ -136,16 +136,16 @@ export function RealAdjustmentPanel({
    try {
     const got=await api.get(result.id)
     setConfirmed(got)
-    setNotice('Operación confirmada y verificada mediante GET por su identificador. Inventario actualizado desde FastAPI.')
+    setNotice('Operation confirmed and verified by GET by its identifier. Inventory updated from FastAPI.')
    }catch{
-    setNotice('Operación confirmada por POST. La consulta de comprobación falló; NO la vuelvas a ejecutar.')
+    setNotice('Operation confirmed by POST. Check query failed; DO NOT run it again.')
    }
    onConfirmed()
    try{
     await adjustmentJournal.discard(row.scope,row.key)
     setPending(null)
    }catch{
-    setNotice('Operación confirmada, pero la identidad persistida no pudo limpiarse. Conservá el ID; no repitas el POST.')
+    setNotice('Operation confirmed, but the identity persisted could not be cleaned. Keep ID; do not repeat POST.')
    }
   }catch(err){
    setPending(row)
@@ -157,59 +157,59 @@ export function RealAdjustmentPanel({
   if(busy||loading||pending||confirmed||balanceLoading||!consent||!roleAllowed)return
   try{
    const cmd=command()
-   const action=cmd.kind==='STOCK_INICIAL'?'registrar STOCK INICIAL':
+   const action=cmd.kind==='STOCK_INICIAL'?'register INITIAL STOCK':
      cmd.kind==='AJUSTE_ENTRADA'?'AGREGAR':'QUITAR'
    const signed=cmd.kind==='AJUSTE_SALIDA'?'−':'+'
    const statement=[
-    'Confirmar operación REAL: '+action+' '+formatMilli(cmd.quantity_milli)+' '+(selectedItem?.unit??'')+' ('+signed+')',
+    'Confirm REAL operation: '+action+' '+formatMilli(cmd.quantity_milli)+' '+(selectedItem?.unit??'')+' ('+signed+')',
     'Artículo: '+(selectedItem?.name??cmd.catalog_item_id),
-    'Ubicación: '+(selectedLocation?.name??cmd.location_id),
-    'Saldo leído: '+(balance?formatMilli(balance.quantity_milli):'SIN SALDO REGISTRADO')+' · expected_version='+cmd.expected_version,
-    'Saldo esperado si nadie opera antes: '+formatMilli(preview?.next??0),
+    'Location: '+(selectedLocation?.name??cmd.location_id),
+    'Balance read: '+(balance?formatMilli(balance.quantity_milli):'WITHOUT REGISTRATED BAIL')+' · expected_version='+cmd.expected_version,
+    'Expected balance if no one operates before: '+formatMilli(preview?.next??0),
     'Motivo: '+cmd.reason,
-    'Se generará un movimiento histórico; no se modifican precios ni compras.',
+    'A historic movement will be generated; no changes in prices or purchases.',
    ].join('\n')
    if(!window.confirm(statement))return
    setBusy(true)
    const row=await adjustmentJournal.reserve(newAdjustmentIntent(actorId,business.id,cmd))
    setPending(row)
    await send(row)
-  }catch(e){setError(e instanceof Error?e.message:'No se pudo preparar el ajuste; no se envió POST.')}
+  }catch(e){setError(e instanceof Error?e.message:'The adjustment could not be prepared; POST was not sent.')}
   finally{setBusy(false)}
  }
  async function discard(){
   if(!pending||busy||!checkedToDiscard)return
-  if(!window.confirm('¿Confirmás que revisaste saldos e historial antes de descartar esta clave? Una clave nueva podría duplicar un ajuste confirmado.'))return
+  if(!window.confirm('Do you confirm that you reviewed balances and history before discarding this key? A new key could duplicate a confirmed setting.'))return
   setBusy(true);setError('')
   try{
    await adjustmentJournal.discard(scope,pending.key)
    setPending(null);setCheckedToDiscard(false)
    setBalance(undefined);setBalanceLoading(!!itemId&&!!locationId)
    setBalanceRefresh(x=>x+1)
-   setNotice('Intento descartado tras verificación. Se vuelve a consultar la versión del saldo; no se envió un nuevo ajuste.')
-  }catch(e){setError(e instanceof Error?e.message:'No se pudo descartar.')}
+   setNotice('Try discarded after verification. Checked the balance version again; no new adjustment was sent.')
+  }catch(e){setError(e instanceof Error?e.message:'Could not be ruled out.')}
   finally{setBusy(false)}
  }
  const canSubmit=canAdjust&&roleAllowed&&!!selectedItem&&!!selectedLocation
    &&balance!==undefined&&!balanceLoading&&!loading&&!busy&&!pending&&!confirmed
    &&!!preview&&!draftError&&!!reason.trim()&&consent
  const pendingLabel=pending?.body.kind==='STOCK_INICIAL'?'Stock inicial':
-   pending?.body.kind==='AJUSTE_ENTRADA'?'Ajuste de entrada':'Ajuste de salida'
- return <section className="real-transfer-panel real-adjustment-panel" aria-label="Stock inicial y ajustes REALES">
+   pending?.body.kind==='AJUSTE_ENTRADA'?'Input adjustment':'Output setting'
+ return <section className="real-transfer-panel real-adjustment-panel" aria-label="Initial stock and real adjustments">
   <div className="real-transfer-top">
    <div><h2>Stock inicial y ajustes</h2>
-    <p>Las operaciones se registran en FastAPI y PostgreSQL, con trazabilidad y versión de saldo. No sustituyen compras ni movimientos anteriores.</p>
+    <p>The transactions are recorded in FastAPI and PostgreSQL, with traceability and balance version. They do not replace previous purchases or movements.</p>
    </div>
-   <button type="button" className="real-auth-secondary" disabled={busy} onClick={onClose}>Volver a inventario</button>
+   <button type="button" className="real-auth-secondary" disabled={busy} onClick={onClose}>Back to inventory</button>
   </div>
-  <p className="real-auth-note">Solo titular y administrador pueden registrar stock inicial. Los encargados asignados pueden ajustar existencias. Trabajadores: solo lectura. La API comprueba el rol y permiso STORE en la sede.</p>
-  <p className="real-auth-note">Si aceptás, la identidad del intento y sus datos comerciales (sin token ni contraseña) se guardan <strong>sin cifrar</strong> en IndexedDB de este navegador hasta resolverlos. Evitá dispositivos compartidos.</p>
-  {loading&&<p role="status">Verificando intentos pendientes…</p>}
+  <p className="real-auth-note">Holder and administrator only can register initial stock. The assigned managers can adjust stocks. Workers: read only. API checks the role and permission STORE at headquarters.</p>
+  <p className="real-auth-note">If you accept, the identity of the attempt and its commercial data (no token or password) are saved <strong>unencrypted</strong> In IndexedDB of this browser until they are resolved. Avoid shared devices.</p>
+  {loading&&<p role="status">Checking pending attempts...</p>}
   {error&&<p role="alert" className="real-auth-error">{error}</p>}
   {notice&&<p role="status" className="real-auth-success">{notice}</p>}
-  {!canAdjust&&!loading&&<p role="status" className="real-auth-note">Tu rol solo permite consultar saldos e historial. No se habilitan ajustes ni inicialización.</p>}
+  {!canAdjust&&!loading&&<p role="status" className="real-auth-note">Your role only allows you to check balances and history. No settings or initialization are enabled.</p>}
   {!loading&&confirmed&&<div className="real-transfer-confirmed">
-   <h3>Operación confirmada: {confirmed.kind.replaceAll('_',' ')}</h3>
+   <h3>Operation confirmed: {confirmed.kind.replaceAll('_',' ')}</h3>
    <p>{catalog.find(x=>x.id===confirmed.catalog_item_id)?.name??confirmed.catalog_item_id} · {locations.find(x=>x.id===confirmed.location_id)?.name??confirmed.location_id}</p>
    <p>Motivo: {confirmed.reason}</p>
    <div className="real-transfer-movements">{confirmed.movements.map(m=><div key={m.id}>
@@ -217,82 +217,82 @@ export function RealAdjustmentPanel({
     <strong className={m.delta_milli<0?'real-inventory-negative':'real-inventory-positive'}>{formatDelta(m.delta_milli)} {confirmed.unit_snapshot}</strong>
    </div>)}</div>
    <p>Responsable: <code>{confirmed.actor_id}</code> · {date(confirmed.created_at)}</p>
-   <details><summary>Identificadores de auditoría</summary><p>Operación: <code>{confirmed.id}</code></p>
+   <details><summary>Audit identifiers</summary><p>Operation: <code>{confirmed.id}</code></p>
     <p>Movimiento: <code>{confirmed.movements[0].id}</code></p></details>
-   <button type="button" className="real-auth-primary" onClick={onReview}>Revisar saldos e historial desde API</button>
+   <button type="button" className="real-auth-primary" onClick={onReview}>Review balances and history from API</button>
   </div>}
   {!loading&&!confirmed&&pending&&<div className="real-transfer-pending">
-   <h3>Operación pendiente guardada: {pendingLabel}</h3>
+   <h3>Operation pending saved: {pendingLabel}</h3>
    <p>{pendingItem?.name??pending.body.catalog_item_id} · {pendingSite?.name??pending.body.location_id}</p>
-   <p>Variación: {pending.body.kind==='AJUSTE_SALIDA'?'−':'+'}{formatMilli(pending.body.quantity_milli)}
-    {' '}· Versión original: <strong>{pending.body.expected_version}</strong></p>
-   <p>Motivo: {pending.body.reason} · Fecha del intento: {date(pending.createdAt)}</p>
-   <p className="real-auth-note">Primero consultá saldos e historial. Si recibiste 409 por versión obsoleta, revisá el estado nuevo; la MISMA clave siempre conserva la versión anterior. No se recalcula ni se reenvía automáticamente.</p>
+   <p>Difference: {pending.body.kind==='AJUSTE_SALIDA'?'−':'+'}{formatMilli(pending.body.quantity_milli)}
+    {' '}· Original version: <strong>{pending.body.expected_version}</strong></p>
+   <p>Motivo: {pending.body.reason} · Date of attempt: {date(pending.createdAt)}</p>
+   <p className="real-auth-note">First check balances and history. If you received 409 by outdated version, review the new status; the key SAME always retains the previous version. It is not automatically recalculated or forwarded.</p>
    <div className="real-transfer-actions">
-    <button type="button" className="real-auth-secondary" disabled={busy} onClick={onReview}>Consultar saldos e historial</button>
+    <button type="button" className="real-auth-secondary" disabled={busy} onClick={onReview}>Checking for balances and history</button>
     <button type="button" className="real-auth-primary" disabled={busy} onClick={()=>{
-      if(window.confirm('¿Reenviar exactamente la MISMA operación con la MISMA clave y expected_version? Verificá antes la existencia de un movimiento confirmado.'))void send(pending)
-    }}>{busy?'Consultando…':'Reintentar MISMA operación'}</button>
+      if(window.confirm('Exactly forward the same operation with the same key and specified_version? Check before the existence of a confirmed movement.'))void send(pending)
+    }}>{busy?'Consultando…':'Retry Same Operation'}</button>
    </div>
    <label className="real-transfer-accept"><input type="checkbox" checked={checkedToDiscard} disabled={busy}
-     onChange={e=>setCheckedToDiscard(e.target.checked)}/>Verifiqué el historial y saldos y decido descartar este intento.</label>
-   <button type="button" className="real-auth-secondary" disabled={!checkedToDiscard||busy} onClick={()=>void discard()}>Descartar tras verificar</button>
+     onChange={e=>setCheckedToDiscard(e.target.checked)}/>I checked the history and balances and decided to discard this attempt.</label>
+   <button type="button" className="real-auth-secondary" disabled={!checkedToDiscard||busy} onClick={()=>void discard()}>Discard after verification</button>
   </div>}
   {!loading&&!confirmed&&!pending&&canAdjust&&<div className="real-transfer-form">
    <div className="real-transfer-grid">
-    <label>Artículo físico activo
+    <label>Active physical article
      <select value={itemId} disabled={busy} onChange={e=>changeItem(e.target.value)}>
-      <option value="">Elegir artículo</option>
+      <option value="">Choose article</option>
       {items.map(x=><option key={x.id} value={x.id}>{x.name} · {x.unit}</option>)}
      </select>
     </label>
-    <label>Ubicación con almacenamiento
+    <label>Location with storage
      <select value={locationId} disabled={busy} onChange={e=>changeSite(e.target.value)}>
       <option value="">Elegir sede</option>
       {sites.map(x=><option key={x.id} value={x.id}>{x.name}</option>)}
      </select>
     </label>
-    <label>Tipo de operación
+    <label>Type of operation
      <select value={mode} disabled={busy} onChange={e=>{setMode(e.target.value as Mode);setQuantity('');setError('')}}>
-      <option value="CONTEO">Conteo físico · indicar saldo final</option>
-      <option value="AJUSTE_ENTRADA">Ajuste de entrada · sumar unidades</option>
-      <option value="AJUSTE_SALIDA">Ajuste de salida · descontar unidades</option>
-      {canInitial&&<option value="STOCK_INICIAL">Stock inicial · primera carga</option>}
+      <option value="CONTEO">Physical count · indicate final balance</option>
+      <option value="AJUSTE_ENTRADA">Input adjustment · add units</option>
+      <option value="AJUSTE_SALIDA">Output setting · discount units</option>
+      {canInitial&&<option value="STOCK_INICIAL">Initial stock · first load</option>}
      </select>
     </label>
-    <label>{isCount?'Cantidad contada (saldo final)':isInitial?'Cantidad inicial':'Cantidad a '+(mode==='AJUSTE_SALIDA'?'quitar':'agregar')}
+    <label>{isCount?'Counted amount (final balance)':isInitial?'Cantidad inicial':'Cantidad a '+(mode==='AJUSTE_SALIDA'?'quitar':'agregar')}
      <input inputMode="decimal" maxLength={18} value={quantity} disabled={busy} onChange={e=>setQuantity(e.target.value)}
        placeholder={isCount?'Ej.: 0 o 12,500':'Ej.: 1 o 0,500'}/>
     </label>
    </div>
    <div className="real-transfer-balance">
-    <div><strong>Saldo actual desde API</strong><p>La versión se comprueba otra vez en FastAPI al confirmar. No es una reserva.</p></div>
-    <div>{balanceLoading?'Consultando…':balance===undefined?'Seleccioná artículo y sede':
-      balance===null?<strong>Sin saldo registrado · versión 0</strong>:
-      <strong>{formatMilli(balance.quantity_milli)} {selectedItem?.unit} · versión {balance.version}</strong>}</div>
-    <button type="button" className="real-auth-secondary" disabled={!itemId||!locationId||busy} onClick={refreshBalance}>Actualizar saldo</button>
+    <div><strong>Current balance from API</strong><p>The version is checked again in FastAPI when confirming. It is not a reservation.</p></div>
+    <div>{balanceLoading?'Consultando…':balance===undefined?'Select article and venue':
+      balance===null?<strong>No balance recorded · version 0</strong>:
+      <strong>{formatMilli(balance.quantity_milli)} {selectedItem?.unit} · version {balance.version}</strong>}</div>
+    <button type="button" className="real-auth-secondary" disabled={!itemId||!locationId||busy} onClick={refreshBalance}>Update balance</button>
    </div>
    {balanceError&&<p role="alert" className="real-auth-error">{balanceError}</p>}
-   {isInitial&&<p className="real-auth-note">Stock inicial solo cuando NO existe saldo ni movimientos anteriores de este artículo en esta sede. Un listado vacío no garantiza que no haya historial: el backend comprobará ambas condiciones. No se puede usar sobre un saldo existente, ni aunque sea cero.</p>}
-   {isCount&&<p className="real-auth-note">El conteo físico es el saldo final observado. La aplicación convierte la diferencia respecto del saldo consultado en una entrada o salida; no reemplaza movimientos históricos ni modifica el catálogo. Si coincide, no se envía operación.</p>}
+   {isInitial&&<p className="real-auth-note">Starting stock only when there is NO previous balance or movements of this article at this venue. An empty listing does not guarantee that there is no history: the backend will check both conditions. It cannot be used on an existing balance, even if it is zero.</p>}
+   {isCount&&<p className="real-auth-note">The physical count is the observed final balance. The application converts the difference from the consulted balance into an input or output; it does not replace historical movements or modify the catalog. If it matches, no operation is sent.</p>}
    {draftError&&<p className="real-auth-error" role="alert">{draftError}</p>}
    {preview&&selectedItem&&<div className="real-adjustment-preview">
-     <div><span>Saldo observado</span><strong>{balance?formatMilli(balance.quantity_milli):'Sin saldo'}</strong></div>
-     <div><span>Movimiento a registrar</span>
+     <div><span>Observed balance</span><strong>{balance?formatMilli(balance.quantity_milli):'No balance'}</strong></div>
+     <div><span>Movement to register</span>
        <strong className={preview.kind==='AJUSTE_SALIDA'?'real-inventory-negative':'real-inventory-positive'}>
         {preview.kind==='AJUSTE_SALIDA'?'−':'+'}{formatMilli(preview.quantity_milli)} {selectedItem.unit}</strong>
      </div>
-     <div><span>Saldo esperado</span><strong>{formatMilli(preview.next)} {selectedItem.unit}</strong></div>
+     <div><span>Expected balance</span><strong>{formatMilli(preview.next)} {selectedItem.unit}</strong></div>
    </div>}
-   {isCount&&quantity.trim()&&!draftError&&!preview&&balance!==undefined&&<p className="real-auth-note">El conteo coincide con el saldo actual: no hace falta registrar un movimiento.</p>}
-   <label className="real-transfer-reason">Motivo obligatorio (3 a 500 caracteres)
+   {isCount&&quantity.trim()&&!draftError&&!preview&&balance!==undefined&&<p className="real-auth-note">The count matches the current balance: no movement is required.</p>}
+   <label className="real-transfer-reason">Required reason (3 to 500 characters)
     <textarea rows={3} maxLength={500} disabled={busy} value={reason} onChange={e=>setReason(e.target.value)}
-      placeholder="Ej.: Conteo físico y corrección de faltante / inventario inicial en depósito"/>
+      placeholder="Ex.: Physical count and missing correction / initial inventory in stock"/>
    </label>
    <label className="real-transfer-accept"><input type="checkbox" disabled={busy} checked={consent}
-    onChange={e=>setConsent(e.target.checked)}/>Acepto conservar este intento sin cifrar en este navegador hasta resolverlo.</label>
+    onChange={e=>setConsent(e.target.checked)}/>I agree to keep this unencrypted attempt in this browser until it is resolved.</label>
    <button type="button" className="real-auth-primary" disabled={!canSubmit} onClick={()=>void submit()}>
-    {busy?'Confirmando…':'Confirmar operación REAL'}
+    {busy?'Confirmando…':'Confirm REAL operation'}
    </button>
   </div>}
  </section>

@@ -1,33 +1,33 @@
-# ADR-001 — Aislamiento por empresa y membresías
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO (regla provisional de E1; pendiente de aprobación del equipo)  
-**Responsable de aprobación:** equipo del TP / responsable funcional (a designar).  
-**Ámbito:** frontend DEMO, dominio y backend futuro.
+# ADR-001 — Company isolation and membership
+**Date:** 2026-11-06  
+**Status:** PROPOSED (provisional E1 rule; pending approval of the team)  
+**Responsible for approval:** TP team/functional manager (to be designated).  
+**Scope:** frontend DEMO, dominio y backend futuro.
 
-## Contexto
-La plataforma es multirrubro y multinegocio; un usuario puede tener cero, una o varias empresas. E0-A identifica H01/H02/H09/H14: modelos históricos de membresía única, permisos globales y almacenamiento aislado M1/M2/M3, incompatibles con el producto acordado. Fuentes: E0-A ``3.1, 5 y 7; E0-B ``5–8; plan rector v4 ``1–4.
+## Context
+The platform is multi-rubre and multi-business; a user can have zero, one or more companies. E0-A identifies H01/H02/H09/H14: historic single membership models, global permissions and isolated M1/M2/M3 storage, incompatible with the agreed product. Sources: E0-A ``3.1, 5 y 7; E0-B ``5–8; master plan v4 ``1–4.
 
-## Decisión propuesta
-1. **User** es identidad global; **Business** entidad independiente; **Membership** vincula usuario-negocio con rol/estado/alcance. Se admite 0..n membresías por usuario.
-2. Todas las operaciones empresariales incluyen el contexto **businessId** y actor autenticado; **locationId** cuando la operación lo requiere. El `businessId` de la URL no concede acceso por sí solo.
-3. En DEMO, datos, borradores, proyecciones, operaciones idempotentes y permisos visibles quedan indexados por empresa. A→B invalida contexto de A (incluida caja/ubicación); no mueve borradores.
-4. En backend cada recurso se busca dentro del tenant autorizado; validar permisos **en servidor**, usar filtros compuestos y constraints que impidan vínculos cruzados. Para IDs ajenos devolver error sin revelar atributos (404 o 403 según contrato a formalizar).
-5. Registro de fundador y responsabilidad administrativa se define en **ADR-002**; invitación y aceptación en **ADR-003**.
+## Proposed decision
+1. **User** is a global identity; **Business** independent entity; **Membership** links user-business to role/state/scope. Memberships per user are supported.
+2. All business operations include context **businessId** and authenticated actor; **locationId** when the operation requires it. `businessId` URL does not grant access alone.
+3. In DEMO, data, drafts, projections, idempotent operations and visible permissions are indexed by company. A→B invalidates context of A (including box/location); it does not move drafts.
+4. In backend each resource is searched within the authorized tenant; validate permissions **on server**, use composite filters and constraints that prevent cross-linking. For other people's IDs return error without revealing attributes (404 or 403 according to contract to formalize).
+5. Register of founder and administrative responsibility is defined in **ADR-002**; invitation and acceptance in **ADR-003**.
 
-## Alternativas evaluadas
-- Perfil y negocio singleton: descartado, filtra información entre tenants.
-- Rol único por usuario global: descartado, no respeta permisos distintos en A/B.
-- Separación por despliegue/base de datos por empresa: no seleccionada para MVP; sobrecarga de operación.
+## Alternatives assessed
+- Singleton Profile and Business: discarded, filters information between tenants.
+- Single role per global user: discarded, does not respect different A/B permissions.
+- Deployment/company database separation: not selected for MVP; operation overload.
 
-## Consecuencias y riesgos
-- Toda consulta y comando requiere ámbito explícito; aumenta validaciones pero evita fugas.
-- Guardas visuales sólo mejoran UX; **no se presentan como seguridad real** hasta API.
-- Futuro backend debe prevenir escrituras cross-tenant incluso si el cliente manipula IDs.
+## Consequences and risks
+- All queries and commands require explicit scope; they increase validations but avoid leakage.
+- Visual saves only improve UX; **not presented as real security** hasta API.
+- Future backend should prevent cross-tenant scripts even if the client manipulates IDs.
 
-## Pruebas de aceptación pendientes
-- **DEMO-TEN-01:** usuario pertenece a A y B con roles diferentes; alternar y verificar catálogo, borradores, botones y dashboard sin contaminación.
-- **QA-TEN-01/02:** API niega lectura/escritura de recurso de B desde A y aplica rol efectivo por membresía.
-- Crear usuario sin empresa y empresa de servicios sin depósito.
+## Outstanding acceptance evidence
+- **DEMO-TEN-01:** user belongs to A and B with different roles; alternate and verify catalogs, drafts, buttons and dashboard without contamination.
+- **QA-TEN-01/02:** API denies B resource reading/writing from A and applies effective role by membership.
+- Create user without company and service company without deposit.
 
-## Revisión y aprobación
-Aprobar antes de cerrar E1-A2. Ajustar contratos según UML/TP3 durante E2; no confundir una demo en memoria con acceso protegido en servidor.
+## Review and approval
+Approve before closing E1-A2. Adjust contracts according to UML/TP3 during E2; do not confuse a memory demo with server protected access.

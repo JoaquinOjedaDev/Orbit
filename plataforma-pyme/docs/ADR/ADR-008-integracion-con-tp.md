@@ -1,30 +1,30 @@
-# ADR-008 — Convivencia con el TP académico y transición API
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO; estrategia de integración de código PENDIENTE hasta E2.  
-**Responsable de aprobación:** equipo del TP / responsable de integración (a designar).  
-**Fuentes:** E0-A ``1/5/9; E0-B ``1–4 y 12; plan rector v4 ``3–5; backlog v4 `TP3.
+# ADR-008 — Coexistence with academic TP and API transition
+**Date:** 2026-11-06  
+**Status:** PROPOSAL; PENDING code integration strategy up to E2.  
+**Responsible for approval:** TP team/integration officer (to be designated).  
+**Sources:** E0-A ``1/5/9; E0-B ``1–4 and 12; master plan v4 ``3–5; backlog v4 `TP3.
 
-## Contexto
-En el repositorio compartido coexisten `Proyecto-3-AppAdmin-Mascotas/`, `Proyecto-3-Extendido-Generico/` y `plataforma-pyme/`. El usuario pidió trabajar directamente en `main` para facilitar colaboración. El TP de Programación 2 tiene requisitos académicos y backend en evolución. No se debe confundir plataforma de producto con una versión del TP ni alterar trabajo de compañeros por accidente.
+## Context
+In the shared repository coexist `Proyecto-3-AppAdmin-Mascotas/`, `Proyecto-3-Extendido-Generico/` y `plataforma-pyme/`. The user asked to work directly on `main` The Programming TP 2 has academic requirements and evolving backend. It should not confuse product platform with a version of the TP or alter peer work by accident.
 
-## Decisión propuesta
-1. Construir nueva UI/documentación bajo `plataforma-pyme/`, **dentro del mismo GitHub** y actualmente en `main`, sin crear repositorio independiente. No alterar archivos fuera de esa ruta durante E0/E1 salvo acuerdo del equipo.
-2. Versionar cada corte con commit de alcance limitado; comprobar cambios ajenos antes de agregar archivos. No usar `git add .` si hay archivos locales de otros integrantes sin revisar.
-3. No duplicar ni trasladar `Proyecto-3-Extendido-Generico/backend/` antes de evaluar código, pruebas, migraciones y dependencias en E2.
-4. En E2 mapear **≥5 requisitos académicos de alto nivel** a endpoints; FastAPI + SQLAlchemy 2.x + PostgreSQL + Alembic, autenticación, Docker, tests, CI GitHub Actions, UML, patrón justificado, README, documentación y despliegue planificado según la consigna original.
-5. TP3 exige **≥10 tests unitarios ejecutados** (no reemplazables por lista documental, E2E ni tests únicamente de integración). No tocar `Proyecto-3-AppAdmin-Mascotas/` por suposiciones de compatibilidad.
-6. Backend de producto futuro será autoridad sobre stock, ventas, caja, permisos y registros; la UI no debe conservar una segunda autoridad cuando cambie a `ApiGateway`.
-7. MP OAuth/Orders/webhooks se integrará tras consolidar API, tests y cuentas proveedor válidas; QR de E1 será DEMO.
+## Proposed decision
+1. Build new IU/low documentation `plataforma-pyme/`, **within the same GitHub** and currently in `main`, without creating independent repository. Do not alter files outside that path during E0/E1 unless agreed by the computer.
+2. Version each cut with limited scope commit; check other people's changes before adding files. Do not use `git add .` if there are local files of other members without review.
+3. Do not duplicate or transfer `Proyecto-3-Extendido-Generico/backend/` before evaluating code, tests, migrations and dependencies in E2.
+4. En E2 mapear **≥5 high-level academic requirements** a endpoints; FastAPI + SQLAlchemy 2.x + PostgreSQL + Alembic, authentication, Docker, tests, CI GitHub Actions, UML, justified pattern, README, documentation and deployment planned according to the original slogan.
+5. TP3 requires **≥10 unit tests performed** (not replaceable by documentary list, E2E or integration tests only). `Proyecto-3-AppAdmin-Mascotas/` for compatibility assumptions.
+6. Future product backend will be authority over stock, sales, cash, permits and records; the IU should not retain a second authority when switching to `ApiGateway`.
+7. MP OAuth/Orders/webhooks will be integrated after consolidating valid API, tests and supplier accounts; E1 QR will be DEMO.
 
-## Alternativas
-- Reemplazar en sitio el backend académico de inmediato: descartado por alto riesgo sobre trabajo compartido.
-- Repositorio externo o rama obligatoria: no adoptada por preferencia explícita del equipo; ramas futuras siguen disponibles.
-- Forzar todas las necesidades del negocio a UML heredado: descartado; primero se trazan y validan contratos.
+## Alternatives
+- Replace academic backend on site immediately: discarded by high risk over shared work.
+- External repository or mandatory branch: not adopted by explicit preference of the equipment; future branches remain available.
+- Force all business needs to inherited UML: discarded; first contracts are drawn up and validated.
 
-## Riesgos y pruebas
-- Riesgo de modificaciones simultáneas de `main`: los colaboradores deben acordar responsables, revisar `git status` y `git pull --ff-only` antes de publicar.
-- **TP3-01/02:** matriz de cumplimiento y evidencia verificable de tests y CI.
-- **API-01..06:** desarrollo en cortes (identidad/scoping → catálogo → stock → ventas → caja), con PostgreSQL y rollback en fallos.
+## Risks and tests
+- Risk of simultaneous changes in `main`: partners must agree responsible, review `git status` y `git pull --ff-only` before you publish.
+- **TP3-01/02:** compliance matrix and verifiable evidence of tests and IC.
+- **API-01..06:** development in cuts (identity/scoping → catalog → stock → sales → box), with PostgreSQL and rollback in bugs.
 
-## Pendientes para E2
-Ubicación final del backend, estrategia de reutilización de M01/M02, migraciones, patrón de diseño y despliegue **no** se consideran resueltos por este ADR.
+## Earrings for E2
+Final location of the backend, M01/M02 reuse strategy, migrations, design pattern and deployment **no** are considered resolved by this ADR.

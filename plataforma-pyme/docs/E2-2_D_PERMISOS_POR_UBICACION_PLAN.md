@@ -1,84 +1,84 @@
-# E2-2 D — Plan previo y registro de implementación
+# E2-2 D — Prior Plan and Implementation Record
 
-**Proyecto:** Orbit · **Fecha:** 08/11/2026 · **Estado:** IMPLEMENTADO Y VALIDADO EN CI Y WINDOWS (371/371); PR DE REVISIÓN AÚN NO PRESENTADO  
-**Bloque:** E2-2 — Ubicaciones empresariales y autorización por ubicación  
-**Corte verificado:** código E2-2 C en `7abafd8208965cd99b0116e02ffc5240d23f218f` (CI 3/3), documentación/03A sincronizados luego.  
+**Project:** Orbit · **Date:** 08/11/2026 · **Status:** IMPLEMENTED AND VALUE IN CI AND WINDOWS (371/371); UNsubmitted PR FOR REVISION  
+**Block:** E2-2 — Business locations and location clearance  
+**Checked cut:** code E2-2 C in `7abafd8208965cd99b0116e02ffc5240d23f218f` (CI 3/3), documentation/03A synchronized later.  
 **Evidencia local:** Windows: **325 passed in 36.91s**, Alembic `e22b_location_casa (head)` sin deriva, Docker API y PostgreSQL `healthy`, `/ready` = `ready/ok`.
 
-> **Nota:** los apartados 1–5 son el plan histórico anterior a la implementación, por lo que sus expresiones «pendiente» se leen en ese contexto. La sección 6 registra el estado del código vigente.
+> **Nota:** Sections 1–5 are the historical plan prior to implementation, so that their expressions "pending" are read in this context. Section 6 records the status of the current code.
 
-> **Estado vigente E2-2 (08/11/2026):** E2-2 A/A.1/B/C/D implementado y validado: **371 pruebas Windows aprobadas en 47.57s**, Alembic `e22d_assignments (head)` sin deriva, API y PostgreSQL en Docker `healthy`, `/ready` = `ready/ok`. CI del código E2-2 D: 3/3 aprobado, 371 pruebas Python 3.12/3.14 y Docker. **La política por sede aún no se aplica a inventario/compras/ventas**, que son bloques futuros; frontend React permanece DEMO. Los estados parciales descritos en notas de A/B/C constituyen histórico.
+> **State in force E2-2 (08/11/2026):** E2-2 A/A.1/B/C/D implemented and validated: **371 Windows tests approved in 47.57s**, Alembic `e22d_assignments (head)` sin deriva, API y PostgreSQL en Docker `healthy`, `/ready` = `ready/ok`. Code IC E2-2 D: 3/3 approved, 371 Python tests 3.12/3.14 and Docker. **The headquarters policy does not yet apply to inventory/purchases/sales**, which are future blocks; frontend React remains DEMO. The partial states described in notes of A/B/C constitute historical.
 
-## 1. Motivo de esta fase
+## 1. Reason for this phase
 
-La guía maestra establece que E2-2 contempla **pertenencia, permisos y relaciones por ubicación**. E2-2 A/B/C implementa efectivamente:
+The master guide states that E2-2 contemplates **membership, permits and location relationships**. E2-2 A/B/C effectively implements:
 
-- `locations` con FK a Empresa, tipos `LOCAL/FERIA/DEPOSITO/OFICINA/CASA/OTRO`, capacidades independientes, estado y principal activa única.
-- Crear, listar, consultar, editar, pausar/reactivar y elegir principal en **seis rutas reales** por tenant, con sesión y membresía empresarial revalidadas.
-- RBAC empresarial: TITULAR_ADMINISTRATIVO y ADMINISTRADOR administran todas las ubicaciones propias; miembros activos de otros roles pueden consultarlas. La empresa suspendida es solo lectura.
-- 325 tests de regresión local + CI PostgreSQL/Python 3.12/3.14/Docker correctos.
+- `locations` with FK to Company, types `LOCAL/FERIA/DEPOSITO/OFICINA/CASA/OTRO`, independent capabilities, state and main unique active.
+- Create, list, view, edit, pause/reactivate and choose main in **six real routes** by tenant, with revalidated business session and membership.
+- RBAC: AMINISTRATIVE AND ADMINISTRATOR SERVICE manage all of their own locations; active members of other roles can consult them. The suspended company is read only.
+- 325 local regression tests + postgreSQL/Python CI 3.12/3.14/Docker correct.
 
-**No existe aún** asignación de integrantes a sedes concretas ni un permiso operacional que restrinja las futuras compras, stock y ventas a esas sedes. Por lo tanto, **NO declarar E2-2 completo ni generar la hoja `E2-2_ENTREGA_PARA_REVISION.md` hasta resolver explícitamente este alcance o aprobar su diferimiento**.
+**Not yet in existence** assignment of members to specific headquarters or an operational permit restricting future purchases, stocks and sales to such locations. **DO NOT declare complete E2-2 or generate the sheet `E2-2_ENTREGA_PARA_REVISION.md` until this scope is explicitly resolved or its deferment approved**.
 
-## 2. Política sugerida para no romper E2-1 ni E2-2 B/C
+## 2. Suggested policy to avoid breaking E2-1 or E2-2 B/C
 
-1. Mantener la **identidad global** de Usuario y la **Membresía por Empresa**; la ubicación **nunca** crea un rol global ni una membresía independiente.
-2. Mantener la lectura administrativa/operativa actual: miembros activos pueden listar y consultar ubicaciones del tenant, sin cruzar empresas.
-3. Mantener titular/administrador con permiso administrativo empresarial para crear/editar/pausar/designar principal, independientemente de asignaciones laborales futuras.
-4. Definir la asignación **Membresía de Empresa ↔ Ubicación** como vínculo de trabajo (potencialmente muchos-a-muchos) para ENCARGADO/TRABAJADOR, con revocación. Un usuario de varias empresas puede tener asignaciones independientes.
-5. **Las operaciones comerciales futuras** deben verificar simultáneamente: sesión ACTIVA, membresía ACTIVA, empresa ACTIVA, ubicación ACTIVA, capacidad `can_sell` o `can_store` según la operación, y asignación vigente donde corresponda. **Asignación no concede permisos de administración por sí sola.**
-6. Nadie debe obtener acceso a sedes de otro tenant por conocer UUIDs. La suspensión de una membresía cancela su acceso efectivo aunque existan asignaciones históricas.
-7. Evitar reescribir modelos o migraciones de E2-0/E2-1. Si se requieren nuevos índices/constraints para FKs compuestas, agregarlos mediante migración Alembic aditiva y pruebas, no edición retrospectiva.
-8. No inventar dependencias del stock que todavía no existen. Al cambiar `can_store`, indicar que la prohibición con saldos positivos se implementa en E2-5, no validarla de manera ficticia ahora.
-9. No modificar el frontend DEMO ni conectar React a FastAPI en E2-2 D; integración pertenece a E2-7.
+1. Keep the **global identity** of User and the **Membership by Company**; location **Never** creates a global role and an independent membership.
+2. Keep current administrative/operational reading: Active members can list and consult tenant locations, without crossing companies.
+3. Maintain holder/manager with business administrative permission to create/edit/pause/main designator, regardless of future employment assignments.
+4. Define Assignment **Company Membership ↔ Location** as a working link (potentially many-to-many) for CHARGE/TRABEDOR, with revocation. A user from several companies may have separate assignments.
+5. **Future commercial operations** must verify simultaneously: session ACTIVA, membership ENTITRAL, company ENTITLEMENT, location ENTITLEMENT `can_sell` o `can_store` according to the operation, and allocation in force where applicable. **Allocation does not grant administrative permits on its own.**
+6. No one should be granted access to the premises of another tenant for UUIDs. Suspension of a membership cancels effective access even if historical assignments exist.
+7. Avoid rewriting models or migrations of E2-0/E2-1. If new indices/constraints are required for composite FKs, add them by adding additive Alembic migration and testing, not retrospective editing.
+8. Do not invent stock dependencies that do not yet exist. `can_store`, indicate that the ban with positive balances is implemented in E2-5, not validate it in a fictitious way now.
+9. Do not modify the DEMO frontend or connect React to FastAPI in E2-2 D; integration belongs to E2-7.
 
-## 3. Contrato que falta terminar antes de codificar
+## 3. Contract to be terminated before codifying
 
-| Pregunta técnica | Criterio sugerido / protección |
+| Technical question | Suggested criterion/protection |
 |---|---|
-| ¿Qué entidad representa la asignación? | Una asociación de una Membresía **del mismo tenant** con una Ubicación; comprobar tenant tanto en SQL como en el servicio. Evitar roles empresariales duplicados. |
-| ¿Quién puede gestionar asignaciones? | Solo TITULAR_ADMINISTRATIVO / ADMINISTRADOR de la empresa ACTIVA. No permitir que trabajadores se autoasignen. |
-| ¿Se permite asignar un titular/admin a una sede? | Opcional como información, **nunca** como fuente de su autoridad administrativa. |
-| ¿Qué significa una asignación activa? | Solo si la ubicación, empresa y membresía están activas, y la asignación no fue revocada. |
-| ¿Qué se muestra a los trabajadores? | Mantener lectura de ubicaciones como contrato actual; la restricción granular se aplicará a la **operación** sobre una sede, no se infiere que el domicilio deba ser público. Evaluar si `address/map_url` requieren visibilidad más estricta antes del despliegue. |
-| ¿Cómo se comporta el caso sin asignaciones? | Denegar las **operaciones por sede** de trabajador/encargado hasta asignarlo, no crear accesos implícitos. Lectura actual sigue intacta. |
-| ¿Se permite cambiar permiso `can_store` con stock? | Aún sin inventario persistido, puede cambiarse; E2-5 agregará la regla de negocio cuando exista stock real. |
-| ¿Se habilitan operaciones de inventario o venta aquí? | No. E2-2 define política reutilizable y gestión de asignaciones; E2-4/5/6 la consumen. |
+| What entity does the assignment represent? | A Membership Association **of the same tenant** with a Location; check tenant both in SQL and service. Avoid duplicate business roles. |
+| Who can manage assignments? | Only ENTRY_MANNER/ACISTERING OF THE ACTIVA COMPANIES. Do not allow workers to self-assign themselves. |
+| Is it allowed to assign a holder/admin to a headquarters? | Optional as information, **Never** as a source of its administrative authority. |
+| What does an active assignment mean? | Only if the location, company and membership are active, and the assignment was not revoked. |
+| What is shown to the workers? | Keep reading locations as current contract; granular restriction will apply to the **operation** on a seat, it is not inferred that the domicile should be public. `address/map_url` require stricter visibility before deployment. |
+| How does the case behave without assignments? | Deny the **operations by headquarters** worker/manager until assigned, not create implied accesses. Current reading remains intact. |
+| Is permission to change permission `can_store` con stock? | Even without persistent inventory, it can be changed; E2-5 will add the business rule when real stock exists. |
+| Are inventory or sales operations enabled here? | No. E2-2 defines reusable policy and allocation management; E2-4/5/6 consumes it. |
 
-Estas reglas son **propuesta de diseño** para E2-2 D, no funcionalidad probada ni decisión académica irrevocable. Mantener cambios localizados y transaccionales.
+These rules are **design proposal** For E2-2 D, no proven functionality or irrevocable academic decision. Maintain localized and transactional changes.
 
-## 4. Secuencia de implementación verificable
+## 4. Verifiable implementation sequence
 
-1. Especificar el modelo de asignación, sus constraints de pertenencia al mismo tenant, alta/revocación y comportamiento ante membresía/ubicación pausadas.
-2. Añadir modelo SQLAlchemy y nueva migración aditiva. No alterar `e22a_locations`, `e22b_location_casa` ni migraciones E2-1.
-3. Añadir servicios/repositorio/rutas de asignaciones al módulo `locations`, reutilizando identidad/sesión y bloqueos existentes sin mutar el comportamiento de creación y gestión de ubicaciones.
-4. Exponer una política de autorización pura y testeable para futuros comandos por ubicación; para ubicaciones ACTIVA y capacidades compatibles, con rol/miembro/asignación coherentes.
-5. Probar: titular/admin, encargado/trabajador, membresía inactiva, empresa suspendida, ubicación PAUSADA, asignación revocada, IDs ajenos, dos empresas del mismo usuario, unicidades, concurrencia y rollback.
-6. Validar `alembic upgrade head`, `current`, `check`, Pytest completo, CI Python 3.12/3.14 y Docker; confirmar Windows local.
-7. Reconciliar RF-03, CU-04, Documentos 01–05 y UML 03A (PUML/guía/SVG editorial). Dejar 03B y 03C sin cambios.
-8. **Solo entonces** generar `plataforma-pyme/docs/revisiones/E2-2_ENTREGA_PARA_REVISION.md` con SHA de cierre, allowlist del bloque, decisiones deliberadas, exclusiones, resultados y rama `review/e2-2-ubicaciones`. El compañero crea `E2-2_INFORME_DE_REVISION.md` en su rama y presenta PR **sin fusionarlo**.
+1. Specify the assignment model, its tenant membership constraints, high/revocation and behavior before membership/disturbed location.
+2. Add SQLAlchemy model and new additive migration. Do not alter `e22a_locations`, `e22b_location_casa` No E2-1 migrations.
+3. Add services/repository/allocation paths to the module `locations`, reusing existing identity/session and blocking without mutating the creation and management of locations behavior.
+4. To present a pure and testable authorization policy for future location commands; for active locations and compatible capabilities, with consistent role/member/assignment.
+5. Test: holder/admin, manager/worker, inactive membership, suspended company, PAUSADA location, revoked assignment, other IDs, two companies of the same user, uniqueness, attendance and rollback.
+6. Validate `alembic upgrade head`, `current`, `check`, Full Python, CI Python 3.12/3.14 and Docker; confirm Windows local.
+7. Reconciling RF-03, CU-04, Documents 01–05 and UML 03A (PUML/guide/SVG editorial). Leave 03B and 03C unchanged.
+8. **Only then.** generate `plataforma-pyme/docs/revisiones/E2-2_ENTREGA_PARA_REVISION.md` with SHA closing, block allowlist, deliberate decisions, exclusions, results and branch `review/e2-2-ubicaciones`The companion creates `E2-2_INFORME_DE_REVISION.md` in its branch and presents PR **sin fusionarlo**.
 
-## 5. No confundir los cortes
+## 5. Do not confuse the cuts
 
-| Corte | Estado |
+| Cut | Status |
 |---|---|
-| E2-2 A/A.1 | Persistencia y CASA, validados localmente |
-| E2-2 B | POST + GET lista/detalle, validados localmente (277 pruebas) |
-| E2-2 C | PATCH edición, PATCH estado, PUT principal, validados localmente (325 pruebas) |
-| **E2-2 D** | **Pendiente:** asignaciones y permisos operativos granulares por ubicación |
-| E2-2 entrega formal | **No creada** hasta resolver E2-2 D o diferimiento aprobado |
-| E2-3 Catálogo | Sin iniciar; no anticipar código |
+| E2-2 A/A.1 | Persistence and CASA, locally validated |
+| E2-2 B | POST + GET list/detail, locally validated (277 tests) |
+| E2-2 C | PATCH editing, PATCH status, main PUT, locally validated (325 tests) |
+| **E2-2 D** | **Pending:** granular operational allocations and permits by location |
+| E2-2 formal delivery | **Not created** until E2-2 D resolution or approved deferment |
+| E2-3 Catalogue | Unstarted; not anticipate code |
 
-**Alcance cerrado hasta C:** ubicación de empresa con controles efectivos por tenant y rol administrativo. **Brecha reconocida:** permisos por ubicación para operadores y futuros módulos comerciales. Una matriz de pruebas exitosa no demuestra una funcionalidad ausente.
+**Closed range up to C:** location of company with effective controls for tenant and administrative role. **Recognized gap:** Location permissions for operators and future business modules. A successful testing matrix does not demonstrate missing functionality.
 
-## 6. Implementación confirmada de E2-2 D (08/11/2026)
+## 6. Confirmed implementation of E2-2 D (08/11/2026)
 
-**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` y FK compuesta hacia `Location` y `Membership` del MISMO tenant. Migración aditiva `e22d_assignments`, índice único auxiliar de ubicación `(business_id,id)`. Estados administrativos `ACTIVA`/`REVOCADA`; fecha `revoked_at`, sin borrado físico. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` lista asignaciones de una sede (titular/administrador); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` recibe JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` y activa/revoca idempotentemente. Solo se activa una membresía ENCARGADO/TRABAJADOR activa hacia ubicación ACTIVA; revocar permite sede pausada o miembro inactivo. Empresa SUSPENDIDA solo lectura. La política pura `can_operate_at_location` obliga a tenant, membresía, sede y capacidad `SELL/STORE` vigentes, además de asignación ACTIVA a encargados/trabajadores. **La política todavía no se consume en compras, inventario ni ventas**, fuera de este corte. Sin nuevas funciones de E2-1 ni conexión del frontend.
+**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` and FK composed towards `Location` y `Membership` of the same tenant. Additive migration `e22d_assignments`, single location index `(business_id,id)`. Administrative States `ACTIVA`/`REVOCADA`; date `revoked_at`No physical deletion. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` list of assignments from a headquarters (holder/manager); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` receive JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` and actively/revolves. Only one member is activated ENTRY/TRAWER active towards the active location; revoke allows for paused headquarters or inactive member. Company SUSPENDED read only. Pure policy `can_operate_at_location` obliging tenant, membership, headquarters and capacity `SELL/STORE` in force, besides the active assignment to managers/workers. **The policy is not yet consumed in purchases, inventory or sales**, outside this cut. No new E2-1 functions or frontend connection.
 
-**CI comprobado para código funcional `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 y 3.14, 3/3 trabajos aprobados**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Windows local E2-2 D está pendiente:** la última ejecución aportada corresponde a E2-2 C, 325 passed. No atribuir al último commit documental ejecución propia de tests.
+**IC checked for functional code `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 and 3.14, 3/3 jobs approved**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Local Windows E2-2 D is pending:** the last execution contributed corresponds to E2-2 C, 325 passed. Do not attribute to the last commit documentary own execution of tests.
 
-**Próximo paso:** validar 371 pruebas en Windows, Alembic y Docker; luego cerrar documentación/UML y generar hoja de revisión E2-2 con SHA fijo y rama `review/e2-2-ubicaciones`. El compañero elaborará informe y PR sin merge, siguiendo la guía maestra.
+**Next step:** validate 371 tests on Windows, Alembic and Docker; then close documentation/UML and generate E2-2 review sheet with fixed SHA and branch `review/e2-2-ubicaciones`. The partner will prepare report and PR without merit, following the master guide.
 
-## 7. Cierre técnico confirmado y siguiente entrega
+## 7. Confirmed technical closure and next delivery
 
-**Evidencia Windows recibida:** `371 passed in 47.57s`, `e22d_assignments (head)`, `No new upgrade operations detected.`, PostgreSQL y FastAPI `healthy`, `ready/ok`. Esta validación sustituye la indicación «Windows pendiente» que quedó registrada al redactar el plan antes de la ejecución. El siguiente paso es crear `docs/revisiones/E2-2_ENTREGA_PARA_REVISION.md`, con la rama de revisión independiente. No iniciar E2-3 como parte de la revisión.
+**Evidence received from Windows:** `371 passed in 47.57s`, `e22d_assignments (head)`, `No new upgrade operations detected.`, PostgreSQL y FastAPI `healthy`, `ready/ok`. This validation replaces the ‘Windows pending’ indication that was registered when drawing up the plan before implementation. `docs/revisiones/E2-2_ENTREGA_PARA_REVISION.md`, with the independent review branch. Do not start E2-3 as part of the review.

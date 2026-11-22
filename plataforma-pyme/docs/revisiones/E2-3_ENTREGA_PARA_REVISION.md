@@ -1,143 +1,143 @@
 ---
-tipo_documento: "ENTREGA_PARA_REVISION"
-proyecto: "Orbit — Programación 2, UNSAM"
-bloque: "E2-3"
-nombre: "Catálogo multiempresa: persistencia, API, estado e integridad"
+type_document: "INREGA_PARA_REVISION"
+project: "Orbit — Programming 2, UNSAM"
+block: "E2-3"
+name: "Multi-company catalog: persistence, API, state and integrity"
 version: "1.0"
-fecha_corte: "2026-11-08"
-repositorio: "JoaquinOjedaDev/Orbit"
-carpeta_exclusiva: "plataforma-pyme/"
+_Cut date: "2026-11-08"
+repository: "JoaquinOjedaDev/Orbit"
+_exclusive folder: "platform-pyme/"
 rama_origen: "main"
 rama_revision: "review/e2-3-catalogo"
 commit_fin_e2_2: "af47a65bd2c04576cb3cb4b526188591585212f6"
-commit_codigo_e2_3_d_validado_ci: "bf4fd3fa809c9f4e6afdeb064a155acf233b1722"
-commit_previo_a_esta_hoja: "b409a45e5a4db36245753543f7cb177ba038da2f"
-base_rama_revision: "SHA_COMPLETO_DEL_COMMIT_QUE_PUBLICA_ESTA_HOJA"
-informe_revisor: "plataforma-pyme/docs/revisiones/E2-3_INFORME_DE_REVISION.md"
-estado: "CERRADO_FUNCIONALMENTE_PARA_REVISION_INDEPENDIENTE"
-fusion_permitida_al_revisor: false
+commit_code_e2_3_d_validated_ci: "bf4fd3fa809c9f4e6afdeb064a155acf233b1722"
+commit_previous_a_esta_sheet: "b409a45e5a4db36245753543f7cb177ba038da2f"
+base_branch_revision: "SHA_COMMIT_DEL_COMMIT_WHERE_PUBLISH_THAT_SHOLE"
+reviewer_report: "platform-pyme/docs/revisions/E2-3_INFORME_DE_REVISION.md"
+status: "FUNCTIONALLY_FOR_REVISION_INDEPENDENT"
+merge_permitida_al_revisor: false
 ---
 
-# E2-3 — Hoja de entrega para auditoría independiente del Catálogo
+# E2-3 — Catalogue independent audit delivery sheet
 
-**Destinatario:** compañero revisor y la IA con la que realice la auditoría. Este archivo describe el **código efectivamente entregado** y las decisiones de alcance, NO sustituye la revisión ni asegura ausencia de defectos. El resultado debe ser un segundo Markdown, `E2-3_INFORME_DE_REVISION.md`, versionado en `review/e2-3-catalogo`, y un Pull Request contra `main` **sin fusionar**.
+**Addressee:** the reviewer partner and the AI with which the audit is conducted. **code actually delivered** and the scope decisions, do NOT substitute for revision or ensure absence of defects. The result should be a second Markdown, `E2-3_INFORME_DE_REVISION.md`, versioned in `review/e2-3-catalogo`, y un Pull Request contra `main` **sin fusionar**.
 
-> **Regla principal:** examinar E2-3 a fondo, documentar fallos demostrados y corregir **únicamente** los problemas necesarios dentro de la lista blanca. La revisión NO autoriza a reestructurar E2-0/E2-1/E2-2, resolver auditorías ajenas, tocar frontend, crear proveedores/compras/stock/ventas, ni iniciar una refactorización general. El responsable conserva la decisión de ACEPTAR, RECHAZAR, AJUSTAR o DIFERIR cada modificación por separado.
+> **Main rule:** thoroughly examine E2-3, document proven failures and correct **only** The review does not allow for restructuring E2-0/E2-1/E2-2, resolution of external audits, touching frontend, creating suppliers/purchases/stock/sales, or initiating a general refactoring. The responsible retains the decision to ACCEPT, REJECT, EXCUSE or DIFFER each modification separately.
 
-## 1. Repositorio, SHAs y fuentes obligatorias
+## 1. Repository, SHAs and mandatory sources
 
-**Repositorio:** https://github.com/JoaquinOjedaDev/Orbit  
-**Carpeta exclusiva:** `plataforma-pyme/`  
-**Rama de trabajo del responsable:** `main`  
-**Rama que creará el revisor en un clon o worktree separado:** `review/e2-3-catalogo`.
+**Repository:** https://github.com/JoaquinOjedaDev/Orbit  
+**Exclusive Folder:** `plataforma-pyme/`  
+**Work force of the responsible person:** `main`  
+**Branch that will create the reviewer in a separate clone or worktree:** `review/e2-3-catalogo`.
 
-- **Cierre E2-2:** `af47a65bd2c04576cb3cb4b526188591585212f6`. Sirve de referencia histórica para identificar el comienzo del nuevo Catálogo; puede incluir la hoja de revisión E2-2.
-- **Último SHA de CÓDIGO E2-3 aprobado en CI:** `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`.
-- **SHA de código + UML 03A + documentación de E2-3 E previo a esta hoja:** `b409a45e5a4db36245753543f7cb177ba038da2f`.
-- **SHA FIJO de la rama de revisión:** el SHA completo **del commit que publica esta misma hoja**. Es imposible incrustar su propio hash exacto dentro del archivo sin cambiarlo; el responsable lo comunicará junto al enlace. Contrastar mediante `git show`, `git rev-parse HEAD` y existencia de este archivo **antes de comenzar**.
-- **No partir del `main` más reciente** si avanzó luego de la entrega; tampoco sincronizar por rebase/merge durante la revisión sin autorización.
+- **Closure E2-2:** `af47a65bd2c04576cb3cb4b526188591585212f6`. It serves as a historical reference to identify the beginning of the new Catalogue; it can include the review sheet E2-2.
+- **Last E2-3 CODE SHA approved in IC:** `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`.
+- **Code SHA + UML 03A + E2-3 E documentation prior to this sheet:** `b409a45e5a4db36245753543f7cb177ba038da2f`.
+- **SHA FIX of the revision branch:** the full SHA **of the committee that publishes this same sheet**. It is impossible to embed your own exact hash into the file without changing it; the responsible will communicate it next to the link. `git show`, `git rev-parse HEAD` and existence of this archive **before you start**.
+- **Do not start from `main` most recent** whether it advanced after delivery; nor did it synchronize by overbase/merge during review without authorization.
 
-**Orden de lectura y precedencia:**
+**Order of reading and precedence:**
 
-1. Esta hoja y [guía maestra de revisión E2](GUIA_MAESTRA_REVISION_BLOQUES_E2_ASISTENTE_PYME.md).
-2. [01 Requerimientos](../../entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md) RF-04; [02 Casos de uso](../../entrega-programacion-2/02_CASOS_DE_USO.md) CU-05; [03 Dominio/UML](../../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md); [04 Arquitectura](../../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md); [05 Matriz API](../../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md).
-3. [UML 03A PlantUML v0.7](../../entrega-programacion-2/diagramas/03A_CLASES_IDENTIDAD_Y_CATALOGO.puml), [guía 03A](../../entrega-programacion-2/diagramas/03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md), [SVG editorial](../../entrega-programacion-2/diagramas/03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg).
-4. [Matriz E2-3 D de integridad y límites](../E2-3_D_INTEGRIDAD_CATALOGO.md), [README backend](../../backend/README.md) y código real en `backend/app/modules/catalog/`, `models/catalog_item.py`, migración y tests.
-5. Los documentos E2-1/E2-2 **solo para compatibilidad**, nunca como autorización para editarlos. 03B/03C también son solo lectura.
+1. This leaf and [Master review guide E2](GUIA_MAESTRA_REVISION_BLOQUES_E2_ASISTENTE_PYME.md).
+2. [01 Requirements](../../entrega-programacion-2/01_ANALISIS_DE_REQUERIMIENTOS.md) RF-04; [02 Cases of use](../../entrega-programacion-2/02_CASOS_DE_USO.md) CU-05; [03 Dominio/UML](../../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md); [04 Architecture](../../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md); [05 Matrix API](../../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md).
+3. [UML 03A PlantUML v0.7](../../entrega-programacion-2/diagramas/03A_CLASES_IDENTIDAD_Y_CATALOGO.puml), [guide 03A](../../entrega-programacion-2/diagramas/03A_EXPLICACION_IDENTIDAD_EMPRESAS_CATALOGO.md), [SVG editorial](../../entrega-programacion-2/diagramas/03A_IDENTIDAD_EMPRESAS_CATALOGO_REDISENADO.svg).
+4. [E2-3 D matrix of integrity and boundaries](../E2-3_D_INTEGRIDAD_CATALOGO.md), [README backend](../../backend/README.md) and real code in `backend/app/modules/catalog/`, `models/catalog_item.py`migration and tests.
+5. Documents E2-1/E2-2 **only for compatibility**, never as permission to edit them. 03B/03C are also read only.
 
-## 2. Resultado real y límites de cada corte
+## 2. Actual result and limits of each cut
 
-| Corte | Resultado implementado | Última prueba local aportada |
+| Cut | Implemented result | Last local test provided |
 |---|---|---|
-| **E2-3 A** | ORM `CatalogItem`, tabla `catalog_items`, restricciones de tenant, nombre, SKU, unidades, precios; migración aditiva `e23a_catalog` | 407 passed |
-| **E2-3 B** | Cuatro rutas: POST/GET colección y GET/PATCH detalle; normalización, RBAC, tenant, paginación | 498 passed |
-| **E2-3 C** | Quinta ruta PATCH `/status` (ACTIVO/INACTIVO), idempotencia y no borrado | 527 passed |
-| **E2-3 D** | Regresión de Unicode, nulabilidad, tipo/unidad, aislamiento de dos empresas, rollback tras flush y límite BIGINT de offset | **580 passed in 66.45s** |
-| **E2-3 E** | Actualización Documentos 01–05, README, modelo PUML 03A v0.7, guía y SVG editorial, hoja independiente para auditoría | **Sin cambios de código/test**; no se declara un nuevo CI |
+| **E2-3 A** | ORM `CatalogItem`, tabla `catalog_items`, tenant restrictions, name, SKU, units, prices; additive migration `e23a_catalog` | 407 passed |
+| **E2-3 B** | Four routes: POST/GET collection and GET/PATECH detail; standardization, RBAC, tenant, pagination | 498 passed |
+| **E2-3 C** | Quinta ruta PATCH `/status` (ACTIVE/INACTIVE), Idempotency and not erased | 527 passed |
+| **E2-3 D** | Unicode regression, nullability, type/unit, isolation of two companies, rollback after flow and BIGINT offset limit | **580 passed in 66.45s** |
+| **E2-3 E** | Update Documents 01–05, README, model PUML 03A v0.7, guide and editorial SVG, independent sheet for audit | **No code changes/test**; no new IC declared |
 
-**Estado:** el Catálogo **está implementado y validado localmente para su alcance**. No se ha implementado aún Proveedor ni operaciones de compras, stock, ventas o frontend conectado a FastAPI. No inferir de esta tabla un TP final completo ni una puesta en producción.
+**Status:** Catalogue **is implemented and validated locally for its scope**. No supplier or purchase, stock, sales or frontend operations connected to FastAPI have been implemented yet. Do not infer from this table a complete final TP or a production setting.
 
-### 2.1. Modelo, cardinalidad y restricciones reales
+### 2.1. Actual model, cardinality and restrictions
 
-- Cada `CatalogItem` pertenece a una sola `Business` mediante `business_id` y FK `RESTRICT`. Una empresa puede iniciar con **cero artículos**. Existe UNIQUE adicional `(business_id,id)` para facilitar FK comerciales compuestas futuras.
-- `kind` representa **ELABORADO, REVENTA, INSUMO, SERVICIO**. El `item_type` BIEN/SERVICIO de la API es **derivado de `kind`**, NO una columna o segundo discriminador mutable.
-- `unit` admite `UNIDAD, GRAMO, KILOGRAMO, MILILITRO, LITRO, PAQUETE, CAJA, SERVICIO`. Clase SERVICIO exige unidad SERVICIO y viceversa. No inventar unidades sin acuerdo de producto.
-- `name` y `name_key` (canónica mediante NFKC, colapso de espacios y `casefold`), hasta 90 caracteres efectivos. UNIQUE `(business_id,name_key)` incluye fichas INACTIVO.
-- `sku` opcional/NULL, máximo 32 caracteres ASCII `[A-Z0-9._-]` tras NFKC/mayúsculas; UNIQUE parcial `(business_id,sku) WHERE sku IS NOT NULL`. Varios artículos sin SKU son válidos; SKU no nulo es único en la empresa **incluso si está INACTIVO**. Otra empresa puede reutilizarlo.
-- `category` texto no vacío, valor inicial `General`; `description` y `observations` guardados por ficha. `sellable` es Boolean independiente de `status`.
-- `price_cents` y `reference_cost_cents` son BIGINT **opcionales**, entre 0 y 99.999.999.999 centavos, **sin Float**. Precio cero es válido, precio NULL significa no informado; el futuro comando comercial será responsable de exigir un importe apropiado.
-- `status` ACTIVO/INACTIVO, con desactivación/reactivación reversible y **sin DELETE físico**. Estado repetido por la ruta dedicada no actualiza `updated_at`. El catálogo de consulta incluye fichas inactivas; desactivar NO libera nombre ni SKU.
-- `created_at`, `updated_at` persisten fechas. Registrar fichas **no crea stock**, ubicación, compra, venta, saldo, asiento ni movimiento.
+- Each `CatalogItem` belongs to one `Business` by `business_id` y FK `RESTRICT`. A company can start with **zero articles**. Additional UNIQUE exists `(business_id,id)` to facilitate future composite commercial FK.
+- `kind` represents **ELABORATED, REVENT, INSUMO, SERVICE**. El `item_type` WELL/SERVICE of the API is **derived from `kind`**, NOT a column or second mutable discriminator.
+- `unit` admite `UNIDAD, GRAMO, KILOGRAMO, MILILITRO, LITRO, PAQUETE, CAJA, SERVICIO`. Class SERVICE requires unit SERVICE and vice versa. Do not invent units without product agreement.
+- `name` y `name_key` (canonical by NFKC, collapse of spaces and `casefold`), up to 90 characters effective. `(business_id,name_key)` includes INACTIVE tokens.
+- `sku` optional/NULL, maximum 32 ASCII characters `[A-Z0-9._-]` after NFKC/mayuscules; partial UNIQUE `(business_id,sku) WHERE sku IS NOT NULL`. Several items without SKU are valid; non-zero SKU is unique in the company **even if you are inactive**Another company can reuse it.
+- `category` non-empty text, starting value `General`; `description` y `observations` saved by file. `sellable` is Boolean independent of `status`.
+- `price_cents` y `reference_cost_cents` son BIGINT **optional**, between 0 and 99.999.999 cents, **sin Float**. Zero price is valid, NULL price means uninformed; the future commercial command will be responsible for demanding an appropriate amount.
+- `status` ASSETS/INACTIVE, with reversible deactivation/reactivation and **without physical DELETE**. Repeated status for dedicated route not updated `updated_at`. The query catalog includes inactive chips; disable does NOT release name or SKU.
+- `created_at`, `updated_at` linger dates. Register tokens **no crea stock**location, purchase, sale, balance, seat or movement.
 
-**Atención:** la comprobación canónica de nombres y SKU ocurre en el DTO/servicio; PostgreSQL protege las claves almacenadas mediante índices. No afirmar que SQL normaliza automáticamente todas las entradas directas. Revisar que la lógica resuelva conflictos de concurrencia mediante excepciones SQL y rollback.
+**Attention:** The canonical check of names and SKU occurs in the DTO/service; PostgreSQL protects keys stored by indexes. Do not claim that SQL automatically normalizes all direct entries. Check that logic resolves conflicts of continuance through SQL and rollback exceptions.
 
-### 2.2. Las CINCO rutas HTTP reales
+### 2.2. The actual 5 HTTP routes
 
-Prefijo exacto `/api/v1/businesses/{business_id}`. Todas revalidan sesión, usuario y membresía empresarial.
+Prefix exact `/api/v1/businesses/{business_id}`. All revalidate session, user and business membership.
 
-| Método | Ruta | Efecto | Éxito |
+| Method | Path | Effect | Success |
 |---|---|---|---|
-| GET | `/catalog` | Lista ordenada por `name_key,id`, activas e inactivas, offset >= 0, limit 1..500 | 200 |
-| POST | `/catalog` | Crea una ficha ACTIVO sin stock | 201 |
-| GET | `/catalog/{item_id}` | Consulta una ficha del tenant | 200 |
-| PATCH | `/catalog/{item_id}` | Edita atributos permitidos, NO estado ni tenant | 200 |
-| PATCH | `/catalog/{item_id}/status` | Solo `ACTIVO`/`INACTIVO`, reversible, idempotente | 200 |
+| GET | `/catalog` | List sorted by `name_key,id`, active and inactive, offset >= 0, limit 1.500 | 200 |
+| POST | `/catalog` | Creates a stockless Active tab | 201 |
+| GET | `/catalog/{item_id}` | Check a tenant tab | 200 |
+| PATCH | `/catalog/{item_id}` | Edit allowed attributes, NOT state or tenant | 200 |
+| PATCH | `/catalog/{item_id}/status` | Alone `ACTIVO`/`INACTIVO`, reversible, idempotente | 200 |
 
-**RBAC:** miembros ACTIVA con permiso empresarial de lectura pueden GET. Para POST/PATCH, **solo TITULAR_ADMINISTRATIVO y ADMINISTRADOR**, con Empresa ACTIVA y sesión válida. Empresa SUSPENDIDA admite consultas autorizadas pero no modificaciones.
+**RBAC:** Active members with business readable permission can GET. For POST/PATCH, **only ENTRY_MANNER AND ADMINISTRATOR**, with Active Company and valid session. SUSPENDED company supports authorized consultations but no modifications.
 
-**Errores:** 401 token/sesión inválidos; 403 falta de permiso del rol; 404 empresa, membresía o artículo fuera del tenant/inexistente; 409 nombre/SKU duplicado o empresa suspendida en escritura; 422 payload, unidad, tipo, campos protegidos o paginación inválidos. Revisar **cada ruta**: no asumir mismo listado de errores en todos los casos. Atributos `business_id,id,name_key,status,created_at,updated_at` no deben poder suplantarse mediante POST/PATCH genérico. `status` solo por ruta dedicada. Valores `null` del PATCH de campos opcionales se distinguen de campo omitido.
+**Errors:** 401 invalid token/session; 403 non-permission role; 404 company, membership or item outside the tenant/non-existent; 409 duplicate SKU name or company suspended in writing; 422 payload, unit, type, protected fields or invalid pagination. **each route**: not to assume the same list of errors in all cases. Attributes `business_id,id,name_key,status,created_at,updated_at` should not be supplanted by generic POST/PATECH. `status` only by dedicated route. `null` the optional fields PATCH are distinguished from omitted field.
 
-### 2.3. Reglas y diferencias deliberadas
+### 2.3. Deliberate rules and differences
 
-1. Plataforma generalista multiempresa/multirrubro. WALOS es **solo un caso cliente de ejemplo**.
-2. La empresa nace con **cero artículos**; no se crea ficha, almacén o inventario por defecto.
-3. `BIEN/SERVICIO` derivado de `kind`; impedir duplicación innecesaria de estado conceptual en SQL.
-4. Los cuatro tipos de artículo son las categorías `kind` de la DEMO, **no** la columna libre `category`; son conceptos diferentes.
-5. El catálogo contiene tanto bienes físicos como servicios, pero **no autoriza ni contabiliza venta o producción**.
-6. Precio y costo de referencia son opcionales y enteros en centavos; no requieren ser mayores que cero.
-7. Nombre canónico y SKU permanecen reservados mientras una ficha está INACTIVO. Solo edición explícita y válida del nombre/SKU puede liberar la clave previa, no la desactivación.
-8. La ruta `PATCH /status` no elimina fichas y no cambia `sellable` ni otros atributos de negocio.
-9. `PATCH` parcial puede cambiar `kind` y `unit` conjuntamente si la combinación final es válida **porque no existe todavía historial comercial**. La protección contra cambios incompatibles con operaciones previas es obligación de los futuros módulos comerciales; no inventar un bloqueo basado en historia inexistente.
-10. El límite de paginación `offset` es el máximo BIGINT PostgreSQL `9_223_372_036_854_775_807` para impedir error 500 con enteros arbitrarios. No modificar el contrato sin prueba de compatibilidad.
-11. La fuente PlantUML 03A incluye correspondencia real completa; el SVG es **lámina editorial resumida**: puede omitir atributos y asociaciones mostrados en la guía. `Proveedor` continúa conceptual/TO-BE.
-12. Los commits D agregan tests y una corrección de límite offset, **no** nueva migración. La migración `e23a_catalog` aplicada forma parte del historial, y no se reescribe durante revisión.
+1. Generalist multi-company/multi-rubro platform. **just one example client case**.
+2. The company is born with **zero articles**; no file, warehouse or inventory is created by default.
+3. `BIEN/SERVICIO` derived from `kind`; prevent unnecessary duplication of conceptual status in SQL.
+4. The four types of article are categories `kind` DEMO, **no** the free column `category`; they are different concepts.
+5. The catalogue contains both physical goods and services, but **does not authorize or account for sale or production**.
+6. Price and reference cost are optional and whole in cents; they do not require being greater than zero.
+7. Canon name and SKU remain reserved while a tab is INACTIVE. Only explicit and valid editing of the name/SKU can release the previous key, not deactivation.
+8. The route `PATCH /status` does not remove chips and does not change `sellable` or other business attributes.
+9. `PATCH` partial may change `kind` y `unit` together if the final combination is valid **because there is no business history yet**Protection against changes incompatible with prior transactions is an obligation of future business modules; not to invent a blockade based on non-existent history.
+10. The page limit `offset` is the maximum BIGINT PostgreSQL `9_223_372_036_854_775_807` to prevent 500 error with arbitrary integers. Do not modify the contract without proof of compatibility.
+11. The PlantUML 03A source includes full real correspondence; the SVG is **Summary editorial sheet**: can omit attributes and associations shown in the guide. `Proveedor` continues conceptual/TO-BE.
+12. D commit adds tests and an offset limit correction, **no** new migration. `e23a_catalog` applied is part of the history, and is not rewritten during revision.
 
-## 3. Alcance EXCLUIDO y dependencias para otros bloques
+## 3. EXCLUDED scope and dependencies for other blocks
 
-- **E2-4 Proveedores, Compras y Recepción:** no existen sus rutas backend todavía. Usarán artículos del mismo tenant y una ubicación compatible para recibir.
-- **E2-5 Inventario:** saldos por ubicación, lotes, transferencias, movimientos, inventario inicial real y control de capacidad `can_store`.
-- **E2-6 Ventas y pagos declarados:** línea de venta, precio explícito si no hay precio de lista, estado ACTIVO y `sellable`, uso de `can_sell` y permisos operativos por sede, historial/snapshots, concurrencia comercial.
-- **E2-7 Frontend conectado / E2E:** React DEMO es independiente; no confundir sus pantallas con rutas FastAPI integradas.
-- Versionado de precios/historial fiscal, variantes complejas, fotos comerciales persistentes, QR de cobro Mercado Pago, roles nuevos, etiquetas ilimitadas, geolocalización, notificaciones y despliegue público.
-- Modificar registro, invitaciones, titularidad, membresías, roles empresariales E2-1; ubicaciones/asignaciones E2-2; UML 03B/03C.
-- Ensayo de carga y prueba específica de dos INSERT simultáneos sobre el mismo SKU/nombre **NO se realizaron**. Los índices PostgreSQL son defensa SQL, pero los tests de colisión fueron secuenciales; documentar el límite y sugerir una prueba independiente.
+- **E2-4 Suppliers, Purchases and Reception:** there are no backend routes yet. You will use items from the same tenant and a compatible location to receive.
+- **E2-5 Inventory:** balances by location, lots, transfers, movements, actual initial inventory and capacity control `can_store`.
+- **E2-6 Sales and payments declared:** sales line, explicit price if no list price, active status and `sellable`, use of `can_sell` and operating permits by headquarters, history/snapshots, commercial attendance.
+- **E2-7 Frontend connected / E2E:** React DEMO is independent; do not confuse your screens with integrated FastAPI routes.
+- Price/tax history version, complex variants, persistent commercial photos, QR payment Market Payment, new roles, unlimited labels, geolocation, notifications and public deployment.
+- Modify registration, invitations, ownership, memberships, business roles E2-1; locations/assignments E2-2; UML 03B/03C.
+- Load test and specific test of two simultaneous INSERTs on the same SKU/name **NO were performed**. PostgreSQL indices are SQL defense, but collision tests were sequential; document the limit and suggest an independent test.
 
-**Una dependencia fuera de alcance debe informarse como riesgo o requisito futuro, no implementarse durante la auditoría sin permiso.**
+**An out of reach unit should be reported as a future risk or requirement, not implemented during the audit without permission.**
 
-## 4. Archivos reales que revisar (todos dentro de plataforma-pyme)
+## 4. Real files to review (all inside platform-pyme)
 
-**Persistencia y esquema:**
+**Persistence and outline:**
 
-- `backend/app/infrastructure/models/catalog_item.py` — campos SQL, CHECK, UNIQUE por empresa, FK.
-- `backend/alembic/versions/20261108_0011_catalog_items.py` — migración `e23a_catalog`, aditiva; **SOLO LECTURA, NO modificar migraciones aplicadas**.
-- `backend/app/infrastructure/models/__init__.py` — registro del modelo en metadatos, solo lectura.
-- `backend/tests/test_postgres_integration.py` — head de Alembic, solo lectura.
+- `backend/app/infrastructure/models/catalog_item.py` — SQL, CHECK, UNIQUE fields by company, FK.
+- `backend/alembic/versions/20261108_0011_catalog_items.py` — migration `e23a_catalog`, aditiva; **ONLY READING, NOT Modifying Applied Migrations**.
+- `backend/app/infrastructure/models/__init__.py` — registration of the model in metadata, read only.
+- `backend/tests/test_postgres_integration.py` — Alembic head, read only.
 
 **API:**
 
-- `backend/app/modules/catalog/schemas.py` — DTO de creación, edición, status, canonicalización y límites.
-- `backend/app/modules/catalog/service.py` — sesiones, membresías, rol, transacciones, 409, actualización.
-- `backend/app/modules/catalog/repository.py` — queries por `business_id`, orden y bloqueo.
-- `backend/app/modules/catalog/router.py` — cinco contratos HTTP, códigos y paginación.
-- `backend/app/modules/catalog/__init__.py`, registro de rutas en `backend/app/api/v1/router.py` (último, SOLO LECTURA salvo permiso previo).
+- `backend/app/modules/catalog/schemas.py` — DTO of creation, editing, status, canonicalization and limits.
+- `backend/app/modules/catalog/service.py` — sessions, memberships, role, transactions, 409, update.
+- `backend/app/modules/catalog/repository.py` — queries por `business_id`Order and lock.
+- `backend/app/modules/catalog/router.py` — five HTTP contracts, codes and pagination.
+- `backend/app/modules/catalog/__init__.py`, route log in `backend/app/api/v1/router.py` (last, ONLY READING unless previously allowed).
 
-**Pruebas:** `backend/tests/test_catalog_item_model.py`, `test_catalog_item_integration.py`, `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py`, `test_catalog_hardening_schemas.py`. Puede haber más archivos `test_catalog*.py` dentro del mismo scope; verificarlos por listado, no inferirlos.
+**Tests:** `backend/tests/test_catalog_item_model.py`, `test_catalog_item_integration.py`, `test_catalog_schemas.py`, `test_catalog_http.py`, `test_catalog_api_integration.py`, `test_catalog_hardening_schemas.py`There may be more files `test_catalog*.py` within the same scope; check by listing, not infer them.
 
-**Documentación:** 01–05, guía técnica E2-3 D, UML 03A PUML/guía/SVG e índice. Comparar AS-IMPLEMENTED y requisitos TO-BE sin corregir históricos retroactivamente si están rotulados como tales.
+**Documentation:** 01–05, technical guide E2-3 D, UML 03A PUML/guide/SVG and index. Compare AS-IMPLEMENTED and TO-BE requirements without retroactively correcting historical if they are labeled as such.
 
-## 5. LISTA BLANCA de edición del revisor (restricción vinculante)
+## 5. BLANK LIST of revisioner edition (binding restriction)
 
-Las rutas permitidas solo se modifican si existe hallazgo y solución proporcional. **Por defecto, todo archivo no expresamente autorizado es SOLO LECTURA.**
+The permitted routes are only modified if there is a finding and proportional solution. **By default, any file not expressly authorized is READING ONLY.**
 
 ~~~yaml
 rutas_permitidas_sin_autorizacion_adicional_para_correcciones_demostradas:
@@ -190,28 +190,28 @@ rutas_prohibidas_o_solo_lectura:
 regla_general: "Revisar solo archivos de E2-3; si una corrección requiere otro archivo, elevar propuesta y esperar aprobación."
 ~~~
 
-**Regla estricta sobre migraciones:** `20261108_0011_catalog_items.py` ya se aplicó en PostgreSQL local; jamás modificarla retroactivamente. Para una vulnerabilidad que exija nuevo CHECK, índice o columna, proponer **nueva** migración aditiva con compatibilidad, riesgo y pruebas. Esperar aprobación antes de escribirla.
+**Strict migration rule:** `20261108_0011_catalog_items.py` already applied to local PostgreSQL; never modify it retroactively. For a vulnerability that requires new CHECK, index or column, propose **new** Additive migration with compatibility, risk and evidence. Expect approval before writing it.
 
-## 6. Evidencia previa disponible; el revisor debe reproducir lo que pueda
+## 6. Evidence available; reviewer must reproduce what he or she can
 
-| Control | Resultado aportado | Clasificación |
+| Ctrl | Results | Classification |
 |---|---|---|
-| Git | SHA de código D `bf4fd3fa...`, SHA de cierre E previo a hoja `b409a45...` | Corte autor |
+| Git | D-code SHA `bf4fd3fa...`, pre-leaf closure E SHA `b409a45...` | Author Court |
 | Pytest Windows | **580 passed in 66.45s** | `REPORTADO_POR_AUTOR` |
 | Alembic Windows | `e23a_catalog (head)`, `No new upgrade operations detected.` | `REPORTADO_POR_AUTOR` |
-| Docker Windows | API y PostgreSQL `healthy` | `REPORTADO_POR_AUTOR` |
+| Docker Windows | API and PostgreSQL `healthy` | `REPORTADO_POR_AUTOR` |
 | Readiness Windows | `/ready` devuelve `ready / ok` | `REPORTADO_POR_AUTOR` |
 | CI D (Python 3.12) | 580 passed, PostgreSQL 16, sin deriva de esquema | CI 42508771222, `CI_PASS_VERIFICADO` |
-| CI D (Python 3.14) | 580 passed, PostgreSQL 16, sin deriva de esquema | Mismo run/SHA |
-| CI D Docker | Imagen y comprobación de liveness | Mismo run/SHA, aprobado |
+| CI D (Python 3.14) | 580 passed, PostgreSQL 16, sin deriva de esquema | Same run/SHA |
+| CI D Docker | Image and Liveness Check | Same run/SHA, approved |
 
-**Importante:** el revisor no debe marcar `EJECUTADO_PASS` sobre pruebas que solo ejecutó el responsable u otro runner. Si corre tests en su ambiente, reportar **su propio SHA, comando, fecha, resultado, PostgreSQL y configuración**. Los commits E son documentales y no aportan pruebas de concurrencia, producción ni cargas.
+**Important:** the reviewer must not mark `EJECUTADO_PASS` about tests that only the responsible or other runner performed. If you run tests in your environment, report **your own SHA, command, date, result, PostgreSQL and configuration**. E-commitments are documentaries and do not provide evidence of competition, production or burden.
 
-## 7. Procedimiento de Git y revisión — SIN MERGE
+## 7. Git and Review Procedure — NO MERGE
 
-### A. Confirmar acceso, fijar SHA y crear la rama independiente
+### A. Confirm access, fix SHA and create independent branch
 
-Usar otro clon o worktree aislado. No modificar el árbol de trabajo habitual del responsable ni sus archivos locales sin seguimiento. Antes de continuar, confirmar acceso real a `plataforma-pyme/`, Documentos 01–05, 03A, código Catalog y tests. Si el acceso es incompleto, detallar exactamente cuáles faltan.
+Use another clone or isolated worktree. Do not modify the usual work tree of the responsible person or his local files without tracking. Before continuing, confirm real access to `plataforma-pyme/`, Documents 01–05, 03A, Catalog code and tests. If access is incomplete, detail exactly which ones are missing.
 
 ~~~powershell
 git clone https://github.com/JoaquinOjedaDev/Orbit.git
@@ -229,26 +229,26 @@ git branch --show-current
 git rev-parse HEAD
 ~~~
 
-Si `review/e2-3-catalogo` ya existe, NO sobrescribirla ni usar `reset --hard` o `push --force`. Coordinar con el equipo.
+Si `review/e2-3-catalogo` already exists, DO NOT overwrite or use it `reset --hard` o `push --force`. Coordinate with the team.
 
-### B. Revisar con evidencia y priorizar
+### B. Reviewing with evidence and prioritizing
 
-1. Inspeccionar RF-04/CU-05, esquemas, migración, servicios, repositorios, router, tests, UML 03A y README de **este mismo SHA**.
-2. Comparar desde el cierre E2-2 `af47a65...` hasta el corte, filtrando **solo cambios E2-3**. No asumir que todos los archivos de un diff histórico son editables.
-3. Construir matriz requisito → DTO → API → Servicio → Repositorio → SQL → pruebas, diferenciando implementado, parcial y futuro.
-4. Buscar bugs P0/P1/P2/P3 reproducibles con condición de entrada, respuesta real, impacto y evidencia de código/línea.
-5. Revisar especialmente SQL tenant-safe, roles, revocación de sesión, Unicode, colisiones y error mapping, idempotencia de estado, carrera simultánea real si el entorno lo permite, errores 500, rollback, esquema y SVG.
-6. Distinguir una mejora de producto fuera de alcance de una falla real. No cambiar diseño deliberado sin autorización.
+1. Inspect RF-04/CU-05, schemas, migration, services, repositories, router, tests, UML 03A and README of **this same SHA**.
+2. Compare from closure E2-2 `af47a65...` until cut, filtering **only changes E2-3**. Do not assume that all files of a historical diff are editable.
+3. Build array requirement → DTO → API → Service → Repository → SQL → tests, differentiated implemented, partial and future.
+4. Search for reproducible P0/P1/P2/P3 bugs with input, actual response, impact and code/line evidence.
+5. Especially review SQL tenant-safe, roles, session revocation, Unicode, collisions and mapping error, state idempotency, real simultaneous race if environment allows, 500 errors, rollback, schema and SVG.
+6. Distinguishing an out-of-range product improvement from a real failure. Do not change deliberate design without authorization.
 
-### C. Corregir en commits separados y acotados
+### C. Correct in separate and limited committees
 
-Un hallazgo debe mapear a `REV-E2-3-###`; su corrección, a `MOD-E2-3-###`. Preferir **un hallazgo/un cambio lógico/un commit**. Cada bug reproducible corregido debe acompañarse de test de regresión que falle antes y pase después. No inflar la auditoría con reformatos o refactors generales.
+A finding should map to `REV-E2-3-###`; correction, a `MOD-E2-3-###`. Prefer **a finding/a logical change/a commit**. Each corrected reproducible bug should be accompanied by regression test that fails before and after. Do not inflate the audit with general reformats or refactors.
 
-Si la corrección exige archivo fuera de la lista blanca o migración nueva, **detener esa modificación**, registrar evidencia y solicitar autorización previa, con impacto sobre historia de datos y rollback. Una limitación que no puede corregirse sin tocar E2-1/E2-2 debe quedar como hallazgo abierto, no provocar un cambio transversal unilateral.
+If the correction requires file off the whitelist or new migration, **stop this modification**, record evidence and request prior authorization, with impact on data history and rollback. A limitation that cannot be corrected without touching E2-1/E2-2 should remain as an open finding, not cause a unilateral transversal change.
 
-### D. Validar con entorno propio seguro
+### D. Validate with secure environment
 
-Desde `plataforma-pyme/backend/`, únicamente sobre una base PostgreSQL de desarrollo conocida:
+From `plataforma-pyme/backend/`, only on a well-known PostgreSQL development basis:
 
 ~~~powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
@@ -262,7 +262,7 @@ try {
 }
 ~~~
 
-Desde `plataforma-pyme/`:
+From `plataforma-pyme/`:
 
 ~~~powershell
 docker compose --profile api up -d --build --wait api
@@ -270,9 +270,9 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ~~~
 
-**No ejecutar** migraciones sobre bases compartidas o productivas, ni `downgrade`, `stamp`, `docker compose down -v`, limpieza SQL o `git reset --hard` como atajos. Si no posee PostgreSQL/entorno, consignar `OMITIDO_SIN_ENTORNO` en lugar de inventar resultados. Verificar el **CI del PR**, sobre su propio SHA, no únicamente el run histórico.
+**No ejecutar** migration on a shared or productive basis; or `downgrade`, `stamp`, `docker compose down -v`, SQL cleaning or `git reset --hard` as shortcuts. If you do not have PostgreSQL/environment, enter `OMITIDO_SIN_ENTORNO` rather than inventing results. **PR IC**, about his own SHA, not just the historical run.
 
-Estados permitidos: `EJECUTADO_PASS`, `EJECUTADO_FAIL`, `OMITIDO_SIN_ENTORNO`, `NO_EJECUTADO`, `CI_PENDIENTE`, `CI_PASS_VERIFICADO`, `CI_FAIL_VERIFICADO`.
+Permissible States: `EJECUTADO_PASS`, `EJECUTADO_FAIL`, `OMITIDO_SIN_ENTORNO`, `NO_EJECUTADO`, `CI_PENDIENTE`, `CI_PASS_VERIFICADO`, `CI_FAIL_VERIFICADO`.
 
 ### E. Publicar informe y PR, NO fusionar
 
@@ -286,13 +286,13 @@ git commit -m "docs(review): informe de auditoria E2-3"
 git push -u origin review/e2-3-catalogo
 ~~~
 
-Si hubo correcciones de código, agregarlas individualmente en sus commits previos. **No usar `git add -A` indiscriminado**. Abrir PR con **base `main` ← head `review/e2-3-catalogo`**, preferiblemente Draft mientras se revisa. **El revisor NO fusiona nada**, ni integra PRs E2-1/E2-2.
+If there were code corrections, add them individually in your previous commit. **Do not use `git add -A` Indiscriminate**. Open PR with **base `main` ← head `review/e2-3-catalogo`**preferably draft while checked. **The reviewer does NOT merge anything**, nor integrate PRs E2-1/E2-2.
 
-Si `main` avanza durante la revisión, mantener SHA original. No hacer `git rebase origin/main` ni `git merge origin/main` sin permiso. Registrar diferencias y, si corresponde, `CONFLICTO_CON_MAIN`. El responsable decidirá cherry-pick o integración selectiva.
+Si `main` progress during the review, keep original SHA. Do not do `git rebase origin/main` ni `git merge origin/main` without permission. Record differences and, if applicable, `CONFLICTO_CON_MAIN`The responsible person shall decide cherry pick or selective integration.
 
-## 8. Segundo documento obligatorio del revisor: INFORME E2-3
+## 8. Second mandatory document of the reviewer: E2-3 report
 
-Ruta fija: **`plataforma-pyme/docs/revisiones/E2-3_INFORME_DE_REVISION.md`**. Debe estar en el PR aunque no se proponga ninguna corrección. Encabezado YAML parseable:
+Fixed path: **`plataforma-pyme/docs/revisiones/E2-3_INFORME_DE_REVISION.md`**. It should be in the PR even if no correction is proposed. Headed YAML parseable:
 
 ~~~yaml
 ---
@@ -318,47 +318,47 @@ ci_del_pr: null
 ---
 ~~~
 
-**Contenido obligatorio:** resumen ejecutivo; acceso real y SHA; lectura de requisitos; matriz de trazabilidad; metodología de pruebas, SQL/RBAC, canonicalización y concurrencia; hallazgos `REV-E2-3-###` con pruebas; modificaciones `MOD-E2-3-###` con commits y efectos; pendientes y decisiones humanas; impacto sobre E2-1/E2-2 y datos existentes; coherencia Documentos 01–05/UML 03A; tabla de ejecución de tests con SHA/fecha/comando/estado y límites; lista blanca verificada; estado de CI del PR; URL del PR y declaración **NO MERGE**.
+**Mandatory content:** executive summary; real access and SHA; requirements reading; traceability matrix; testing methodology, SQL/RBAC, canonicalization and concurring; findings `REV-E2-3-###` with tests; modifications `MOD-E2-3-###` with commit and effects; pending human decisions; impact on E2-1/E2-2 and existing data; consistency Documents 01–05/UML 03A; test run table with SHA/date/command/state and limits; verified whitelist; PR IC status; PR URL and declaration **NO MERGE**.
 
-### 8.1. Matriz OBLIGATORIA de decisión selectiva
+### 8.1. Obligatory selective decision matrix
 
-| ID cambio | Hallazgo | Commit SHA | Archivos | Prioridad | Antes / después | Test nuevo y CI PR | Impacto y compatibilidad | Dependencias | Recomendación revisor | Decisión equipo |
+| Change ID | Finding | Commit SHA | Files | Priority | Before/after | New Test and CI PR | Impact and compatibility | Units | Revised recommendation | Team decision |
 |---|---|---|---|---|---|---|---|---|---|---|
-| MOD-E2-3-001 | REV-E2-3-001 | SHA real | archivos reales | P0/P1/P2/P3 | evidencia | comando/resultado | E2-1/E2-2/datos/API | otros MOD o ninguna | ACEPTAR / RECHAZAR / AJUSTAR / DIFERIR | **PENDIENTE** |
+| MOD-E2-3-001 | REV-E2-3-001 | Actual SHA | real files | P0/P1/P2/P3 | evidence | command/outcome | E2-1/E2-2/Data/API | other MOD or none | ACCEPT/REJECT/JUST/DIFFERENCE | **PENDING** |
 
-El revisor nunca completa la columna final en nombre del equipo. No mezclar en un solo commit una corrección bloqueante con una mejora estética opcional. Si hay dependencias, explicitar orden y si pueden aceptarse por separado.
+The reviewer never completes the final column on behalf of the team. Do not mix a blocking correction with an optional aesthetic improvement in one piece. If there are dependencies, specify order and if they can be accepted separately.
 
-### 8.2. Criterios de dictamen
+### 8.2. Criteria for opinions
 
-| Situación | Recomendación |
+| Status | Recommendation |
 |---|---|
-| Cero P0/P1 pendientes, cobertura crítica propia satisfactoria, CI PR verificado cuando corresponde, alcance respetado | `APTO` |
-| Sin P0/P1, solo P2/P3 documentados y pruebas relevantes correctas | `APTO_CON_OBSERVACIONES` |
-| P0/P1 pendientes o pruebas críticas fallidas | `REQUIERE_CORRECCIONES` |
-| Archivos fuera de alcance, migración incompatible, datos en riesgo o conflicto grave sin resolución | `BLOQUEADO` |
+| Zero P0/P1 outstanding, satisfactory own critical coverage, CI PR verified where applicable, scope respected | `APTO` |
+| No P0/P1, only documented P2/P3 and relevant correct tests | `APTO_CON_OBSERVACIONES` |
+| P0/P1 pending or critical evidence failed | `REQUIERE_CORRECCIONES` |
+| Files out of reach, incompatible migration, data at risk or serious conflict without resolution | `BLOQUEADO` |
 
-Si no hay entorno de pruebas, reportarlo. No presentar una omisión como `PASS`. Una auditoría con cero cambios puede ser válida si explica el alcance y la evidencia revisada.
+If there is no evidence environment, report it. Do not submit an omission as `PASS`. An audit with zero changes can be valid if it explains the scope and evidence reviewed.
 
-## 9. Lista de comprobación final del compañero
+## 9. Partner final checklist
 
-- [ ] Repositorio y SHA fijo correctos; no rebase/merge inadvertido.
-- [ ] Cinco rutas reales; no crear un endpoint sexto por error ni reclamar un DELETE físico.
-- [ ] Usuario/membresía/sesión activos, empresa y recurso tenant-scoped; rol sin permiso no escribe.
-- [ ] Dos empresas pueden usar nombre/SKU idénticos; mismo tenant no, incluso INACTIVO.
-- [ ] Nombre NFKC + casefold y SKU uppercase ASCII; caracteres Unicode/control y longitudes extremas protegidos.
-- [ ] SKU null permitido varias veces; cero y null de precio/costo correctamente separados.
-- [ ] SERVICIO solo con unidad SERVICIO; BIEN/SERVICIO es atributo derivado.
-- [ ] PATCH parcial distingue omitido de null; campos protegidos no se escriben.
-- [ ] Estado reversible sin borrar registro ni liberar claves; idempotencia evita actualizar timestamp artificialmente.
-- [ ] 401/403/404/409/422 según ruta; no 500 con offset más allá del BIGINT.
-- [ ] Rollback tras conflictos SQL o excepción, sin grabar parcialmente.
-- [ ] Riesgos de carreras simultáneas y cambios con historia comercial futura explícitos.
-- [ ] UML 03A PUML/guía/SVG actualizados; el SVG es resumen editorial y Proveedor sigue TO-BE.
-- [ ] E2-1/E2-2, frontend, 03B/03C y migraciones aplicadas sin modificar.
-- [ ] Informe completo, matriz para aceptar cambios individualmente y PR sin merge.
+- [ ] Correct fixed repository and SHA; do not over-reach/merge unnoticed.
+- [ ] Five real routes; do not create a sixth endpoint by mistake or claim a physical DELETE.
+- [ ] Active user/membership/session, company and resource tenant-scoped; role without permission does not write.
+- [ ] Two companies can use identical SKU/name; same tenant no, even INACTIVE.
+- [ ] Name NFKC + casefold and SKU uppercase ASCII; Unicode/control characters and extreme protected lengths.
+- [ ] SKU null allowed several times; zero and null price/cost correctly separated.
+- [ ] SERVICE only with unit SERVICE; WELL/SERVICE is derivative attribute.
+- [ ] Partial PATCH distinguishes omitted from null; protected fields are not written.
+- [ ] Reversible state without erasing record or releasing keys; idempotency prevents artificially updating timestamp.
+- [ ] 401/403/404/409/422 according to route; no 500 with offset beyond the BIGINT.
+- [ ] Rollback after SQL conflicts or exception, without partially recording.
+- [ ] Risks of simultaneous careers and changes with explicit future business history.
+- [ ] UML 03A PUML/guide/SVG updated; SVG is an editorial summary and Supplier follows TO-BE.
+- [ ] E2-1/E2-2, frontend, 03B/03C and applied migrations unmodified.
+- [ ] Full report, matrix to accept individual changes and unmerged PR.
 
-## 10. Resultado esperado de la entrega
+## 10. Expected delivery result
 
-El compañero entregará **(1) PR no fusionado** desde `review/e2-3-catalogo` a `main`, con correcciones justificadas dentro de alcance y commits separables, y **(2) informe completo** `E2-3_INFORME_DE_REVISION.md` en esa rama. El responsable decidirá posteriormente qué aplicar y en qué orden.
+The comrade will deliver **(1) Unfused PR** from `review/e2-3-catalogo` a `main`, with justified corrections within scope and separable commitments; and **(2) full report** `E2-3_INFORME_DE_REVISION.md` The responsible person will then decide what to apply and in which order.
 
-**No iniciar E2-4 dentro de este PR.** La revisión de Catálogo es independiente y no debe bloquear la conservación de los bloques previos ni contaminar `main` con modificaciones ajenas.
+**Do not start E2-4 within this PR.** The Catalogue review is independent and should not block the preservation of previous blocks or pollute `main` with modifications from others.

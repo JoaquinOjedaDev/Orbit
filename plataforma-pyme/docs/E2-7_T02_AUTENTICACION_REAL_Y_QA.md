@@ -1,22 +1,22 @@
-# E2-7 T02 — Autenticación REAL, sesión opaca y separación de DEMO
+# E2-7 T02 — REAL Authentication, opaque session and separation of DEMO
 
-**Estado:** implementación en rama; pendiente de validación local del operador y CI.  
+**Status:** implementation in the branch; pending local operator validation and IC.  
 **Rama:** `feature/e2-7-t02-autenticacion-real`.  
-**Base:** `main` `136bed6b847bdb3c9aac7ca4132c95b83b8e71cb` (T01 fusionado).  
-**Alcance:** exclusivamente frontend y docs en `plataforma-pyme/`; no se modifica backend, Docker, migraciones o negocio.
+**Base:** `main` `136bed6b847bdb3c9aac7ca4132c95b83b8e71cb` (T01 merged).  
+**Scope:** only frontend and docs en `plataforma-pyme/`; no backend, Docker, migration or business changes.
 
-## 1. Alcance
+## 1. Scope
 
 - Acceso REAL por `/real/login`, `/real/registro` y `/real/perfil`.
-- `POST /api/v1/auth/register` crea usuario persistente y **no inicia sesión**.
-- `POST /api/v1/auth/login` obtiene un **Bearer opaco**, no JWT. El token solo se conserva en memoria React.
-- `GET /api/v1/auth/me` valida el token antes de mostrar el perfil, y permite actualizar la identidad desde servidor.
-- `POST /api/v1/auth/logout` invalida sesión remota si FastAPI es accesible; la UI oculta el perfil inmediatamente. Ante fallo de red la UI **no afirma revocación remota**.
-- Token y password no se guardan en `localStorage`, `sessionStorage`, URL ni `demoStore`. La recarga F5 implica reautenticación, decisión T00/P05.
-- El árbol React REAL no monta las páginas DEMO. Un enlace separado permite acceder al prototipo `/inicio`; el uso de ese enlace es **un cambio explícito de modo**, no un fallback ante un 401 o caída de red.
-- Datos REAL aún no incluyen empresas, ubicaciones, catálogo, compras o ventas. Esos módulos permanecen DEMO hasta T03 y posteriores.
+- `POST /api/v1/auth/register` creates persistent user and **no login**.
+- `POST /api/v1/auth/login` Get a **Opaque Bearer**, no JWT. El token solo se conserva en memoria React.
+- `GET /api/v1/auth/me` validates the token before displaying the profile, and allows updating the identity from server.
+- `POST /api/v1/auth/logout` disables remote session if FastAPI is accessible; IU hides profile immediately. **does not claim remote revocation**.
+- Token y password no se guardan en `localStorage`, `sessionStorage`, URL ni `demoStore`. F5 recharge implies re-attendation, decision T00/P05.
+- The React REAL tree does not mount DEMO pages. A separate link allows you to access the prototype `/inicio`; the use of that link is **an explicit change in mode**Not a failback to a 401 or network crash.
+- REAL Data does not yet include companies, locations, catalog, purchases or sales. These modules remain DEMO until T03 and later.
 
-## 2. Archivos
+## 2. Archives
 
 ```text
 frontend/src/App.tsx                     frontera /real/* y enlace desde DEMO
@@ -30,9 +30,9 @@ docs/E2-7_T02_AUTENTICACION_REAL_Y_QA.md   este documento
 
 ## 3. Ejecutar localmente — Windows PowerShell
 
-Usar la rama T02, sin cambiar de carpeta fuera del repo salvo lo indicado. Como en PowerShell `npm.ps1` está bloqueado, usar **`npm.cmd`**.
+Use the T02 branch, without changing folder outside the repo except as indicated. As in PowerShell `npm.ps1` is blocked, use **`npm.cmd`**.
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ```powershell
 git status --short --branch
@@ -48,49 +48,49 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw "lint falló" }
 ```
 
-Si el backend Docker sigue ejecutándose y accesible en el puerto **18000**, en otra terminal:
+If Docker backend continues to run and accessible in port **18000**, at another terminal:
 
 ```powershell
 $env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"
 npm.cmd run dev
 ```
 
-Vite se abrirá en `http://localhost:5173`. Probar `http://localhost:5173/health` y `http://localhost:5173/ready`. Si son satisfactorios, visitar:
+Vite will open in `http://localhost:5173`. Probar `http://localhost:5173/health` y `http://localhost:5173/ready`If satisfactory, visit:
 
-- `http://localhost:5173/real/registro` — crear **un usuario de prueba nuevo**, con email de prueba que puedas controlar y una contraseña de al menos 15 caracteres. No compartir credenciales ni tokens en capturas/logs/chat.
-- `http://localhost:5173/real/login` — autenticarse. Debe mostrar `/real/perfil` con el nombre/correo obtenidos de la API.
-- Botón **Actualizar desde API** — GET /auth/me debe completar sin error.
-- Botón **Cerrar sesión** — volver a login. Visitar manualmente `/real/perfil` sin sesión no debe mostrar identidad protegida.
-- Volver a autenticarse y presionar **F5**: debe requerir login otra vez, sin redirigir a datos DEMO. Eso es **comportamiento conocido del MVP**, no un bug a corregir en T02.
-- Ingresar una contraseña errónea: debe dar error de credenciales, sin revelar información interna.
-- Abrir `http://localhost:5173/inicio` y navegar a Catálogo/Inventario/Ventas DEMO para verificar que el prototipo no sufrió regresión.
+- `http://localhost:5173/real/registro` — crear **a new test user**, with a test email you can control and a password of at least 15 characters. Do not share credentials or tokens in captures/logs/chat.
+- `http://localhost:5173/real/login` — authenticate. `/real/perfil` with the name/mail obtained from the API.
+- Button **Update from API** — GET /auth/me debe completar sin error.
+- Button **Sign out** — back to login. Visit manually `/real/perfil` no session must not show protected identity.
+- Reauthenticate and press **F5**: you must require login again, without redirecting to DEMO data. That's **known behaviour of the MVP**Not a bug to correct in T02.
+- Entering an erroneous password: you must give credentials error, without revealing internal information.
+- Open `http://localhost:5173/inicio` and navigate to Catalog/Inventory/DEMO Sales to verify that the prototype did not suffer regression.
 
-**Precauciones:** registrar usuario REAL crea un registro en la DB Docker configurada; no uses emails/contraseñas de personas reales ni la base de trabajo si requerís datos totalmente efímeros. Para pruebas reproducibles y aisladas en CI, configurar base PostgreSQL temporal independiente; la creación de una DB efímera debe dirigirse realmente desde la API (no basta con cambiar `DB_NAME` en PowerShell mientras Docker usa otro valor).
+**Precautions:** Real user registration creates a registry in the configured Docker DB; do not use real person emails/passwords or the database if you require completely ephemeral data. For reproducible and isolated tests in IC, set up temporary standalone PostgreSQL base; creating an ephemeral DB must actually be directed from the API (it is not enough to change `DB_NAME` en PowerShell mientras Docker usa otro valor).
 
-## 4. Matriz mínima de aceptación
+## 4. Minimum acceptance matrix
 
-| ID | Prueba | Esperado |
+| ID | Test | Expected |
 |---|---|---|
-| T02-01 | Registro nuevo | 201, usuario real; login independiente |
-| T02-02 | Login correcto | token opaco + `GET /me`; perfil correcto |
-| T02-03 | Login erróneo | 401, error seguro y sin sesión |
-| T02-04 | Recargar F5 con sesión en memoria | Solicita reautenticación; no revela identidad |
-| T02-05 | Logout | UI limpia; HTTP 204 si API accesible |
-| T02-06 | Abrir `/real/perfil` sin token | No aparece información privada |
-| T02-07 | Error 401 al actualizar perfil | Limpieza de sesión activa |
-| T02-08 | Navegar REAL → DEMO | Cambio explícito; no se mezclan datos |
-| T02-09 | Tests + build + lint | Todos sin errores |
-| T02-10 | Vista móvil | Formularios legibles, navegación correcta |
+| T02-01 | New registration | 201, real user; standalone login |
+| T02-02 | Right login | token opaque + `GET /me`; correct profile |
+| T02-03 | Wrong login | 401, error safe and no session |
+| T02-04 | Reload F5 with memory session | Request re-authentication; does not reveal identity |
+| T02-05 | Logout | Clean IU; HTTP 204 if accessible API |
+| T02-06 | Open `/real/perfil` sin token | No private information appears |
+| T02-07 | Error 401 while updating profile | Active session cleaning |
+| T02-08 | → DEMO | Explicit change; no data mix |
+| T02-09 | Tests + build + lint | All without mistakes |
+| T02-10 | Mobile view | Readable forms, correct navigation |
 
-## 5. Límites conocidos
+## 5. Known limits
 
-1. No hay refresh token ni cookie; al recargar F5 hay que volver a login. Esto es T00/D05 y P05.
-2. T02 no conecta empresas reales; esa integración corresponde a T03.
-3. La UI de login no permite editar perfil (no hay PATCH general de perfil en el contrato de E2-1).
-4. Registro de usuario es una operación real de base de datos; para demos públicas deben agregarse rate limits/medidas antiabuso antes de desplegar el servicio a internet.
-5. Tests `node --test` verifican transporte y DTOs, **no** reemplazan navegador + FastAPI + PostgreSQL. No declarar aceptación integral hasta las pruebas de este documento.
-6. El frontend de producción requiere configurar publicación de API bajo el mismo origen, reverse proxy o CORS restringido; el proxy actual es solo para Vite desarrollo.
+1. There is no refresh token or cookie; when reloading F5 you have to log back in. This is T00/D05 and P05.
+2. T02 does not connect real companies; this integration corresponds to T03.
+3. The login UI does not allow editing of profile (there is no general PATCH profile in the E2-1 contract).
+4. User registration is a real database operation; for public demos, there must be added rates limits/anti-abuse measures before deploying the internet service.
+5. Tests `node --test` verify transport and DTOs, **no** replace browser + FastAPI + PostgreSQL. Do not declare full acceptance until the tests of this document.
+6. The production frontend requires setting up API publishing from the same source, reverse proxy or restricted CORS; the current proxy is only for Vite development.
 
-## 6. Regla de cierre
+## 6. Closing rule
 
-Registrar SHA de la rama, resultados de `test:api`, `test:auth`, `build`, `lint`, pruebas reales navegador + FastAPI y GitHub Actions. No fusionar hasta que se hayan verificado errores de credenciales, logout y F5, además de comprobar no regresión del prototipo DEMO.
+Register branch SHA, results of `test:api`, `test:auth`, `build`, `lint`, real browser tests + FastAPI and GitHub Actions. Do not merge until credentials errors, logout and F5 have been verified, as well as check non-regression of the DEMO prototype.

@@ -10,7 +10,7 @@ test.beforeAll(() => {
 
 async function seed(request: APIRequestContext) {
   const email = `t09-read-${randomUUID()}@example.com`
-  const password = 'Disposable T09 QA password 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registered = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'T09 Browser QA' },
   })
@@ -48,10 +48,10 @@ async function seed(request: APIRequestContext) {
 
 async function open(page: Page, fixture: Awaited<ReturnType<typeof seed>>) {
   await page.goto('/real/empresas/' + fixture.company.id + '/ventas')
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(fixture.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(fixture.password)
+  await page.getByLabel('Email', { exact: true }).fill(fixture.email)
+  await page.getByLabel('Password', { exact: true }).fill(fixture.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Historial de ventas' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sales history' })).toBeVisible()
 }
 
 test('T09-D navegador REAL: lista, filtro, comprobante y by-request, sin POST de ventas en UI', async ({ page, request }) => {
@@ -63,24 +63,24 @@ test('T09-D navegador REAL: lista, filtro, comprobante y by-request, sin POST de
   })
   await open(page, fixture)
   await expect(page.locator('.real-sales-row')).toHaveCount(2)
-  await expect(page.getByText('Solo lectura.', { exact: true })).toBeVisible()
-  await page.getByLabel('Filtrar ventas por ubicación').selectOption(fixture.siteA.id)
+  await expect(page.getByText('Just reading.', { exact: true })).toBeVisible()
+  await page.getByLabel('Filter sales by location').selectOption(fixture.siteA.id)
   await expect(page.locator('.real-sales-row')).toHaveCount(1)
   await expect(page.locator('.real-sales-row')).toContainText('T09 sede A')
-  await page.locator('.real-sales-row').getByRole('button', { name: 'Ver comprobante' }).click()
-  const receipt = page.getByRole('region', { name: 'Comprobante de venta REAL' })
+  await page.locator('.real-sales-row').getByRole('button', { name: 'See voucher' }).click()
+  const receipt = page.getByRole('region', { name: 'REAL sales check' })
   await expect(receipt).toContainText(fixture.saleA.id)
   await expect(receipt).toContainText('Asesoría T09')
-  await expect(receipt).toContainText('Pagos declarados (sin acreditación externa)')
-  await page.getByRole('button', { name: 'Cerrar comprobante' }).click()
+  await expect(receipt).toContainText('Declared payments (without external accreditation)')
+  await page.getByRole('button', { name: 'Close voucher' }).click()
   await page.getByLabel('Clave original de solicitud (UUID4)').fill(fixture.saleA.request_id)
   await page.getByRole('button', { name: 'Consultar solicitud' }).click()
   await expect(receipt).toContainText(fixture.saleA.request_id)
-  await page.getByRole('button', { name: 'Cerrar comprobante' }).click()
-  await page.getByLabel('Filtrar ventas por ubicación').selectOption(fixture.siteB.id)
+  await page.getByRole('button', { name: 'Close voucher' }).click()
+  await page.getByLabel('Filter sales by location').selectOption(fixture.siteB.id)
   await expect(page.locator('.real-sales-row')).toHaveCount(1)
   await expect(page.locator('.real-sales-row')).toContainText('T09 sede B')
-  await page.getByRole('button', { name: 'Actualizar desde API' }).click()
+  await page.getByRole('button', { name: 'Update from API' }).click()
   await expect(page.locator('.real-sales-row')).toHaveCount(1)
   expect(uiWrites).toBe(0)
 })
@@ -100,7 +100,7 @@ test('T09-D móvil REAL: historial sin operaciones y recuperación posterior a F
   await expect(page.locator('.real-sales-row')).toHaveCount(2)
   await page.getByLabel('Clave original de solicitud (UUID4)').fill(fixture.saleB.request_id)
   await page.getByRole('button', { name: 'Consultar solicitud' }).click()
-  await expect(page.getByRole('region', { name: 'Comprobante de venta REAL' }))
+  await expect(page.getByRole('region', { name: 'REAL sales check' }))
     .toContainText(fixture.saleB.id)
   expect(uiWrites).toBe(0)
 })
@@ -131,12 +131,12 @@ test('T09-F navegador: error 503 de historial permite reintentar GET sin POST de
     return route.continue()
   })
   await open(page, fixture)
-  await expect(page.getByText('Error al consultar')).toBeVisible()
+  await expect(page.getByText('Query Error')).toBeVisible()
   await expect(page.getByRole('alert')).toContainText('FastAPI no pudo consultar el comprobante')
   failMode = false
-  await page.getByRole('button', { name: 'Reintentar consulta' }).click()
+  await page.getByRole('button', { name: 'Retry Consultation' }).click()
   await expect(page.locator('.real-sales-row')).toHaveCount(2)
-  await expect(page.getByText('Fin del listado consultado')).toBeVisible()
+  await expect(page.getByText('End of list consulted')).toBeVisible()
   expect(injections).toBeGreaterThan(0)
   expect(uiSalePosts).toBe(0)
 })

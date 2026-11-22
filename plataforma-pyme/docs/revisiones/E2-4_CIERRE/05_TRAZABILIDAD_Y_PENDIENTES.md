@@ -1,56 +1,56 @@
-# E2-4 — Matriz de trazabilidad, evidencia y backlog
+# E2-4 — Traceability, Evidence and Backlog Matrix
 
-**Clasificaciones:** AS-IMPLEMENTED (código ejecutable), QA-MANUAL (respuesta de Swagger aportada por el desarrollador), CI-VERIFICADO (run de GitHub comprobado), TO-BE (diseño), DIFERIDO (no implementado). Una etiqueta de requisito no convierte automáticamente toda su funcionalidad en realizada.
+**Classifications:** AS-IMPLEMENTED (executable code), QA-MANUAL (swagger response provided by the developer), CI-VERIFIED (run of GitHub checked), TO-BE (design), DIFFERED (not implemented). A requirement label does not automatically convert all its functionality into realized.
 
-## 1. Requisitos, casos de uso y pruebas
+## 1. Requirements, use cases and evidence
 
-| RF/CU | Contrato implementado | Archivo fuente | Prueba / evidencia | Estado |
+| RF/CU | Contract implemented | Source file | Evidence/evidence | Status |
 |---|---|---|---|---|
-| RF-05 / CU-06 | Alta, consulta, edición y estado de Proveedor por empresa | `modules/suppliers/{router,service,schemas}.py` | CI A/B; suites `test_supplier_*` | AS-IMPLEMENTED + CI |
-| RF-05 / CU-06 | Alta de compra opcionalmente asociada a Proveedor; líneas, snapshots, totales | `modules/purchases/{router,service,schemas}.py` | U-01/U-07, CI D | AS-IMPLEMENTED + QA-MANUAL |
-| RF-05 / CU-06 | Idempotencia de compra, colisión diferente y GET/listado | `purchases/service.py`, `purchases/router.py` | U-02 a U-05; tests de concurrencia/HTTP | AS-IMPLEMENTED + QA-MANUAL |
-| RF-05 / CU-07 | Recepción única y completa hacia ubicación STORE | `purchases/receipt_service.py`, `receipt_router.py` | U-12/U-13/U-14, CI E | AS-IMPLEMENTED + QA-MANUAL |
-| RF-06 / CU-08 (parcial) | Saldo actual por empresa/ubicación/artículo | `purchases/inventory_router.py`, `stock_balance.py` | U-15/U-16, test de saldos | AS-IMPLEMENTED (parcial) |
-| RF-06 / CU-08 (parcial) | Ledger de entradas con trazabilidad | `purchases/inventory_router.py`, `stock_movement.py` | U-17, tests de ledger | AS-IMPLEMENTED (parcial) |
-| RF-03 / CU-04 (dependencia) | Ubicaciones `ACTIVA`, `can_store`, asignación | `modules/locations/` y `purchases/receipt_service.py` | U-08/U-09/U-10, integración | AS-IMPLEMENTED |
-| RF-04 / CU-05 (dependencia) | Catálogo físico, estado, unidad y protección histórica | `modules/catalog/service.py` | U-06, integración E, CI | AS-IMPLEMENTED |
-| CU-09 / transferencias | Movimiento origen-destino y 2 saldos | No existe endpoint E2-4 | Ninguna ejecución | DIFERIDO |
-| CU-11 / ajustes | Ajuste manual firmado y comprobante | No existe endpoint E2-4 | Ninguna ejecución | DIFERIDO |
-| RF-07 / CU-10 (ventas) | Venta/caja y egresos de stock | No existe endpoint E2-4 | Ninguna ejecución | DIFERIDO |
+| RF-05 / CU-06 | High, query, editing and status of Supplier by company | `modules/suppliers/{router,service,schemas}.py` | CI A/B; suites `test_supplier_*` | AS-IMPLEMENTED + CI |
+| RF-05 / CU-06 | Optionally associated purchase fee for Supplier; lines, snapshots, totals | `modules/purchases/{router,service,schemas}.py` | U-01/U-07, CI D | AS-IMPLEMENTED + QA-MANUAL |
+| RF-05 / CU-06 | Purchase power, different collision and GET/listing | `purchases/service.py`, `purchases/router.py` | U-02 to U-05; attendance tests/HTTP | AS-IMPLEMENTED + QA-MANUAL |
+| RF-05 / CU-07 | Unique and complete reception to STORE location | `purchases/receipt_service.py`, `receipt_router.py` | U-12/U-13/U-14, CI E | AS-IMPLEMENTED + QA-MANUAL |
+| RF-06 / CU-08 (partial) | Current balance by company/location/article | `purchases/inventory_router.py`, `stock_balance.py` | U-15/U-16, stock test | AS-IMPLEMENTED (parcial) |
+| RF-06 / CU-08 (partial) | Ledger of entries with traceability | `purchases/inventory_router.py`, `stock_movement.py` | U-17, tests de ledger | AS-IMPLEMENTED (parcial) |
+| RF-03 / CU-04 (dependencia) | Locations `ACTIVA`, `can_store`, allocation | `modules/locations/` y `purchases/receipt_service.py` | U-08/U-09/U-10, integration | AS-IMPLEMENTED |
+| RF-04 / CU-05 (dependencia) | Physical catalog, status, unity and historical protection | `modules/catalog/service.py` | U-06, E integration, IC | AS-IMPLEMENTED |
+| CU-09 / transfers | Origin/destiny movement and 2 balances | No existe endpoint E2-4 | No execution | DIFFERENT |
+| CU-11 / ajustes | Manual adjustment signed and voucher | No existe endpoint E2-4 | No execution | DIFFERENT |
+| RF-07 / CU-10 (sales) | Sale/box and outflows of stock | No existe endpoint E2-4 | No execution | DIFFERENT |
 
-Consultar documentos académicos `entrega-programacion-2/01`–`05` y la implementación vigente. El UML 03B contiene diseño conceptual más amplio que este corte: no atribuir al código atributos u operaciones aún no implementadas.
+Consult academic documents `entrega-programacion-2/01`–`05` The UML 03B contains broader conceptual design than this cut: not attribute attributes or operations to the code that have not yet been implemented.
 
-## 2. Contratos de seguridad y operación no negociables
+## 2. Non-negotiable security and transaction contracts
 
-1. `business_id` y permisos se verifican en el backend por cada operación; una identidad global no otorga rol global sobre todas las empresas.
-2. La Compra no tiene efecto físico hasta recepción; los conceptos/servicios no generan stock.
-3. La recepción es completa, atómica y por una ubicación STORE, con una sola entrada por línea física.
-4. Nunca reingresar el mismo documento por usar una clave nueva. Reintento exacto del mismo actor y cuerpo reproduce respuesta, sin alterar saldo.
-5. Restricciones de FK compuestas y registros históricos no deben eliminarse en futuras extensiones.
-6. Mantener centavos/milésimas enteros y regla HALF_UP por línea mientras el contrato vigente no cambie.
-7. Los tests deben aislar documentos/empresas en sus consultas sin depender de un conteo global de filas.
-8. Un cambio de contrato requiere versión/migración aditiva y pruebas; no editar migraciones ya aplicadas.
+1. `business_id` and permits are verified in the backend for each operation; a global identity does not give a global role to all companies.
+2. Purchase has no physical effect until reception; concepts/services do not generate stock.
+3. The reception is complete, atomic and by a STORE location, with only one entrance per physical line.
+4. Never re-enter the same document for using a new key. Exact retry of the same actor and body plays response, without altering balance.
+5. Composite FK restrictions and historical records should not be removed in future extensions.
+6. Keep whole cents/thousandths and HALF_UP rule per line as long as the current contract does not change.
+7. Tests should isolate documents/enterprises in their queries without relying on a global row count.
+8. A change of contract requires additive version/migration and testing; do not edit already applied migrations.
 
-## 3. Backlog priorizado (propuesta; no nuevas funcionalidades de E2-4)
+## 3. Priority backlog (proposed; no new E2-4 functionalities)
 
-| Prioridad orientativa | Trabajo | Motivo y criterio de aceptación futuro |
+| Guidance priority | Work | Reason and future acceptance criteria |
 |---|---|---|
-| P1 antes de pruebas destructivas | **Base de datos de tests aislada** | `RUN_DB_INTEGRATION=1` nunca debe conectar a DB de desarrollo/producción sin explícita separación y protección por nombre/URL; crear DB efímera y migrarla |
-| P1 para operación real | Cancelación comercial | Definir transición `REGISTRADA→CANCELADA` y autorización/idempotencia. No cancelar una compra `RECIBIDA` por simple cambio de estado |
-| P1 para corregir errores reales | Compensación o ajuste auditable de recepción | No borrar el movimiento original; generar contraoperación controlada, preservar no negativo y motivo |
-| P1 para despliegue | Permisos e inmutabilidad SQL de movimientos | Rol runtime sin privilegio de UPDATE/DELETE del ledger, acceso DBA restringido, auditoría y evaluación de triggers |
-| P2 según necesidad de negocio | Recepción parcial 1:N/multidestino | Rediseñar por renglón/cantidad pendiente y comprobante de recepción, garantizar migración aditiva sin romper la recepción completa existente |
-| P2 comercial | Moneda y tipo de cambio histórico | Código ISO 4217 + tasa/fecha/fuente de cambio; aclarar moneda en compra y reportes |
-| P2 comercial | Conciliación de redondeo | Ajustes por comprobante/impuestos/descuentos sin cambiar costo de línea histórica |
-| P2 escala | Límite de 30 líneas | Importación por lotes con protección de abuso, atomicidad y paginación de lectura |
-| P2 integridad | Reconciliar ledger y saldos | Informe de diferencias, acciones seguras ante manipulación SQL externa, sin ajustar manualmente en silencio |
-| P2 documentación QA | CRUD completo de Proveedores manual | Registrar POST/GET/PATCH/PATCH status sin exponer credenciales |
-| P3 experiencia dev | Solicitudes HTTP parametrizadas | Colecciones .http/Bruno con tokens y claves locales efímeras; no versionar secretos |
-| P3 | Frontend React conectado a API | Contrato DTO, sesión, estado por tenant y pruebas E2E |
-| Futuro | Ventas, transferencias, gastos, caja, MP/QR | Otros bloques con casos de uso y seguridad independiente |
+| P1 before destructive testing | **Insulated test database** | `RUN_DB_INTEGRATION=1` never connect to DB development/production without explicit name separation and protection/URL; create ephemeral DB and migrate it |
+| P1 for actual operation | Commercial cancellation | Define transition `REGISTRADA→CANCELADA` and authorization/idempotency. Do not cancel a purchase `RECIBIDA` by simple change of status |
+| P1 to correct real errors | Compensation or adjustment of the reception | Do not erase the original movement; generate controlled counteroperation, preserve non-negative and motive |
+| P1 for deployment | Permissions and SQL movement immutability | Rol runtime without privilege of UPDATE/DELETE ledger, restricted DBA access, audit and trigger evaluation |
+| P2 according to business need | Partial reception 1:N/multidestiny | Redesign by line/quantity pending and receipt voucher, guarantee additive migration without breaking the existing complete reception |
+| P2 commercial | Currency and historical exchange rate | ISO code 4217 + fee/date/source of exchange; clarify currency in purchase and reports |
+| P2 commercial | Rounding reconciliation | Adjustments for voucher/taxes/discounts without changing historical line cost |
+| P2 scale | 30 line limit | Batch import with protection from abuse, atomism and reading pagination |
+| P2 integrity | Reconciling leadger and balances | Difference reporting, secure actions against external SQL manipulation, without manually setting in silence |
+| QA documentation | Full CRUD Manual Suppliers | Registrar POST/GET/PATCH/PATCH status sin exponer credenciales |
+| P3 experiencia dev | Parametrized HTTP requests | Collections .http/Bruno with ephemeral local tokens and keys; do not cover secrets |
+| P3 | Frontend React connected to API | DTO contract, session, tenant status and E2E tests |
+| Future | Sales, transfers, expenses, cash, MP/QR | Other blocks with use cases and independent security |
 
-El orden expresa riesgo técnico, no decisión de producto aprobada. Priorizar bajo el plan del TP.
+The order expresses technical risk, not approved product decision. Prioritize under the plan of the TP.
 
-## 4. Estado de la revisión externa recibida
+## 4. Status of external review received
 
-Las observaciones de terceros se clasifican y contestan en `10_OBSERVACIONES_DE_AUDITORIA_Y_DECISIONES.md`. **No son prueba de auditoría independiente completa**, ni autorizan migraciones/refactors. E2-4 se cierra funcionalmente para el alcance implementado, no para producción.
+Third party comments are classified and answered in `10_OBSERVACIONES_DE_AUDITORIA_Y_DECISIONES.md`. **Not complete independent audit test**E2-4 is functionally closed for the scope implemented, not for production.

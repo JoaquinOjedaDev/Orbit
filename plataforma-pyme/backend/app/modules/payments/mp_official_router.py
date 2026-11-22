@@ -47,18 +47,18 @@ def _errors(exc: Exception):
     if isinstance(exc,PurchaseSessionInvalid):
         raise unauthorized() from None
     if isinstance(exc,(PurchaseBusinessUnavailable,QrIntentNotFound,MpMissing)):
-        raise HTTPException(404,detail="Empresa u orden TEST no disponible") from None
+        raise HTTPException(404,detail="Company or TEST order not available") from None
     if isinstance(exc,(MpForbidden,QrIntentForbidden)):
-        raise HTTPException(403,detail="Sin autorización para esta empresa") from None
+        raise HTTPException(403,detail="No authorisation for this company") from None
     if isinstance(exc,MpNotReady):
-        raise HTTPException(503,detail="Integración TEST deshabilitada o incompleta") from None
+        raise HTTPException(503,detail="Unable or incomplete TEST integration") from None
     if isinstance(exc,(MpConflict,QrIntentConflict)):
-        raise HTTPException(409,detail="Conflicto: consultá el intento antes de reintentar") from None
+        raise HTTPException(409,detail="Conflict: Consult the attempt before retrying") from None
     if isinstance(exc,(MpProviderFailure,MpIntegrityError)):
-        raise HTTPException(503,detail="Mercado Pago no confirmó una orden válida; mantené la misma clave") from None
+        raise HTTPException(503,detail="Market Payment did not confirm a valid order; I kept the same key") from None
     raise exc
 
-@router.get("/connection",summary="Estado de cuenta OAuth TEST, sin secretos")
+@router.get("/connection",summary="Account status OAuth TEST, no secrets")
 def connection(business_id:UUID,context:AuthContext=Depends(current_auth),
                db:Session=Depends(get_db)):
     try:
@@ -66,7 +66,7 @@ def connection(business_id:UUID,context:AuthContext=Depends(current_auth),
     except Exception as e:
         _errors(e)
 
-@router.post("/oauth/start",summary="Iniciar OAuth PKCE TEST para una empresa")
+@router.post("/oauth/start",summary="Start OAuth PKCE TEST for a company")
 def oauth_start(business_id:UUID,context:AuthContext=Depends(current_auth),
                 db:Session=Depends(get_db)):
     try:
@@ -94,7 +94,7 @@ def oauth_callback(state:str=Query(min_length=20,max_length=200),
     return RedirectResponse(target+("?" if "?" not in target else "&")+
         urlencode({"mp_test_oauth":result}),status_code=303)
 
-@router.put("/pos",summary="Configurar caja externa MP TEST del negocio")
+@router.put("/pos",summary="Configure External Business MP TEST Box")
 def save_pos(business_id:UUID,command:PosInput,context:AuthContext=Depends(current_auth),
              db:Session=Depends(get_db)):
     try:
@@ -106,7 +106,7 @@ def save_pos(business_id:UUID,command:PosInput,context:AuthContext=Depends(curre
         _errors(e)
 
 @router.post("/orders/from-qr/{source_intent_id}",response_model=OrderView,
-    status_code=201,summary="Crear order dinámica oficial TEST idempotente")
+    status_code=201,summary="Create official dynamic order TEST idempotent")
 def create_order(business_id:UUID,source_intent_id:UUID,
                  idempotency_key:UUID4=Header(alias="Idempotency-Key"),
                  context:AuthContext=Depends(current_auth),db:Session=Depends(get_db)):
@@ -119,7 +119,7 @@ def create_order(business_id:UUID,source_intent_id:UUID,
         _errors(e)
 
 @router.get("/orders/for-qr/{source_intent_id}",response_model=OrderView | None,
-    summary="Recuperar order TEST por QR original tras F5 o respuesta incierta")
+    summary="Recover TEST order by original QR after F5 or uncertain response")
 def find_by_source(business_id:UUID,source_intent_id:UUID,
                    context:AuthContext=Depends(current_auth),db:Session=Depends(get_db)):
     try:
@@ -129,7 +129,7 @@ def find_by_source(business_id:UUID,source_intent_id:UUID,
         _errors(e)
 
 @router.post("/orders/{order_id}/settle-qa",
-    summary="Asentar UNA venta QA solo tras verificar accredited en Orders API")
+    summary="Set up A QA sale only after checking credited in Orders API")
 def settle_official_test(business_id:UUID,order_id:UUID,
                         context:AuthContext=Depends(current_auth),db:Session=Depends(get_db)):
     try:
@@ -139,7 +139,7 @@ def settle_official_test(business_id:UUID,order_id:UUID,
         _errors(e)
 
 @router.get("/orders/{order_id}",response_model=OrderView,
-    summary="Consultar order QR TEST local")
+    summary="Consult local QR TEST order")
 def read_order(business_id:UUID,order_id:UUID,context:AuthContext=Depends(current_auth),
                db:Session=Depends(get_db)):
     try:
@@ -149,7 +149,7 @@ def read_order(business_id:UUID,order_id:UUID,context:AuthContext=Depends(curren
         _errors(e)
 
 @router.post("/orders/{order_id}/reconcile",response_model=OrderView,
-    summary="Consultar resultado de pago en Orders API con token del vendedor")
+    summary="Check payment result in Orders API with seller token")
 def reconcile_order(business_id:UUID,order_id:UUID,
                     context:AuthContext=Depends(current_auth),db:Session=Depends(get_db)):
     try:
@@ -159,7 +159,7 @@ def reconcile_order(business_id:UUID,order_id:UUID,
         _errors(e)
 
 @public_router.post("/orders/webhook",status_code=200,
-    summary="Webhook firmado Orders: HMAC y conciliación contra API oficial")
+    summary="Webhook signed Orders: HMAC and reconciliation against official API")
 async def order_webhook(request:Request,db:Session=Depends(get_db),
                         x_signature:str | None=Header(None,alias="x-signature"),
                         x_request_id:str | None=Header(None,alias="x-request-id")):
@@ -167,11 +167,11 @@ async def order_webhook(request:Request,db:Session=Depends(get_db),
     order_id=request.query_params.get("data.id","")
     if not secret or not x_signature or not x_request_id or not signature_valid(
         secret=secret,signature=x_signature,request_id=x_request_id,data_id=order_id):
-        raise HTTPException(401,detail="Firma inválida")
+        raise HTTPException(401,detail="Invalid signature")
     try:
         payload=await request.json()
     except ValueError:
-        raise HTTPException(400,detail="Notificación inválida") from None
+        raise HTTPException(400,detail="Invalid notification") from None
     # TEST no acepta webhook productivo, tipo distinto o ID ausente.
     # Se contrasta el cuerpo con el data.id firmado antes del GET remoto.
     if (
@@ -184,7 +184,7 @@ async def order_webhook(request:Request,db:Session=Depends(get_db),
         or not isinstance(payload.get("data"), dict)
         or str(payload["data"].get("id")) != order_id
     ):
-        raise HTTPException(400,detail="Orden incompatible")
+        raise HTTPException(400,detail="Uncompromising order")
     try:
         if os.getenv("PYME_DISPOSABLE_QA") == "1" and os.getenv("PYME_MP_QR_SHARED_QA_ENABLED") == "1":
             from app.modules.payments.mp_shared_qa_service import MpSharedQaService
@@ -192,5 +192,5 @@ async def order_webhook(request:Request,db:Session=Depends(get_db),
         else:
             MpOfficialService(db).webhook_reconcile(order_id)
     except (MpProviderFailure,MpIntegrityError,MpNotReady):
-        raise HTTPException(503,detail="No se pudo verificar estado en Orders API") from None
+        raise HTTPException(503,detail="Could not check status in Orders API") from None
     return {"accepted":True}

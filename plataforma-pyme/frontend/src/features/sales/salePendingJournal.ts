@@ -27,12 +27,12 @@ export type SalePendingPort = {
 
 export class SalePendingConflict extends Error {
   constructor() {
-    super('Existe una venta pendiente incompatible. No se envió ninguna venta.')
+    super('There is an incompatible pending sale. No sales were sent.')
   }
 }
 export class SalePendingUnavailable extends Error {
   constructor() {
-    super('No fue posible verificar IndexedDB. No se envió ninguna venta.')
+    super('Could not verify IndexedDB. No sales were sent.')
   }
 }
 
@@ -43,7 +43,7 @@ const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b)
 
 export function salePendingScope(actorId: string, businessId: string): string {
   if (!UUID_PATTERN.test(actorId) || !UUID_PATTERN.test(businessId))
-    throw new TypeError('Actor o empresa inválidos para guardar la venta.')
+    throw new TypeError('Invalid Actor or Company to Save the Sale.')
   return actorId + ':' + businessId + ':sale.create'
 }
 
@@ -155,7 +155,7 @@ export function createSalePendingJournal(port: SalePendingPort) {
   }
 }
 
-const DATABASE = 'asistente-pyme-real-sales-v1'
+const DATABASE = 'assistant-pyme-real-sales-v1'
 const STORE = 'pending'
 const MAX_ROWS = 60
 

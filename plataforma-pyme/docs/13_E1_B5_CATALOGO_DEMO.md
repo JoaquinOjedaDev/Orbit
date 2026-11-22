@@ -1,41 +1,41 @@
-# E1-B5 — Catálogo general de productos y servicios (DEMO)
+# E1-B5 — General Catalogue of Products and Services (DEMO)
 
-**Estado:** código publicado en GitHub main. Build, lint, test y recorrido visual local PENDIENTES.
-**Base:** E0-A Z069 (catalogo_modulo2.html), Z050 (M2 v5.1), especificación funcional del módulo 2 v5.1, backlog E0-C E1-B2-01 y ADR-004 propuesto.
+**Status:** code published in GitHub main. Build, lint, test and local visual tour PENDENTES.
+**Base:** E0-A Z069 (catalogue_modulo2.html), Z050 (M2 v5.1), functional specification of module 2 v5.1, E0-C E1-B2-01 backlog and proposed ADR-004.
 
-## Alcance
+## Scope
 
-Se integró un catálogo multirrubro por empresa. WALOS sólo es un fixture y no determina el contenido ni los nombres obligatorios.
+A multi-rubre catalogue was integrated by company. WALOS is only a fixture and does not determine the content or mandatory names.
 
-- **Elaboración propia, Reventa, Insumo/material y Servicio** son tipos de comportamiento diferentes de la categoría visual.
-- Nombre obligatorio, tipo, categoría libre, SKU opcional, unidad de control, descripción, precio opcional y costo de referencia opcional. Campo independiente para indicar si se ofrece a la venta.
-- Un servicio usa unidad SERVICIO y **nunca crea existencia física**. La creación de cualquier artículo tampoco crea stock, caja, compra, proveedor ni receta.
-- SKU único **por empresa** cuando se informa, normalizado a mayúsculas. Puede repetirse entre empresas. La identidad interna usa un UUID independiente.
-- Nombre único por empresa ignorando espacios repetidos y mayúsculas; no se reutiliza mientras exista una ficha inactiva con ese nombre.
-- Precio y costo en **centavos enteros de ARS**. El formulario admite importes como 1250,50; 1250.50; 1250. Sin separadores de miles. Vacío equivale a no informado o a cotizar.
-- Las unidades caja, paquete, kg, gramo, unidad, ml o litro NO implican equivalencias automáticas. Conversión explícita pendiente para Compras/Inventario.
-- Buscar nombre, descripción, SKU o categoría; filtrar por tipo y estado. Guardar edición, desactivar/reactivar con confirmación sin borrar historial.
-- Las empresas existentes parten con catálogo vacío; no se importan productos del HTML original como datos de empresas reales.
-- Se permite editar tipo y unidad durante la DEMO porque todavía no hay movimientos asociados. Antes de ventas/inventario el servidor debe bloquear o versionar cambios incompatibles.
+- **Own development, Resale, Input/material and Service** are different types of behavior from the visual category.
+- Mandatory name, type, free category, optional SKU, control unit, description, optional price and optional reference cost. Independent field to indicate if offered for sale.
+- A service uses SERVICE and **never creates physical existence**. The creation of any item also does not create stock, box, purchase, supplier or recipe.
+- Single SKU **per company** When reported, standardized to capital letters. It can be repeated between companies. Internal identity uses an independent UUID.
+- Single name per company ignoring repeated and capitalized spaces; not reused as long as there is an inactive tab with that name.
+- Price and cost in **ARS whole cents**. The form admits amounts like 1250.50; 1250.50; 1250. Without thousands separators. Empty is equivalent to uninformed or listed.
+- The box, package, kg, gram, unit, ml or liter units do NOT imply automatic equivalences.
+- Search for name, description, SKU or category; filter by type and status. Save edit, disable/reactivate with confirmation without deleting history.
+- Existing companies leave with empty catalog; no products from the original HTML are imported as real business data.
+- Type and drive editing is allowed during DEMO because there are no associated movements yet. Before sales/inventory the server must block or reverse incompatible changes.
 
-## Código
+## Code
 
-- frontend/src/data/demo/catalogPolicy.ts: tipos, unidades, validaciones, centavos enteros y normalización.
-- frontend/src/data/demo/demoStore.ts: DemoCatalogItem indexado por ID, lectura por businessId, comandos de alta/edición/estado con pertenencia por empresa.
-- frontend/src/features/catalog/CatalogPage.tsx: formulario, tarjetas, filtros, detalle, inactivación/reactivación.
-- frontend/src/App.tsx: ruta /b/:businessId/catalogo; key por negocio para no transferir borradores.
+- frontend/src/data/demo/catalogPolicy.ts: types, units, validations, whole cents and normalization.
+- frontend/src/data/demo/demoStore.ts: DemoCatalogItem indexed by ID, businessId read, high/editing/state commands with company membership.
+- frontend/src/features/catalog/CatalogPage.tsx: form, cards, filters, detail, inactivation/reactivation.
+- frontend/src/App.tsx: path /b/:businessId/catalogue; key per business to not transfer drafts.
 - frontend/src/features/dashboard/Dashboards.tsx: acceso y cantidad de fichas activas.
-- frontend/src/App.css: diseño responsive.
+- frontend/src/App.css: responsive design.
 - frontend/tests/catalog-policy.test.mjs: pruebas de dinero/SKU/tipos.
 - frontend/package.json: script npm.cmd run test:catalog.
 
-## Persistencia
+## Persistence
 
-Se conserva la clave asistente-pyme.e1a2.demo.v1 con version 1; se agrega array opcional catalogItems. La lectura antigua conserva profile, createdBusinesses, fixtureEdits, memberJobs, locations, teamInvitations y teamMembers. No hay autenticación ni control de permisos real.
+The wizard-pyme.e1a2.demo.v1 key is retained with version 1; optional array items are added. Old reading preserves profile, createdBusinesses, fixtureEdits, memberJobs, locations, teamInvitations and teamMembers. No real authentication or permission control.
 
-## Verificación pendiente
+## Pending verification
 
-Desde la carpeta plataforma-pyme/frontend:
+From the platform-pyme/frontend folder:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -47,23 +47,23 @@ npm.cmd run test:maps
 npm.cmd run dev
 ~~~
 
-| ID | Prueba | Resultado esperado |
+| ID | Test | Expected outcome |
 |---|---|---|
-| CAT-01 | Abrir Catálogo en una empresa creada | Vacío, sin productos inventados |
-| CAT-02 | Crear Servicio a cotizar | Unidad Servicio, cero stock propio |
-| CAT-03 | Crear reventa SKU-01, precio 1250,50 | Se muestra monto ARS; código guardado |
-| CAT-04 | Crear Insumo sin ofrecer venta | Precio no obligatorio |
-| CAT-05 | Repetir SKU en misma empresa | Rechaza duplicado |
-| CAT-06 | Repetir SKU en otra empresa | Permitido |
-| CAT-07 | Repetir nombre cambiando mayúsculas | Rechaza duplicado |
-| CAT-08 | Editar y presionar F5 | Guarda cambios |
-| CAT-09 | Desactivar, filtrar Inactivos y reactivar | Ficha conservada, cambia contador |
-| CAT-10 | Cambiar de A a B durante edición | No mezcla borradores |
-| CAT-11 | Reabrir perfil, Equipo, Ubicaciones y Maps | Datos anteriores intactos |
-| CAT-12 | Ingresar 1.234,50, -10 o tres decimales | Rechaza importe ambiguo/inválido |
-| CAT-13 | Ancho móvil de 390 px | Filtros y tarjetas legibles |
-| CAT-14 | Build, lint y tres test scripts | Cero errores |
+| CAT-01 | Open Catalogue in a company created | Empty, without invented products |
+| CAT-02 | Create a quote service | Service unit, zero stock of own |
+| CAT-03 | Create SKU-01 resale, price 1250.50 | ARS Amount Displayed; Saved Code |
+| CAT-04 | Create Input without offering sale | Non-mandatory price |
+| CAT-05 | Repeat SKU in the same company | Rejects duplicate |
+| CAT-06 | Repeat SKU in another company | Allowed |
+| CAT-07 | Repeat name by changing capital letters | Rejects duplicate |
+| CAT-08 | Edit and Press F5 | Save Changes |
+| CAT-09 | Deactivate, filter Inactive and reactivate | Reserved tab, change counter |
+| CAT-10 | Switch from A to B during editing | Do not mix drafts |
+| CAT-11 | Reopen Profile, Equipment, Locations and Maps | Previous data intact |
+| CAT-12 | Enter 1,234.50, -10 or three decimal places | Rejects ambiguous/invalid amount |
+| CAT-13 | Mobile width 390 px | Leafable filters and cards |
+| CAT-14 | Build, lint y tres test scripts | Zero errors |
 
-## Fuera de este corte
+## Out of this cut.
 
-Fotos y galería 0–3, código de barras, imágenes, componentes/recetas, guías de elaboración, proveedores, existencias físicas, vencimientos y operaciones. Se abordarán en siguientes incrementos, preservando los requisitos del TP3.
+Photos and gallery 0–3, barcode, images, components/recipes, production guides, suppliers, physical stocks, maturities and operations. They will be addressed in subsequent increments, preserving the requirements of TP3.

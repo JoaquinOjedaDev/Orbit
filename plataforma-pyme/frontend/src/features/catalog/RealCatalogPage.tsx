@@ -22,7 +22,7 @@ type Draft = Omit<CatalogCreate,'price_cents'|'reference_cost_cents'> & {price:s
 const emptyDraft:Draft={name:'',kind:'REVENTA',category:'General',sku:null,unit:'UNIDAD',description:'',
   observations:'',sellable:true,price:'',cost:''}
 const formatMoney=(n:number|null)=>n===null?'No informado':'$ '+centsToPesos(n)
-const label=(kind:string)=>({ELABORADO:'Elaborado',REVENTA:'Reventa',INSUMO:'Insumo',SERVICIO:'Servicio'}[kind]??kind)
+const label=(kind:string)=>({ELABORADO:'Elaborado',REVENTA:'Reventa',INSUMO:'Insumo',SERVICIO:'Service'}[kind]??kind)
 
 export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthorized}:Props) {
   const gateway=useMemo(()=>createCatalogGateway(token,businessId),[token,businessId])
@@ -108,7 +108,7 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
       const seen=new Set(items.map(x=>x.id))
       if(page.some(x=>seen.has(x.id))){
         setHasMore(false)
-        setError('El catálogo cambió durante la paginación. Actualizá desde la primera página para evitar resultados duplicados.')
+        setError('The catalog changed during the page. Update from the first page to avoid duplicate results.')
         return
       }
       setItems(old=>[...old,...page])
@@ -170,8 +170,8 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
         try{
           for(const file of createPhotos) await photos.upload(file)
         }catch(err){
-          photoIssue='Se guardó el artículo, pero no se completaron todas las fotos: '+photoErrorMessage(err)+
-            ' Revisá la galería antes de volver a cargarlas.'
+          photoIssue='The article was saved, but not all the photos were completed: '+photoErrorMessage(err)+
+            ' Check the gallery before loading them again.'
         }
       }
       if(!mounted.current.active)return
@@ -179,7 +179,7 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
       setForm(false);setEditing(null);setCreatePhotos([]);setDetailId(null)
       setItems(old=>[saved,...old.filter(item=>item.id!==saved.id)])
       // No presentar éxito completo y error simultáneamente si falló una foto.
-      setNotice(photoIssue?'':editing?'Ficha actualizada en PostgreSQL.':'Artículo creado en PostgreSQL.')
+      setNotice(photoIssue?'':editing?'Update in PostgreSQL.':'Article created in PostgreSQL.')
       if(photoIssue)setError(photoIssue)
       try{
         const first=await gateway.page(0)
@@ -190,7 +190,7 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
         if(mounted.current.active){
           setNotice('')
           setError((photoIssue?photoIssue+' ':'')+
-            'El artículo está guardado, pero el listado no se pudo actualizar. Consultá la ficha; no repitas el alta.')
+            'The item is saved, but the list could not be updated. Consult the tab; do not repeat the release.')
         }
       }
     }catch(err){handle(err,true)}
@@ -200,7 +200,7 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
   async function changeStatus(item:CatalogItem){
     if(!canWrite||busy||uncertain)return
     const next=item.status==='ACTIVO'?'INACTIVO':'ACTIVO'
-    if(!window.confirm((next==='INACTIVO'?'Desactivar':'Reactivar')+' «'+item.name+'» para esta empresa?'))return
+    if(!window.confirm((next==='INACTIVO'?'Desactivar':'Reactivar')+' «'+item.name+'» for this company?'))return
     setBusy(true);setError('');setNotice('')
     try{
       await gateway.status(item.id,next)
@@ -208,7 +208,7 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
       const first=await gateway.page(0)
       if(!mounted.current.active)return
       setItems(first);setHasMore(first.length===CATALOG_PAGE_SIZE)
-      setNotice('Estado actualizado en PostgreSQL.')
+      setNotice('Status updated in PostgreSQL.')
     }catch(err){handle(err,true)}
     finally{if(mounted.current.active)setBusy(false)}
   }
@@ -228,63 +228,63 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
     previousView.current=view
   },[view])
   return <section className="real-auth-card real-business-panel e3-commerce-page e3-catalog-page">
-    {view==='list'&&<nav className="real-business-nav" aria-label="Navegación de empresa">
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Empresa</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/ubicaciones')}>Ubicaciones</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/inicio')}>Primeros pasos</button>
-      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas')}>Mis empresas</button>
+    {view==='list'&&<nav className="real-business-nav" aria-label="Company navigation">
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId)}>Company</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/ubicaciones')}>Locations</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas/'+businessId+'/inicio')}>First steps</button>
+      <button className="real-auth-link" type="button" onClick={()=>onNavigate('/real/empresas')}>My companies</button>
     </nav>}
     {view!=='list'&&<div className="e3-commerce-backbar">
       <button ref={backRef} type="button" className="e3-commerce-back" disabled={busy} onClick={closeSubview}>
-        <Icon name="arrow-left" size={18}/>Volver al catálogo
+        <Icon name="arrow-left" size={18}/>Back to Catalogue
       </button>
-      <span className="e3-commerce-view-label">{view==='form'?'Edición de artículo':'Ficha de artículo'}</span>
+      <span className="e3-commerce-view-label">{view==='form'?'Article Edition':'Article sheet'}</span>
     </div>}
     <header className="e3-commerce-heading">
       <span className="e3-commerce-heading-icon"><Icon name={view==='detail'?'book':'package'} size={28}/></span>
       <div className="e3-commerce-heading-copy">
-        <span className="e3-commerce-eyebrow">{business?.name??'Empresa'} · Comercial</span>
+        <span className="e3-commerce-eyebrow">{business?.name??'Company'} · Comercial</span>
         {view==='list'
-          ? <h1 ref={listTitleRef} tabIndex={-1}>Catálogo de artículos</h1>
-          : <h1>{view==='form'?(editing?'Editar artículo':'Nuevo artículo'):'Ficha del artículo'}</h1>}
-        <p>{view==='list'?'Organizá lo que vendés y los insumos que utilizás.':view==='detail'?(selected?.name??'Ficha de artículo'):'Completá los datos de la ficha seleccionada.'}</p>
+          ? <h1 ref={listTitleRef} tabIndex={-1}>Catalogue of articles</h1>
+          : <h1>{view==='form'?(editing?'Edit Article':'New article'):'Article sheet'}</h1>}
+        <p>{view==='list'?'Organize what you sell and the inputs you use.':view==='detail'?(selected?.name??'Article sheet'):'Complete the data on the selected tab.'}</p>
       </div>
       {view==='list'&&canWrite&&<button className="real-auth-primary e3-commerce-top-action" type="button"
-        disabled={busy||uncertain||loading} onClick={startCreate}><Icon name="plus" size={18}/>Crear artículo REAL</button>}
+        disabled={busy||uncertain||loading} onClick={startCreate}><Icon name="plus" size={18}/>Create REAL article</button>}
     </header>
-    {uncertain&&<div className="real-auth-message real-ops-warning" role="alert">La operación podría haberse confirmado en el servidor. No la reintentes sin verificar primero.
-      <button type="button" className="real-auth-link" onClick={()=>void refresh()}>Reconsultar catálogo</button>
+    {uncertain&&<div className="real-auth-message real-ops-warning" role="alert">The operation could have been confirmed on the server. Do not re-enter without checking first.
+      <button type="button" className="real-auth-link" onClick={()=>void refresh()}>Consult Catalogue</button>
     </div>}
     {notice&&<p className="real-auth-message" role="status">{notice}</p>}
     {error&&<p className="real-auth-message real-auth-error" role="alert">{error}</p>}
-    {loading&&<p role="status">Consultando catálogo de PostgreSQL…</p>}
+    {loading&&<p role="status">Checking PostgreSQL catalog...</p>}
     {view==='list'&&<>
       {business&&<div className="e3-commerce-toolbar"><span>Empresa: <strong>{business.name}</strong></span>
-        <button type="button" className="real-auth-secondary" disabled={loading||busy||moreLoading} onClick={()=>void refresh()}>Actualizar catálogo</button>
+        <button type="button" className="real-auth-secondary" disabled={loading||busy||moreLoading} onClick={()=>void refresh()}>Update Catalogue</button>
       </div>}
       {!loading&&loaded&&<>
         <RealSetupGuide suggestion={setupSuggestion} businessId={businessId} onNavigate={onNavigate}/>
-        <div className="e3-commerce-stats" aria-label="Resumen del catálogo cargado">
-          <div><span>Fichas cargadas</span><strong>{items.length}</strong></div>
-          <div><span>Activas cargadas</span><strong>{loadedActive}</strong></div>
-          <div><span>Inactivas cargadas</span><strong>{items.length-loadedActive}</strong></div>
+        <div className="e3-commerce-stats" aria-label="Catalogue summary loaded">
+          <div><span>Loaded sheets</span><strong>{items.length}</strong></div>
+          <div><span>Active loaded</span><strong>{loadedActive}</strong></div>
+          <div><span>Inactive loaded</span><strong>{items.length-loadedActive}</strong></div>
         </div>
         <p className="real-catalog-coverage" role="status">
           {items.length} ficha{items.length===1?'':'s'} cargada{items.length===1?'':'s'}.
-          {hasMore?' Hay más páginas posibles: los filtros solo abarcan lo cargado.':' Se consultó la última página.'}
+          {hasMore?' There are more pages possible: filters only cover the loaded.':' The last page was consulted.'}
         </p>
         <div className="e3-commerce-filters">
-          <label className="e3-commerce-search"><Icon name="search" size={18}/><span className="e3-sr-only">Buscar entre páginas cargadas</span>
-            <input type="search" aria-label="Buscar entre páginas cargadas" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Buscar por nombre o SKU"/></label>
-          <label>Tipo<select aria-label="Filtrar catálogo por tipo" value={kindFilter} onChange={e=>setKindFilter(e.target.value as typeof kindFilter)}>
-            <option value="TODOS">Todos</option>{CATALOG_KINDS.map(k=><option value={k} key={k}>{label(k)}</option>)}
+          <label className="e3-commerce-search"><Icon name="search" size={18}/><span className="e3-sr-only">Search between loaded pages</span>
+            <input type="search" aria-label="Search between loaded pages" value={filter} onChange={e=>setFilter(e.target.value)} placeholder="Search by name or SKU"/></label>
+          <label>Type<select aria-label="Filter catalogue by type" value={kindFilter} onChange={e=>setKindFilter(e.target.value as typeof kindFilter)}>
+            <option value="TODOS">All</option>{CATALOG_KINDS.map(k=><option value={k} key={k}>{label(k)}</option>)}
           </select></label>
-          <label>Estado<select aria-label="Filtrar catálogo por estado" value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)}>
-            <option value="TODOS">Todos</option><option value="ACTIVO">Activos</option><option value="INACTIVO">Inactivos</option>
+          <label>Status<select aria-label="Filter catalog by status" value={statusFilter} onChange={e=>setStatusFilter(e.target.value as typeof statusFilter)}>
+            <option value="TODOS">All</option><option value="ACTIVO">Activos</option><option value="INACTIVO">Inactivos</option>
           </select></label>
         </div>
-        {items.length===0&&<div className="real-business-empty e3-commerce-empty"><strong>Tu catálogo todavía está vacío</strong><p>Creá tu primera ficha para comenzar a registrar productos, insumos o servicios.</p></div>}
-        {items.length>0&&visible.length===0&&<div className="real-business-empty e3-commerce-empty"><strong>Sin coincidencias en las páginas cargadas</strong><p>Probá otra búsqueda o cargá más artículos si hay páginas pendientes.</p></div>}
+        {items.length===0&&<div className="real-business-empty e3-commerce-empty"><strong>Your catalog is still empty.</strong><p>Create your first tab to start registering products, inputs or services.</p></div>}
+        {items.length>0&&visible.length===0&&<div className="real-business-empty e3-commerce-empty"><strong>No matches on loaded pages</strong><p>Try another search or upload more articles if there are pages pending.</p></div>}
         <div className="real-catalog-grid e3-commerce-grid">
           {visible.map(item=><article key={item.id} className="real-catalog-tile e3-catalog-tile">
             <div className="e3-commerce-card-top">
@@ -296,79 +296,79 @@ export function RealCatalogPage({token,userId,businessId,onNavigate,onUnauthoriz
             <div className="e3-commerce-chips"><span>{item.unit}</span><span>{item.sellable?'Vendible':'No vendible'}</span></div>
             <small className="e3-commerce-sku">SKU: {item.sku??'Sin SKU'}</small>
             <div className="real-catalog-prices e3-commerce-prices">
-              <span>Precio de venta <b>{formatMoney(item.price_cents)}</b></span>
-              <span>Costo de referencia <b>{formatMoney(item.reference_cost_cents)}</b></span>
+              <span>Sales price <b>{formatMoney(item.price_cents)}</b></span>
+              <span>Reference cost <b>{formatMoney(item.reference_cost_cents)}</b></span>
             </div>
             <div className="real-auth-actions e3-commerce-card-actions">
               <button type="button" className="real-auth-secondary" onClick={()=>openDetail(item)}>Ver ficha</button>
-              {canWrite&&<button type="button" className="real-auth-secondary" disabled={busy||uncertain} onClick={()=>startEdit(item)}>Editar</button>}
+              {canWrite&&<button type="button" className="real-auth-secondary" disabled={busy||uncertain} onClick={()=>startEdit(item)}>Edit</button>}
               {canWrite&&<button type="button" className="real-auth-secondary" disabled={busy||uncertain}
                 onClick={()=>void changeStatus(item)}>{item.status==='ACTIVO'?'Desactivar':'Reactivar'}</button>}
             </div>
           </article>)}
         </div>
         {hasMore&&<button type="button" className="real-auth-secondary e3-commerce-loadmore" disabled={moreLoading||busy||loading}
-          onClick={()=>void next()}>{moreLoading?'Cargando página siguiente…':'Cargar los siguientes 100'}</button>}
-        {!canWrite&&<p className="real-auth-note">Tu membresía puede consultar el catálogo, pero no crear, editar o cambiar el estado de artículos.</p>}
+          onClick={()=>void next()}>{moreLoading?'Loading next page...':'Load the next 100'}</button>}
+        {!canWrite&&<p className="real-auth-note">Your membership may consult the catalog, but do not create, edit or change the status of items.</p>}
       </>}
     </>}
-    {view==='detail'&&selected&&<section className="e3-commerce-subsurface" aria-label="Detalle del artículo">
+    {view==='detail'&&selected&&<section className="e3-commerce-subsurface" aria-label="Detail of the article">
       <div className="e3-commerce-detail-heading"><span className="e3-commerce-card-icon"><Icon name="package" size={24}/></span>
         <div><h2>{selected.name}</h2><p>{label(selected.kind)} · {selected.category}</p></div>
         <span className={'real-catalog-status '+(selected.status==='ACTIVO'?'real-catalog-active':'')}>{selected.status}</span>
       </div>
       <dl className="e3-commerce-fact-grid">
-        <div><dt>Tipo de artículo</dt><dd>{label(selected.kind)}</dd></div>
-        <div><dt>Unidad</dt><dd>{selected.unit}</dd></div>
+        <div><dt>Type of item</dt><dd>{label(selected.kind)}</dd></div>
+        <div><dt>Unit</dt><dd>{selected.unit}</dd></div>
         <div><dt>SKU</dt><dd>{selected.sku??'No asignado'}</dd></div>
-        <div><dt>Disponible para venta</dt><dd>{selected.sellable?'Sí':'No'}</dd></div>
-        <div><dt>Precio de venta</dt><dd>{formatMoney(selected.price_cents)}</dd></div>
-        <div><dt>Costo de referencia</dt><dd>{formatMoney(selected.reference_cost_cents)}</dd></div>
+        <div><dt>Available for sale</dt><dd>{selected.sellable?'Yes':'No'}</dd></div>
+        <div><dt>Sales price</dt><dd>{formatMoney(selected.price_cents)}</dd></div>
+        <div><dt>Reference cost</dt><dd>{formatMoney(selected.reference_cost_cents)}</dd></div>
       </dl>
       <div className="e3-commerce-note-grid">
-        <div><h3>Descripción</h3><p>{selected.description||'Sin descripción registrada.'}</p></div>
-        <div><h3>Observaciones</h3><p>{selected.observations||'Sin observaciones.'}</p></div>
+        <div><h3>Description</h3><p>{selected.description||'No description recorded.'}</p></div>
+        <div><h3>Observaciones</h3><p>{selected.observations||'No comment.'}</p></div>
       </div>
-      <RealPhotoManager token={token} owner={{kind:'CATALOG',businessId,resourceId:selected.id}} title={"Fotografías de "+selected.name} canManage={canWrite} onUnauthorized={onUnauthorized}/>
-      <p className="e3-commerce-disclaimer">La ficha describe el artículo. El stock y sus movimientos se consultan exclusivamente en Inventario REAL.</p>
+      <RealPhotoManager token={token} owner={{kind:'CATALOG',businessId,resourceId:selected.id}} title={"Photographs of "+selected.name} canManage={canWrite} onUnauthorized={onUnauthorized}/>
+      <p className="e3-commerce-disclaimer">The sheet describes the article. Stock and its movements are consulted exclusively in REAL Inventory.</p>
       {canWrite&&<div className="real-auth-actions">
-        <button className="real-auth-primary" type="button" disabled={busy||uncertain} onClick={()=>startEdit(selected)}>Editar artículo</button>
+        <button className="real-auth-primary" type="button" disabled={busy||uncertain} onClick={()=>startEdit(selected)}>Edit Article</button>
       </div>}
     </section>}
-    {view==='form'&&canWrite&&<section className="e3-commerce-subsurface e3-commerce-form-screen" aria-label="Formulario de artículo">
-      <div className="e3-commerce-section-head"><h2>Datos del artículo</h2><p>La información se guardará únicamente en la empresa seleccionada.</p></div>
-      {draft.kind==='SERVICIO'&&<p className="real-auth-note" role="note">Los servicios no requieren stock inicial ni movimientos de inventario. Su precio y disponibilidad comercial se registran en esta ficha.</p>}
+    {view==='form'&&canWrite&&<section className="e3-commerce-subsurface e3-commerce-form-screen" aria-label="Article form">
+      <div className="e3-commerce-section-head"><h2>Article data</h2><p>The information will be saved only to the selected company.</p></div>
+      {draft.kind==='SERVICIO'&&<p className="real-auth-note" role="note">The services do not require initial stock or inventory movements. Their price and commercial availability are recorded in this file.</p>}
       <form className="real-auth-form real-ops-form e3-commerce-form" onSubmit={e=>void save(e)}>
         <div className="e3-commerce-form-grid">
-          <label>Nombre<input required minLength={2} maxLength={90} value={draft.name} onChange={e=>updateField('name',e.target.value)}/></label>
-          <label>Tipo<select value={draft.kind} onChange={e=>changeKind(e.target.value as CatalogKind)}>
+          <label>Name<input required minLength={2} maxLength={90} value={draft.name} onChange={e=>updateField('name',e.target.value)}/></label>
+          <label>Type<select value={draft.kind} onChange={e=>changeKind(e.target.value as CatalogKind)}>
             {CATALOG_KINDS.map(k=><option value={k} key={k}>{label(k)}</option>)}</select></label>
-          <label>Rubro o categoría<input required minLength={2} maxLength={60} value={draft.category} onChange={e=>updateField('category',e.target.value)}/></label>
-          <label>Unidad<select value={draft.unit} onChange={e=>updateField('unit',e.target.value as CatalogUnit)}>
+          <label>Category<input required minLength={2} maxLength={60} value={draft.category} onChange={e=>updateField('category',e.target.value)}/></label>
+          <label>Unit<select value={draft.unit} onChange={e=>updateField('unit',e.target.value as CatalogUnit)}>
             {CATALOG_UNITS.filter(u=>draft.kind==='SERVICIO'?u==='SERVICIO':u!=='SERVICIO').map(u=><option key={u} value={u}>{u}</option>)}</select></label>
-          <label>SKU (opcional)<input maxLength={32} placeholder="Ej.: PRODUCTO-001" value={draft.sku??''}
+          <label>SKU (optional)<input maxLength={32} placeholder="E.g.: PRODUCT-001" value={draft.sku??''}
             onChange={e=>updateField('sku',e.target.value||null)}/></label>
           <div className="e3-commerce-sellable"><label className="real-ops-check"><input type="checkbox" checked={draft.sellable}
-            onChange={e=>updateField('sellable',e.target.checked)}/> Artículo vendible</label></div>
-          <label>Precio (pesos, opcional)<input inputMode="decimal" placeholder="1250,50" value={draft.price}
+            onChange={e=>updateField('sellable',e.target.checked)}/> Sellable article</label></div>
+          <label>Price (weights, optional)<input inputMode="decimal" placeholder="1250,50" value={draft.price}
             onChange={e=>updateField('price',e.target.value)}/></label>
-          <label>Costo de referencia (pesos, opcional)<input inputMode="decimal" placeholder="800,00" value={draft.cost}
+          <label>Reference cost (weights, optional)<input inputMode="decimal" placeholder="800,00" value={draft.cost}
             onChange={e=>updateField('cost',e.target.value)}/></label>
-          <label className="e3-commerce-span-all">Descripción<textarea rows={3} maxLength={450} value={draft.description}
+          <label className="e3-commerce-span-all">Description<textarea rows={3} maxLength={450} value={draft.description}
             onChange={e=>updateField('description',e.target.value)}/></label>
           <label className="e3-commerce-span-all">Observaciones<textarea rows={3} maxLength={600} value={draft.observations}
             onChange={e=>updateField('observations',e.target.value)}/></label>
         </div>
-        {!editing&&<RealPhotoDraftPicker title="Fotografías del nuevo artículo o servicio" files={createPhotos}
+        {!editing&&<RealPhotoDraftPicker title="Photographs of the new article or service" files={createPhotos}
           onChange={setCreatePhotos} maximum={8} disabled={busy}/>}
         <div className="real-auth-actions e3-commerce-form-actions">
-          <button type="submit" className="real-auth-primary" disabled={busy||uncertain}>{busy?'Guardando…':'Guardar artículo'}</button>
-          <button type="button" className="real-auth-secondary" disabled={busy} onClick={closeSubview}>Cancelar</button>
+          <button type="submit" className="real-auth-primary" disabled={busy||uncertain}>{busy?'Guardando…':'Save Item'}</button>
+          <button type="button" className="real-auth-secondary" disabled={busy} onClick={closeSubview}>Cancel</button>
         </div>
       </form>
       {editing&&<RealPhotoManager token={token} owner={{kind:'CATALOG',businessId,resourceId:editing}}
-        title="Fotografías del artículo (edición)" canManage={canWrite} onUnauthorized={onUnauthorized}/>}
-      <p className="e3-commerce-disclaimer">Las fotografías son opcionales y se guardan por separado de los datos comerciales. Los cambios de imágenes no modifican stock ni precios.</p>
+        title="Photographs of the article (editation)" canManage={canWrite} onUnauthorized={onUnauthorized}/>}
+      <p className="e3-commerce-disclaimer">Photographs are optional and stored separately from commercial data. Images changes do not change stock or prices.</p>
     </section>}
   </section>
 }

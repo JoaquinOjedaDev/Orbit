@@ -69,12 +69,12 @@ class CreateSaleRequest(BaseModel):
         subtotal = sum(line_total_cents(x.quantity_milli, x.unit_price_cents)
                        for x in self.lines)
         if not 1 <= subtotal <= MAX_CENTS:
-            raise ValueError("Subtotal fuera de rango")
+            raise ValueError("Subtotal out of range")
         total = subtotal - self.discount_cents
         if not 1 <= total <= MAX_CENTS:
-            raise ValueError("El total debe ser positivo")
+            raise ValueError("The total must be positive")
         if sum(payment.amount_cents for payment in self.payments) != total:
-            raise ValueError("Los pagos declarados deben sumar el total exacto")
+            raise ValueError("The payments declared must add up the exact total")
         return self
 
     def payload_digest(self) -> str:

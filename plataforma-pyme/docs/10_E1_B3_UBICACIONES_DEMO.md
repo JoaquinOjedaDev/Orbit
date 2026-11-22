@@ -1,30 +1,30 @@
-# E1-B3 — Ubicaciones DEMO por empresa
+# E1-B3 — DEMO locations per company
 
-**Fecha:** 2026-11-06. **Estado:** código publicado en main; build, lint y pruebas visuales LOCALES PENDIENTES.
-**Base de diseño:** matriz E0-A Z004 (Ubicaciones.html) y E0-B. No se copiaron scripts globales ni datos reales del HTML original.
+**Date:** 2026-11-06. **Status:** code published in main; build, lint and visual tests LOCAL PENDENT.
+**Design base:** E0-A Z004 (Locations.html) and E0-B matrix. No global scripts or actual data were copied from the original HTML.
 
-## Alcance implementado
+## Scope implemented
 
-- Se habilita `/b/:businessId/ubicaciones` con listado, formulario de alta/edición, botón para designar principal y pausa/reactivación con confirmación contextual.
-- Tipos: Local, Feria, Depósito, Oficina y Otro; dirección/referencia opcional. Capacidad de vender y capacidad de almacenar son booleanos independientes.
-- Una empresa de servicios puede tener **cero ubicaciones**. Crear empresa **no** genera depósito, caja ni inventario.
-- Una ubicación pertenece a `businessId`, y los comandos DEMO verifican la pertenencia antes de editar, pausar o hacer principal.
-- Como máximo hay una ubicación principal **activa** por empresa. Si la principal se pausa, pierde el estado principal y la empresa puede quedar sin principal; al reactivar no se restaura automáticamente.
-- No se elimina ninguna ubicación, se cambia su estado. El sistema todavía no tiene stock, caja ni referencias transaccionales; la pausa **no** ejecuta validaciones de operaciones pendientes, y no debe considerarse lista para producción.
-- Los datos se guardan en `locations` dentro del almacenamiento preexistente `asistente-pyme.e1a2.demo.v1` (version 1), manteniendo profile, createdBusinesses, fixtureEdits y memberJobs intactos.
-- El almacenamiento local valida el formato, la pertenencia empresarial y la unicidad de ubicación principal por empresa. No es seguridad real ni backup.
-- Los formularios se desmontan al cambiar de negocio con `key={business.id}`; no se trasladan borradores entre empresas.
+- Enabled `/b/:businessId/ubicaciones` with list, high/edit form, button to designate main and pause/reactivation with context confirmation.
+- Types: Local, Fair, Deposit, Office and Other; Optional address/reference. Ability to sell and storage capacity are independent booleans.
+- A service company may have **zero locations**. Create a company **no** generates deposit, cashier or inventory.
+- A location belongs to `businessId`, and DEMO commands check membership before editing, pause or make main.
+- At most there is a main location **active** If the main one pauses, it loses its main state and the company can be left without principal; when reactivated it is not automatically restored.
+- No location is removed, its status is changed. The system still has no stock, box or transactional references; pause **no** executes validations of pending operations and should not be considered as production-ready.
+- Data is saved in `locations` inside pre-existing storage `asistente-pyme.e1a2.demo.v1` (version 1), manteniendo profile, createdBusinesses, fixtureEdits y memberJobs intactos.
+- Local storage validates formatting, business ownership and uniqueness of main location by company. It is not real security or backup.
+- Forms are dismantled when changing business with `key={business.id}`; drafts are not transmitted between companies.
 
-## Archivos
+## Files
 
 - `frontend/src/data/demo/demoStore.ts` — Location, input tipado, indexado por ID, lectura y guardado compatibles, comandos createLocation/updateLocation/setPrimaryLocation/setLocationStatus.
-- `frontend/src/features/locations/LocationsPage.tsx` — creación, edición, listado, principal y pausa/reactivación.
-- `frontend/src/App.tsx` — conexión a la ruta `ubicaciones` por empresa.
-- `frontend/src/App.css` — tarjetas y formulario responsive.
+- `frontend/src/features/locations/LocationsPage.tsx` — creation, editing, listing, main and pause/reactivation.
+- `frontend/src/App.tsx` — connection to the route `ubicaciones` per company.
+- `frontend/src/App.css` — cards and form responsible.
 
-## Validaciones pendientes (no se afirma su resultado)
+## Outstanding validations (not reported)
 
-Desde la carpeta `plataforma-pyme/frontend`:
+From Folder `plataforma-pyme/frontend`:
 
 ```powershell
 git pull --ff-only origin main
@@ -33,25 +33,25 @@ npm.cmd run lint
 npm.cmd run dev
 ```
 
-| Prueba | Procedimiento | Resultado esperado |
+| Test | Procedure | Expected outcome |
 |---|---|---|
-| UBI-01 | Abrir ubicaciones en empresa de Servicios recién creada | Lista vacía, sin local ni depósito ficticio |
-| UBI-02 | Crear ubicación Local con vender=Sí, almacenar=No | Aparece una ubicación activa, sin inventario generado |
-| UBI-03 | Crear Depósito con vender=No, almacenar=Sí | Ambas capacidades son independientes |
-| UBI-04 | Elegir otra ubicación principal | La anterior deja de ser principal |
-| UBI-05 | Pausar ubicación principal | Queda pausada, sin principal; ofrece reactivar |
-| UBI-06 | Reactivar ubicación | Activa, no se convierte sola en principal |
-| UBI-07 | Editar A; cambiar a B; volver | A conserva datos; B no se ve afectada ni hereda borrador |
-| UBI-08 | Guardar cambios y presionar F5 | Persisten los registros de cada empresa |
-| UBI-09 | Refrescar con perfil, empresas y función laboral preexistentes | Datos anteriores conservados |
-| UBI-10 | Intentar nombre vacío o inválido | Error/validación; no altera el estado |
-| UBI-11 | Reducir a pantalla móvil de 390px | Formulario y tarjetas legibles |
-| UBI-12 | `npm.cmd run build` y `npm.cmd run lint` | Sin errores ni advertencias |
+| UBI-01 | Open newly created Services company locations | Empty list, no premises or fictitious deposit |
+| UBI-02 | Create local location with selling=Yes, store=No | An active location appears, no generated inventory |
+| UBI-03 | Create Deposit with Sell=No, Store=Yes | Both capacities are independent |
+| UBI-04 | Choose another main location | The previous one is no longer the main one |
+| UBI-05 | Pause main location | It is paused, without main; offers to reactivate |
+| UBI-06 | Reactivate location | Active, does not become principal alone |
+| UBI-07 | Edit A; switch to B; return | A retains data; B is not affected or inherited draft |
+| UBI-08 | Save changes and press F5 | The records of each company persist |
+| UBI-09 | Refresh with pre-existing profile, companies and job function | Previous data retained |
+| UBI-10 | Try empty or invalid name | Error/validation; does not alter status |
+| UBI-11 | Reduce to 390px mobile screen | Form and cards readable |
+| UBI-12 | `npm.cmd run build` y `npm.cmd run lint` | No errors or warnings |
 
-## Lo que NO implementa
+## What Is NOT Implementing
 
-No hay API, permisos efectivos, geolocalización, inventario, caja, ubicaciones asignadas a colaboradores ni bloqueo de pausa con operaciones pendientes. La integración con TP3, roles por ubicación, ledger de stock y ventas viene en posteriores incrementos. Antes de usar pausas con operaciones reales, agregar validaciones de stock y caja del servidor, no confiar en controles visuales.
+There is no API, effective permissions, geolocation, inventory, box, partner locations or pause lock with pending operations. Integration with TP3, location roles, stock leadger and sales comes in subsequent increments. Before using break with actual operations, add stock validations and server box, do not rely on visual controls.
 
-## Actualización E2-2 A.1 — CASA en la DEMO (08/11/2026)
+## Update E2-2 A.1 — CASE IN DEMO (08/11/2026)
 
-Se agregó la opción **CASA — Casa o domicilio particular** al selector de ubicaciones existente, conservando `LOCAL`, `FERIA`, `DEPOSITO`, `OFICINA` y `OTRO`. El tipo `LocationKind`, las etiquetas y ambas validaciones (entrada y recuperación del almacenamiento local) aceptan CASA. `canSell` y `canStore` continúan independientes y se mantienen todos los comandos y datos previos. La pantalla genera sus opciones a partir de `locationKindLabels`, por lo que no requiere otra implementación visual. **No se geolocaliza, publica ni verifica automáticamente el domicilio** y no hay sincronización con FastAPI. Los CI del cambio CASA aprobaron: backend 217 tests, frontend build/lint/E2E 2/2. Para comprobación manual: crear CASA en el selector, guardar, recargar y constatar persistencia; verificar también que ubicaciones de tipos anteriores siguen visibles.
+Added option **CASA — Home or private home** the existing location selector, preserving `LOCAL`, `FERIA`, `DEPOSITO`, `OFICINA` y `OTRO`The guy `LocationKind`, labels and both validations (input and local storage recovery) accept CASA. `canSell` y `canStore` remain independent and all previous commands and data are maintained. The screen generates its options from `locationKindLabels`so it doesn't require another visual implementation. **No geolocation, publication or automatic verification of domicile** and there is no synchronization with FastAPI. CASA change ICs approved: backend 217 tests, frontend build/lint/E2E 2/2. For manual check: create CASA on selector, save, reload and verify persistence; also verify which locations of previous types remain visible.

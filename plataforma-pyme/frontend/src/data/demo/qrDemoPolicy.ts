@@ -20,15 +20,15 @@ export type DemoQrIntent = {
 }
 
 export const qrStatusLabels: Record<QrDemoStatus, string> = {
-  PENDIENTE: 'Pendiente (sin cobro)',
-  SIMULADO_APROBADO: 'Aprobado SIMULADO (sin dinero real)',
+  PENDIENTE: 'Outstanding (no charge)',
+  SIMULADO_APROBADO: 'SIMULATED Approved (no real money)',
   CANCELADO: 'Cancelado',
 }
 
 export function normalizeQrSaleInput(input: SaleInput): SaleInput {
   const normalized = normalizeSaleInput(input)
   if (normalized.payments.length !== 1 || normalized.payments[0].method !== 'MERCADO_PAGO_DECLARADO') {
-    throw new Error('Para el QR DEMO seleccioná un único medio Mercado Pago declarado por el total.')
+    throw new Error('Select Mercado Pago as the only declared payment method for the full demo QR amount.')
   }
   return normalized
 }

@@ -25,7 +25,7 @@ function AuthenticatedPhoto({ token, photo, alt, owner }: Shared & { photo: Phot
   }, [gateway, photo.id])
   return source
     ? <img className="e3-photo-img" src={source} alt={alt} loading="lazy"/>
-    : <span className="e3-photo-fallback" role="img" aria-label={'Sin vista previa de '+alt}>
+    : <span className="e3-photo-fallback" role="img" aria-label={'No preview of '+alt}>
         <Icon name={owner.kind==='PROFILE'?'user':owner.kind==='SUPPLIER'?'briefcase':owner.kind==='BUSINESS'?'building':'package'} size={25}/>
       </span>
 }
@@ -70,7 +70,7 @@ export function RealPhotoManager({ token, owner, title, canManage, onUnauthorize
     if (!selected.length || busy || !canManage) return
     if (isCatalog && selected.length+photos.length>maximum) {
       setNotice('')
-      setError('El artículo o servicio admite hasta 8 fotos; quitá alguna antes de agregar más.')
+      setError('The article or service supports up to 8 photos; remove one before adding more.')
       return
     }
     setBusy(true);setError('');setNotice('')
@@ -78,7 +78,7 @@ export function RealPhotoManager({ token, owner, title, canManage, onUnauthorize
       for(const file of selected) await gateway.upload(file)
       await refresh()
       onChanged?.()
-      setNotice(isCatalog?'Fotografías guardadas en PostgreSQL.':'Foto guardada en PostgreSQL.')
+      setNotice(isCatalog?'Photographs saved in PostgreSQL.':'Photo saved in PostgreSQL.')
     } catch (cause) {
       setError(photoErrorMessage(cause))
       // Una respuesta perdida puede representar una carga confirmada; consultar antes de reintentar.
@@ -88,13 +88,13 @@ export function RealPhotoManager({ token, owner, title, canManage, onUnauthorize
   }
 
   async function removePhoto(id: string) {
-    if (!canManage || busy || !window.confirm('¿Quitar esta fotografía? Esta acción no elimina la ficha ni sus operaciones.')) return
+    if (!canManage || busy || !window.confirm('Remove this photograph? This action does not remove the tab or its operations.')) return
     setBusy(true);setError('');setNotice('')
     try {
       await gateway.remove(id)
       await refresh()
       onChanged?.()
-      setNotice('Foto quitada correctamente.')
+      setNotice('Photo removed correctly.')
     } catch(cause) {
       setError(photoErrorMessage(cause))
       try { await refresh() } catch { /* conservar advertencia */ }
@@ -102,37 +102,37 @@ export function RealPhotoManager({ token, owner, title, canManage, onUnauthorize
     } finally {setBusy(false)}
   }
 
-  return <section className="e3-photo-manager" aria-label={'Imágenes de '+title}>
+  return <section className="e3-photo-manager" aria-label={'Images from '+title}>
     <div className="e3-photo-heading">
-      <div><h3>{title}</h3><p>{isCatalog?'Hasta 8 fotos. La primera es la portada del artículo o servicio.'
-          :'Una foto. Podés reemplazarla o quitarla cuando quieras.'}</p></div>
+      <div><h3>{title}</h3><p>{isCatalog?'Up to 8 photos. The first is the cover of the article or service.'
+          :'You can replace it or remove it anytime.'}</p></div>
       <span className="e3-photo-count">{photos.length}/{maximum}</span>
     </div>
-    {loading&&<p role="status">Consultando fotografías…</p>}
+    {loading&&<p role="status">Checking photographs...</p>}
     {!loading&&<>
-      {photos.length===0&&<p className="e3-photo-empty">Todavía no cargaste ninguna foto.</p>}
+      {photos.length===0&&<p className="e3-photo-empty">You haven't uploaded any photos yet.</p>}
       <div className="e3-photo-grid">
         {photos.map((photo,i)=><figure className="e3-photo-card" key={photo.id}>
           <AuthenticatedPhoto token={token} owner={owner} photo={photo}
             alt={title+(isCatalog?' — fotografía '+(i+1):'')}/>
           <figcaption>{isCatalog&&i===0?'Portada':isCatalog?'Foto '+(i+1):'Foto actual'}
             {canManage&&<button type="button" className="real-auth-secondary" disabled={busy}
-              onClick={()=>void removePhoto(photo.id)}>Quitar foto</button>}</figcaption>
+              onClick={()=>void removePhoto(photo.id)}>Remove Photo</button>}</figcaption>
         </figure>)}
       </div>
       {canManage&&<div className="e3-photo-actions">
-        <label>{isCatalog?'Agregar fotos':'Seleccionar o reemplazar foto'}
+        <label>{isCatalog?'Agregar fotos':'Select or replace photo'}
           <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp"
             multiple={isCatalog} disabled={busy || (isCatalog&&photos.length>=maximum)}
             onChange={event=>void selectFiles(event)}/>
         </label>
-        <small>JPG, PNG o WebP. Hasta 5 MB por foto; se optimiza automáticamente.</small>
+        <small>JPG, PNG or WebP. Up to 5 MB per photo; it is automatically optimized.</small>
       </div>}
-      {canManage&&!isCatalog&&photos.length>0&&<p className="real-auth-note">Si seleccionás otra foto, reemplazará la anterior.</p>}
+      {canManage&&!isCatalog&&photos.length>0&&<p className="real-auth-note">If you select another photo, it will replace the previous one.</p>}
     </>}
     {notice&&<p className="real-auth-message" role="status">{notice}</p>}
     {error&&<div className="real-auth-message real-auth-error" role="alert">{error}
-      <button type="button" className="real-auth-link" disabled={busy} onClick={()=>{setError('');setLoading(true);void refresh().catch(e=>setError(photoErrorMessage(e))).finally(()=>setLoading(false))}}>Actualizar fotos</button>
+      <button type="button" className="real-auth-link" disabled={busy} onClick={()=>{setError('');setLoading(true);void refresh().catch(e=>setError(photoErrorMessage(e))).finally(()=>setLoading(false))}}>Update photos</button>
     </div>}
   </section>
 }

@@ -1,88 +1,88 @@
-# E2-6 — Matriz de auditoría independiente, evidencias y plantillas
+# E2-6 — Independent audit matrix, evidence and templates
 
-**Propósito:** instrumento de trabajo para la IA auditora. **No es una auditoría efectuada ni una lista de fallos confirmados.**  
-**Fecha:** 2026-11-09.  
+**Purpose:** working instrument for the AI auditor. **It is not an audit or a list of confirmed failures.**  
+**Date:** 2026-11-09.  
 **Rama:** `feature/e2-6-ventas-integradas`.  
-**Ámbito:** `plataforma-pyme/`; ventas E2-6 y dependencias directas.  
-**Documento de encargo:** [E2-6_AUDITORIA_IA_PROMPT_MAESTRO.md](E2-6_AUDITORIA_IA_PROMPT_MAESTRO.md).
+**Scope:** `plataforma-pyme/`; E2-6 sales and direct dependencies.  
+**Custom document:** [E2-6_AUDITORIA_IA_PROMPT_MAESTRO.md](E2-6_AUDITORIA_IA_PROMPT_MAESTRO.md).
 
-## 1. Ficha de trazabilidad que debe completar el auditor
+## 1. Trace sheet to be completed by the auditor
 
-| Dato | Valor que debe registrar la IA |
+| Data | Value to be recorded by AI |
 |---|---|
-| URL repositorio | `https://github.com/JoaquinOjedaDev/Orbit` |
-| Rama de análisis | `feature/e2-6-ventas-integradas` |
-| SHA de `main` efectivamente consultado | **Completar** |
-| SHA exacto de la rama auditada | **Completar** |
-| Merge-base exacto y comparación `main...feature` | **Completar** |
-| Fecha/hora UTC de lectura | **Completar** |
-| Modalidad | Solo lectura |
-| Archivos consultados y archivos inaccesibles | **Completar con paths exactos** |
-| Tests ejecutados en base aislada | **Completar o «no ejecutados»** |
-| CI consultada y SHA de esa ejecución | **Completar o «no consultada»** |
-| Restricciones / evidencia ausente | **Completar** |
+| Repository URL | `https://github.com/JoaquinOjedaDev/Orbit` |
+| Analysis branch | `feature/e2-6-ventas-integradas` |
+| SHA of `main` effectively consulted | **Complete** |
+| Exact SHA of the audited branch | **Complete** |
+| Merge-base exact and comparison `main...feature` | **Complete** |
+| Date/time of reading UTC | **Complete** |
+| Modality | Read only |
+| Accessible files and files | **Complete with exact paths** |
+| Tests performed on an isolated basis | **Complete or ‘not executed’** |
+| IC consulted and SHA of this execution | **Complete or ‘not consulted’** |
+| Restrictions/ missing evidence | **Complete** |
 
-**Regla:** la referencia documental inicial es `130d0c14f6d26248df96f65c3f6d12ba5fba8341`, pero el paquete de auditoría agrega commits documentales. El auditor debe registrar el **HEAD real leído**, no copiar mecánicamente ese SHA.
+**Rule:** the initial documentary reference is `130d0c14f6d26248df96f65c3f6d12ba5fba8341`the audit package adds documentary committs. **Real HEAD read**Don't copy that SHA mechanically.
 
-## 2. Matriz completa de controles
+## 2. Complete matrix of controls
 
-Para cada fila: anotar `OK`, `FALLO`, `RIESGO` o `NO VERIFICADO`, archivo:líneas y test/evidencia que respalda el juicio. **OK no implica demostración exhaustiva**.
+For each row: write down `OK`, `FALLO`, `RIESGO` o `NO VERIFICADO`, file:lines and test/evidence supporting the trial. **OK does not involve exhaustive demonstration**.
 
-| ID | Dimensión | Control específico | Evidencia mínima que buscar | Estado / hallazgo |
+| ID | Dimension | Specific control | Minimum evidence to look for | Status/foundation |
 |---|---|---|---|---|
-| C01 | Tenant | Catálogo, ventas, ubicación, saldo y movimientos pertenecen al business_id autorizado | Queries con `business_id`, FK compuestas, test cross-tenant | Pendiente |
-| C02 | Sesión | Usuario/sesión revocados no pueden crear/leer indebidamente | Dependencias AuthContext, locks, tests sesión | Pendiente |
-| C03 | Membresía | Roles y membresía activa controlan POST y GET | `PurchaseService._authorize`, `own_business`, tests | Pendiente |
-| C04 | Ubicaciones | SELL/STORE, ubicación activa/capacidades, asignaciones activas | `can_operate_at_location`, bloqueo de sede | Pendiente |
-| C05 | Carreras en autorizaciones | Revocación concurrente de asignaciones, permisos y estado operativo | Dos sesiones PostgreSQL; orden de locks | Pendiente |
-| C06 | Catálogo | Estado ACTIVO, sellable, unidad y tipo, validación previa a debitar | `CatalogItem`, validación del servicio | Pendiente |
-| C07 | Cantidades | Milésimas positivas, discretas en múltiplos de 1000, máximos | Validadores y CHECK SQL | Pendiente |
-| C08 | Montos | HALF_UP por línea, subtotal/total/descuento, enteros estrictos, máximos | Pydantic, SQL CHECK, pruebas límite | Pendiente |
-| C09 | Pagos declarados | 1..6 pagos; suma exacta; no acreditación falsa ni transacción bancaria | Schemas, pagos, response, textos API | Pendiente |
-| C10 | Política de precio | Diferencia de precio recibido frente a catálogo; límites de abuso por rol | Servicio, permisos, ADR | Pendiente |
-| C11 | Atomicidad | Revertir comprobante, pagos, saldo y ledger ante falla en línea 2 o flush | Transaction boundaries, tests falla tardía | Pendiente |
-| C12 | Stock CAS | Cantidad disponible y versión, dos ventas por última unidad | UPDATE condicional, tests concurrencia real | Pendiente |
-| C13 | Ledger | Movimiento negativo por línea bien, exclusivo y ligado a sale_line | StockMovement FK y CHECK, consulta balances | Pendiente |
-| C14 | Histórico | Snapshot estable de venta y saldo, GET sin mutaciones, replay posterior | `SaleView`, `balances_after`, tests | Pendiente |
-| C15 | Idempotencia | Identidad por tenant, actor y digest; replay seguro; conflicto por clave | Unique constraint, hash, error 409, tests | Pendiente |
-| C16 | Replay / sede cambiada | Sede pausada/STORE revocado tras venta: decisión de semántica histórica | Orden exacto de autorización y `_replay` | Pendiente |
-| C17 | Interoperabilidad | Venta con recepción, traslado, ajustes simultáneos; deadlock/no pérdidas | Locks/orden, conexiones PG reales | Pendiente |
-| C18 | HTTP y OpenAPI | 201/200/401/403/404/409/422, request/response, errores no filtrantes | Router, tests, OpenAPI | Pendiente |
-| C19 | DDL / migración | Upgrade aditivo, origen XOR, FK tenant, downgrade protegido | Alembic y modelos E2-6 A | Pendiente |
-| C20 | Regresión | Tests de B–D realmente cubren sus afirmaciones; límites no probados | 7 archivos test_sales, CI local/integración | Pendiente |
+| C01 | Tenant | Catalog, sales, location, balance and movements belong to the authorized business_id | Queries con `business_id`, FK composites, cross-tenant test | Pending |
+| C02 | Meeting | User/session revoked cannot create/read improperly | AuthContext, locks, session tests | Pending |
+| C03 | Membership | Roles and active membership control POST and GET | `PurchaseService._authorize`, `own_business`, tests | Pending |
+| C04 | Locations | SELL/STORE, active location/capacity, active assignments | `can_operate_at_location`, headquarters blocking | Pending |
+| C05 | Careers in authorisations | Concurrent revocation of assignments, permits and operational status | Dos sesiones PostgreSQL; orden de locks | Pending |
+| C06 | Catalog | ASSETS, SELLING, UNIT AND TYPE, Validation prior to debit | `CatalogItem`, validation of the service | Pending |
+| C07 | Amounts | Thousandth positives, discrete in multiples of 1000, maximum | Validators and SQL CHECK | Pending |
+| C08 | Amounts | HALF_UP per line, subtotal/total/uncounting, strict integers, maximum | Pydantic, SQL CHECK, limit tests | Pending |
+| C09 | Declared payments | 1..6 payments; exact amount; no false accreditation or bank transaction | Schemes, payments, response, API texts | Pending |
+| C10 | Price policy | Price difference received versus catalogue; limits of abuse per role | Service, permits, ADR | Pending |
+| C11 | Atomity | Reverse voucher, payments, balance and ledger to failure online 2 or flush | Transaction bonds, tests late failure | Pending |
+| C12 | Stock CAS | Quantity available and version, two sales per last unit | UPDATE condicional, tests concurrencia real | Pending |
+| C13 | Ledger | Negative movement by line well, exclusive and linked to sale_line | StockMovement FK y CHECK, consulta balances | Pending |
+| C14 | History | Stable sales and balance snapshot, non-mutation GET, rear replay | `SaleView`, `balances_after`, tests | Pending |
+| C15 | Idempotency | Identity by tenant, actor and digest; secure replay; conflict by key | Unique constraint, hash, error 409, tests | Pending |
+| C16 | Replay/changed venue | Pause Headquarters/STORE revoked after sale: decision of historical semantics | Exact order of authorisation and `_replay` | Pending |
+| C17 | Interoperability | Sale with reception, transfer, simultaneous adjustments; deadlock/no losses | Locks/orden, conexiones PG reales | Pending |
+| C18 | HTTP and OpenAPI | 201/200/401/403/404/409/422, request/response, non-filtering errors | Router, tests, OpenAPI | Pending |
+| C19 | DDL / migration | Upgrade additive, XOR origin, FK tenant, downgrade protected | Alembic and models E2-6 A | Pending |
+| C20 | Regression | B-D tests really cover your claims; untested limits | 7 test_sal files, local IQ/integration | Pending |
 
-## 3. Escenarios de prueba priorizados
+## 3. Priority test scenarios
 
-Separar expresamente **caso confirmado por test**, **test leído pero no ejecutado**, **reproducción manual exitosa**, **riesgo potencial** y **falta de evidencia**.
+Separate expressly **test confirmed case**, **test read but not executed**, **successful manual playback**, **potential risk** y **lack of evidence**.
 
-| ID | Escenario | Resultado esperado |
+| ID | Scenario | Expected outcome |
 |---|---|---|
-| T01 | Crear venta física de 2 unidades con stock 10 | HTTP 201, saldo 8, versión siguiente, 1 `VENTA_SALIDA` |
-| T02 | Venta mixta bien + servicio, con split de pagos | HTTP 201, solo bien descuenta stock, suma de pagos exacta |
-| T03 | Repetir misma clave/payload del mismo actor | HTTP 200, mismo ID y snapshot, ningún saldo/ledger adicional |
-| T04 | Misma clave con payload o actor diferente | HTTP 409, sin escritura extra |
-| T05 | Solicitar venta por encima del saldo | HTTP 409, stock y versión sin cambio |
-| T06 | Dos ventas simultáneas por última unidad | Una 201 y una 409; no negativo |
-| T07 | Dos reintentos simultáneos de misma clave | Un único comprobante y débito |
-| T08 | Segundo artículo sin stock tras primer UPDATE | Rollback de ambos y ausencia de venta/pagos/ledger |
-| T09 | Excepción SQL tras descontar y antes de commit | Rollback completo |
-| T10 | Usuario sin permiso/tenant equivocado | 403/404 según contrato; cero efecto |
-| T11 | Sesión y membresía revocadas antes de reintento | Acceso denegado según política |
-| T12 | Asignación SELL/STORE revocada concurrentemente | Ninguna operación no autorizada confirmada |
-| T13 | Misma venta recuperada tras cambio posterior de stock | Snapshot original sin mutaciones |
-| T14 | Replay tras pausar ubicación | Observar y juzgar contra política histórica explícita |
-| T15 | Artículo de servicio sin ubicación | Solo modalidad administrativa autorizada |
-| T16 | Unidad discreta fraccionaria, float o montos desbordados | HTTP 422; ningún registro |
-| T17 | Venta y recepción concurrentes del mismo artículo | Stock consistente y historial reconciliable |
-| T18 | Venta y traslado concurrentes del mismo artículo | Stock consistente, sin deadlock persistente ni pérdidas |
-| T19 | Venta y ajuste concurrentes del mismo artículo | Stock consistente, sin saldo negativo |
-| T20 | Upgrade y check de esquema en base descartable | Alembic sin diferencias; historial E2-4/E2-5 conservado |
+| T01 | Create 2 units physical sale with stock 10 | HTTP 201, balance 8, next version, 1 `VENTA_SALIDA` |
+| T02 | Mixed sale well + service, with split payments | HTTP 201, only well account stock, exact payout sum |
+| T03 | Repetir misma clave/payload del mismo actor | HTTP 200, same ID and snapshot, no additional balance/ledger |
+| T04 | Misma clave con payload o actor diferente | HTTP 409, no extra writing |
+| T05 | Request sale above balance | HTTP 409, stock and version unchanged |
+| T06 | Two simultaneous sales per last unit | One 201 and one 409; not negative |
+| T07 | Two simultaneous retryings of the same key | A single voucher and debit |
+| T08 | Second item without stock after first UPDATE | Rollback of both and no sale/payments/ledger |
+| T09 | SQL exception after discount and before commit | Rollback completo |
+| T10 | User without permission/mistaken lieutenant | 403/404 per contract; zero effect |
+| T11 | Revocation of session and membership before retry | Access denied according to policy |
+| T12 | SELL/STORE assignment revoked concurrently | No unauthorised operations confirmed |
+| T13 | Same sale recovered after subsequent stock change | Original Snapshot without Mutations |
+| T14 | Replay after pause location | Observe and judge against explicit historical policy |
+| T15 | Service item without location | Authorized administrative mode only |
+| T16 | Discreet fractional unit, float or overflowing amounts | HTTP 422; no record |
+| T17 | Concurrent sale and receipt of the same article | Consistent stock and reconciling history |
+| T18 | Concurrent sale and transfer of the same article | Consistent stock, no persistent deadlock or losses |
+| T19 | Concurrent sale and adjustment of the same article | Stock consistent, no negative balance |
+| T20 | Upgrade and schema check on disposable basis | Alembic without differences; history E2-4/E2-5 preserved |
 
-**Recomendación operacional:** si se ejecutan T06–T20, usar sesiones independientes contra PostgreSQL en una base aislada. No usar la base con datos que el usuario quiera conservar. No exigir ejecución real cuando el auditor carezca de entorno, pero dejar esa limitación en el informe.
+**Operational recommendation:** if T06–T20 is executed, use standalone sessions against PostgreSQL on an isolated database. Do not use the database with data that the user wants to keep. Do not require actual execution when the auditor lacks a setting, but leave that limitation in the report.
 
-## 4. Plantilla de hallazgo AUD-E26-XXX
+## 4. AUD-E26-XXX Find Template
 
-Copiar una instancia por hallazgo. No completar con ejemplos hipotéticos como si fueran resultados reales.
+Copy one instance per find. Do not complete with hypothetical examples as if they were real results.
 
 ```markdown
 ### AUD-E26-001 — [Título concreto]
@@ -112,25 +112,25 @@ Copiar una instancia por hallazgo. No completar con ejemplos hipotéticos como s
 - **Resultado de regresión y CI (después):** ...
 ```
 
-## 5. Plantilla de matriz de decisión selectiva del mantenedor
+## 5. Maintainer Selective Decision Matrix Template
 
-Este cuadro **no** debe completarse automáticamente por la IA auditora como autorización de implementar.
+This table **no** must be automatically completed by the AI auditor as an authorization to implement.
 
-| ID del hallazgo | Estado probatorio | Severidad | Recomendación auditor | Decisión mantenedor | Motivo | Test de aceptación | SHA fix | Verificación |
+| Finding ID | Evidence | Severity | Audit recommendation | Maintenance decision | Reason | Acceptance Test | SHA fix | Verification |
 |---|---|---|---|---|---|---|---|---|
-| AUD-E26-001 | Pendiente | Pendiente | Pendiente | **Sin decidir** | — | — | — | — |
+| AUD-E26-001 | Pending | Pending | Pending | **Undecided** | — | — | — | — |
 
-Reglas de clasificación:
+Classification rules:
 
-- **Aceptar:** defecto reproducible y dentro de alcance; corrección mínima con test.
-- **Ajustar:** existe problema real pero se requiere solución menos disruptiva.
-- **Diferir:** riesgo fundado no bloqueante o necesidad posterior fuera de MVP; explicitar condición y tarea futura.
-- **Rechazar:** evidencia insuficiente, falso positivo, regresión injustificada o exigencia fuera de alcance; conservar argumentación.
-- **Bloquear merge:** hallazgo crítico o alto confirmado no resuelto, violación de aislamiento o corrupción de stock, regressión crítica, CI final rojo.
+- **Accept:** reproducible defect within range; minimal correction with test.
+- **Ajustar:** There is a real problem but less disruptive solution is required.
+- **Defer:** well-founded risk not blocking or subsequent need outside MVP; specify condition and future task.
+- **Reject:** insufficient evidence, false positive, unjustified regression or out of reach demand; retaining argumentation.
+- **Block Merge:** critical or high finding confirmed unsolved, isolation violation or stock corruption, critical regression, red final IC.
 
-## 6. Plantillas de archivos a entregar
+## 6. File templates to be delivered
 
-Para evitar un informe genérico, la IA debe producir cinco Markdown independientes:
+To avoid a generic report, AI must produce five independent Markdowns:
 
 ```text
 AUD-E26-00_RESUMEN_EJECUTIVO.md
@@ -140,31 +140,31 @@ AUD-E26-03_PLAN_SELECTIVO.md
 AUD-E26-04_EVIDENCIA_Y_LIMITES.md
 ```
 
-Mínimos:
+Minimum:
 
-- **00:** SHA, cobertura, estado aptitud (apto, apto con correcciones, no apto, no evaluable), top riesgos con evidencia, qué se inspeccionó y qué queda pendiente.
-- **01:** completar C01–C20, con referencias de archivo/test y limitaciones.
-- **02:** todas las instancias AUD-E26; si no hay hallazgos, explicitar «sin hallazgos reproducibles en alcance inspeccionado».
-- **03:** propuesta mínima ordenada por riesgo, alcance de cada corrección y test asociado, sin ejecutarla.
-- **04:** inventario de archivos leídos, diff real, logs/comandos de pruebas ejecutadas, CI de SHA preciso, fecha y fuentes; separar lo no comprobado.
+- **00:** SHA, coverage, fitness status (suitable, fit with corrections, unfit, unevaluable), top risks with evidence, what was inspected and what is pending.
+- **01:** complete C01–C20, with file/test references and limitations.
+- **02:** all AUD-E26 instances; if no findings are found, explain "no reproducible findings in inspected scope".
+- **03:** minimum proposal ordered by risk, scope of each correction and associated test, without executing it.
+- **04:** inventory of read files, real diff, log/executed test commands, precise SHA CI, date and sources; separate what is not checked.
 
-## 7. Lista de control antes de aceptar el informe
+## 7. Checklist before accepting the report
 
-- [ ] La IA identifica el repo, rama y SHA que realmente examinó.
-- [ ] Reporta la comparación `main...feature` y la persistencia A que ya existe en main.
-- [ ] Leyó archivos centrales, la migración, contratos y pruebas relevantes, o declaró cada ausencia.
-- [ ] No confunde ausencia de función futura con incumplimiento del MVP.
-- [ ] Ningún hallazgo grave carece de archivo:línea, causalidad y resultado verificable.
-- [ ] Distingue riesgo hipotético de fallo confirmado.
-- [ ] Aborda concurrencia y revocación de permisos, no solo datos válidos.
-- [ ] Propone tests concretos y una corrección mínima por hallazgo.
-- [ ] No ha modificado repositorio ni datos reales.
-- [ ] Devuelve cinco artefactos separados con matrices y decisiones pendientes.
-- [ ] No presenta CI verde de SHA diferente como validación final de un futuro fix.
-- [ ] El equipo conserva la potestad de corregir solo hallazgos aceptados.
+- [ ] AI identifies the repo, branch and SHA that it actually examined.
+- [ ] Report comparison `main...feature` and the persistence A that already exists in main.
+- [ ] He read central archives, migration, contracts and relevant evidence, or declared each absence.
+- [ ] It does not confuse the absence of future function with non-compliance with MVP.
+- [ ] No serious finding lacks file:line, causality and verifiable result.
+- [ ] Distinguish hypothetical risk of confirmed failure.
+- [ ] It addresses the continuance and revocation of permits, not only valid data.
+- [ ] It proposes concrete tests and a minimum correction per finding.
+- [ ] You have not modified repository or actual data.
+- [ ] Returns five separate artifacts with pending matrices and decisions.
+- [ ] It does not present different SHA green IC as a final validation of a future fix.
+- [ ] The team retains the power to correct only accepted findings.
 
-## 8. Cierre esperado del proceso, posterior a la auditoría
+## 8. Expected closure of the process, after audit
 
-Recibida la auditoría, el mantenedor registrará la decisión de todos los hallazgos, implementará correcciones aceptadas **únicamente en** `feature/e2-6-ventas-integradas`, ejecutará tests focalizados + regresión en PostgreSQL aislado, verificará `alembic current/check` y GitHub Actions del SHA final; luego revisará un único PR hacia `main` y fusionará solo después de la aprobación explícita.
+Once the audit has been received, the maintainer will record the decision of all findings, implement corrections accepted **only in** `feature/e2-6-ventas-integradas`, will run focused tests + regression in isolated PostgreSQL, will verify `alembic current/check` and GitHub Actions of the final SHA; then you will review a single PR towards `main` and merge only after explicit approval.
 
-**No realizar esta secuencia dentro del encargo de auditoría.**
+**Do not perform this sequence within the audit commission.**

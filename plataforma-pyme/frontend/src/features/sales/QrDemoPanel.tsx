@@ -28,44 +28,44 @@ export function QrDemoPanel({ intent, business, onApproved, onCanceled, onClose 
         onCanceled()
       }
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No se pudo completar la simulación QR.')
+      setError(caught instanceof Error ? caught.message : 'Could not complete QR simulation.')
     } finally { setBusy(false) }
   }
 
-  return <section className="form-panel qr-demo-panel" aria-label="Intención de cobro QR de demostración">
+  return <section className="form-panel qr-demo-panel" aria-label="Demonstration QR collection intent">
     <div className="business-section-heading">
-      <div><Icon name="credit" size={22}/><h2>Cobro con QR · DEMO</h2></div>
-      <button type="button" className="button button-secondary" onClick={onClose}><Icon name="close" size={16}/> Cerrar detalle</button>
+      <div><Icon name="credit" size={22}/><h2>I charge with QR · DEMO</h2></div>
+      <button type="button" className="button button-secondary" onClick={onClose}><Icon name="close" size={16}/> Close detail</button>
     </div>
     <div className="qr-demo-content">
       <div className="qr-demo-visual">
-        <svg viewBox="0 0 29 29" role="img" aria-label="Patrón gráfico ilustrativo, no es un QR escaneable ni un enlace de pago">
+        <svg viewBox="0 0 29 29" role="img" aria-label="Illustrative graphic pattern, not a scanning QR or payment link">
           <rect width="29" height="29" fill="#ffffff"/>
           {cells.map(cell => <rect key={cell.x + '-' + cell.y} x={cell.x} y={cell.y} width="1" height="1" fill="#163b6d"/>)}
         </svg>
-        <strong>ILUSTRACIÓN DEMO</strong>
-        <small>No escaneable · No transfiere dinero</small>
+        <strong>DEMO ILLUSTRATION</strong>
+        <small>Not Scannable · No Transfer of Money</small>
       </div>
       <div className="qr-demo-info">
         <span className={'qr-demo-state ' + (intent.status === 'PENDIENTE' ? 'pending' : intent.status === 'CANCELADO' ? 'cancelled' : 'approved')}>{qrStatusLabels[intent.status]}</span>
         <p className="qr-demo-amount">{moneyDisplay(intent.amountCents)}</p>
         <p>Empresa: <strong>{business.name}</strong></p>
-        <p>Medio: <strong>Mercado Pago declarado (sin conexión)</strong></p>
-        <p>Artículos o servicios: <strong>{intent.input.lines.length}</strong></p>
-        <p>Referencia interna: <code>{intent.id}</code></p>
+        <p>Medio: <strong>Market Declared payment (no connection)</strong></p>
+        <p>Articles or services: <strong>{intent.input.lines.length}</strong></p>
+        <p>Internal reference: <code>{intent.id}</code></p>
         <div className="informational-note">
           <Icon name="shield" size={18}/>
-          <span><strong>Simulación exclusivamente local.</strong> El QR es ilustrativo; ningún cliente puede pagarlo. El estado pendiente no registra ventas ni modifica existencias. El botón de aprobación crea una venta DEMO declarada, pero nunca confirma dinero en Mercado Pago.</span>
+          <span><strong>Only local simulation.</strong> QR is illustrative; no customer can afford it. The pending status does not record sales or modify stocks. The approval button creates a declared DEMO sale, but never confirms money in Pay Market.</span>
         </div>
         {error && <p className="form-message error" role="alert">{error}</p>}
         {intent.status === 'PENDIENTE' && <div className="form-actions qr-demo-actions">
-          <button type="button" className="button button-secondary" disabled={busy} onClick={() => void act('cancel')}>Cancelar intención</button>
+          <button type="button" className="button button-secondary" disabled={busy} onClick={() => void act('cancel')}>Cancel Intent</button>
           <button type="button" className="button button-primary" disabled={busy} onClick={() => void act('approve')}>
-            <Icon name="shield" size={16}/>{busy ? 'Procesando…' : 'Simular aprobación (sin cobro real)'}
+            <Icon name="shield" size={16}/>{busy ? 'Procesando…' : 'Simulate approval (no actual charge)'}
           </button>
         </div>}
-        {intent.status === 'SIMULADO_APROBADO' && <p className="cash-form-hint linked"><Icon name="receipt" size={17}/> Se registró una única venta DEMO. Se puede consultar en el historial de ventas.</p>}
-        {intent.status === 'CANCELADO' && <p className="cash-form-hint unlinked"><Icon name="clock" size={17}/> Intención cancelada. No se generó ninguna venta; para reintentar creá un QR nuevo.</p>}
+        {intent.status === 'SIMULADO_APROBADO' && <p className="cash-form-hint linked"><Icon name="receipt" size={17}/> A single DEMO sale was registered. It can be consulted in the sales history.</p>}
+        {intent.status === 'CANCELADO' && <p className="cash-form-hint unlinked"><Icon name="clock" size={17}/> Intention cancelled. No sales were generated; to try again create a new QR.</p>}
       </div>
     </div>
   </section>

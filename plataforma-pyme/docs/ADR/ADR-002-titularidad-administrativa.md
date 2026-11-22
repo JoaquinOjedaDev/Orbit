@@ -1,31 +1,31 @@
-# ADR-002 — Fundador y titularidad administrativa
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO; transferencia y recuperación DIFERIDAS con diseño obligatorio antes de API real.  
-**Responsable de aprobación:** equipo del TP / responsable funcional (a designar).  
-**Fuentes:** E0-A ``3.1 y 5; E0-B ``6, 8 y 12; v4 `3, D01/H01.
+# ADR-002 — Founder and administrative title
+**Date:** 2026-11-06  
+**Status:** PROPOSAL; DIFFERENT transfer and recovery with mandatory design before actual API.  
+**Responsible for approval:** TP team/functional manager (to be designated).  
+**Sources:** E0-A ``3.1 y 5; E0-B ``6, 8 y 12; v4 `3, D01/H01.
 
-## Contexto
-Crear una empresa requiere responsable inicial, pero **fundador histórico**, **titular administrativo de plataforma** y **titular legal/socio** no equivalen. Algunos prototipos combinan estos conceptos o permiten roles inconsistentes.
+## Context
+Creating a company requires initial responsibility, but **historical founder**, **Administrative platform holder** y **legal holder/partner** some prototypes combine these concepts or allow inconsistent roles.
 
-## Decisión propuesta
-1. Al crear Business, registrar `founderUserId` inmutable como hecho histórico.
-2. Crear una Membership activa del creador y asignar exactamente **un titular administrativo activo inicial** por negocio (invariante).
-3. No permitir en E1 transferir, revocar o eliminar el último responsable. Acciones todavía no diseñadas deben aparecer «Próximamente», no ofrecer falsa transferencia.
-4. En API, transferencia de titularidad será transaccional, autorizada y auditada; la transición debe asegurar que nunca queden cero ni dos titulares **activos**. Recuperación y sucesión necesitan flujo aparte.
-5. Atribución administrativa **no acredita propiedad legal** ni se deriva de aportes, socios o porcentajes.
+## Proposed decision
+1. Al crear Business, registrar `founderUserId` immutable as a historical fact.
+2. Create an active Membership of the creator and assign exactly **an initial active administrative holder** per business (invariant).
+3. Do not allow in E1 transfer, revoke or remove the last responsible. Actions not yet designed must appear "nextly", do not offer false transfer.
+4. In API, transfer of title will be transactional, authorized and audited; the transition must ensure that there are never zero or two holders **assets**Recovery and succession need flow apart.
+5. Administrative attribution **does not credit legal property** is not derived from contributions, partners or percentages.
 
-## Alternativas
-- Fundador único e irrevocable: no aceptable para negocios reales.
-- Varios titulares activos sin regla de coordinación: se difiere porque rompe unicidad y responsabilidades.
-- Titular legal como dato automático del usuario: descartado.
+## Alternatives
+- Unique and irrevocable founder: not acceptable for real business.
+- Several active holders without coordination rule: it differs because it breaks oneness and responsibilities.
+- Legal holder as automatic data of the user: discarded.
 
-## Impacto / riesgos
-La invariancia exige constraints/serialización de transferencias en backend; en DEMO se simula la validación pero no se promete concurrencia segura.
+## Impact/risks
+Invariance requires constraints/serialization of backend transfers; DEMO simulates validation but does not promise safe competition.
 
-## Pruebas pendientes
-- **QA-ONB-01:** alta crea una sola responsabilidad administrativa coherente con membresía.
-- No se puede dejar empresa sin titular activo; dos solicitudes concurrentes de transferencia se serializan **cuando exista API**.
-- Fundador registrado permanece aunque cambie el responsable.
+## Pending evidence
+- **QA-ONB-01:** high creates a single administrative responsibility consistent with membership.
+- No company can be left without active holder; two competing transfer requests are serialized **when API exists**.
+- Registered Founder remains even if the responsible person changes.
 
-## Aprobación
-Aprobar la regla de alta inicial antes de E1-A2; dejar transferencias como capacidad no implementada hasta ADR complementario y tests.
+## Approval
+Adopt the initial discharge rule before E1-A2; leave transfers as unimplemented capacity up to complementary ADR and tests.

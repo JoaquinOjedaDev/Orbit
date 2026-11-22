@@ -1,40 +1,40 @@
-# E1-B4 — Equipo de trabajo e invitaciones nominativas DEMO
+# E1-B4 — DEMO work equipment and nominative invitations
 
-**Fecha:** 2026-11-06.
-**Estado:** Código publicado en GitHub main; build, lint, tests y navegador PENDIENTES de ejecutar localmente.
-**Fuente:** E0-A Z002/Z014; E0-C E1-B1-02; ADR-001/002/003. Los ADR continúan PROPUESTOS.
+**Date:** 2026-11-06.
+**Status:** Code published in GitHub main; build, lint, tests and browser PENDENT to run locally.
+**Source:** E0-A Z002/Z014; E0-C E1-B1-02; ADR-001/002/003.
 
-## Alcance implementado
+## Scope implemented
 
-- Ruta /b/:businessId/equipo y acceso rápido «Equipo de trabajo» disponible.
-- Listado: el perfil global del titular inicial, con la función laboral de esta empresa; colaboradores ficticios que resulten de respuestas simuladas.
-- Invitación nominativa: correo de prueba, rol ENCARGADO o TRABAJADOR. No se ofrece PROPIETARIO ni transferencia de titularidad.
-- Estados PENDIENTE, CANCELADA, RECHAZADA y ACEPTADA; EXPIRADA se calcula en la interfaz sin crear membresías. Vigencia propuesta de 7 días.
-- Alta de invitación pendiente NO agrega integrante ni da acceso. «Simular respuesta» requiere un paso independiente, con aceptación/rechazo explícitos.
-- Aceptar actualiza la invitación y crea miembro DEMO en una única notificación de estado local. Repetir aceptación no duplica miembros.
-- Cancelar y rechazar no crean miembros. No se elimina ni degrada al titular inicial.
-- Los comandos incluyen businessId y rechazan IDs de invitaciones de otras empresas. Mismo correo en A y B no comparte rol.
-- Enlace/QR para solicitar incorporación continúa «Próximamente», sin inventar un QR que conceda acceso.
+- Route /b/:businessId/equipment and quick access "Work equipment" available.
+- Listed: the overall profile of the initial holder, with the job function of this company; fictitious collaborators resulting from simulated responses.
+- Nominative invitation: proof mail, role ENTRY or WORKER. No PROPERTY offered nor transfer of title.
+- PENDENT, CANCELATED, REJECTED AND ACCEPTED STATES; EXPIRED is calculated on the interface without creating memberships. Proposed 7-day force.
+- Pending invitation fee DOES NOT add member or access. Simulate response requires an independent step, with explicit acceptance/rejection.
+- Accept updates the invitation and creates DEMO member in a single local status notification. Repeat acceptance does not duplicate members.
+- Cancel and refuse do not create members. The initial holder is not removed or degraded.
+- The commands include businessId and reject invitations IDs from other companies. Same mail in A and B does not share role.
+- Link/QR to request incorporation continues "Next", without inventing a QR that grants access.
 
-## Persistencia y seguridad
+## Persistence and safety
 
-Se conserva la misma clave asistente-pyme.e1a2.demo.v1 y version 1. Se agregan arrays opcionales teamInvitations y teamMembers. Los datos previos profile, createdBusinesses, fixtureEdits, memberJobs, locations y mapUrl permanecen en el mismo objeto; su lectura es compatible.
+The same wizard-pyme.e1a2.demo.v1 and version 1 key is retained. Optional arrays are added teamInvitations and teamMembers. Previous data profile, createdBusinesses, fixtureEdits, memberJobs, locations and mapUrl remain in the same object; their reading is compatible.
 
-La carga valida formato de IDs, correos, roles, estados, fechas y pertenencia al negocio. Un integrante restaurado tiene que estar asociado a una invitación ACEPTADA coherente.
+The valid load format IDs, mails, roles, states, dates and business membership. A restored member must be associated with a coherent ACCEPTED invitation.
 
-No hay autenticación de destinatarios, envío real de emails, token de aceptación, autorización, auditoría persistente ni concurrencia. El botón «Simular aceptación» representa la respuesta del destinatario SÓLO dentro de la DEMO local; no es una acción real del titular para aceptar por otra persona. La implementación productiva debe incorporar tokens de un solo uso, permisos del actor, aceptación desde identidad verificada y transacciones en backend.
+There is no recipient authentication, actual email sending, acceptance token, authorization, persistent audit or concurring. The "Simulate Acceptance" button represents the recipient's response only within the local DEMO; it is not a real action of the holder to accept by another person. Productive implementation must incorporate single-use tokens, actor permissions, verified identity acceptance and backend transactions.
 
-## Archivos
+## Files
 
-- frontend/src/data/demo/teamPolicy.ts — política pura de roles/email/expiración.
-- frontend/src/data/demo/demoStore.ts — invitaciones y miembros en el snapshot y comandos tipados.
-- frontend/src/features/team/TeamPage.tsx — panel, formulario y respuestas simuladas.
+- frontend/src/data/demo/teamPolicy.ts — pure role policy/email/expiration.
+- frontend/src/data/demo/demoStore.ts — invitations and members in snapshot and typed commands.
+- frontend/src/features/team/TeamPage.tsx — panel, form and simulated responses.
 - frontend/src/App.tsx — ruta scoped por businessId.
-- frontend/src/features/dashboard/Dashboards.tsx — acceso rápido disponible.
-- frontend/src/App.css — diseño adaptable.
+- frontend/src/features/dashboard/Dashboards.tsx — Shortcut available.
+- frontend/src/App.css — adaptable design.
 - frontend/tests/team-policy.test.mjs y script npm test:team — pruebas unitarias.
 
-## Comandos desde plataforma-pyme/frontend
+## Commands from platform-pyme/frontend
 
 ~~~powershell
 git pull --ff-only origin main
@@ -45,26 +45,26 @@ npm.cmd run test:maps
 npm.cmd run dev
 ~~~
 
-Si Vite ya está activo, no volver a iniciarlo. La compilación y los tests nuevos NO han sido ejecutados en la computadora del equipo.
+If Vite is already active, do not start it again. The compilation and new tests have NOT been executed on the computer computer.
 
-## Matriz de aceptación
+## Acceptance matrix
 
-| ID | Acción | Esperado |
+| ID | Action | Expected |
 |---|---|---|
-| EQ-01 | Entrar a Equipo en WALOS | Titular inicial presente; ningún empleado inventado |
-| EQ-02 | Invitar persona@ejemplo.invalid con rol Trabajador | PENDIENTE, número de miembros no cambia |
-| EQ-03 | Invitar el mismo correo con mayúsculas en la misma empresa | Rechaza duplicado |
-| EQ-04 | Mismo correo en otra empresa | Independencia de roles/invitaciones |
-| EQ-05 | Simular aceptación | Sólo ahora crea integrante DEMO |
-| EQ-06 | Actualizar F5 o repetir aceptación | Sin duplicados; invitación y miembro conservados |
-| EQ-07 | Crear otra invitación y cancelar | CANCELADA, sin miembro |
-| EQ-08 | Simular rechazo | RECHAZADA, sin miembro |
-| EQ-09 | Revisar selector de roles | Sólo Encargado/Trabajador; no Propietario |
-| EQ-10 | Editar puesto laboral del titular | No cambia la responsabilidad administrativa |
-| EQ-11 | Probar antiguos perfil, empresas, ubicaciones y mapas | Persistencia anterior intacta |
-| EQ-12 | Pantalla 390 px, teclado y menú | Interfaz legible, accesible |
-| EQ-13 | Build, lint, test:team, test:maps | Sin errores |
+| EQ-01 | Enter Team in WALOS | Initial holder present; no invented employee |
+| EQ-02 | Invite person@example.invalid with role Worker | PENDENT, number of members does not change |
+| EQ-03 | Invite the same mail with capital letters in the same company | Rejects duplicate |
+| EQ-04 | Same mail in another company | Role independence/invitations |
+| EQ-05 | Simulate acceptance | Only now creates DEMO member |
+| EQ-06 | Update F5 or repeat acceptance | No duplicates; invitation and member preserved |
+| EQ-07 | Create another invitation and cancel | CANCELADA, no member |
+| EQ-08 | Simulate rejection | Rejected, no member |
+| EQ-09 | Review Role Selector | Only Maintainer/Worker; not Owner |
+| EQ-10 | Edit job title | Administrative responsibility does not change |
+| EQ-11 | Test old profile, companies, locations and maps | Previous persistence intact |
+| EQ-12 | 390 px screen, keyboard and menu | Interfaz legible, accesible |
+| EQ-13 | Build, lint, test:team, test:maps | No mistakes |
 
-## Próximas decisiones
+## Next decisions
 
-ADR-003 debe ser aprobado o modificado por el equipo antes de generar invitaciones reales. Completar flujo de cuenta invitada, expiración efectiva, revocación y autorización por ubicación en backend, con auditoría. Para el siguiente corte funcional se puede avanzar con Catálogo o Cuentas y medios de cobro, manteniendo alcance TP3.
+ADR-003 must be approved or modified by the team before generating actual invitations. Complete guest account flow, effective expiration, revocation and authorization by location in backend, with audit. For the next functional cut you can advance with Catalog or Accounts and means of collection, maintaining reach TP3.

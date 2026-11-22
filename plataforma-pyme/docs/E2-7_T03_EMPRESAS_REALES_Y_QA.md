@@ -1,43 +1,43 @@
-# E2-7 T03 — Empresas REAL y aislamiento por tenant
+# E2-7 T03 — REAL companies and tenant isolation
 
-**Estado:** PR de implementación, pendiente de pruebas integradas en la computadora del equipo.  
+**Status:** PR implementation, pending tests integrated into the computer of the computer.  
 **Rama:** `feature/e2-7-t03-empresas-reales`.  
-**Base:** `main` `0ab1d2e82ea3c0f57aeadc50a9f05cdd4a696797`, T02 fusionado.  
-**Alcance:** exclusivamente `plataforma-pyme/frontend` y documentación; no modifica el backend ni migra datos DEMO.
+**Base:** `main` `0ab1d2e82ea3c0f57aeadc50a9f05cdd4a696797`, T02 merged.  
+**Scope:** only `plataforma-pyme/frontend` and documentation; does not modify the backend or migrate DEMO data.
 
-## 1. Contratos comprobados en backend
+## 1. Contracts checked in backend
 
-| Operación REAL | HTTP | Requisito / comportamiento |
+| REAL Operation | HTTP | Requirement/behaviour |
 |---|---|---|
-| Listar negocios propios | `GET /api/v1/businesses` | Bearer opaco; backend incluye solo membresías activas |
-| Crear negocio y membresía fundadora | `POST /api/v1/businesses` | Bearer + `Idempotency-Key` UUID4; devuelve 201 o 200 en replay |
-| Consultar un negocio | `GET /api/v1/businesses/{business_id}` | Bearer; exige membresía activa; negocio ajeno devuelve 404 |
-| Editar perfil empresarial | `PATCH /api/v1/businesses/{business_id}` | Nombre/rubro/actividad; backend aplica rol y estado; 403/404/409 |
+| Listing your own businesses | `GET /api/v1/businesses` | Opaque Bearer; backend includes only active memberships |
+| Create business and founding membership | `POST /api/v1/businesses` | Bearer + `Idempotency-Key` UUID4; devuelve 201 o 200 en replay |
+| Consult a business | `GET /api/v1/businesses/{business_id}` | Bearer; requires active membership; other people's business returns 404 |
+| Edit Business Profile | `PATCH /api/v1/businesses/{business_id}` | Name/rub/activity; backend applies role and status; 403/404/409 |
 
-DTO real `BusinessView`: `id`, `name`, `category`, `activity_kind`, `status`, `founder_user_id`, `created_at` y `membership` (`id`, `user_id`, `role`, `status`, `job_title`). No inventar campos del DTO DEMO. `category` es un texto libre de rubro de 2–120 caracteres.
+DTO real `BusinessView`: `id`, `name`, `category`, `activity_kind`, `status`, `founder_user_id`, `created_at` y `membership` (`id`, `user_id`, `role`, `status`, `job_title`) Do not invent fields of DEMO DTO. `category` is a 2-120-character free text.
 
-## 2. Interfaz nueva
+## 2. New interface
 
-- `/real/perfil`: botón **Mis empresas reales**.
-- `/real/empresas`: listado desde PostgreSQL, no fixtures.
-- `/real/empresas/nueva`: alta REAL con nombre, rubro, actividad y clave idempotente UUID.
-- `/real/empresas/{uuid}`: panel inicial de empresa REAL, membresía y estado, con edición solo para titular/administrador y empresa activa. El backend vuelve a autorizar cada escritura.
-- Navegación entre negocios REAL: cada selección cambia la ruta y desmonta el panel anterior; GET se cancela/ignora si llegó tarde, sin reusar datos de A en B.
-- `/inicio` y `/b/{id}/...` permanecen DEMO con perfil y fixtures independientes. La navegación REAL → DEMO es explícita.
-- **Todavía no hay** métricas de ventas, stock o compras reales en el nuevo panel: no mostrar números DEMO en un negocio REAL.
-- Sesión opaca solo en memoria, con re-login después de F5.
+- `/real/perfil`: button **My real companies**.
+- `/real/empresas`: Listed from PostgreSQL, no fixes.
+- `/real/empresas/nueva`: High REAL with name, heading, activity and key UUID idempotent.
+- `/real/empresas/{uuid}`: REAL company initial panel, membership and status, with editing only for owner/manager and active company. The backend reauthorizes each deed.
+- Navigation between REAL businesses: each selection changes the path and removes the previous panel; GET cancels/ignores if it arrived late, without reusing A data in B.
+- `/inicio` y `/b/{id}/...` DEMO remains with independent profile and fixtures. REAL navigation → DEMO is explicit.
+- **There's still no** actual sales metrics, stock or purchases in the new panel: do not display DEMO numbers in a REAL business.
+- Opaque session only in memory, with re-login after F5.
 
-## 3. Idempotencia y límites hasta T06
+## 3. Idempotence and limits up to T06
 
-El backend exige `Idempotency-Key` UUID4 por creación. El formulario T03 genera una clave por intento y conserva clave+cuerpo **en la memoria de la sesión React** hasta éxito o resultado definitivo.
+Backend demands `Idempotency-Key` UUID4 per creation. Form T03 generates a key by attempt and retains key+body **in the React session memory** to success or final result.
 
-Si una mutación termina en error de transporte, 409 o 5xx, se muestra incertidumbre y no se genera una segunda clave automáticamente. Podés consultar `Mis empresas` y, si hace falta, reintentar explícitamente el mismo envío (misma clave y datos). Descartar la clave requiere confirmación humana.
+If a mutation ends in transport error, 409 or 5xx, uncertainty is displayed and no second key is generated automatically. `Mis empresas` and, if necessary, explicitly retry the same send (same key and data). Discarding the key requires human confirmation.
 
-**Limitación importante:** después de F5/cerrar pestaña la intención pendiente aún no sobrevive, porque su registro persistente, acotado por usuario/empresa y con política de retención, corresponde a **T06**. Ante una caída o F5 durante una creación, revisá el listado antes de iniciar otra. No declarar garantía de recuperación durable ni ausencia absoluta de duplicaciones entre recargas.
+**Significant limitation:** after F5/Close tab pending intention still does not survive, because its persistent registration, limited by user/company and with retention policy, corresponds to **T06**. In the event of a fall or F5 during one creation, check the list before starting another. Do not declare guarantee of durable recovery nor absolute absence of duplication between recharges.
 
-## 4. Validación local (Windows)
+## 4. Local Validation (Windows)
 
-El usuario ya está ubicado en `plataforma-pyme/frontend` y en la rama T03. Ejecutar:
+The user is already located in `plataforma-pyme/frontend` y en la rama T03. Ejecutar:
 
 ```powershell
 git pull --ff-only origin feature/e2-7-t03-empresas-reales
@@ -54,9 +54,9 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw "Falló lint" }
 ```
 
-La advertencia de tamaño de chunk de Vite puede permanecer: no aumentar el umbral para ocultarla; revisar lazy loading en una etapa separada si hace falta. No se silencian advertencias de React.
+Vite's chunk size warning may remain: do not raise the threshold to hide it; review lazy loading at a separate stage if necessary. React warnings are not muted.
 
-Con Docker PostgreSQL/API en buen estado y Vite en la terminal:
+With PostgreSQL/API Docker in good condition and Vite at the terminal:
 
 ```powershell
 docker compose --profile api up -d --wait
@@ -64,30 +64,30 @@ $env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"
 npm.cmd run dev
 ```
 
-Abrir `http://localhost:5173/real/login`, ingresar con el usuario REAL de prueba registrado en T02 y pulsar **Mis empresas reales**.
+Open `http://localhost:5173/real/login`, enter with the REAL test user registered in T02 and click **My real companies**.
 
-**Crear empresas es una escritura real** en la base Docker actual. Usar nombres inequívocamente de prueba, no modificar empresas productivas.
+**Creating businesses is a real writing** Use name tests unequivocally, do not modify productive enterprises.
 
-## 5. QA funcional mínimo, desde navegador
+## 5. Minimum functional QA, from browser
 
-| Caso | Acción | Esperado |
+| Case | Action | Expected |
 |---|---|---|
-| T03-01 | Login del usuario T02 → Mis empresas | `GET /businesses`; vacía si no tiene membresías |
-| T03-02 | Crear empresa TEST-A | 201; empresa visible con rol titular administrativo |
-| T03-03 | Crear otra TEST-B | A y B listadas, IDs reales distintos |
-| T03-04 | Abrir A, luego B y volver A | Cada panel muestra solo su negocio; no arrastra datos al cambiar |
-| T03-05 | Editar nombre o rubro de A | PATCH confirmado; listado y ficha reflejan el cambio |
-| T03-06 | Logout y volver a URL de empresa | Exige reautenticación; nunca carga datos de la sesión anterior |
-| T03-07 | F5 en un negocio | Re-login explícito; sin fallback a DEMO |
-| T03-08 | Usuario REAL de prueba 2 | No puede consultar UUID ajeno; backend devuelve 404 |
-| T03-09 | Entrar a `/inicio` | DEMO intacta, sin mezclar perfil, negocios ni artículos |
-| T03-10 | Navegación móvil o ancho reducido | Tarjetas/formularios legibles; sin desborde |
-| T03-11 | Cortar conectividad durante lectura | Error visible; no relleno con datos DEMO ni acceso cruzado |
-| T03-12 | Corte durante POST de creación | Mensaje de resultado incierto y misma clave en reintento mientras esa sesión siga abierta |
+| T03-01 | User Login T02 → My companies | `GET /businesses`; empty if you do not have memberships |
+| T03-02 | Create a TEST-A company | 201; visible company with administrative title |
+| T03-03 | Create another TEST-B | A and B listed, different real IDs |
+| T03-04 | Open A, then B and return A | Each panel displays only your business; it does not drag data when changing |
+| T03-05 | Edit A name or heading | PATCH confirmed; list and tab reflect change |
+| T03-06 | Logout and return to company URL | Requires re-authentication; never loads data from previous session |
+| T03-07 | F5 in a business | Explicit relogin; no failback to DEMO |
+| T03-08 | REAL Test User 2 | Can not get folder: %s: %s |
+| T03-09 | Enter `/inicio` | DEMO intact, not mixed profile, business or articles |
+| T03-10 | Mobile navigation or reduced width | Legible cards/forms; unwrapped |
+| T03-11 | Cut connectivity during reading | Visible error; not filled with DEMO data or cross-access |
+| T03-12 | Cut during Creation POST | Message of uncertain result and same key in retry as long as that meeting is still open |
 
-**QA reproducible con base temporal:** el backend Docker conecta a su propia configuración. Cambiar `DB_NAME` solo en PowerShell NO cambia la base usada por una API Docker ya iniciada. Para integración aislada, configurar explícitamente el servicio API y la base temporal antes de correr pruebas destructivas.
+**Reproducible QA with time base:** Docker backend connects to your own settings. Change `DB_NAME` Only in PowerShell does NOT change the base used by a Docker API already started. For isolated integration, explicitly configure API service and time base before running destructive tests.
 
-## 6. Archivos del incremento
+## 6. Increase Files
 
 ```text
 frontend/src/features/businesses/businessGateway.ts     DTOs + cliente REAL con controles de tenant
@@ -99,6 +99,6 @@ frontend/package.json                                   script test:businesses
 docs/E2-7_T03_EMPRESAS_REALES_Y_QA.md                    este documento
 ```
 
-## 7. Cierre
+## 7. Closure
 
-No fusionar sin comprobar `test:api`, `test:auth`, `test:businesses`, build, lint y CI, además de las verificaciones manuales de usuario REAL, dos empresas, edición y cambio de tenant. La política de posibles resultados inciertos y el caso A→B merecen atención especial. T04 incluirá ubicaciones/equipo/invitaciones; no habilitarlos a través de datos DEMO.
+No fusionar sin comprobar `test:api`, `test:auth`, `test:businesses`, build, lint and IC, in addition to the REAL user manual checks, two companies, editing and change of tenant. Policy on possible uncertain results and case A→B deserve special attention. T04 will include locations/equipment/invitations; not enable them through DEMO data.

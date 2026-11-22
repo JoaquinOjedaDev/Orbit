@@ -1,33 +1,33 @@
-# ADR-005 — Jornada, arqueo y snapshot de cierre
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO; excepción «sin verificar» DIFERIDA y deshabilitada por defecto.  
-**Responsable de aprobación:** equipo del TP / responsable funcional (a designar).  
-**Fuentes:** E0-A Z092/Z093/Z075, H06/H07/H09/H13/H25/H26 y D05/D06; E0-B `8.4; v4 QA-JOR.
+# ADR-005 — Closing day, arching and snapshots
+**Date:** 2026-11-06  
+**Status:** PROPOSAL; exception ‘unverified’ DIFFERED and disabled by default.  
+**Responsible for approval:** TP team/functional manager (to be designated).  
+**Sources:** E0-A Z092/Z093/Z075, H06/H07/H09/H13/H25/H26 and D05/D06; E0-B `8.4; v4 QA-JOR.
 
-## Contexto
-El HTML Z093 aporta una UX de cierre útil pero `commitFinalClosure` borra el borrador sin dejar snapshot verificable. Z075/Z092 ofrecen otros resúmenes, con diferencias sobre cierre sin conteo. E0-C debe fijar una variante conservadora para E1 sin aprobar silenciosamente excepciones.
+## Context
+HTML Z093 provides a useful closing UX but `commitFinalClosure` delete the draft without leaving a verifiable snapshot. Z075/Z092 offer other summaries, with differences over uncounted closure. E0-C must set a conservative variant for E1 without quietly approving exceptions.
 
-## Decisión propuesta
-1. `CashSession` pertenece a una empresa y, **cuando corresponde**, ubicación y caja. Empresas de servicios sin caja física pueden operar sin jornada obligatoria.
-2. Apertura guarda actor, instante y fondo de efectivo inicial; no confundir billetera/CBU con caja.
-3. Durante la jornada, movimientos registrados y aplicados tienen fuente/tipo/importe y referencias estables; no recalcular saldo desde capturas de pantalla.
-4. Cierre normal exige arqueo contado, corte identificable, esperado, contado, diferencia, actor, fecha y motivo cuando aplique.
-5. **Persistir snapshot inmutable primero** en el mismo cambio lógico que marca la sesión CERRADA. No reabrir, borrar ni sobreescribir evidencia. Reintento con misma clave no genera segundo cierre.
-6. Movimientos de stock/retorno de feria se registran por comando independiente. Cerrar caja **no** devuelve productos ni inventa merma. El dinero digital se concilia por pagos de la jornada, no por saldo total de una cuenta compartida.
-7. Cierre `sin verificar` no se muestra como acción funcional en E1 salvo aprobación posterior de permiso especial, causa, alerta y estado diferenciado.
+## Proposed decision
+1. `CashSession` belongs to a company and, **where applicable**, location and cashier. Service companies without physical cash can operate without mandatory working hours.
+2. Opening saves actor, instant and initial cash fund; do not confuse wallet/CBU with box.
+3. During the day, recorded and applied movements have stable source/type/import and references; do not recalculate balance from screenshots.
+4. Normal closure requires spotting, identifiable cut, expected, counted, difference, actor, date and motive when applying.
+5. **Persistent snapshot immutable first** in the same logical change that marks the Closed session. Do not reopen, delete or overwrite evidence. Retrying with the same key does not generate second closure.
+6. Stock/trade fair return movements are recorded by independent command. Close box **no** returns products or invents a decrease. Digital money is reconciled by day payments, not by total balance of a shared account.
+7. Closure `sin verificar` is not shown as functional action in E1 except for subsequent approval of special permission, cause, alertness and differentiated status.
 
-## Alternativas
-- Cerrar sin arqueo y borrar borrador: rechazado para E1 por H06.
-- Cerrar y retornar automáticamente mercadería: rechazado por H25.
-- Reescribir snapshot después del cierre: rechazado por pérdida de auditabilidad.
+## Alternatives
+- Close without arching and delete draft: rejected for E1 by H06.
+- Automatically close and return goods: rejected by H25.
+- Rewrite snapshot after closure: rejected for loss of auditability.
 
-## Riesgos y mitigaciones
-La implementación DEMO es una transición en un store único; carrera venta/cierre requiere **transacción/lock real** en API. Montos exactos en centavos y parseo estricto.
+## Risks and mitigations
+DEMO implementation is a transition in a single store; race sale/closure requires **real transaction/lock** in API. Exact amounts of pennies and strict parseo.
 
-## Aceptación pendiente
-- **DEMO-JOR-01 / QA-JOR-01:** snapshot conserva actor, fecha, arqueo, esperado, diferencia y detalle tras consultar historial; doble clic no duplica.
-- **QA-JOR-02 (backend):** venta concurrente al corte se incluye o rechaza, jamás queda a medias.
-- Cierre no borra borradores sin snapshot, no muta stock ni saldo de billetera.
+## Pending acceptance
+- **DEMO-JOR-01 / QA-JOR-01:** snapshot retains actor, date, arching, expected, difference and detail after consulting history; double click does not duplicate.
+- **QA-JOR-02 (backend):** concurrent sale to the court is included or rejected, never half.
+- Close does not delete drafts without snapshot, no stock swap or wallet balance.
 
-## Aprobación
-Variante conservadora apta para implementar E1-C2 como **propuesta**, validable mediante E2E; definir excepciones sólo con aprobación.
+## Approval
+Conservative variant suitable for implementing E1-C2 as **Proposed**, validable by E2E; define exceptions only with approval.

@@ -1,61 +1,61 @@
-# E2-3 D — Matriz técnica de integridad y regresión del Catálogo
+# E2-3 D — Technical matrix for the integrity and regression of the Catalogue
 
-**Proyecto:** Orbit (multiempresa y multirrubro)  
-**Fecha:** 08/11/2026  
-**Estado:** CÓDIGO Y CI D VALIDADOS, WINDOWS 580/580 APROBADO; UML 03A CONCILIADO EN E2-3 E  
-**Base funcional:** E2-3 C, commit `5fe257f140ebc0d19d6504798bcdee02b9c7e314`  
-**Corte de pruebas D:** `8598c271eeaf5a21e64909e518765135d22fbc03`  
-**Corte de paginación D:** `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`  
-**CI del último código:** historical CI run 42508771222
+**Project:** Orbit (multi-enterprise and multi-rub)  
+**Date:** 08/11/2026  
+**Status:** CODE AND IC D VALIDADOS, WINDOWS 580/580 APPROVED; UML 03A CONCILIATED IN E2-3 E  
+**Functional basis:** E2-3 C, commit `5fe257f140ebc0d19d6504798bcdee02b9c7e314`  
+**Test cut D:** `8598c271eeaf5a21e64909e518765135d22fbc03`  
+**Pagination cut D:** `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`  
+**IC of the last code:** historical CI run 42508771222
 
-## 1. Propósito del incremento
+## 1. Purpose of the increase
 
-Cerrar los casos límite de los cinco endpoints de Catálogo ya construidos en E2-3 B/C sin agregar funciones comerciales, inventario o modificaciones innecesarias de modelos y migraciones de bloques anteriores.
+Close the case limits of the five Catalog endpoints already built in E2-3 B/C without adding commercial functions, inventory or unnecessary modifications to models and migrations of previous blocks.
 
-- Se crean, listan, consultan y editan fichas, y se cambia explícitamente `status` ACTIVO/INACTIVO.
-- Los bienes físicos ELABORADO/REVENTA/INSUMO usan unidades físicas; SERVICIO usa la unidad SERVICIO.
-- Los nombres canónicos y SKU no nulos son únicos por empresa, también para artículos inactivos, pero se pueden reutilizar en otro tenant.
-- El catálogo no genera saldo, compra, venta ni movimiento por registrar o activar una ficha.
-- El estado de una ficha y el indicador `sellable` son diferentes y no deben confundirse.
+- Create, list, query and edit tabs, and change explicitly `status` ASSETS/INACTIVE.
+- Physical goods ELABORATED/REVENT/INSUMO use physical units; SERVICE uses the SERVICE unit.
+- Non-nullian canonical and SKU names are unique by company, also for inactive items, but may be reused on another tenant.
+- The catalogue does not generate balance, purchase, sale or movement by registering or activating a tab.
+- The status of a tab and the indicator `sellable` They are different and should not be confused.
 
-## 2. Matriz de regresión nueva
+## 2. New regression matrix
 
-| Dimensión | Prueba / contrato | Evidencia |
+| Dimension | Evidence/contract | Evidence |
 |---|---|---|
-| Unicode y colisiones | NFKC + casefold en nombres, fullwidth y ligaduras | `test_catalog_hardening_schemas.py`, `test_catalog_api_integration.py` |
-| SKU | Canonicalización ASCII, mayúsculas y rechazo de formatos inválidos | Pruebas puras y HTTP de colisión real |
-| Límites | casefold que expande el nombre más allá de 90 caracteres; caracteres de control; longitud SKU | Validación Pydantic, 422 |
-| Dinero | Enteros estrictos con rango seguro; sin float, bool o cadenas coercionadas | Pruebas del esquema |
-| PATCH | Diferencia entre campo ausente y null para SKU/precio/costo; `sellable=false` | SQL y lectura posterior |
-| Tipo/unidad | Un cambio parcial incompatible devuelve 422 sin afectar el registro; conversión conjunta válida sin historia comercial | SQL + API |
-| Tenants | Dos empresas del mismo usuario, misma clave nominal y UUID ajeno | 404 y verificación de filas intactas |
-| Estado | La ficha INACTIVO sigue siendo visible y conserva claves reservadas | SQL + API |
-| Fallo posterior a flush | Excepción provocada durante serialización de alta/edición | Rollback, sin fila huérfana ni cambio parcial |
-| Paginación | `offset` fuera de rango BIGINT bloqueado antes de SQL | 422; `limit` continúa entre 1 y 500 |
-| Regresión global | E2-0, E2-1 y E2-2 no cambiaron | Suite completa y revisión de diff |
+| Unicode and collisions | NFKC + casefold in names, fullwidth and ligatures | `test_catalog_hardening_schemas.py`, `test_catalog_api_integration.py` |
+| SKU | ASCII canonicalization, capital letters and rejection of invalid formats | Pure and HTTP real collision tests |
+| Limits | casefold that expands the name beyond 90 characters; control characters; length SKU | Pydatic Validation, 422 |
+| Money | Strict integers with safe range; without float, bool or coerced chains | Scheme tests |
+| PATCH | Difference between absent and null field for SKU/price/cost; `sellable=false` | SQL and later reading |
+| Type/unit | A partial incompatible change returns 422 without affecting the registration; valid joint conversion without commercial history | SQL + API |
+| Tenants | Two companies of the same user, same nominal key and UUID foreign | 404 and check intact rows |
+| Status | The INACTIVE tab remains visible and retains reserved keys | SQL + API |
+| Fallo posterior a flush | Derogation caused during serialization of high/editing | Rollback, no orphan row or partial change |
+| Pagina | `offset` out of range BIGINT blocked before SQL | 422; `limit` continues between 1 and 500 |
+| Global regression | E2-0, E2-1 and E2-2 did not change | Complete Suite and Diff Review |
 
-## 3. Evidencia CI
+## 3. Evidence IC
 
 - Commit funcional final: `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`.
 - GitHub Actions: historical CI run 42508771222
 - Python 3.12/PostgreSQL 16: **580 passed en 57.31s**.
 - Python 3.14/PostgreSQL 16: **580 passed en 57.55s**.
-- Docker build/liveness aprobado. Alembic `e23a_catalog (head)`; `alembic check`: sin operaciones pendientes.
-- Windows: el último resultado suministrado corresponde a **E2-3 C (527 passed in 59.60s)**. Para E2-3 D **aún no hay ejecución local**.
-- El commit documental posterior es una sincronización de evidencias, no un nuevo CI de código.
+- Docker build/liveness aprobado. Alembic `e23a_catalog (head)`; `alembic check`: no pending operations.
+- Windows: the last result provided corresponds to **E2-3 C (527 passed in 59.60s)**. For E2-3 D **No local execution yet**.
+- The subsequent documentary commit is a synchronization of evidence, not a new code IC.
 
-## 4. Riesgos, límites y dependencias
+## 4. Risks, limits and dependencies
 
-1. **Concurrencia real:** la UNIQUE por tenant y el bloqueo SQL existente brindan la defensa principal contra dobles altas. Esta entrega prueba conflictos en PostgreSQL y rollback; **no contiene una prueba de carrera simultánea con dos conexiones**, ni ensayo de carga. Registrar explícitamente al auditar.
-2. **Historia comercial:** cuando se implementen compras, stock y ventas deberán enlazarse mediante claves del mismo tenant y conservar snapshots. Reglas para impedir conversión de tipo/unidad con operaciones registradas se añaden cuando haya tablas comerciales reales, no antes.
-3. **Estado:** al confirmar una compra o venta futura, comprobar si una ficha se encuentra ACTIVO, aparte de `sellable`, ubicación y permisos; el catálogo por sí solo no autoriza la operación.
-4. **Front-end:** React continúa en modo DEMO y no llama a este backend; integración y pruebas end-to-end pertenecen a E2-7.
-5. **Migración:** no hubo nueva migración en E2-3 D. No editar migraciones E2-1, E2-2 o E2-3 A ya aplicadas.
-6. **Revisión independiente:** no generar informe de auditoría E2-3 hasta reconciliar el UML 03A y recibir la validación Windows de D.
+1. **Actual concurrence:** the UNIQUE by tenant and existing SQL blocking provide the main defense against double highs. This delivery proves conflicts in PostgreSQL and rollback; **does not contain a simultaneous race test with two connections**, no load test. Register explicitly when auditing.
+2. **Commercial history:** When implementing purchases, stock and sales must be linked by tenant keys and keep snapshots. Rules to prevent conversion of type/unit with registered transactions are added when there are actual commercial tables, not before.
+3. **Status:** when confirming a future purchase or sale, check whether a card is ASSISTING, apart from `sellable`, location and permissions; the catalogue alone does not authorize the operation.
+4. **Front-end:** React continues in DEMO mode and does not call this backend; integration and end-to-end tests belong to E2-7.
+5. **Migration:** There was no new migration in E2-3 D. No editing of already applied E2-1, E2-2 or E2-3 A migrations.
+6. **Independent review:** do not generate E2-3 audit report until the UML 03A is reconciled and receive Windows validation from D.
 
-## 5. Próxima ejecución Windows (base de desarrollo, no producción)
+## 5. Next Windows execution (developmental base, no production)
 
-Desde `plataforma-pyme/`:
+From `plataforma-pyme/`:
 
 ```powershell
 git pull --ff-only origin main
@@ -74,12 +74,12 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-Esperado: **580 passed**, `e23a_catalog (head)`, ausencia de deriva, dos contenedores `healthy` y `ready/ok`. No usar `downgrade`, `stamp` ni borrar volúmenes.
+Waited: **580 passed**, `e23a_catalog (head)`, no drifting, two containers `healthy` y `ready/ok`Do not use `downgrade`, `stamp` or delete volumes.
 
-**Luego:** E2-3 E — conciliar 03A PUML/guía/SVG y cerrar documentos 01–05 con un SHA fijo para auditoría externa. No iniciar E2-4 en el mismo corte.
+**Then:** E2-3 E — reconcile 03A PUML/guide/SVG and close documents 01–05 with a fixed SHA for external audit. Do not start E2-4 in the same cut.
 
-## 6. Actualización tras validación local y cierre E2-3 E
+## 6. Update after local validation and closure E2-3 E
 
-**E2-3 E cerrado funcional y documentalmente (08/11/2026):** catálogo `CatalogItem` con migración `e23a_catalog`, cinco rutas REST reales, verificación de tenant/RBAC y estado ACTIVO/INACTIVO. **580 passed en Windows (66.45s)**, Alembic sin deriva, API y DB Docker healthy, `/ready` ready/ok. CI D 3/3 y 580 tests en Python 3.12/3.14 sobre `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`. UML 03A v0.7 (PUML, guía y SVG editorial) actualizado; Proveedor TO-BE, 03B/03C preservados. No hay aún compras, inventario, ventas ni integración React/API. **Pendiente: entrega formal al revisor, sin merge de PR**. Los estados A/B/C/D más abajo corresponden a cortes históricos.
+**E2-3 E closed functionally and documentaryly (08/11/2026):** catalogue `CatalogItem` with migration `e23a_catalog`, five actual REST routes, tenant/RBAC verification and active/INACTIVE status. **580 passed en Windows (66.45s)**, Alembic sin deriva, API y DB Docker healthy, `/ready` ready/ok. CI D 3/3 and 580 Python tests 3.12/3.14 sachet `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`. UML 03A v0.7 (PUML, guide and editorial SVG) updated; To-BE Supplier, 03B/03C preserved. There are no purchases, inventory, sales or React/API integration yet. **Earrings: formal delivery to the reviewer, no PR merchandise**. The A/B/C/D states below correspond to historical cuts.
 
-**La sección 5 registra el procedimiento anterior a la prueba local, ahora ejecutado por el desarrollador**. Se mantiene como evidencia histórica; no significa que Windows siga pendiente. Para la auditoría externa, no confundir pruebas de duplicación SQL secuencial con carrera de conexiones simultáneas.
+**Section 5 records the procedure prior to the local test, now executed by the developer**. It remains as historical evidence; it does not mean that Windows is still pending. For external audit, do not confuse sequential SQL duplication tests with simultaneous connection run.

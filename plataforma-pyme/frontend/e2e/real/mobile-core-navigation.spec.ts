@@ -8,7 +8,7 @@ test.beforeAll(() => {
 
 test('E27-RESP-01: rutas REAL principales en móvil sin overflow ni escrituras', async ({ page, request }) => {
   const email = 't11-mobile-' + randomUUID() + '@example.com'
-  const password = 'T11 mobile readonly QA descartable 2026!'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const reg = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'T11 móvil QA' },
   })
@@ -39,9 +39,9 @@ test('E27-RESP-01: rutas REAL principales en móvil sin overflow ni escrituras',
   ]
   for (const route of sections) {
     await page.goto('/real/empresas/' + company.id + route.suffix)
-    await expect(page.getByRole('heading', { name: 'Iniciar sesión real' })).toBeVisible()
-    await page.getByLabel('Correo electrónico', { exact: true }).fill(email)
-    await page.getByLabel('Contraseña', { exact: true }).fill(password)
+    await expect(page.getByRole('heading', { name: 'Log in real' })).toBeVisible()
+    await page.getByLabel('Email', { exact: true }).fill(email)
+    await page.getByLabel('Password', { exact: true }).fill(password)
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
     await expect(page.getByRole('heading', { name: route.heading, exact: true })).toBeVisible()
     await expect(page.getByRole('alert').filter({ hasText: /API rechazó|No se pudo|Error de red/ })).toHaveCount(0)

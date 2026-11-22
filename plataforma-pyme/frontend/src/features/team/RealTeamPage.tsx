@@ -13,8 +13,8 @@ import { RealTeamAvatar } from '../photos/RealTeamAvatar.tsx'
 const roles = ['ADMINISTRADOR', 'ENCARGADO', 'TRABAJADOR'] as const
 const roleLabels: Record<(typeof roles)[number], string> = {
   ADMINISTRADOR: 'Administrador',
-  ENCARGADO: 'Encargado',
-  TRABAJADOR: 'Trabajador',
+  ENCARGADO: 'Manager',
+  TRABAJADOR: 'Staff member',
 }
 type Props = { token: string; userId: string; businessId: string; onNavigate: (route: string) => void; onUnauthorized: () => void }
 
@@ -90,21 +90,21 @@ export function RealTeamPage({ token, userId, businessId, onNavigate, onUnauthor
       if (!active.current.valid) return
       setIssued(result)
       setInvite({ email: '', role: 'TRABAJADOR' })
-      setNotice('Invitación emitida. Entregá el código al destinatario por un canal seguro. Este código no se podrá consultar nuevamente.')
+      setNotice('Invitation issued. Deliver the code to the recipient via a secure channel. This code cannot be consulted again.')
     } catch (err) { problem(err) }
     finally { if (active.current.valid) setBusy(false) }
   }
 
   async function changeMember(member: TeamMember, changes: MemberChanges) {
     if (!company || !canManageTeam(company) || member.user_id === userId || busy || uncertain) return
-    const action = changes.status === 'INACTIVA' ? 'Desactivar la membresía de este usuario' : changes.role ? 'Cambiar el rol de ' + member.display_name + ' a ' + roleLabels[changes.role] : 'Reactivar la membresía'
+    const action = changes.status === 'INACTIVA' ? 'Disable this user\'s membership' : changes.role ? 'Change the role of ' + member.display_name + ' a ' + roleLabels[changes.role] : 'Reactivate Membership'
     if (!window.confirm(action + ' en ' + company.name + '?')) return
     setError(''); setNotice(''); setBusy(true)
     try {
       const updated = await gateway.changeMember(businessId, member.id, changes)
       if (!active.current.valid) return
       setMembers((old) => old.map((row) => row.id === updated.id ? updated : row))
-      setNotice('Membresía actualizada en PostgreSQL.')
+      setNotice('Membership updated in PostgreSQL.')
     } catch (err) { problem(err) }
     finally { if (active.current.valid) setBusy(false) }
   }
@@ -125,48 +125,48 @@ export function RealTeamPage({ token, userId, businessId, onNavigate, onUnauthor
   })
 
   return <section className="real-auth-card real-business-panel e3-ops-page e3-team-page">
-    <nav className="real-business-nav" aria-label="Navegación de empresa">
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId)}>Empresa</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/ubicaciones')}>Ubicaciones</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/inicio')}>Primeros pasos</button>
-      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>Mis empresas</button>
+    <nav className="real-business-nav" aria-label="Company navigation">
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId)}>Company</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/ubicaciones')}>Locations</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas/' + businessId + '/inicio')}>First steps</button>
+      <button type="button" className="real-auth-link" onClick={() => onNavigate('/real/empresas')}>My companies</button>
     </nav>
     <header className="e3-ops-heading">
       <div className="e3-ops-heading-icon"><Icon name="users" size={29}/></div>
       <div className="e3-ops-heading-copy">
-        <span className="e3-ops-kicker">Organización · Personas</span>
-        <h1>Equipo e invitaciones</h1>
-        <p>Consultá integrantes, roles y accesos de esta empresa.</p>
+        <span className="e3-ops-kicker">Organization · People</span>
+        <h1>Equipment and invitations</h1>
+        <p>It consults members, roles and accesses of this company.</p>
       </div>
-      {company && <button className="real-auth-secondary e3-ops-heading-cta" type="button" disabled={busy} onClick={() => void reload()}>Actualizar equipo</button>}
+      {company && <button className="real-auth-secondary e3-ops-heading-cta" type="button" disabled={busy} onClick={() => void reload()}>Update equipment</button>}
     </header>
-    {loading && <p role="status">Comprobando permisos del equipo…</p>}
+    {loading && <p role="status">Checking equipment permits...</p>}
     {!loading && company && <>
       <div className="e3-ops-context"><span>Empresa: <strong>{company.name}</strong></span>
-        <span className="e3-ops-context-note">Los permisos se verifican en FastAPI</span>
+        <span className="e3-ops-context-note">Permissions are verified in FastAPI</span>
       </div>
       {!canReadTeam(company) ? <div className="e3-ops-restricted" role="status">
-        <Icon name="shield" size={25}/><div><strong>El directorio de equipo es privado</strong>
-        <p>Tu rol permite consultar la empresa, pero no acceder al listado de integrantes. Solicitá acceso a un administrador.</p></div>
+        <Icon name="shield" size={25}/><div><strong>The team directory is private</strong>
+        <p>Your role allows you to consult the company, but not access the list of members. You will request access to an administrator.</p></div>
       </div> : <>
         <RealSetupGuide suggestion={setupSuggestion} businessId={businessId} onNavigate={onNavigate}/>
-        <div className="e3-ops-summary" aria-label="Resumen de equipo">
+        <div className="e3-ops-summary" aria-label="Summary of equipment">
           <div className="e3-ops-stat"><span>Integrantes</span><strong>{members.length}</strong></div>
           <div className="e3-ops-stat"><span>Activos</span><strong>{activeMembers}</strong></div>
           <div className="e3-ops-stat"><span>Inactivos</span><strong>{members.length - activeMembers}</strong></div>
         </div>
         {members.length > 0 && <div className="e3-ops-filterbar">
-          <label className="e3-ops-search"><Icon name="search" size={18}/><span className="e3-ops-visually-hidden">Buscar integrantes</span>
-            <input type="search" aria-label="Buscar integrantes" placeholder="Buscar por nombre, correo o rol" value={search} onChange={(e) => setSearch(e.target.value)}/></label>
-          <label className="e3-ops-filter-label">Estado
-            <select aria-label="Filtrar integrantes por estado" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
-              <option value="TODOS">Todos</option><option value="ACTIVA">Activos</option><option value="INACTIVA">Inactivos</option>
+          <label className="e3-ops-search"><Icon name="search" size={18}/><span className="e3-ops-visually-hidden">Find Members</span>
+            <input type="search" aria-label="Find Members" placeholder="Search by name, mail or role" value={search} onChange={(e) => setSearch(e.target.value)}/></label>
+          <label className="e3-ops-filter-label">Status
+            <select aria-label="Filter members by state" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}>
+              <option value="TODOS">All</option><option value="ACTIVA">Activos</option><option value="INACTIVA">Inactivos</option>
             </select>
           </label>
         </div>}
-        {members.length === 0 && <div className="real-business-empty e3-ops-empty"><Icon name="users" size={30}/><strong>No hay integrantes para mostrar</strong><p>El servidor todavía no devolvió membresías de esta empresa.</p></div>}
-        {members.length > 0 && visibleMembers.length === 0 && <div className="real-business-empty e3-ops-empty"><strong>No encontramos integrantes con esos filtros.</strong><p>Probá otra búsqueda o seleccioná «Todos».</p></div>}
-        {canManage && <p className="e3-ops-role-guidance"><strong>Cambios internos:</strong> como titular administrativo podés modificar el rol de un integrante existente, incluso ascenderlo a Administrador. La operación solicita confirmación.</p>}
+        {members.length === 0 && <div className="real-business-empty e3-ops-empty"><Icon name="users" size={30}/><strong>No members to show</strong><p>The server has not yet returned memberships of this company.</p></div>}
+        {members.length > 0 && visibleMembers.length === 0 && <div className="real-business-empty e3-ops-empty"><strong>We didn't find any members with those filters.</strong><p>Try another search or select "All".</p></div>}
+        {canManage && <p className="e3-ops-role-guidance"><strong>Internal changes:</strong> as an administrative holder you can modify the role of an existing member, even promote it to Administrator. The operation requests confirmation.</p>}
         <div className="real-ops-list e3-ops-directory">
           {visibleMembers.map((member) => <article className="real-ops-person e3-ops-member" key={member.id}>
             <div className="e3-ops-person-identity">
@@ -174,10 +174,10 @@ export function RealTeamPage({ token, userId, businessId, onNavigate, onUnauthor
                 initials={member.display_name.slice(0, 1).toLocaleUpperCase('es-AR')}/>
               <div className="real-ops-person-info">
                 <div className="e3-ops-person-name"><strong>{member.display_name}</strong>
-                  {member.user_id === userId && <span className="e3-ops-self">Tu cuenta</span>}
+                  {member.user_id === userId && <span className="e3-ops-self">Your account</span>}
                 </div>
                 <span>{member.email}</span>
-                {member.job_title && <small>Función: {member.job_title}</small>}
+                {member.job_title && <small>Function: {member.job_title}</small>}
                 <div className="e3-ops-person-flags">
                   <span className="e3-ops-pill e3-ops-pill-role">{member.role.replaceAll('_', ' ')}</span>
                   <span className={'e3-ops-pill ' + (member.status === 'ACTIVA' ? 'e3-ops-pill-active' : 'e3-ops-pill-paused')}>{member.status}</span>
@@ -195,47 +195,47 @@ export function RealTeamPage({ token, userId, businessId, onNavigate, onUnauthor
           </article>)}
         </div>
       </>}
-      {canInvite && <section className="real-ops-subpanel e3-ops-invite" aria-label="Invitar a un colaborador">
+      {canInvite && <section className="real-ops-subpanel e3-ops-invite" aria-label="Invite a Friend">
         <div className="e3-ops-section-heading e3-ops-invite-heading">
           <h2><button type="button" className="e3-ops-invite-toggle"
             aria-expanded={inviteOpen} aria-controls="real-team-invite-content"
             disabled={busy} onClick={() => setInviteOpen(open => !open)}>
             <Icon name="plus" size={19}/>
-            <span>Invitar a un colaborador</span>
+            <span>Invite a Friend</span>
             <Icon name="chevron" size={20} className={'e3-ops-invite-chevron' + (inviteOpen ? ' e3-ops-invite-chevron-open' : '')}/>
           </button></h2>
-          <p>Generá un código de un solo uso. La plataforma no envía correos automáticamente: compartilo por un canal seguro.</p>
+          <p>Generate a single-use code. The platform does not send mail automatically: share it through a secure channel.</p>
         </div>
         <div id="real-team-invite-content" className="e3-ops-invite-content" hidden={!inviteOpen}>
         <form className="real-auth-form real-ops-form e3-ops-form" onSubmit={(e) => void issue(e)}>
           <div className="e3-ops-form-grid">
-            <label>Correo del destinatario<input type="email" autoComplete="off" required value={invite.email} onChange={(e) => setInvite((old) => ({ ...old, email: e.target.value }))}/></label>
-            <label>Rol propuesto<select value={invite.role} onChange={(e) => setInvite((old) => ({ ...old, role: e.target.value as InvitationInput['role'] }))}>
-              <option value="TRABAJADOR">Trabajador</option><option value="ENCARGADO">Encargado</option>
+            <label>Mail of addressee<input type="email" autoComplete="off" required value={invite.email} onChange={(e) => setInvite((old) => ({ ...old, email: e.target.value }))}/></label>
+            <label>Proposed role<select value={invite.role} onChange={(e) => setInvite((old) => ({ ...old, role: e.target.value as InvitationInput['role'] }))}>
+              <option value="TRABAJADOR">Staff member</option><option value="ENCARGADO">Manager</option>
             </select></label>
           </div>
-          <p className="e3-ops-role-guidance"><strong>Roles para nuevos colaboradores:</strong> Trabajador o Encargado. Si más adelante necesitás designarlo Administrador, el titular administrativo puede cambiar su rol una vez que haya aceptado la invitación.</p>
-          <div className="real-auth-actions e3-ops-form-actions"><button className="real-auth-primary" type="submit" disabled={busy || uncertain}>{busy ? 'Emitiendo…' : 'Emitir invitación REAL'}</button></div>
+          <p className="e3-ops-role-guidance"><strong>Roles for new partners:</strong> Worker or Maintainer. If you need to appoint him/her later, the administrative holder may change his/her role once you have accepted the invitation.</p>
+          <div className="real-auth-actions e3-ops-form-actions"><button className="real-auth-primary" type="submit" disabled={busy || uncertain}>{busy ? 'Emitiendo…' : 'Issue REAL invitation'}</button></div>
         </form>
         {issued && <div className="real-ops-secret" role="status">
-          <strong>Invitación emitida para {issued.email}</strong>
+          <strong>Invitation issued for {issued.email}</strong>
           <p>Expira: {new Date(issued.expires_at).toLocaleString('es-AR')}.</p>
-          <label>Código de invitación — visible solo ahora<input aria-label="Código de invitación emitido" type="text" readOnly value={issued.invitation_token}/></label>
+          <label>Invitation code — visible only now<input aria-label="Invitation code issued" type="text" readOnly value={issued.invitation_token}/></label>
           <div className="real-auth-actions">
             <button className="real-auth-secondary" type="button" onClick={() => {
               void navigator.clipboard.writeText(issued.invitation_token).then(
-                () => setNotice('Código copiado. Enviáselo solo al destinatario correspondiente.'),
-                () => setError('No se pudo copiar automáticamente. Seleccioná el código para copiarlo manualmente.'),
+                () => setNotice('Copy code. Send it only to the corresponding recipient.'),
+                () => setError('Could not copy automatically. Select the code to manually copy it.'),
               )
-            }}>Copiar código</button>
-            <button className="real-auth-secondary" type="button" onClick={() => setIssued(null)}>Ocultar código</button>
+            }}>Copy Code</button>
+            <button className="real-auth-secondary" type="button" onClick={() => setIssued(null)}>Hide Code</button>
           </div>
-          <p>El destinatario debe entrar con su propia cuenta y pegar el código desde «Ingresar código de invitación».</p>
+          <p>The recipient must enter with his own account and paste the code from "Introduce invitation code".</p>
         </div>}
         </div>
       </section>}
     </>}
-    {uncertain && <p className="real-auth-message real-ops-warning" role="alert">La respuesta de la escritura se perdió o no pudo validarse. No repitas la operación automáticamente: consultá el estado actualizado. En una invitación podría haberse consumido el único código emitido. <button className="real-auth-link" type="button" onClick={() => void reload()}>Reconsultar equipo</button></p>}
+    {uncertain && <p className="real-auth-message real-ops-warning" role="alert">The write response was lost or could not be validated. Do not repeat the operation automatically: consult the updated status. In an invitation, the only code issued could have been consumed. <button className="real-auth-link" type="button" onClick={() => void reload()}>Consult Team</button></p>}
     {notice && <p className="real-auth-message" role="status">{notice}</p>}
     {error && <p className="real-auth-message real-auth-error" role="alert">{error}</p>}
   </section>

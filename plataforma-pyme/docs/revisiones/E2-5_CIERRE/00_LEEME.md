@@ -1,63 +1,63 @@
-# E2-5 — Paquete documental para revisión previa al cierre definitivo
+# E2-5 — Documentary package for review prior to final closure
 
-**Proyecto:** Orbit · Programación 2 (UNSAM, 2C2026)  
-**Bloque:** E2-5 — Inventario · cortes A (modelo), B (traslados), C (ajustes y stock inicial)  
-**Fecha del corte documental:** 9 de noviembre de 2026  
-**Versión documental:** 1.2 — **PUBLICADA EN `main` mediante PR #24**, SHA del cierre original `c66df2f8ddaa8179ca12e342bd3099348bc6b155`; auditoría independiente todavía no realizada  
-**Repositorio:** https://github.com/JoaquinOjedaDev/Orbit  
-**Área examinada:** `plataforma-pyme/` · **rama:** `main`  
+**Project:** Orbit · Programming 2 (UNSAM, 2C2026)  
+**Block:** E2-5 — Inventory · A-cuts (model), B-treads, C-tightening and initial stock)  
+**Date of the documentary cut:** 9 November 2026  
+**Documentary version:** 1.2 — **PUBLISHED IN `main` by PR #24**, SHA original closure `c66df2f8ddaa8179ca12e342bd3099348bc6b155`; independent audit not yet carried out  
+**Repository:** https://github.com/JoaquinOjedaDev/Orbit  
+**Area examined:** `plataforma-pyme/` · **rama:** `main`  
 **Commit exacto de cierre funcional:** `748e69319d8d04900c009d5184168a264a9deeac`  
-**Migración vigente:** `e25a_inventory_ops`.
+**Migration in force:** `e25a_inventory_ops`.
 
-## Propósito y límites de esta entrega
+## Purpose and limits of this delivery
 
-Este directorio contiene el **cierre documental E2-5 publicado**, procedente del ZIP v1 y revisado frente al código y las observaciones de otra IA. Fue incorporado a `main` por el PR #24, sin cambios funcionales. La hoja y el paquete de auditoría independiente también están publicados y pueden entregarse al revisor. **La auditoría aún no ocurrió y la publicación no constituye aprobación de producción.**
+This directory contains the **documentary closure E2-5 published**, coming from the ZIP v1 and revised in front of the code and observations of another AI. It was incorporated to `main` The sheet and the independent audit package are also published and can be delivered to the reviewer. **The audit has not yet been carried out and the publication does not constitute production approval.**
 
-### Índice
+### Contents
 
-| Archivo | Para qué sirve |
+| File | What is it for? |
 |---|---|
-| `01_INFORME_CONSOLIDADO.md` | Dictamen técnico acotado, objetivos, resultados y situación al cierre |
-| `02_BITACORA_SWAGGER_E2-5_B.md` | Pruebas manuales de compra, recepción, traslado, reintentos y saldos |
-| `03_BITACORA_SWAGGER_E2-5_C.md` | Pruebas manuales de stock inicial, ajustes, errores y reconciliación |
-| `04_PRUEBAS_AUTOMATIZADAS_CI_Y_WINDOWS.md` | PR, SHA, runs, cantidad de tests, ejecución local y cobertura inferible |
-| `05_ARQUITECTURA_MODELO_Y_API.md` | Modelo de datos, rutas, controles y límites de las transacciones |
-| `06_MATRIZ_TRAZABILIDAD.md` | RF/CU → código → pruebas → criterios de aceptación |
-| `07_FICHA_QA_SANITIZADA.md` | Identificadores de recursos QA, dos artículos y estado final |
-| `08_REPRODUCCION_SEGURA.md` | Reproducción no destructiva en Windows/PostgreSQL y secuencia de validaciones |
-| `09_RIESGOS_DEUDAS_Y_DECISIONES.md` | Pendientes reales y prioridades propuestas, sin inventar defectos |
-| `10_CHECKLIST_REVISION_Y_PUBLICACION.md` | Revisión previa, distinción de auditados/no auditados y siguiente decisión |
-| `11_EVIDENCIA_ESTRUCTURADA.json` | Resumen legible por herramientas de QA, con resultados y sin secretos |
-| `12_MANIFIESTO_GIT_BLOBS.md` | Identificadores Git blob verificados en el PR; sustituyen hashes del ZIP anterior que ya no corresponden al contenido revisado |
-| `13_EVALUACION_OBSERVACIONES_IA.md` | Contraste razonado de 14 observaciones externas, decisiones y prioridades sin cambiar código |
-| `14_REVISION_INTEGRAL_DOCUMENTAL.md` | Acta de control editorial/técnico, correcciones y alcance explícito del OK documental |
+| `01_INFORME_CONSOLIDADO.md` | Technical opinion set out, objectives, results and position at closure |
+| `02_BITACORA_SWAGGER_E2-5_B.md` | Manual proof of purchase, receipt, transfer, re-try and balances |
+| `03_BITACORA_SWAGGER_E2-5_C.md` | Manual Initial Stock Testing, Adjustments, Errors and Reconciliation |
+| `04_PRUEBAS_AUTOMATIZADAS_CI_Y_WINDOWS.md` | PR, SHA, runs, number of tests, local execution and inferable coverage |
+| `05_ARQUITECTURA_MODELO_Y_API.md` | Model of data, routes, controls and limits of transactions |
+| `06_MATRIZ_TRAZABILIDAD.md` | RF/CU → code → tests → acceptance criteria |
+| `07_FICHA_QA_SANITIZADA.md` | QA resource identifiers, two articles and final status |
+| `08_REPRODUCCION_SEGURA.md` | Non-destructive Windows/PostgreSQL playback and validation sequence |
+| `09_RIESGOS_DEUDAS_Y_DECISIONES.md` | Real challenges and proposed priorities, without inventing defects |
+| `10_CHECKLIST_REVISION_Y_PUBLICACION.md` | Prior review, distinction of audited/unaudited and next decision |
+| `11_EVIDENCIA_ESTRUCTURADA.json` | Readable summary by QA tools, with results and no secrets |
+| `12_MANIFIESTO_GIT_BLOBS.md` | Git blob identifiers verified in the PR; replace hashes from the previous ZIP that no longer correspond to the revised content |
+| `13_EVALUACION_OBSERVACIONES_IA.md` | Reasoned contrast of 14 external observations, decisions and priorities without changing code |
+| `14_REVISION_INTEGRAL_DOCUMENTAL.md` | Editorial/technical control report, corrections and explicit scope of the OK documentary |
 
-## Política estricta de seguridad
+## Strict security policy
 
-- **No se incluyen** contraseñas, tokens de sesión, encabezados Bearer reales, claves reales de idempotencia ni sus valores de solicitud, hashes de esos valores, credenciales de base, ni correos del usuario QA.
-- Se conservan algunos **UUID de recursos QA** (empresa, ubicaciones, artículos y operaciones) porque son identificadores de negocio útiles para contrastar el ledger. **No son credenciales**. Los UUID de identidad personal se omiten.
-- No se incluye el `curl` copiado desde Swagger, precisamente porque podría exponer una cabecera sensible. Las respuestas se reducen a códigos, estados, cantidades, eventos y relaciones verificables.
-- En la conversación de QA se copió una cabecera Bearer válida. El desarrollador **aportó después un `POST /api/v1/auth/logout` con HTTP `204 No Content` y el mismo token expuesto**, el 09/11/2026 a las 15:23:37 GMT. **Revocación de esa sesión confirmada por respuesta Swagger reportada**, coherente con `SessionService.logout()`; no es una inspección SQL independiente ni implica revocar otras sesiones. **Nunca se reproduce el token.**
-- Cualquier nueva captura o transcripción debe inspeccionarse y sanearse **antes** de adjuntarla o subirla a Git.
+- **Not included** passwords, session tokens, real Bearer headers, actual idempotency keys or their application values, hashes of those values, base credentials, or emails from QA user.
+- Some are retained **UUID QA resources** (company, locations, items and operations) because they are useful business identifiers to contrast the leadger. **They're not credentials.**. UUIDs of personal identity are omitted.
+- Not included `curl` copied from Swagger, precisely because it could expose a sensitive header. Responses are reduced to codes, states, quantities, events and verifiable relationships.
+- A valid Bearer header was copied in the QA conversation. **then contributed a `POST /api/v1/auth/logout` with HTTP `204 No Content` and the same token displayed**, on 09/11/2026 at 15:23:37 GMT. **Revocation of that session confirmed by reported Swagger response**consistent with `SessionService.logout()`; it is not an independent SQL inspection nor does it imply the revocation of other sessions. **The token never reproduces.**
+- Any new capture or transcription must be inspected and healed **before** to attach it or upload it to Git.
 
-## Procedencia y grado de prueba
+## Origin and degree of proof
 
-**CI-VERIFICADO:** ejecución observada en GitHub Actions asociada a un commit específico.  
-**LOCAL-REPORTADO:** salida de PowerShell copiada por el desarrollador; no acceso remoto independiente a su máquina.  
-**SWAGGER-REPORTADO:** respuesta HTTP real aportada por el desarrollador; se validó su coherencia con el flujo y el código consultado.  
-**CÓDIGO-INSPECCIONADO:** archivos existentes en GitHub `main` al SHA indicado.  
-**PENDIENTE:** falta evidencia suficiente o está fuera de este corte.
+**CI-VERIFIED:** execution observed in GitHub Actions associated with a specific commit.  
+**LOCAL-REPORTED:** PowerShell output copied by the developer; no independent remote access to your machine.  
+**SWAGGER-REPORTED:** real HTTP response provided by the developer; its consistency with the flow and code consulted was validated.  
+**CODE-INSPECTION:** existing files in GitHub `main` to the indicated SHA.  
+**PENDING:** There's enough evidence missing or it's out of this court.
 
-Un total de **840 pruebas aprobadas no significa 840 pruebas exclusivamente de inventario ni 100 % de cobertura**: la suite abarca todos los módulos backend hasta E2-5 C.
+Total **840 approved tests does not mean 840 inventory-only tests or 100 % coverage**: The suite covers all backend modules up to E2-5 C.
 
-## Fuente de verdad
+## Source of truth
 
-Se cotejó el repositorio público (documentos E2-5 A/B/C, routers, servicios, ORM, migración, tests y PR #21–#23), las ejecuciones de GitHub Actions y el registro Swagger/PowerShell de esta conversación. **El código del commit es fuente de verdad para el comportamiento implementado**; los documentos de incremento A/B/C que todavía dicen «pendiente de merge» describen el estado de aquel momento, no el estado actual. Este paquete aclara esa evolución sin reescribir los documentos históricos.
+The public repository (documents E2-5 A/B/C, routers, services, ORM, migration, tests and PR #21–#23), GitHub Actions executions and Swagger/PowerShell record of this conversation were cross-checked. **The commit code is a source of truth for the implemented behavior**; the A/B/C increment documents that still say "to be merge" describe the state of that moment, not the current state. This package clarifies this evolution without rewriting historical documents.
 
-**Ubicación definitiva:** `plataforma-pyme/docs/revisiones/E2-5_CIERRE/` en `main`. **SHA documental original:** `c66df2f8ddaa8179ca12e342bd3099348bc6b155`; **SHA funcional examinado:** `748e69319d8d04900c009d5184168a264a9deeac`. Un commit posterior que actualice estos textos no cambia el SHA del cierre original. La auditoría independiente sigue pendiente.
+**Final location:** `plataforma-pyme/docs/revisiones/E2-5_CIERRE/` en `main`. **Original SHA documentary:** `c66df2f8ddaa8179ca12e342bd3099348bc6b155`; **Functional SHA examined:** `748e69319d8d04900c009d5184168a264a9deeac`. A subsequent commit to update these texts does not change the SHA from the original closure. The independent audit is still pending.
 
-## Cambios de esta revisión (v1.2, sobre v1.1)
+## Changes to this review (v1.2, over v1.1)
 
-Se incorporó un **dictamen crítico documentado** sobre concurrencia, semántica de stock inicial, reversos, autorización, auditoría SQL, reservas, errores HTTP y límites comerciales. Los comentarios recibidos son **hipótesis y propuestas**, no pruebas de un bug por sí mismos. Ver [13_EVALUACION_OBSERVACIONES_IA.md](13_EVALUACION_OBSERVACIONES_IA.md) y [09_RIESGOS_DEUDAS_Y_DECISIONES.md](09_RIESGOS_DEUDAS_Y_DECISIONES.md). La documentación v1.0 permanece como antecedente de lectura, pero los hashes del ZIP v1.0 no validan esta revisión versionada. Se corrigieron términos de autenticación, referencias a manifiesto, checklist e índice académico; ver [acta 14](14_REVISION_INTEGRAL_DOCUMENTAL.md).
+A new **documented critical opinion** on contributence, semantics of initial stock, reverses, authorization, SQL audit, reservations, HTTP errors and business limits. Comments received are **assumptions and proposals**You don't prove a bug by yourself. [13_EVALUATION_OBSERVATIONS_IA.md](13_EVALUACION_OBSERVACIONES_IA.md) y [09_RIESGOS_DEUDAS_Y_DECISIONS.md](09_RIESGOS_DEUDAS_Y_DECISIONES.md). The v1.0 documentation remains as a reading background, but the ZIP v1.0 hashes do not validate this versioned revision. Authentication terms, references to manifesto, checklist and academic index were corrected; see [Minutes 14](14_REVISION_INTEGRAL_DOCUMENTAL.md).
 
-La [hoja formal de entrega](../E2-5_ENTREGA_PARA_REVISION.md) y el [paquete de auditoría técnica](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md) están **preparados en el PR**, no constituyen la auditoría realizada; el auditor debe partir de los SHAs verificados cuando se apruebe y publique esta documentación.
+La [formal delivery sheet](../E2-5_ENTREGA_PARA_REVISION.md) y el [Technical audit package](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md) They're **prepared in the PR**the audit is not performed; the auditor must start from the audited SHAs when this documentation is approved and published.

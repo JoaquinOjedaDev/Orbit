@@ -1,36 +1,36 @@
-# E1-A2.1 — Perfil personal y alta de empresas DEMO
+# E1-A2.1 — Personal and high profile DEMO companies
 
-**Fecha:** 2026-11-06.
-**Estado:** Código publicado en GitHub main; build, lint y pruebas manuales E1-A2 pendientes de ejecutar/registrar por el equipo.
-**Fuente:** E0-B y backlog E0-C (E1-A2); ADR-001, ADR-002 y ADR-007, todavía **PROPUESTOS**.
-**Alcance:** incremento funcional de demostración, no autentica usuarios y no crea empresas en backend.
+**Date:** 2026-11-06.
+**Status:** Code published in GitHub main; build, lint and manual tests E1-A2 pending to run/register for the computer.
+**Source:** E0-B and backlog E0-C (E1-A2); ADR-001, ADR-002 and ADR-007 still **PROPOSALS**.
+**Scope:** functional increase of demonstration, does not authenticate users and does not create companies in backend.
 
-## Qué se implementó
+## What was implemented
 
-1. **Perfil personal único** en /perfil: nombre visible y correo DEMO opcional, editables; el perfil no depende del negocio seleccionado. No contraseña, login ni autorización.
-2. **Crear empresa** en /empresas/nueva: nombre, tipo Productos / Servicios / Mixto, rubro opcional y descripción opcional. Sin obligatoriedad de stock, caja, local, recetas o feria.
-3. **Alta coherente**: la creación registra una empresa y una membresía DEMO ACTIVA con rol TITULAR_ADMINISTRATIVO para el usuario de demostración; fundador y responsable inicial coinciden pero son campos diferentes. No hay transferencia de titularidad.
-4. **Selector y dashboard integrados**: empresas recién creadas aparecen tanto en /inicio como en el selector de la barra superior y se puede recorrer su /b/:businessId/inicio.
-5. **Ficha inicial de negocio** en /b/:businessId/empresa: nombre, actividad, descripción e información DEMO de titularidad. Sólo lectura; edición futura E1-B.
-6. **Gateway tipado de ejemplo**: demoGateway.saveProfile y demoGateway.createBusiness retornan Promise y operan sobre una única fuente de estado local observable mediante useSyncExternalStore.
-7. **Persistencia sólo local**: datos de creación y perfil se guardan en localStorage bajo la clave versionada asistente-pyme.e1a2.demo.v1. Los 3 negocios iniciales WALOS, Comercio Ejemplo y Servicios Ejemplo se reconstruyen como fixtures, no se duplican en cada guardado. Valor local, no seguridad ni backup.
-8. **Contexto por empresa**: negocios y membresías indexados por businessId. La ruta no valida identidad real; la vista DEMO sólo encuentra negocios con membresía DEMO activa en el snapshot local.
+1. **Single personal profile** In /profile: visible name and optional DEMO mail, editable; profile does not depend on the selected business. No password, login or authorization.
+2. **Create company** in /company/new: name, type Products / Services / Mixed, optional item and optional description. No stock obligation, box, local, recipes or fair.
+3. **Consistent high**: the creation records a company and an active DEMO membership with PORTUGUESE_ADMINISTRATIVE role for the demonstration user; founder and initial manager agree but are different fields. There is no transfer of ownership.
+4. **Integrated selector and dashboard**: Newly created companies appear in /start as well as the selector of the top bar and you can tour your /b/:businessId/start.
+5. **Start of business sheet** in /b/:businessId/company: name, activity, description and DEMO title information. Read only; future edition E1-B.
+6. **Gateway example typed**: demoGateway.saveProfile and demoGateway.createBusiness return Promise and operate on a single local state source observable usingSyncExternalStore.
+7. **Local only persistence**: Creation data and profile are saved in localStorage under the versioned key assistant-pyme.e1a2.demo.v1. The 3 initial businesses WALOS, Trade Example and Services Example are rebuilt as fixes, do not duplicate each save. Local value, no security or backup.
+8. **Context by company**: Business and membership indexed by businessId. The route does not validate real identity; the DEMO view only finds businesses with active DEMO membership in the local snapshot.
 
-## Archivos
+## Files
 
-- frontend/src/data/demo/demoStore.ts — tipos, fixtures, snapshot único, carga versionada, comandos tipados y suscripción.
+- frontend/src/data/demo/demoStore.ts — types, fixes, unique snapshots, versioned upload, typed commands and subscription.
 - frontend/src/features/profile/ProfilePage.tsx — formulario personal.
-- frontend/src/features/businesses/BusinessPages.tsx — creación y ficha de empresa.
-- frontend/src/App.tsx — rutas funcionales y lectura del snapshot DEMO.
-- frontend/src/app/shell/TopBar.tsx — selector y avatar dinámicos.
-- frontend/src/app/navigation.ts — sin lista paralela de empresas.
-- frontend/src/features/dashboard/Dashboards.tsx — listado dinámico de empresas y acceso Crear activo.
-- frontend/src/App.css — estilos responsivos de formularios.
-- frontend/README.md — instrucciones.
+- frontend/src/features/business/BusinessPages.tsx — creation and business sheet.
+- frontend/src/App.tsx — functional paths and DEMO snapshot reading.
+- frontend/src/app/shell/TopBar.tsx — dynamic selector and avatar.
+- frontend/src/app/navigation.ts — no parallel list of companies.
+- frontend/src/features/dashboard/Dashboards.tsx — dynamic business listing and login Create active.
+- frontend/src/App.css — responsive styles of forms.
+- frontend/README.md — instructions.
 
-## Pruebas de aceptación (pendientes, no se afirma resultado)
+## Acceptance tests (pending, no result claimed)
 
-Primero, dentro de plataforma-pyme/frontend:
+First, inside platform-pyme/frontend:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -39,27 +39,27 @@ npm.cmd run lint
 npm.cmd run dev
 ~~~
 
-| ID | Procedimiento | Criterio |
+| ID | Procedure | Criterion |
 |---|---|---|
-| E1A2-BUILD | build y lint | Sin errores ni advertencias |
-| E1A2-PER-01 | Ir a Mi perfil, cambiar nombre DEMO y guardar | Avatar y nombre reflejan cambio; refrescar mantiene valor |
-| E1A2-PER-02 | Cambiar WALOS↔Servicios y volver a Mi perfil | El perfil permanece único y compartido |
-| E1A2-PER-03 | Correo inválido, nombre de 1 carácter | Formulario rechaza guardado, da feedback |
-| E1A2-ONB-01 | Crear empresa tipo SERVICIOS sin rubro/local/stock | Creación exitosa; lleva al Inicio del negocio |
-| E1A2-ONB-02 | Volver a /inicio y abrir selector | Empresa aparece en ambos lugares |
-| E1A2-ONB-03 | Refrescar página y reiniciar Vite | Empresa creada se conserva en mismo navegador |
-| E1A2-ONB-04 | Crear empresa de tipo MIXTO | No solicita almacén; muestra tipo correcto en ficha |
-| E1A2-TEN-01 | Alternar empresa A/B, visitar ficha, volver | Nombres/identificadores corresponden al businessId activo |
-| E1A2-TEN-02 | Abrir /b/id-no-existente/inicio | «Empresa no disponible»; no muestra atributos de otras compañías |
-| E1A2-NAV-01 | Hamburguesa, volver, cambio de empresa | Navegación y modal siguen funcionando |
-| E1A2-RESP-01 | Pantalla 390 px | Formularios usables sin desplazamiento horizontal |
+| E1A2-BUILD | build y lint | No errors or warnings |
+| E1A2-PER-01 | Go to My Profile, Change Name DEMO and Save | Avatar and name reflect change; refresh maintains value |
+| E1A2-PER-02 | Change WALOS∫Services and return to My profile | Profile remains unique and shared |
+| E1A2-PER-03 | Invalid mail, 1 character name | Form rejects saved, gives feedback |
+| E1A2-ONB-01 | Create company type SERVICES without item/local/stock | Successful creation; leads to Business Start |
+| E1A2-ONB-02 | Back to /start and open selector | Company appears in both places |
+| E1A2-ONB-03 | Reload page and restart Vite | Company created is conserved in same browser |
+| E1A2-ONB-04 | Create a company of the same type | No warehouse request; correct type display on tab |
+| E1A2-TEN-01 | Change company A/B, visit tab, return | Names/identifiers correspond to the businessId active |
+| E1A2-TEN-02 | Open /b/id-non-existent/start | ‘Company not available’ means no attributes of other companies |
+| E1A2-NAV-01 | Hamburger, back, change of company | Navigation and modal still work |
+| E1A2-RESP-01 | Screen 390 px | Useable forms without horizontal displacement |
 
-## Limitaciones y próximas tareas
+## Limitations and upcoming tasks
 
-- Las empresas/identidades/roles DEMO no son usuarios, autorizaciones ni tenants reales; cualquiera con acceso al navegador local puede alterar los datos locales.
-- No hay sesiones reales, sincronización entre equipos o pestañas, invitaciones, borradores operativos, transferencias, API, PostgreSQL ni Mercado Pago.
-- Persistencia local puede fallar por cuota, modo privado o configuración: la interfaz seguirá en memoria, pero no se asegura guardado permanente; requisito de mejora: indicar fallo de almacenamiento al usuario si se hace uso serio.
-- Próximos cortes: suite Vitest + smoke E2E; React Router; reglas de aislamiento y draft scope; después integración de módulos M1/M2 y E1-C. No inventar funciones de negocio a partir del formulario.
-- Antes de cerrar E1-A2 el equipo debe revisar/aprobar o modificar ADR-001/002. La regla usada aquí es provisional y segura para demo, no implica aprobación del ADR.
+- DEMO companies/identities/roles are not real users, authorizations or tenants; anyone with access to the local browser can alter local data.
+- There are no real sessions, sync between computers or tabs, invitations, operating drafts, transfers, APIs, PostgreSQL and Market Payment.
+- Local persistence may fail by quota, private mode or configuration: the interface will remain in memory but is not securely saved permanently; improvement requirement: indicate storage failure to the user if serious use is made.
+- Next cuts: Vitest suite + smoke E2E; React Router; isolation rules and draft scope; then integration of M1/M2 and E1-C modules.Do not invent business functions from the form.
+- Before closing E1-A2 the equipment must review/approve or modify ADR-001/002. The rule used here is provisional and safe for demo, does not imply approval of the ADR.
 
-**No se tocaron** los proyectos hermanos del TP ni se copiaron datos reales o scripts globales de HTML históricos.
+**They didn't touch each other.** TP sister projects were not copied or copied from real data or global scripts of historical HTML.

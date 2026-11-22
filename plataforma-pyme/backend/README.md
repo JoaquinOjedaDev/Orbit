@@ -1,49 +1,47 @@
-# Orbit — Backend FastAPI/PostgreSQL (estado vigente T11)
+# Orbit backend
 
-**Corte funcional:** `main` `c6a77137cf82dcb9aad225645e84b1265b1da3ec` (PR #45, 11/11/2026). API v1 REAL de **RF-01..RF-07**, con **46 operaciones en 13 routers** y PostgreSQL 16, SQLAlchemy, Alembic y Docker. Este bloque de estado vigente tiene precedencia sobre las notas históricas E2-0 a E2-5 conservadas debajo.
+The FastAPI service uses PostgreSQL, SQLAlchemy, and Alembic. It handles company access, purchasing, inventory, sales, and receipts.
 
-## Capacidades y pruebas vigentes
+## Run locally
 
-Registro y sesión Bearer opaca; empresas, membresías e invitaciones; ubicaciones, asignaciones y capacidades SELL/STORE; catálogo, proveedores, compras con snapshots y recepción física completa y única; inventario (saldos versionados, ledger firmado, traslados, stock inicial/ajustes); ventas POS mixtas, pagos **declarados**, comprobantes e idempotencia/recuperación. El QR Mercado Pago real, cuentas financieras y caja REAL **no están implementados**.
+Follow the [setup guide](../../docs/getting-started.md). Once the API is running, open `http://localhost:8000/docs`. Use `/health` for process status and `/ready` for database connectivity.
 
-**Referencia contractual:** [Documento 05 — API y trazabilidad](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md). **Modelo:** [Documento 03](../entrega-programacion-2/03_MODELO_DE_DOMINIO_Y_UML.md). **Arquitectura actual:** [Documento 04](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md).
+## Checks
 
-**Seguridad de las pruebas:** antes de ejecutar migraciones, Pytest con integración de BD o herramientas de Docker, comprobar nombre y host de la base. Los comandos de QA que escriben datos deben usarse exclusivamente contra **una base descartable creada para pruebas**. No ejecutar `docker compose down -v`, `dropdb`, reinicios destructivos ni pruebas de escritura sobre bases de trabajo del usuario. `/health` (liveness) y `/ready` (dependencia de BD) son endpoints técnicos fuera de `/api/v1`.
+Run `python -m pytest` from this directory. To run PostgreSQL integration tests, configure a disposable test database and set `RUN_DB_INTEGRATION=1`.
 
-**Evidencia histórica de T11:** [auditoría técnica E2-7/T11](../docs/E2-7_T11_E_AUDITORIA_FINAL_PREMERGE.md) con 892 pruebas Pytest, 38 escenarios Playwright REAL y 6 DEMO en su corte verificado. Los cambios T12 son documentales: **no se ejecutaron migraciones ni nuevos tests de integración para redactarlos**.
-
-**Límites y Etapa 2:** no declarar producción comercial, pagos reales ni integración bancaria. Evaluar infraestructura, sesiones reforzadas, informes, caja/cuentas y Mercado Pago QR por empresa después del cierre académico.
+The [API traceability matrix](../entrega-programacion-2/05_MATRIZ_API_Y_TRAZABILIDAD.md) maps endpoints to workflows and tests.
 
 ---
 
-## Archivo histórico E2-0 a E2-5 (preservado)
+## Historical archive E2-0 to E2-5 (preserved)
 
-> **E2-5 C — Ajustes y stock inicial (09/11/2026):** API `POST/GET /api/v1/businesses/{business_id}/inventory/adjustments` con motivo, versión esperada, signos, idempotencia y controles de permisos por ubicación. El primer saldo (`STOCK_INICIAL`) requiere titular/admin y solo admite ubicación+artículo sin historial; ajustes exigen saldo anterior y no permiten negativos. **Sin migración nueva**: `e25a_inventory_ops`. [Contrato/QA](../docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md). CI E2-5 C #42616213215: **840 tests Python 3.12, 840 Python 3.14, 3/3 jobs aprobados, Alembic sin deriva**. Validación local Windows pendiente.
+> **E2-5 C — Ajustes y stock inicial (09/11/2026):** API `POST/GET /api/v1/businesses/{business_id}/inventory/adjustments` on occasion, expected version, signs, idempotence and permission controls by location. The first balance (`STOCK_INICIAL`) requires holder/admin and only supports location+article without history; adjustments require prior balance and do not allow negatives. **No new migration**: `e25a_inventory_ops`. [Contract/QA](../docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md). CI E2-5 C #42616213215: **840 Python 3.12, 840 Python 3.14 tests, 3/3 jobs approved, drift-free Alembic**. Local Windows validation pending.
 
-> **E2-5 B — Transferencias (09/11/2026, CI aprobado; Windows pendiente):** nuevo POST/GET `/api/v1/businesses/{business_id}/inventory/transfers`, debit/credit en una transacción, permiso STORE en ambas ubicaciones, ledger firmado y replay idempotente. Sin nuevas migraciones: `e25a_inventory_ops`. [Detalle y QA](../docs/E2-5_B_TRASLADOS_ATOMICOS.md). La base E2-5 A validó 816 pruebas locales y CI; CI E2-5 B #42602232103: **826 tests Python 3.12, 826 Python 3.14, Docker 3/3, Alembic sin deriva**. Validación Windows todavía pendiente.
+> **E2-5 B — Transfers (09/11/2026, IC approved; Windows pending):** new POST/GET `/api/v1/businesses/{business_id}/inventory/transfers`, debit/credit in a transaction, STORE permission in both locations, signed ledger and idempotent replay. No new migrations: `e25a_inventory_ops`. [Detalle y QA](../docs/E2-5_B_TRASLADOS_ATOMICOS.md). Base E2-5 A validated 816 local tests and CI; CI E2-5 B #42602232103: **826 tests Python 3.12, 826 Python 3.14, Docker 3/3, Alembic sin deriva**. Windows validation still pending.
 
-> **Estado actual — E2-5 A (09/11/2026):** preparación de operaciones de inventario sobre E2-4 cerrado. Nueva entidad `InventoryOperation`, ledger firmado ampliado y migración aditiva `e25a_inventory_ops`; **no hay nuevos endpoints de traslado/ajuste en este corte**. La recepción E2-4 y sus datos existentes permanecen intactos. [Contrato y procedimiento de E2-5 A](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md). Los apartados E2-0 a E2-3 que siguen son registros históricos, no el último head. CI E2-5 A: **816 tests en Python 3.12, 816 en Python 3.14, 3/3 jobs verdes**, `e25a_inventory_ops (head)` sin deriva; **Windows aún pendiente**.
+> **Current status — E2-5 A (09/11/2026):** preparation of closed E2-4 inventory operations. `InventoryOperation`, ledger signed expanded and additive migration `e25a_inventory_ops`; **no new transfer/adjustment endpoints in this cut**. The E2-4 reception and its existing data remain intact. [E2-5A contract and procedure](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md)The following sections E2-0 to E2-3 are historical records, not the last head. CI E2-5 A: **816 tests en Python 3.12, 816 en Python 3.14, 3/3 jobs verdes**, `e25a_inventory_ops (head)` sin deriva; **Windows still pending**.
 
 # Orbit — Backend FastAPI
 
-> **ESTADO DE REFERENCIA — E2-4 (08–09/11/2026):** Proveedores y Compras con snapshots, recepción completa y única, movimiento por línea física, saldo atómico por empresa/ubicación/artículo. Migración `e24e_receipt_stock` (sin deriva), **797/797 tests en Windows y Python 3.12/3.14 CI**, Docker saludable, bitácora Swagger de 17 casos. Código de corte: `4f88416141c09a82e744990b1aee8c00b9f31dfd`. **Fuente vigente:** [cierre E2-4 documentado](../docs/revisiones/E2-4_CIERRE/00_LEEME.md); [hoja para auditor independiente](../docs/revisiones/E2-4_ENTREGA_PARA_REVISION.md). El resto de este README conserva notas **históricas** por incremento, que pueden presentar módulos de E2-4 como futuros a fecha de redacción. No confundir con el estado actual ni con un despliegue productivo.
+> **REFERENCE STATE — E2-4 (08–09/11/2026):** Suppliers and Purchases with snapshots, complete and unique reception, movement by physical line, atomic balance per company/location/article. `e24e_receipt_stock` (sin deriva), **797/797 tests en Windows y Python 3.12/3.14 CI**, Healthy Docker, 17-case Swagger log. `4f88416141c09a82e744990b1aee8c00b9f31dfd`. **Source in force:** [E2-4 closure documented](../docs/revisiones/E2-4_CIERRE/00_LEEME.md); [sheet for independent auditor](../docs/revisiones/E2-4_ENTREGA_PARA_REVISION.md). El resto de este README conserva notas **historical** by increase, which can present E2-4 modules as futures at the drafting date. Do not confuse with the current state or a productive deployment.
 
 
-**Estado histórico previo (08/11/2026):** E2-1 y E2-2 preservados; E2-3 A/B/C/D validado localmente (580 pruebas), E2-3 E documentación y UML 03A conciliados. Alembic `e23a_catalog (head)` sin deriva; API/DB healthy. Cinco rutas de Catálogo protegidas por empresa; frontend DEMO y operaciones comerciales pendientes. Entrega E2-3 de auditoría pendiente.
+**Previous historical status (08/11/2026):** Preserved E2-1 and E2-2; locally validated E2-3 A/B/C/D (580 tests), E2-3 E documentation and UML 03A reconciled. `e23a_catalog (head)` no drift; API/DB health. Five Catalogue routes protected by company; frontend DEMO and pending business operations. E2-3 outstanding audit delivery.
 
-> **Estado histórico E2-2 (08/11/2026):** E2-2 A/A.1/B/C/D implementado y validado: **371 pruebas Windows aprobadas en 47.57s**, Alembic `e22d_assignments (head)` sin deriva, API y PostgreSQL en Docker `healthy`, `/ready` = `ready/ok`. CI del código E2-2 D: 3/3 aprobado, 371 pruebas Python 3.12/3.14 y Docker. **La política por sede aún no se aplica a inventario/compras/ventas**, que son bloques futuros; frontend React permanece DEMO. Los estados parciales descritos en notas de A/B/C constituyen histórico.
+> **Historical state E2-2 (08/11/2026):** E2-2 A/A.1/B/C/D implemented and validated: **371 Windows tests approved in 47.57s**, Alembic `e22d_assignments (head)` sin deriva, API y PostgreSQL en Docker `healthy`, `/ready` = `ready/ok`. Code IC E2-2 D: 3/3 approved, 371 Python tests 3.12/3.14 and Docker. **The headquarters policy does not yet apply to inventory/purchases/sales**, which are future blocks; frontend React remains DEMO. The partial states described in notes of A/B/C constitute historical.
 
 
-**Fuente arquitectónica:** [Documento 04](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md).
+**Architectural source:** [Document 04](../entrega-programacion-2/04_ARQUITECTURA_Y_PATRONES.md).
 
-## Requisitos
+## Requirements
 
-- Python **3.11–3.14**, pip y entorno virtual.
+- Python **3.11–3.14**, pip and virtual environment.
 - PowerShell en Windows o shell en Linux/macOS.
 
 ## Primer arranque en PowerShell
 
-Desde la **raíz del repositorio**:
+From the **repository root**:
 
 ```powershell
 cd plataforma-pyme/backend
@@ -54,15 +52,15 @@ py -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-Si ya estás dentro de `plataforma-pyme/backend`, omití el primer `cd`.
+If you're already inside `plataforma-pyme/backend`, I omitted the first `cd`.
 
-Abre:
+Open:
 
 - `http://127.0.0.1:8000/health`: `{"status":"ok","service":"asistente-pyme-api"}`.
 - `http://127.0.0.1:8000/docs`: Swagger UI.
 - `http://127.0.0.1:8000/openapi.json`: OpenAPI.
 
-Detener Uvicorn con `Ctrl+C`.
+Stop Uvicorn with `Ctrl+C`.
 
 ## Linux / macOS
 
@@ -75,7 +73,7 @@ python3 -m venv .venv
 .venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-## Arquitectura de este corte
+## Architecture of this court
 
 ```text
 backend/
@@ -89,19 +87,19 @@ backend/
 └── .gitignore
 ```
 
-**E2-0.2:** PostgreSQL 16 y Docker Compose. **E2-0.3:** SQLAlchemy, conexión real y Alembic. `/health` indica liveness y `/ready` verifica conectividad PostgreSQL.
+**E2-0.2:** PostgreSQL 16 y Docker Compose. **E2-0.3:** SQLAlchemy, real connection and Alembic. `/health` indica liveness y `/ready` Check PostgreSQL connectivity.
 
-Las futuras rutas bloqueantes que usen SQLAlchemy síncrono serán `def`; las sesiones serán de duración acotada y los repositorios no harán `commit()`. Los contratos comerciales se incorporarán bajo `/api/v1`.
+Future blocking routes using SQLAlchemy synchronous will be `def`; sessions will be of limited duration and repositories will not `commit()`. Commercial contracts will be incorporated under `/api/v1`.
 
 ## E2-0.2: PostgreSQL 16 con Docker Compose
 
-**Este corte creó una base PostgreSQL local de desarrollo.** E2-0.3 agrega conexión ORM y primera migración, todavía sin tablas comerciales.
+**This court created a local PostgreSQL development base.** E2-0.3 adds ORM connection and first migration, still without commercial tables.
 
-El archivo `compose.yaml` está en `plataforma-pyme/`, **un nivel arriba** de este backend. Se usa el puerto **55432 del equipo** hacia el **5432 del contenedor**, para no interferir con el PostgreSQL 16 que ya puede estar instalado localmente en Windows.
+The file `compose.yaml` is in `plataforma-pyme/`, **un nivel arriba** of this backend. The port is used **55432 of the team** towards the **5432 container**, so as not to interfere with PostgreSQL 16 that can already be installed locally on Windows.
 
 ### Primer arranque: PowerShell
 
-Si estás situado en `plataforma-pyme/backend`:
+If you are located in `plataforma-pyme/backend`:
 
 ```powershell
 cd ..
@@ -111,9 +109,9 @@ Copy-Item .env.example .env
 notepad .env
 ```
 
-En el Bloc de notas, reemplazá `POSTGRES_PASSWORD=` por una **contraseña larga y privada**. El archivo `.env` está excluido de Git: no lo subas ni lo compartas. La contraseña **no debe dejarse vacía**.
+In the Notepad, replace `POSTGRES_PASSWORD=` by a **long and private password**. The file `.env` is excluded from Git: do not upload or share it. **should not be left empty**.
 
-Después ejecutá, todavía dentro de `plataforma-pyme/`:
+Then run, still inside `plataforma-pyme/`:
 
 ```powershell
 docker compose config --quiet
@@ -122,13 +120,13 @@ docker compose ps
 docker compose exec -T db psql -U pyme -d asistente_pyme -c "SELECT current_database() AS db, current_setting('server_version') AS postgres_version;"
 ```
 
-**Resultado esperado:** servicio `db` activo y luego `healthy`; consulta SQL mostrando `asistente_pyme` y versión PostgreSQL `16.x`. El primer arranque puede necesitar descargar la imagen; observá `docker compose ps` hasta que el servicio esté saludable. Si Docker no está instalado o no está iniciado, no modifiques tu PostgreSQL de Windows: el siguiente paso es preparar Docker Desktop y repetir estos comandos.
+**Expected result:** service `db` active and then `healthy`; query SQL showing `asistente_pyme` and PostgreSQL version `16.x`. The first boot may need to download the image; watch `docker compose ps` until the service is healthy. If Docker is not installed or is not started, do not modify your Windows PostgreSQL: the next step is to prepare Docker Desktop and repeat these commands.
 
-**Seguridad y persistencia:** el acceso se publica solo en `127.0.0.1:55432`, no a toda la red. `db_data` es un volumen persistente exclusivo de este Compose; `docker compose down` detiene sin borrar los datos. **No ejecutar `docker compose down -v`** salvo que quieras borrar deliberadamente los datos de desarrollo. No utilizar este Compose tal cual en producción pública.
+**Safety and persistence:** el acceso se publica solo en `127.0.0.1:55432`Not the whole network. `db_data` is a persistent volume exclusive to this Compose; `docker compose down` Stops without deleting the data. **No ejecutar `docker compose down -v`** unless you want to deliberately delete the development data. Do not use this Compose as it is in public production.
 
-**Si el puerto 55432 está ocupado**, cambiá solo `POSTGRES_HOST_PORT` en el archivo local `.env` y volvé a aplicar `docker compose up -d db`. El puerto dentro del contenedor sigue siendo 5432.
+**If port 55432 is occupied**, change alone `POSTGRES_HOST_PORT` in the local file `.env` and reapplyed `docker compose up -d db`. The port inside the container remains 5432.
 
-**Si la contraseña cambia después de crear el volumen**, PostgreSQL no modifica automáticamente las credenciales de un volumen ya inicializado. Para el MVP conservá la contraseña inicial y, si necesitás rotarla, hacelo mediante SQL y una estrategia explícita. No borres volúmenes para resolver de manera improvisada un error de credenciales.
+**If password changes after creating volume**, PostgreSQL does not automatically modify the credentials of an already initialized volume. For MVP it retains the initial password and, if you need to rotate it, do so using SQL and an explicit strategy. Do not delete volumes to unplannedly solve a credentials error.
 
 ### Volver al backend de Python
 
@@ -139,30 +137,30 @@ cd backend
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-La API y la base levantan **en procesos independientes**. `/health` comprueba el proceso y `/ready` comprueba PostgreSQL.
+API and base lift **in independent processes**. `/health` checks the process and `/ready` Check PostgreSQL.
 
-## Calidad
+## Quality
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-El extra `.[dev]` instala **httpx2** para `TestClient` (Starlette moderna); mantenerlo en el manifiesto evita la advertencia que apareció al usuario. Las pruebas unitarias existentes son de infraestructura: **no equivalen a diez tests unitarios de lógica de negocio del TP**. Se añadirán pruebas de reglas de negocio, integración real con PostgreSQL y CI en las siguientes etapas.
+The extra `.[dev]` install **httpx2** for `TestClient` (Modern Starlette); keeping it in the manifest avoids warning that appeared to the user. Existing unitary tests are infrastructure: **do not amount to ten unit tests of business logic of the TP**. Added proofs of business rules, real integration with PostgreSQL and IC in the next stages.
 
-No se guardan secretos ni datos comerciales reales. **No se modificó `frontend/`.**
+No real business secrets or data are kept. **Not amended `frontend/`.**
 
 
 ## E2-0.3: SQLAlchemy 2.x + Alembic + readiness
 
-**La contraseña se lee de `plataforma-pyme/.env` automáticamente:** es el mismo archivo privado que usa Docker Compose. No incluirla en comandos ni commits. La API usa el puerto local `POSTGRES_HOST_PORT` (por defecto 55432).
+**The password is read from `plataforma-pyme/.env` automatically:** is the same private file that Docker Compose uses. Do not include it in commands or commits. API uses local port `POSTGRES_HOST_PORT` (default 55432).
 
-Primero, desde `plataforma-pyme/`:
+First, from `plataforma-pyme/`:
 
 ```powershell
 docker compose ps
 ```
 
-Después, desde `plataforma-pyme/backend/` (sin recrear `.venv`):
+Then, from `plataforma-pyme/backend/` (sin recrear `.venv`):
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
@@ -172,37 +170,37 @@ Después, desde `plataforma-pyme/backend/` (sin recrear `.venv`):
 .\.venv\Scripts\python.exe -m alembic check
 ```
 
-Resultado esperado: revisión `e2003_baseline (head)` y Alembic sin diferencias pendientes. La migración inicial es **intencionalmente vacía**: crea el seguimiento `alembic_version`, no tablas de negocio. En las siguientes etapas se agregarán las entidades con nuevas migraciones. No ejecutar `Base.metadata.create_all()` en lugar de migraciones.
+Expected outcome: revision `e2003_baseline (head)` and Alembic without pending differences. Initial migration is **intentionally empty**: creates follow-up `alembic_version`, not business tables. In the next stages will be added entities with new migrations. `Base.metadata.create_all()` instead of migrations.
 
-Desde `plataforma-pyme/`, verificar el registro de revisión:
+From `plataforma-pyme/`, verify the review record:
 
 ```powershell
 docker compose exec -T db psql -U pyme -d asistente_pyme -c "SELECT version_num FROM alembic_version;"
 ```
 
-Levantar la API desde `backend/`:
+Lift API from `backend/`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- `GET /health`: HTTP 200, proceso vivo; independiente de la base.
-- `GET /ready`: HTTP 200 y `{"status":"ready","database":"ok"}` cuando PostgreSQL responde a `SELECT 1`; error 503 sin detalles sensibles cuando no.
-- `GET /docs`: Swagger muestra ambas rutas.
+- `GET /health`: HTTP 200, live process; independent of base.
+- `GET /ready`: HTTP 200 and `{"status":"ready","database":"ok"}` when PostgreSQL responds to `SELECT 1`; 503 error without sensitive details if not.
+- `GET /docs`: Swagger shows both routes.
 
-Arquitectura: `app/core/settings.py` lee las variables del `.env` ubicado en la raíz de `plataforma-pyme`, usa `URL.create()` para manejar caracteres especiales. Admite opcionales `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_NAME` para futuros despliegues.
+Architecture: `app/core/settings.py` read the variables of `.env` located in the root of `plataforma-pyme`, usa `URL.create()` to handle special characters. Optional support `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_NAME` for future deployments.
 
-`app/infrastructure/db.py` inicializa engine y sessionmaker al necesitarlos. Una Session es por comando y nunca compartida entre peticiones. `session_scope()` hace rollback ante errores y **no hace commit**; esa responsabilidad será del servicio del caso de uso.
+`app/infrastructure/db.py` initialize engine and sessionmaker when you need them. A Session is by command and never shared between requests. `session_scope()` makes rollbacks to mistakes and **no hace commit**; that responsibility shall be for the service of the use case.
 
-Las pruebas automáticas de E2-0.3 usan dobles de conexión y no escriben en PostgreSQL real. El `alembic upgrade head` y el `/ready` real son las verificaciones de integración ejecutadas explícitamente por el desarrollador.
+Automatic tests of E2-0.3 use dual connection and do not write to actual PostgreSQL. `alembic upgrade head` y el `/ready` real are integration checks explicitly performed by the developer.
 
-**Seguridad:** no compartir `.env`, `docker compose config` sin `--quiet` ni logs con secretos. No utilizar `docker compose down -v` para detener la base.
+**Security:** not share `.env`, `docker compose config` sin `--quiet` or logs with secrets. `docker compose down -v` to stop the base.
 
 ## E2-0.4 — API Docker y CI independiente
 
-El servicio `api` es **opcional** y usa un perfil Compose: `docker compose up -d db` sigue iniciando exclusivamente PostgreSQL. La API se ejecuta dentro de Docker con el hostname PostgreSQL `db` y puerto interno `5432`, sin publicar credenciales ni copiar `.env` a la imagen. El servicio utiliza un usuario sin privilegios de root.
+The service `api` es **optional** y usa un perfil Compose: `docker compose up -d db` continues to start PostgreSQL exclusively. API runs within Docker with the hostname PostgreSQL `db` and internal port `5432`without publishing credentials or copying `.env` The service uses a user without root privileges.
 
-Desde `plataforma-pyme/`, con Docker Desktop funcionando y el mismo `.env` privado de E2-0.2:
+From `plataforma-pyme/`with Docker Desktop running and the same `.env` private of E2-0.2:
 
 ```powershell
 git pull origin main
@@ -213,24 +211,24 @@ Invoke-RestMethod http://127.0.0.1:18000/health
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-Resultado esperado: `db` y `api` activos; ambos endpoints devuelven HTTP 200. El contenedor expone `127.0.0.1:18000` en Windows, **no 8000**, para permitir que tu Uvicorn local use 8000 sin conflicto. Si 18000 estuviera ocupado, definí `API_HOST_PORT` en `.env` y usá ese puerto. `POSTGRES_HOST_PORT` continúa en 55432; ninguna de estas opciones interfiere con PostgreSQL local de Windows en 5432.
+Expected result: `db` y `api` assets; both endpoints return HTTP 200. The container exposes `127.0.0.1:18000` on Windows, **no 8000**If 18,000 were occupied, I defined `API_HOST_PORT` en `.env` And use that port. `POSTGRES_HOST_PORT` continues in 55432; none of these options interfere with Windows local PostgreSQL in 5432.
 
 ```powershell
 # Desde plataforma-pyme/
 docker compose --profile api stop api
 ```
 
-Detiene solo la API Docker, manteniendo PostgreSQL y su volumen. No ejecutar `docker compose down -v`. En el contenedor no se ejecutan migraciones automáticamente: son una operación de despliegue separada. La migración inicial ya fue aplicada al PostgreSQL local en E2-0.3.
+Stops only the Docker API, keeping PostgreSQL and its volume. Do not run `docker compose down -v`. In the container, no migrations are automatically executed: they are a separate deployment operation. The initial migration has already been applied to the local PostgreSQL in E2-0.3.
 
 ### Tests con PostgreSQL real
 
-Desde `backend/` siguen funcionando las pruebas independientes de PostgreSQL:
+From `backend/` PostgreSQL independent tests continue to work:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -v
 ```
 
-Además, el archivo `tests/test_postgres_integration.py` incluye comprobaciones reales de conexión y del registro `alembic_version`. **No se activan por defecto** para evitar acceso accidental a bases de datos reales. Si querés ejecutarlas manualmente contra el PostgreSQL de desarrollo, desde `backend/`, con el contenedor `db` saludable y la migración aplicada:
+In addition, the file `tests/test_postgres_integration.py` includes actual connection and registration checks `alembic_version`. **Not enabled by default** to avoid accidental access to real databases. If you want to run them manually against the PostgreSQL development, from `backend/`, with the container `db` healthy and applied migration:
 
 ```powershell
 $env:RUN_DB_INTEGRATION = "1"
@@ -238,34 +236,34 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Esperamos **15 tests**: 13 de infraestructura + 2 de integración (los tests comerciales se agregarán en E2-1 y posteriores). No se crean ni alteran registros comerciales.
+We wait. **15 tests**: 13 infrastructure + 2 integration (commercial tests will be added in E2-1 and later). No commercial records created or altered.
 
 ### GitHub Actions
 
-El workflow `.github/workflows/plataforma-pyme-backend.yml` es independiente del frontend y se activa ante cambios en backend, Compose o el workflow. Usa Python 3.12 y 3.14 con PostgreSQL 16 efímero, migra desde cero, ejecuta `alembic check` y todos los tests con las integraciones habilitadas. Otro job construye la imagen Docker y verifica `/health` en un contenedor.
+El workflow `.github/workflows/plataforma-pyme-backend.yml` is independent of frontend and activated against changes in backend, Compose or workflow. Use Python 3.12 and 3.14 with PostgreSQL 16 ephemeral, migrate from scratch, run `alembic check` and all tests with enabled integrations. Another job builds Docker image and checks `/health` in a container.
 
-Las credenciales de CI son **ficticias y efímeras** (no las del equipo). El pipeline del frontend sigue independiente. Verificar resultados en la pestaña **Actions** antes de afirmar que CI está aprobado.
+IC credentials are **ficticides and ephemerals** The frontend pipeline remains independent. Check results in the tab **Actions** before stating that IC is approved.
 
-El backend dockerizado todavía no está desplegado públicamente. Una imagen construida y un pipeline exitoso **no sustituyen el despliegue requerido por el TP**.
+The dockered backend is not yet publicly displayed. A built image and a successful pipeline **do not replace the deployment required by TP**.
 
-## E2-1.1 — Primera tabla: identidad global de usuario
+## E2-1.1 — First table: Global user identity
 
-**Fuente funcional:** RF-01, CU-01 y CU-02; Documento 03, sección 3.1 y UML 03A.
+**Functional source:** RF-01, CU-01 and CU-02; Document 03, Section 3.1 and UML 03A.
 
-Se incorpora la entidad `User` con la tabla PostgreSQL `users`, sin usuarios DEMO persistidos, sin empresa obligatoria y sin roles globales. La migración `e2101_users` incluye:
+Entity is incorporated `User` with PostgreSQL table `users`, without DEMO users persisted, without a mandatory company and without global roles. `e2101_users` includes:
 
-- `id`: UUID único como clave primaria.
-- `email_normalizado`: correo único, no nulo, en minúsculas y sin espacios exteriores, hasta 254 caracteres. E2-1.2 completará la validación semántica del correo.
-- `password_hash`: no nulo, espacio para un hash de contraseña moderno. **El almacenamiento por sí solo no garantiza que sea un hash Argon2id**; E2-1.2 hará el hash y su verificación.
-- `display_name`: nombre de 2 a 70 caracteres; `contact_phone` opcional de máximo 30, según el perfil del frontend.
-- `status`: `ACTIVO` o `DESHABILITADO`, valor inicial `ACTIVO`.
-- `created_at` y `updated_at`: fechas con zona horaria. El ORM actualiza `updated_at` al modificar registros desde SQLAlchemy; aún no existe un trigger para modificaciones SQL externas.
+- `id`: UUID unique as primary key.
+- `email_normalizado`: single mail, not null, in lowercase and without outer spaces, up to 254 characters. E2-1.2 will complete the semantic validation of the mail.
+- `password_hash`: non-null, space for a modern password hash. **Storage alone does not guarantee it is an Argon2id hash**; E2-1.2 will do the hash and its verification.
+- `display_name`: name 2 to 70 characters; `contact_phone` optional maximum 30, depending on the frontend profile.
+- `status`: `ACTIVO` o `DESHABILITADO`, starting value `ACTIVO`.
+- `created_at` y `updated_at`: dates with time zone. The ORM updates `updated_at` when modifying records from SQLAlchemy; there is no trigger for external SQL modifications yet.
 
-Las iniciales del avatar pueden derivarse en la UI. Roles y permisos pertenecerán a la tabla `memberships` en un incremento posterior, nunca a `users`.
+The avatar initials can be derived from the IU. Roles and permissions will belong to the table `memberships` in a later increase, never to `users`.
 
-### Aplicar y verificar la migración
+### Apply and verify migration
 
-Desde `plataforma-pyme/`, con PostgreSQL Docker saludable:
+From `plataforma-pyme/`, con PostgreSQL Docker saludable:
 
 ```powershell
 git pull origin main
@@ -276,9 +274,9 @@ cd backend
 .\.venv\Scripts\python.exe -m alembic check
 ```
 
-Resultado esperado: `e2101_users (head)` y `No new upgrade operations detected.`
+Expected result: `e2101_users (head)` y `No new upgrade operations detected.`
 
-Las pruebas de integración realizan inserciones con correos aleatorios dentro de transacciones PostgreSQL que **siempre se revierten**. No dejan usuarios de prueba en la base:
+Integration tests perform random mail insertions within PostgreSQL transactions that **always reversed**. They do not leave test users on the base:
 
 ```powershell
 $env:RUN_DB_INTEGRATION = "1"
@@ -286,7 +284,7 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Para comprobar la revisión y la tabla, desde `plataforma-pyme/`:
+To check the review and table, from `plataforma-pyme/`:
 
 ```powershell
 cd ..
@@ -294,24 +292,24 @@ docker compose exec -T db psql -U pyme -d asistente_pyme -c "SELECT version_num 
 docker compose exec -T db psql -U pyme -d asistente_pyme -c "\d users"
 ```
 
-`\d users` es una orden interna de `psql`, no SQL ordinario; muestra columnas, restricciones e índices. Esperado: revisión `e2101_users`, tabla `users` y constraint `uq_users_email_normalizado`.
+`\d users` is an internal order of `psql`, not ordinary SQL; displays columns, restrictions and indices. Expected: revision `e2101_users`, tabla `users` y constraint `uq_users_email_normalizado`.
 
-**No ejecutes `alembic downgrade` sobre datos reales**, porque revertir esta migración borra la tabla de usuarios.
+**No ejecutes `alembic downgrade` on actual data**, because reversing this migration deletes the user table.
 
-### Alcance y siguiente paso
+### Scope and next step
 
-- **Hecho en código:** modelo, tabla, migración y pruebas de unicidad/normalización/estado y rollback.
-- **Pendiente de validar en el equipo:** aplicación de migración y tests de integración.
-- **E2-1.2 (después):** normalización de correo, Argon2id, registro y login reales, DTOs seguros y tests HTTP. La política concreta de credenciales se cerrará antes de programarla.
-- **E2-1.3:** empresa, rol por membresía y controles multiempresa. El UML 03A seguirá siendo conceptual hasta integrar estas entidades y sus relaciones.
+- **Done as code:** model, table, migration and tests of oneness/normalization/state and rollback.
+- **Pending validation on the computer:** migration application and integration tests.
+- **E2-1.2 (after):** mail standardization, Argon2id, real registration and login, secure DTOs and HTTP tests. The specific credentials policy will be closed before programming.
+- **E2-1.3:** The UML 03A will remain conceptual until these entities are integrated and their relationships.
 
-## E2-1.2A — Registro real de cuentas
+## E2-1.2A — Real account recording
 
-Se incorpora `POST /api/v1/auth/register`: crea un usuario global, sin empresa ni membresia, devolviendo HTTP 201 con campos publicos (`id`, `email`, `display_name`, `contact_phone`, `status`, `created_at`). No devuelve password ni hash. La direccion de correo se valida y normaliza; se exige ASCII por consistencia con el CHECK PostgreSQL, la unicidad queda garantizada por `uq_users_email_normalizado`. Un duplicado devuelve 409 con mensaje generico. Invalidos devuelven 422.
+It's incorporated. `POST /api/v1/auth/register`: creates a global user, without company or membership, returning HTTP 201 with public fields (`id`, `email`, `display_name`, `contact_phone`, `status`, `created_at`). It does not return password nor hash. The email address is validated and normalized; ASCII is required for consistency with CHECK PostgreSQL, the uniqueness is guaranteed by `uq_users_email_normalizado`. A duplicate returns 409 with generic message. Invalids return 422.
 
-Se utiliza Argon2id con sal aleatoria, memoria 64 MiB, 3 iteraciones y paralelismo 2. La politica inicial requiere frases de acceso de entre 15 y 128 caracteres. El registro **NO inicia sesion** ni otorga permisos empresariales. No se agregaron migraciones nuevas: se utiliza la tabla `users` ya validada en E2-1.1.
+Argon2id is used with random salt, 64 MiB memory, 3 iterations and parallelism 2. Initial policy requires 15 to 128 character access phrases. **NO session starts** no business permits. No new migrations added: the table is used `users` already validated in E2-1.1.
 
-Desde `plataforma-pyme/backend/`:
+From `plataforma-pyme/backend/`:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install -e ".[dev]"
@@ -320,26 +318,26 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Las pruebas HTTP contra PostgreSQL usan una transaccion exterior y SAVEPOINT: las altas de prueba se revierten siempre, sin guardar usuarios. GitHub Actions ejecuta las pruebas en una base efimera. Para probar manualmente Swagger, usar la API en `http://127.0.0.1:8000/docs` (Uvicorn Windows) o reconstruir la imagen Docker y abrir `http://127.0.0.1:18000/docs`.
+HTTP tests against PostgreSQL use an external transaction and SAVEPOINT: the test discharges are always reversed, without saving users. GitHub Actions runs the tests on an ephemeral base. To manually test Swagger, use API in `http://127.0.0.1:8000/docs` (Uvicorn Windows) or reconstruct Docker image and open `http://127.0.0.1:18000/docs`.
 
-**No enviar credenciales reales en mensajes ni archivos.** Una alta manual realizada fuera de tests **si persiste**. Para despliegue publico faltan HTTPS, controles antiabuso y antifuerza bruta, proteccion frente a enumeracion (409 revela duplicados), verificacion/recuperacion de email y gestion de sesiones. E2-1.2B incorporara login, expiracion y revocacion. No se modifico el frontend.
+**Do not send real credentials in messages or files.** A high manual performed outside tests **if it persists**. For public deployment HTTPS is missing, anti-abuse and anti-gross force controls, protection against enumeration (409 reveals duplicates), email verification/recuperation and session management. E2-1.2B will incorporate login, expiration and revocation. The frontend is not modified.
 
-## E2-1.2B — Sesiones personales
+## E2-1.2B — Personal sessions
 
-Nueva revisión Alembic `e212b_sessions`: tabla `auth_sessions` vinculada a `users` con FK, huella SHA-256 única del token, fechas de creación, vencimiento y revocación. No guarda el bearer en claro. El token aleatorio de 256 bits se emite **solo al iniciar sesión**; dura **12 horas**. Cada solicitud protegida consulta PostgreSQL para verificar sesión vigente y usuario activo.
+New review Alembic `e212b_sessions`: tabla `auth_sessions` linked to `users` with FK, unique SHA-256 token print, creation dates, expiration and revocation. Do not keep bearer clear. The 256-bit random token is issued **only when logging in**; hard **12 hours**. Each protected request consults PostgreSQL to verify current session and active user.
 
-| Ruta | Acción |
+| Path | Action |
 |---|---|
-| `POST /api/v1/auth/register` | Crea identidad global, sin empresa |
-| `POST /api/v1/auth/login` | Comprueba contraseña Argon2id y emite Bearer opaco |
-| `GET /api/v1/auth/me` | Identidad pública, requiere Bearer |
-| `POST /api/v1/auth/logout` | Revoca solo sesión actual; HTTP 204 |
+| `POST /api/v1/auth/register` | Creates global identity, without a company |
+| `POST /api/v1/auth/login` | Check Argon2id password and emits Opaque Bearer |
+| `GET /api/v1/auth/me` | Public identity, requires Bearer |
+| `POST /api/v1/auth/logout` | Revocation of current session only; HTTP 204 |
 
-Credenciales erróneas, usuario inexistente o deshabilitado, sesión vencida o revocada retornan HTTP 401 genérico, sin revelar qué condición ocurrió. Los permisos por empresa siguen **pendientes**, y el login personal no concede acceso comercial.
+Error credentials, no user or disabled, expired or revoked session return HTTP 401 generic, without revealing what condition occurred. **outstanding**and the personal login does not grant commercial access.
 
 ### Probarlo en PowerShell
 
-Desde `plataforma-pyme/`, con PostgreSQL Docker iniciado:
+From `plataforma-pyme/`, with PostgreSQL Docker started:
 
 ```powershell
 git pull origin main
@@ -352,29 +350,29 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Las pruebas de integración usan PostgreSQL real bajo transacciones exteriores reversibles; no dejan usuarios ni sesiones de prueba. Desde `plataforma-pyme/`, reconstruí solo la API Docker: `docker compose --profile api up -d --build api`. Consultá Swagger en `http://127.0.0.1:18000/docs`. No pegues tokens ni contraseñas reales en el chat, logs o capturas.
+Integration tests use real PostgreSQL under reversible external transactions; they leave no users or test sessions. `plataforma-pyme/`I just rebuilt the Docker API: `docker compose --profile api up -d --build api`. Consult Swagger at `http://127.0.0.1:18000/docs`. Do not paste tokens or real passwords in chat, logs or captures.
 
-**Limitaciones para producción:** falta HTTPS público, límites de intentos antiabuso, protección frente a enumeración, recuperación y confirmación de correo, almacenamiento seguro de credenciales en frontend y estrategia de cookies/CSRF si se adopta después. No exponer públicamente esta API sin resolver estas medidas; el navegador React DEMO permanece sin integración.
+**Production limitations:** HTTPS public missing, limits of attempts against abuse, protection from enumeration, recovery and mail confirmation, secure frontend credentials storage and cookie/CSRF strategy if adopted later. Do not publicly expose this API without resolving these measures; the React DEMO browser remains unintegrated.
 
-## E2-1.3A — Entidades Empresa y Membresía (modelo real)
+## E2-1.3A — Enterprise and Membership Entities (actual model)
 
-**Referencias:** Documento 01 RF-02; Documento 02 CU-03 y CU-12; Documento 03 UML 03A y sección 3.1; Documento 04 autorización por tenant.
+**References:** Document 01 RF-02; Document 02 CU-03 and CU-12; Document 03 UML 03A and section 3.1; Document 04 authorization per tenant.
 
-La revisión Alembic `e213a_business_members` crea:
+The Alembic Review `e213a_business_members` crea:
 
-- `businesses`: UUID, nombre (2–120), rubro/categoría (2–120), actividad `PRODUCTOS/SERVICIOS/MIXTO`, fundador histórico `founder_user_id` (FK a `users`), estado `ACTIVA/SUSPENDIDA` y fechas.
-- `memberships`: UUID, `business_id` (FK), `user_id` (FK), rol `TITULAR_ADMINISTRATIVO/ADMINISTRADOR/ENCARGADO/TRABAJADOR`, estado `ACTIVA/INACTIVA`, puesto opcional y fechas.
-- `UNIQUE (business_id,user_id)`: una única membresía por persona y empresa.
-- Índice único **parcial** `uq_memberships_one_active_owner`: a lo sumo una membresía activa con rol `TITULAR_ADMINISTRATIVO` por empresa. No bloquea a los demás administradores ni a los colaboradores.
-- Índice `ix_memberships_user_id`: consultas eficientes de empresas asociadas a una cuenta.
+- `businesses`: UUID, name (2–120), category/category (2–120), activity `PRODUCTOS/SERVICIOS/MIXTO`historical founder `founder_user_id` (FK a `users`), status `ACTIVA/SUSPENDIDA` and dates.
+- `memberships`: UUID, `business_id` (FK), `user_id` (FK), rol `TITULAR_ADMINISTRATIVO/ADMINISTRADOR/ENCARGADO/TRABAJADOR`status `ACTIVA/INACTIVA`optional position and dates.
+- `UNIQUE (business_id,user_id)`: a single membership per person and company.
+- Single index **partial** `uq_memberships_one_active_owner`: at most an active membership with role `TITULAR_ADMINISTRATIVO` by company. It does not block other administrators or collaborators.
+- Contents `ix_memberships_user_id`: efficient queries from companies associated with an account.
 
-**Decisión para evitar inconsistencia:** el fundador histórico vive en `businesses.founder_user_id`; el titular administrativo vigente se **deriva de la Membresía activa** con rol `TITULAR_ADMINISTRATIVO`. No hay `administrative_owner_user_id` redundante. No significa titularidad legal ni participación societaria. La transferencia de titularidad se pospone, como los documentos actuales.
+**Decision to avoid inconsistency:** the historical founder lives in `businesses.founder_user_id`; the current administrative holder is **derived from Active Membership** with role `TITULAR_ADMINISTRATIVO`There's no `administrative_owner_user_id` redundant. It does not mean legal title or corporate participation. The transfer of ownership is postponed, as are the current documents.
 
-**Límite de la base de datos:** el índice parcial garantiza **como máximo uno**; no garantiza que exista al menos uno. E2-1.3B implementará `crearEmpresa` en **una sola transacción**, con empresa y membresía inicial del fundador. Ningún endpoint de este corte crea aún empresas, membresías o invitaciones. No se crea ubicación ni stock por defecto; los roles serán autorizados en backend por permiso y tenant en los siguientes incrementos, no por confiar en el frontend.
+**Database boundary:** the partial index guarantees **not more than one**; does not guarantee that there is at least one. E2-1.3B will implement `crearEmpresa` en **one transaction**, with company and initial membership of the founder. No endpoint in this court still creates companies, memberships or invitations. No location or stock is created by default; roles will be authorized in backend by permission and tenant in the following increments, not by trusting the frontend.
 
-### Comprobación en Windows
+### Windows Check
 
-Desde `plataforma-pyme/`, manteniendo PostgreSQL saludable:
+From `plataforma-pyme/`keeping PostgreSQL healthy:
 
 ```powershell
 git pull origin main
@@ -387,9 +385,9 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Se espera la revisión `e213a_business_members (head)` y ninguna diferencia Alembic. Las pruebas usan transacciones PostgreSQL y SAVEPOINTs que se revierten; **no dejan empresas ni usuarios de demostración**.
+Review expected `e213a_business_members (head)` and no difference Alembic. Tests use PostgreSQL and SAVEPOINT transactions that are reversed; **no companies or demonstration users left**.
 
-Comprobación de tablas desde `plataforma-pyme/`:
+Checking tables from `plataforma-pyme/`:
 
 ```powershell
 cd ..
@@ -398,29 +396,29 @@ docker compose exec -T db psql -U pyme -d asistente_pyme -c "\d businesses"
 docker compose exec -T db psql -U pyme -d asistente_pyme -c "\d memberships"
 ```
 
-No ejecutar un `downgrade` con datos reales. Este corte **no modifica React, no crea rutas de negocios y no requiere reconstruir la imagen API Docker**: solamente cambia el esquema y los tests de backend. El backend Docker seguirá funcionando con `/health` y `/ready`.
+No ejecutar un `downgrade` with real data. This cut **does not modify React, does not create business paths and does not require rebuilding the Docker API image**: only changes the schema and backend tests. The Docker backend will continue to work with `/health` y `/ready`.
 
-**Próximo incremento E2-1.3B:** comando autenticado de creación de empresa y membresía inicial, en una transacción; listado de empresas propias, sin acceso cruzado. Después E2-1.3C: roles/permisos, invitaciones si se mantienen en alcance; actualización posterior del UML 03A con el código validado.
+**Next increase E2-1.3B:** Authenticated command of business creation and initial membership, in a transaction; listing of own companies, without cross-access. Then E2-1.3C: roles/permissions, invitations if kept in scope; subsequent update of UML 03A with validated code.
 
-## E2-1.3B — CU-03: crear empresas y ver únicamente las propias
+## E2-1.3B — CU-03: creating businesses and seeing only their own
 
-**Implementado:** tres endpoints protegidos con Bearer en `/api/v1/businesses`:
+**Implemented:** tres endpoints protegidos con Bearer en `/api/v1/businesses`:
 
-| Método | Ruta | Respuesta |
+| Method | Path | Response |
 |---|---|---|
-| POST | `/api/v1/businesses` | 201 primera creación; 200 reintento idéntico; 409 misma clave con datos diferentes |
-| GET | `/api/v1/businesses` | 200 con arreglo de empresas donde la sesión tiene membresía activa |
-| GET | `/api/v1/businesses/{business_id}` | 200 si es miembro activo; 404 si es ajena, inexistente o sin membresía activa |
+| POST | `/api/v1/businesses` | 201 first creation; 200 identical retry; 409 same key with different data |
+| GET | `/api/v1/businesses` | 200 according to companies where the session has active membership |
+| GET | `/api/v1/businesses/{business_id}` | 200 if active member; 404 if non-existent or no active member |
 
-La creación recibe nombre, rubro `category` y tipo de actividad `PRODUCTOS/SERVICIOS/MIXTO`. Debe llevar un encabezado **`Idempotency-Key` con un UUID v4 diferente por comando nuevo**. En reintentos HTTP del *mismo* comando se reutiliza la misma clave y el mismo contenido. No se permite enviar `founder_user_id`, `role` ni `user_id` desde el cliente: el servidor los deriva de la identidad real.
+Creation is named, heading `category` and type of activity `PRODUCTOS/SERVICIOS/MIXTO`. Must carry a header **`Idempotency-Key` with a different UUID v4 by new command**. In HTTP retrying of the *same* command, the same key and content are reused. Sending is not allowed `founder_user_id`, `role` ni `user_id` from the client: the server derives them from the real identity.
 
-El servicio comprueba nuevamente la cuenta y sesión activas **con bloqueo de filas dentro de la misma transacción** y luego crea la Empresa, la Membresía inicial `TITULAR_ADMINISTRATIVO/ACTIVA` y el registro idempotente; confirma **una sola vez**. Ante falla revierte las tres escrituras. El registro `business_creation_requests` tiene clave primaria compuesta `(actor_user_id, idempotency_key)`, hash canónico de petición y referencia a la empresa creada. No se elimina con TTL: evita duplicación ante reintentos posteriores.
+The service checks the active account and session again **with rows locked within the same transaction** and then create the Enterprise, initial Membership `TITULAR_ADMINISTRATIVO/ACTIVA` and the idepotent record; confirms **once only**. Before failure reverses the three scriptures. The record `business_creation_requests` has composite primary key `(actor_user_id, idempotency_key)`, canonical hash of request and reference to the company created. It is not eliminated with TTL: avoids duplication before subsequent retry.
 
-No se generan ubicaciones, catálogo, stock ni socios legales. Los nombres de empresas **no son globalmente únicos**; una razón social y un identificador tributario verificable se definirán más adelante si el negocio lo exige. El listado incluye empresas `SUSPENDIDA` para consulta; el bloqueo de operaciones comerciales se implementará cuando existan servicios empresariales. Para evitar enumeración, el GET por ID retorna **404 tanto para empresa ajena como inexistente**.
+No locations, catalog, stock or legal partners are generated. **are not unique globally**; a business name and verifiable tax identifier will be defined later if the business requires it. `SUSPENDIDA` for consultation; the business transaction blocking will be implemented when there are business services. To avoid enumeration, the GET per ID returns **404 for both non-member and non-existent companies**.
 
-### Verificar en tu equipo
+### Check on your computer
 
-Desde `plataforma-pyme/` con Docker PostgreSQL activo:
+From `plataforma-pyme/` con Docker PostgreSQL activo:
 
 ```powershell
 git pull origin main
@@ -433,27 +431,27 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-La revisión esperada es `e213b_business_creation (head)`. Las pruebas de integración crean usuarios/empresas dentro de una transacción externa y SAVEPOINTs; **se revierten al finalizar** y no dejan registros persistidos.
+The expected revision is `e213b_business_creation (head)`. Integration tests create users/enterprises within an external transaction and SAVEPOINTs; **are reversed at the end** and they leave no persistent records.
 
-Después, desde `plataforma-pyme/`, reconstruí la API Docker con `docker compose --profile api up -d --build api`, comprobá `docker compose ps` y abrí `http://127.0.0.1:18000/docs`. Las rutas nuevas aparecerán bajo `empresas`. La prueba manual de POST desde Swagger **sí guarda la empresa de verdad**, por lo que las pruebas automatizadas son suficientes para este corte.
+Then, from `plataforma-pyme/`I rebuilt the Docker API with `docker compose --profile api up -d --build api`Check. `docker compose ps` And I opened `http://127.0.0.1:18000/docs`. New routes will appear under `empresas`. The POST manual test from Swagger **Yes, it keeps the real company.**So automated testing is enough for this cut.
 
-**Actualización del registro histórico E2-1.3C:** permisos empresariales, emisión/aceptación y gestión de equipo ya están implementados; siguen pendientes controles específicos para los futuros comandos comerciales. React seguirá en modo DEMO hasta disponer de contratos HTTP probados. Los modelos UML 03A se ajustarán sobre el código confirmado.
+**Update of historical record E2-1.3C:** Business permissions, issuance/acceptance and equipment management are already implemented; specific controls for future commercial commands remain pending. React will continue in DEMO mode until proven HTTP contracts are available. UML 03A models will be adjusted over the confirmed code.
 
-### Corrección de comparación Alembic en E2-1.3B
+### Alembic comparison correction in E2-1.3B
 
-La clave primaria compuesta de `business_creation_requests(actor_user_id, idempotency_key)` **ya garantiza la unicidad del reintento por persona**. La declaración ORM contenía además un `UniqueConstraint` sobre exactamente esas mismas columnas. PostgreSQL 16 descarta el índice duplicado, pero Alembic lo veía en los metadatos y detectaba una supuesta operación pendiente `add_constraint`.
+The primary key composed of `business_creation_requests(actor_user_id, idempotency_key)` **already guarantees the uniqueness of retry per person**The ORM declaration also contained a `UniqueConstraint` PostgreSQL 16 discards the duplicate index, but Alembic saw it in the metadata and detected an alleged pending operation `add_constraint`.
 
-Se eliminó **solamente el UNIQUE redundante del modelo ORM** y se ajustó la prueba del modelo; no se modificó el esquema efectivo, no se alteraron contraseñas ni se generó una nueva migración. La migración histórica E2-1.3B permanece inmutable porque ya fue aplicada. La unicidad real sigue cubierta por la PK `pk_business_creation_requests`, y la referencia `business_id` conserva su UNIQUE independiente. Después de `git pull`, `python -m alembic check` debería indicar `No new upgrade operations detected.`. Si aún falla, inspeccionar `\\d business_creation_requests` antes de modificar la base de datos. No usar `alembic stamp`, `downgrade` ni SQL manual para esta corrección.
+Deleted **only redundant UNIQUE of the ORM model** and the model test was adjusted; the effective scheme was not modified, passwords were not altered or a new migration was generated. Historical migration E2-1.3B remains immutable because it has already been applied. Real uniqueness is still covered by PK `pk_business_creation_requests`, and the reference `business_id` preserves its independent UNIQUE. `git pull`, `python -m alembic check` should indicate `No new upgrade operations detected.`If it still fails, inspect `\\d business_creation_requests` before modifying the database. Do not use `alembic stamp`, `downgrade` nor SQL manual for this correction.
 
-## E2-1.3C.1 — Matriz inicial de permisos y actualización documental
+## E2-1.3C.1 — Initial permit matrix and documentary update
 
-`app/modules/businesses/permissions.py` define las capacidades `business.view`, `business.profile.edit`, `members.invite` y `members.manage`. La decisión depende de **rol de la membresía, estado de la membresía, estado de la empresa y permiso solicitado**. Los roles inexistentes y estados desconocidos se deniegan; empresa suspendida es de solo lectura para miembros activos. Esta política es pura y cuenta con tests; **todavía NO se invoca desde nuevos endpoints de edición o invitación**.
+`app/modules/businesses/permissions.py` defines capacities `business.view`, `business.profile.edit`, `members.invite` y `members.manage`. The decision depends on **membership role, membership status, company status and requested permission**. Non-existent roles and unknown states are denied; suspended company is read only for active members. This policy is pure and has tests; **NOT yet invoked from new edit or invite endpoints**.
 
-Se corrigió también la recuperación de carreras de idempotencia en `BusinessService.create`: PostgreSQL puede informar la violación de **`pk_business_creation_requests`**, no la restricción `uq_business_creation_actor_key` que se eliminó por ser redundante. La ruta conserva reintentos sin duplicar empresas y se incorporó un test unitario específico.
+The recovery of Idempotency races in the `BusinessService.create`: PostgreSQL may report violation of **`pk_business_creation_requests`**, not the restriction `uq_business_creation_actor_key` The route retains retrying without duplicating companies and a specific unit test was incorporated.
 
-Documentos académicos actualizados: 01 v0.3, 02 v0.4, 03 v0.4 y 04 v0.5; nuevo Documento 05 v0.1 con trazabilidad real y matriz de permisos. **No hay migración en este corte**, no se altera el frontend ni se modifican datos reales.
+Updated academic documents: 01 v0.3, 02 v0.4, 03 v0.4 and 04 v0.5; new Document 05 v0.1 with real traceability and permission matrix. **No migration in this court**, the frontend is not altered or actual data is modified.
 
-Desde `plataforma-pyme/`:
+From `plataforma-pyme/`:
 
 ```powershell
 git pull origin main
@@ -465,17 +463,17 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-La versión sigue siendo `e213b_business_creation (head)`; Alembic no debe detectar operaciones pendientes. Se espera conservar los **80 tests existentes** y aprobar además los nuevos casos de matriz RBAC y recuperación de idempotencia. No hace falta reconstruir Docker porque no hay un cambio HTTP efectivo en C.1. **E2-1.3C.2** conectará esta política a una operación real autorizada por rol, con pruebas de 401/403/404/409 y pertenencia a la empresa.
+The version remains `e213b_business_creation (head)`; Alembic should not detect pending operations. **80 tests existentes** and also approve new cases of RBAC matrix and idempotency recovery. Docker does not need to be rebuilt because there is no effective HTTP change in C.1. **E2-1.3C.2** connect this policy to a real operation authorized by role, with proofs of 401/403/404/409 and belonging to the company.
 
-## E2-1.3C.2 — Editar datos de empresa con autorización efectiva
+## E2-1.3C.2 — Edit company data with effective authorisation
 
-**Nuevo endpoint:** `PATCH /api/v1/businesses/{business_id}`. Recibe exclusivamente campos opcionales `name`, `category` y `activity_kind`. Al menos un campo obligatorio por petición; `null`, campos extra, nombre/rubro inválido o `activity_kind` fuera de `PRODUCTOS/SERVICIOS/MIXTO` producen HTTP 422. Los campos omitidos no se modifican.
+**Nuevo endpoint:** `PATCH /api/v1/businesses/{business_id}`. Receives only optional fields `name`, `category` y `activity_kind`. At least one mandatory field per request; `null`, extra fields, invalid name/rub or `activity_kind` outside `PRODUCTOS/SERVICIOS/MIXTO` produce HTTP 422. The omitted fields are not modified.
 
-**Permisos reales:** el servicio revalida el usuario y token de sesión con bloqueo SQL, luego obtiene y bloquea `Business` y `Membership` del mismo tenant con miembro `ACTIVA`, y aplica `BusinessPermission.EDIT_PROFILE`. Titular administrativo y administrador pueden editar; encargado y trabajador, no. Códigos: 401 sesión inválida, 404 empresa ajena/inexistente/membresía inactiva, 403 rol sin permiso, 409 empresa suspendida con rol apto, 200 edición exitosa. Ninguna solicitud puede alterar estado, fundador, membresía o rol. Una única transacción `flush/commit`, con rollback ante excepción; respuesta tipo `BusinessView`.
+**Real permits:** the service revalidates user and session token with SQL lock, then gets and blocks `Business` y `Membership` of the same tenant with member `ACTIVA`, and applies `BusinessPermission.EDIT_PROFILE`. Administrative and administrative owner can edit; in charge and worker, no. Codes: 401 invalid session, 404 non-existent/non-existent company/inactive membership, 403 unlicensed role, 409 suspended company with apt role, 200 successful edition. No request can alter status, founder, membership or role. `flush/commit`, with rollback before exception; type response `BusinessView`.
 
-**Pruebas nuevas:** `tests/test_business_update_schemas.py`, `tests/test_business_update_http.py`, `tests/test_business_update_integration.py`. Se usan la misma base PostgreSQL y transacciones reversibles de los cortes anteriores: no crear empresas manuales desde Swagger para verificar. Los datos de prueba no deben quedar persistidos.
+**New tests:** `tests/test_business_update_schemas.py`, `tests/test_business_update_http.py`, `tests/test_business_update_integration.py`. The same PostgreSQL database and reversible transactions from the above cuts are used: do not create manual companies from Swagger to verify. Test data should not be persisted.
 
-**Validación en Windows:** desde `plataforma-pyme/`, ejecutar:
+**Validation on Windows:** from `plataforma-pyme/`, ejecutar:
 
 ```powershell
 git pull origin main
@@ -487,19 +485,19 @@ $env:RUN_DB_INTEGRATION = "1"
 Remove-Item Env:\RUN_DB_INTEGRATION
 ```
 
-Esperado: misma revisión `e213b_business_creation (head)`, `No new upgrade operations detected` y suite completa aprobada. **No afirmar una cifra final hasta ejecutarla**. Para ver PATCH en Swagger de Docker, desde `plataforma-pyme/` volver a construir **solo la API** con `docker compose --profile api up -d --build api`, comprobar `docker compose ps`, `Invoke-RestMethod http://127.0.0.1:18000/ready` y abrir `http://127.0.0.1:18000/docs`. Esta actualización no necesita nuevas tablas ni migraciones.
+Expected: same revision `e213b_business_creation (head)`, `No new upgrade operations detected` y suite completa aprobada. **Do not affirm a final figure until it is executed**. To see PATCH in Docker Swagger, from `plataforma-pyme/` volver a construir **only API** con `docker compose --profile api up -d --build api`, check `docker compose ps`, `Invoke-RestMethod http://127.0.0.1:18000/ready` and open `http://127.0.0.1:18000/docs`. This update does not require new tables or migrations.
 
-**Documentación:** 01 v0.4, 02 v0.5, 03 v0.5, 04 v0.6, 05 v0.2, índice académico. La etapa siguiente dentro de E2-1 será C.3 (emisión de invitaciones), seguida de C.4 (aceptación/gestión de membresías). La hoja formal de auditoría para tu compañero se creará al cerrar el bloque funcional grande **E2-1**, no al completar este subpaso.
+**Documentation:** 01 v0.4, 02 v0.5, 03 v0.5, 04 v0.6, 05 v0.2, academic index. The next step within E2-1 will be C.3 (invitation issue), followed by C.4 (acceptance/membership management). The formal audit sheet for your partner will be created when you close the large functional block **E2-1**, no al completar este subpaso.
 
-## E2-1.3C.3 — Invitaciones empresariales: emitir sin conceder acceso
+## E2-1.3C.3 — Business invitations: issuing without granting access
 
-**Nueva migración:** `e213c3_invitations` crea `business_invitations` (correos normalizados, token SHA-256, rol, estado, vencimiento, empresa e invitador). `POST /api/v1/businesses/{business_id}/invitations` responde 201 y devuelve el token secreto **una sola vez**. El token no se almacena en claro. Solamente invita a `ENCARGADO` o `TRABAJADOR`, y solo titulares/administradores pueden emitir. No hay aceptación, envío de emails ni cambios a `memberships` en este paso.
+**New migration:** `e213c3_invitations` crea `business_invitations` (standardized mails, token SHA-256, role, status, maturity, company and guest). `POST /api/v1/businesses/{business_id}/invitations` answers 201 and returns the secret token **once only**. Token is not stored in clear. It only invites `ENCARGADO` o `TRABAJADOR`, and only holders/administrators can issue. No acceptance, emailing or changes to `memberships` at this step.
 
-Permisos y errores: 401 sesión inválida, 403 miembro sin permiso, 404 empresa ajena/sin membresía activa, 409 suspendida/miembro ya activo/invitación vigente, 422 body incorrecto. Una invitación pendiente a email normalizado en una empresa se impide mediante índice parcial UNIQUE. Si venció, se marca `EXPIRADA` antes de generar una nueva. Se realiza validación y escritura en una transacción; el correo invitado no necesita tener cuenta global todavía.
+Permissions and errors: 401 session invalid, 403 member without permission, 404 company outside/without active membership, 409 suspended/member already active/invitation in force, 422 body incorrect. An invitation pending to normalized email in a company is prevented by partial index UNIQUE. If it expired, it is marked `EXPIRADA` before generating a new one. Validation and writing is done in a transaction; guest mail does not need to have global account yet.
 
-**CI:** GitHub Actions validó migración, `alembic check`, Pytest real con PostgreSQL 16 en Python 3.12/3.14 y Docker. **Falta ejecutar en Windows local** después de aplicar migraciones nuevas.
+**CI:** GitHub Actions validated migration, `alembic check`, Pytest real con PostgreSQL 16 en Python 3.12/3.14 y Docker. **Running missing on local Windows** after applying new migrations.
 
-Desde `plataforma-pyme/` con Docker DB saludable:
+From `plataforma-pyme/` con Docker DB saludable:
 
 ```powershell
 git pull origin main
@@ -516,17 +514,17 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-Esperado: `e213c3_invitations (head)`, sin deriva Alembic, suite aprobada y API/DB `healthy`. En Swagger `http://127.0.0.1:18000/docs` aparecerá el nuevo POST. **Advertencia:** usar Swagger para emitir invitación crea un registro real; las pruebas de integración revertibles son suficientes para este corte. No exponer tokens de invitación en capturas, logs ni documentación.
+Waited: `e213c3_invitations (head)`, no drifting Alembic, approved suite and API/DB `healthy`. En Swagger `http://127.0.0.1:18000/docs` the new POST will appear. **Warning:** Using Swagger to issue invitation creates a real record; the revertible integration tests are sufficient for this cut. Do not display invite tokens in captures, logs or documentation.
 
-**Documentación sincronizada:** 01 v0.5, 02 v0.6, 03 v0.6, 04 v0.7, 05 v0.3 e índice académico. **Siguiente:** C.4 aceptar y gestionar membresías; solo al cerrar E2-1 completo se genera el informe de traspaso a auditoría de tu compañero.
+**Synchronised documentation:** 01 v0.5, 02 v0.6, 03 v0.6, 04 v0.7, 05 v0.3 and academic index. **Next:** C.4 accept and manage memberships; only when you close E2-1 complete is your partner's transfer to audit report generated.
 
-## E2-1 C.4a — Aceptar invitación y habilitar membresía real
+## E2-1 C.4a — Accept invitation and enable actual membership
 
-**Contrato:** `POST /api/v1/invitations/accept` con Bearer del destinatario y JSON `{"invitation_token":"..."}`. Solo la cuenta cuyo correo normalizado coincide con la invitación puede consumirla. El servicio revalida usuario/sesión, comprueba huella de token y vencimiento, bloquea invitación/empresa/membresía, crea o reactiva una sola Membresía operativa, marca ACEPTADA y guarda usuario/fecha en **una transacción**. Responde 200 con `BusinessView`; 401 sesión inválida, 404 token inexistente/ajeno, 409 vencido/consumido, empresa suspendida o pertenencia ya activa, 422 cuerpo inválido. El cliente no elige empresa/rol al aceptar. El estado/rol histórico del titular administrativo inactivo está protegido. No hay token secreto en los DTO de respuesta de aceptación.
+**Contract:** `POST /api/v1/invitations/accept` with Bearer of the recipient and JSON `{"invitation_token":"..."}`. Only the account whose standard mail matches the invitation can be consumed. The service revalidates user/session, checks token and expiration footprint, blocks invitation/company/membership, creates or reactivates a single Operating Membership, ACCEPTED mark and saves user/date on **a transaction**. Respond 200 with `BusinessView`; 401 invalid session, 404 token non-existent/alien, 409 expired/consumed, company suspended or already active membership, 422 invalid body. The client does not choose company/rol when accepting. The historical status/rol of the inactive administrative holder is protected. There is no secret token in the acceptance response DTOs.
 
-**Nueva migración:** `e213c4_acceptance` agrega auditoría de aceptación a `business_invitations` (`accepted_by_user_id`, `accepted_at` y CHECK de coherencia con estado ACEPTADA). No modificar las migraciones aplicadas anteriormente. Las pruebas `test_business_acceptance_schema.py` y `test_business_acceptance_integration.py` comprueban receptor, cuenta creada después de la invitación, token ajeno/duplicado/vencido, empresa suspendida, rol, membresía reactivada, aislamiento multiempresa, sesión revocada y rollback después de un fallo. GitHub Actions aprobó migración, Pytest y Docker; falta validación local.
+**New migration:** `e213c4_acceptance` adds acceptance audit to `business_invitations` (`accepted_by_user_id`, `accepted_at` and CHECK of consistency with ACCEPTED state). Do not modify previously applied migrations. `test_business_acceptance_schema.py` y `test_business_acceptance_integration.py` They check receiver, account created after the invitation, token alien/duplicate/win, company suspended, role, reactivated membership, multi-company isolation, revoked session and rollback after a bug. GitHub Actions approved migration, Pytest and Docker; local validation is missing.
 
-**Verificar desde `plataforma-pyme/`** con Docker PostgreSQL saludable:
+**Check from `plataforma-pyme/`** con Docker PostgreSQL saludable:
 
 ```powershell
 git pull origin main
@@ -543,22 +541,22 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-La comprobación local posterior confirmó `e213c4_acceptance (head)`, Alembic sin nuevas operaciones y **195 pruebas aprobadas** al cierre C.4b. Una consulta a `/ready` inmediatamente después de reconstruir puede fallar mientras el contenedor muestra `health: starting`; repetir tras arrancar. No es necesario emitir invitaciones reales desde Swagger, porque las pruebas PostgreSQL crean y revierten los datos. La administración básica de miembros se completó en C.4b; cancelación/rechazo de invitaciones, validación de email y entrega segura para producción continúan pendientes.
+The subsequent local check confirmed `e213c4_acceptance (head)`, Alembic without new operations and **195 tests approved** at closing C.4b. A consultation to `/ready` immediately after rebuilding may fail while the container displays `health: starting`; repeat after boot. No actual invitations from Swagger are required, because PostgreSQL tests create and reverse data. Basic member administration was completed in C.4b; cancellation/rejection of invitations, email validation and secure delivery for production remain pending.
 
-**Documentos de aquel corte histórico C.4a:** 01 v0.6, 02 v0.7, 03 v0.7, 04 v0.8 y 05 v0.4. **Versiones al cerrar C.5:** 01 v0.8, 02 v0.9, 03 v0.9, 04 v1.0 y 05 v0.6; UML 03A conciliado. Sin cambios de frontend.
+**Documents of that historical court C.4a:** 01 v0.6, 02 v0.7, 03 v0.7, 04 v0.8 y 05 v0.4. **Versions on closing C.5:** 01 v0.8, 02 v0.9, 03 v0.9, 04 v1.0 and 05 v0.6; UML 03A reconciled. No frontend changes.
 
-## E2-1 C.4b — Directorio de miembros y administración por titular
+## E2-1 C.4b — Membership and administration directory per holder
 
-Se publicaron dos rutas de equipo:
+Two team routes were published:
 
-- **GET `/api/v1/businesses/{business_id}/memberships`**: titular/administrador activo (permiso `members.read`) obtienen miembros del mismo tenant con identidad profesional mínima (`id`, `user_id`, `email`, `display_name`, `role`, `status`, `job_title`), incluidos los INACTIVOS. Encargado/trabajador no pueden leer ese directorio.
-- **PATCH `/api/v1/businesses/{business_id}/memberships/{membership_id}`**: solo titular administrativo vigente (permiso `members.manage`) puede cambiar `role` (`ADMINISTRADOR`, `ENCARGADO`, `TRABAJADOR`) y/o `status` (`ACTIVA`, `INACTIVA`). Solo membresías operativas de ese tenant. No permite cambiar al titular activo ni a un titular histórico inactivo, ni transferir titularidad, ni actualizar user_id o job_title.
+- **GET `/api/v1/businesses/{business_id}/memberships`**: holder/active administrator (permission `members.read`) obtain members of the same tenant with minimum professional identity (`id`, `user_id`, `email`, `display_name`, `role`, `status`, `job_title`), including INACTIVES. Maintainer/worker cannot read that directory.
+- **PATCH `/api/v1/businesses/{business_id}/memberships/{membership_id}`**: only valid administrative holder (permission `members.manage`) can change `role` (`ADMINISTRADOR`, `ENCARGADO`, `TRABAJADOR`) y/o `status` (`ACTIVA`, `INACTIVA`) Only operational memberships of that tenant. It does not allow to change the active holder or an inactive historical owner, transfer title, or update user_id or job_title.
 
-Ambas operaciones revalidan usuario, token, empresa y membresía del actor en la DB. La edición bloquea también la membresía objetivo y confirma una transacción única; no afecta otros negocios ni el perfil personal global. Errores: 401 auth, 403 rol insuficiente, 404 tenant/target ajeno, 409 empresa suspendida o titular protegido, 422 body de PATCH inválido. **No hay migración nueva**; Alembic sigue en `e213c4_acceptance`.
+Both operations revalidate user, token, company and actor membership in the DB. Editing also blocks objective membership and confirms a unique transaction; it does not affect other businesses or the global personal profile. Errors: 401 auth, 403 insufficient role, 404 tenant/target alien, 409 suspended company or protected holder, 422 body of invalid PATCH. **No new migration**; Alembic continues in `e213c4_acceptance`.
 
-**Pruebas nuevas:** `test_business_team_schemas.py` (DTOs, OpenAPI y auth) y `test_business_team_integration.py` (RBAC, aislamiento, cambios de rol/estado, autodegradación imposible y rollback), más ampliación de `test_business_permissions.py`. CI aprobó Pytest con PostgreSQL Python 3.12/3.14 y Docker. Ejecutar las comprobaciones locales antes de dar por cerrado C.4b.
+**New tests:** `test_business_team_schemas.py` (DTOs, OpenAPI y auth) y `test_business_team_integration.py` (RBAC, isolation, role/state changes, impossible self-degradation and rollback), plus enlargement of `test_business_permissions.py`. CI approved Pytest with PostgreSQL Python 3.12/3.14 and Docker. Run local checks before calling C.4b closed.
 
-Desde `plataforma-pyme/`:
+From `plataforma-pyme/`:
 
 ```powershell
 git pull origin main
@@ -574,83 +572,19 @@ docker compose ps
 Invoke-RestMethod http://127.0.0.1:18000/ready
 ```
 
-No se alteró React ni ningún proyecto hermano. **C.5 consolidó el UML 03A y los documentos 01–05.** La hoja de auditoría del compañero se preparará aparte, después de la sincronización y antes de RF-03.
+React was not altered or any brother project. **C.5 consolidated UML 03A and documents 01–05.** The partner's audit sheet will be prepared separately, after synchronization and before RF-03.
 
-## E2-1 C.5 — Evidencia y alcance del cierre documental (08/11/2026)
+## E2-1 C.5 — Evidence and scope of the documentary closure (08/11/2026)
 
-**Base funcional:** commit `8cd167481291b78628da0d038c7414cc26e3a311`, con CI 3/3. En Windows, el desarrollador ejecutó las pruebas de integración PostgreSQL con `RUN_DB_INTEGRATION=1`, resultado `195 passed in 23.86s`. `alembic current` devolvió `e213c4_acceptance (head)` y `alembic check` no encontró operaciones nuevas. `docker compose --profile api up -d --build --wait api` concluyó con API/DB `healthy` y `/ready` `ready`/`ok`.
+**Functional basis:** commit `8cd167481291b78628da0d038c7414cc26e3a311`, with CI 3/3. In Windows, the developer executed PostgreSQL integration tests with `RUN_DB_INTEGRATION=1`, result `195 passed in 23.86s`. `alembic current` returned `e213c4_acceptance (head)` y `alembic check` He didn't find any new operations. `docker compose --profile api up -d --build --wait api` concluded with API/DB `healthy` y `/ready` `ready`/`ok`.
 
-**C.5:** actualizar documentos 01–05, índices y 03A (PUML, SVG, guía). **No modifica** código, tests, migraciones, React, 03B ni 03C, ni implica reejecutar CI por el commit documental. Tras este cierre viene una **hoja de revisión independiente** para el compañero; después, RF-03 Ubicaciones.
+**C.5:** update documents 01–05, indexes and 03A (PUML, SVG, guide). **Not amended** code, tests, migrations, React, 03B or 03C, nor does it imply a re-executing IC for the documentary commit. **independent review sheet** for the companion; then RF-03 Locations.
 
-## E2-2 A — Modelo de ubicaciones y validación incremental
+## E2-2 A — Location model and incremental validation
 
-**E2-2 A — persistencia de Ubicaciones (08/11/2026):** se publicó `Location`/`locations` con FK obligatoria `business_id → businesses.id` (`RESTRICT`), seis tipos, `can_sell`/`can_store` independientes, campos de referencia opcionales, `ACTIVA/PAUSADA`, `is_primary`, índice parcial que permite como máximo una principal activa por tenant y CHECK que impide principal pausada. Migración aditiva `20261108_0008_business_locations.py` (`e22a_locations`, descendiente de `e213c4_acceptance`). La empresa continúa iniciándose **sin ubicaciones**. **No hay todavía rutas HTTP de ubicaciones**, ni inventario/compra/venta conectado, ni permisos de ubicación; esos cambios pertenecen a E2-2 B/C y bloques siguientes. El CI del código del corte se verificó en `300fa6f` (GitHub Actions run 42491816481): resultado `success`. La validación local Windows del nuevo corte aún se requiere; los 195 tests anteriores correspondían a E2-1.
+**E2-2 A — Persistence of Locations (08/11/2026):** Published `Location`/`locations` with FK required `business_id → businesses.id` (`RESTRICT`), six types, `can_sell`/`can_store` independent, optional reference fields, `ACTIVA/PAUSADA`, `is_primary`, partial index that allows at most a main active per tenant and CHECK that prevents main paused. Additive migration `20261108_0008_business_locations.py` (`e22a_locations`, descendant of `e213c4_acceptance`) The company continues to start **no locations**. **No HTTP Location Routes yet**, no inventory/purchase/connected sale, no location permits; these changes belong to E2-2 B/C and subsequent blocks. The IC of the cut code was verified in `300fa6f` (GitHub Actions run 42491816481): result `success`. Local Windows validation of the new cut is still required; the previous 195 tests corresponded to E2-1.
 
-**Desde `plataforma-pyme/backend/` luego de `git pull`:**
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m alembic current
-.\.venv\Scripts\python.exe -m alembic check
-$env:RUN_DB_INTEGRATION = "1"
-try {
-  .\.venv\Scripts\python.exe -m pytest -q
-} finally {
-  Remove-Item Env:\RUN_DB_INTEGRATION -ErrorAction SilentlyContinue
-}
-```
-
-El head esperado ahora es **`e22b_location_casa (head)`** (el head anterior era `e22a_locations`). La migración agrega únicamente la tabla `locations`; no crea registros por defecto ni elimina datos anteriores. Los tests de integridad usan transacciones exteriores y SAVEPOINT. **No correr contra una base productiva; no ejecutar `downgrade`, `stamp` ni `docker compose down -v`.** El test de control de versión Alembic se ajustó al head nuevo, sin modificar las reglas de E2-1. La siguiente etapa implementará API/DTO/servicios/autorización; no atribuir CRUD a este incremento.
-
-
-### E2-2 A.1 — CASA y nuevo head (08/11/2026)
-
-`CASA` se añade a los tipos admitidos; las capacidades `can_sell`/`can_store` continúan independientes. Migración aditiva `e22b_location_casa` tras `e22a_locations`, sin cambios a datos anteriores, y reversión protegida cuando existen ubicaciones CASA. **CI backend** (run): **217 pruebas aprobadas, Python 3.12/3.14, Alembic `e22b_location_casa (head)` sin deriva, Docker 3/3**. **CI frontend** (run): **2/2 trabajos exitosos, incluidos build/lint y E2E**. Resultado Windows precedente de E2-2 A: 212 pruebas; **la migración adicional CASA y los 217 tests todavía deben reproducirse localmente**. Sin endpoints de ubicación hasta E2-2 B/C y sin conexión React–API.
-
-**Comando seguro desde `plataforma-pyme/backend/`:** primero `python -m alembic upgrade head`, después `python -m alembic current`, `python -m alembic check`, y `RUN_DB_INTEGRATION=1` con `pytest -q` en una DB local conocida. No ejecutar downgrade sobre datos reales.
-
-## E2-2 B — Creación y lectura de ubicaciones por API (corte parcial)
-
-**Estado E2-2 B (08/11/2026):** se publicaron tres rutas reales para ubicaciones bajo `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` lista 200, `GET /{location_id}` 200). La creación valida DTO sin campos protegidos, revalida identidad/sesión, bloquea la empresa y membresía del actor, exige tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, y confirma una única transacción. Una primera ubicación recibe `is_primary=true`; las posteriores no la reemplazan. Los miembros activos de cualquier rol reconocido pueden consultar las ubicaciones propias, incluso con empresa suspendida; una empresa suspendida no permite crear. Empresa ajena o membresía inactiva devuelve 404; rol sin permiso 403; sesión inválida 401; empresa suspendida al crear 409; cuerpo incorrecto 422. `CASA` y Google Maps HTTPS validado están incluidos. **No hay PATCH/DELETE, ni pausa/reactivación, cambio de principal, asignación individual de personal o consumo comercial de ubicaciones todavía.** La DEMO permanece independiente. Backend sin migración nueva respecto de `e22b_location_casa`.
-
-**Evidencia de CI:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 pruebas aprobadas**, `e22b_location_casa (head)` y Alembic sin deriva. La salida local de Windows aportada previamente para **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **fue validado en Windows con `277 passed in 31.22s`**, Alembic sin deriva y Docker saludable; E2-2 C agrega nuevas pruebas por verificar localmente. La revisión de E2-1 por el compañero sigue anclada en el commit entregado.
-
-**Verificación local sugerida tras `git pull` desde `plataforma-pyme/backend/`:** ejecutar `.\\.venv\\Scripts\\python.exe -m alembic current`, `... -m alembic check` y Pytest con `RUN_DB_INTEGRATION=1` en la base de desarrollo ya migrada. Head esperado `e22b_location_casa (head)`; no existen migraciones E2-2 B. **No ejecutar rollback de versión, downgrade ni borrado de volúmenes.** El contenedor Docker debe reconstruirse para usar las rutas nuevas. Exponer /docs sólo en entorno de desarrollo.
-
-## E2-2 C — Administración de ubicaciones (sin nueva migración)
-
-**E2-2 C (08/11/2026) — operaciones reales sobre ubicaciones:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` permite editar únicamente `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (campos opcionales en el cuerpo, pero se rechazan `null`, cuerpos vacíos, valores inválidos y campos protegidos). `PATCH /{location_id}/status` recibe solo `ACTIVA` o `PAUSADA`: pausar revoca `is_primary` en la misma transacción y reactivar **no** recupera la titularidad de ubicación automáticamente. `PUT /{location_id}/primary` designa una ubicación `ACTIVA`, desmarca la anterior y marca la elegida dentro del **mismo tenant y de una transacción única**, serializada por bloqueo de empresa y protegida con el índice SQL `uq_locations_one_active_primary`. La operación sobre una ubicación ya principal no realiza cambios adicionales. Titular/administrador con membresía ACTIVA pueden administrar; encargado/trabajador solo consultan. Empresa `SUSPENDIDA` admite lectura pero no cambios; recurso ajeno/inexistente 404, rol sin permiso 403, sesión inválida 401, estado incompatible 409 y cuerpo inválido 422. No se habilitó DELETE ni se crearon tablas nuevas.
-
-**Evidencia:** código funcional `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 exitoso**, 325/325 pruebas en Python 3.12 y 3.14 con PostgreSQL, Alembic `e22b_location_casa (head)` sin deriva y Docker correcto. Windows había validado previamente E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **Los 325 tests todavía deben reproducirse en Windows para dar por cerrado localmente E2-2 C.** La integración React/API, la asignación individual de miembros a ubicaciones, control de existencias al quitar `can_store`, recepciones/ventas y gestión de cajas operativas son trabajos futuros; no se atribuyen a este incremento. E2-1 y UML 03B/03C no fueron modificados.
-
-**Validación Windows:** desde `plataforma-pyme/backend/`, ejecutar `alembic current`, `alembic check`, y `RUN_DB_INTEGRATION=1 pytest -q` con el mismo intérprete `.venv` de cortes previos. Reconstruir con Docker Compose y consultar `/ready`. Head esperado `e22b_location_casa (head)`, total esperado **325 pruebas**, pendiente de confirmación por el desarrollador. No tocar la rama de revisión de E2-1, ni ejecutar downgrades ni borrar volúmenes.
-
-## E2-2 D — Asignaciones operativas por sede
-
-**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` y FK compuesta hacia `Location` y `Membership` del MISMO tenant. Migración aditiva `e22d_assignments`, índice único auxiliar de ubicación `(business_id,id)`. Estados administrativos `ACTIVA`/`REVOCADA`; fecha `revoked_at`, sin borrado físico. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` lista asignaciones de una sede (titular/administrador); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` recibe JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` y activa/revoca idempotentemente. Solo se activa una membresía ENCARGADO/TRABAJADOR activa hacia ubicación ACTIVA; revocar permite sede pausada o miembro inactivo. Empresa SUSPENDIDA solo lectura. La política pura `can_operate_at_location` obliga a tenant, membresía, sede y capacidad `SELL/STORE` vigentes, además de asignación ACTIVA a encargados/trabajadores. **La política todavía no se consume en compras, inventario ni ventas**, fuera de este corte. Sin nuevas funciones de E2-1 ni conexión del frontend.
-
-**CI comprobado para código funcional `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 y 3.14, 3/3 trabajos aprobados**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Windows local E2-2 D está pendiente:** la última ejecución aportada corresponde a E2-2 C, 325 passed. No atribuir al último commit documental ejecución propia de tests.
-
-**Comprobación local con PostgreSQL de desarrollo (PowerShell desde `backend/`):**
-
-```powershell
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe -m alembic current
-.\.venv\Scripts\python.exe -m alembic check
-$env:RUN_DB_INTEGRATION = "1"
-try { .\.venv\Scripts\python.exe -m pytest -q }
-finally { Remove-Item Env:\RUN_DB_INTEGRATION -ErrorAction SilentlyContinue }
-```
-
-Esperado: `e22d_assignments (head)` y **371 passed**. La migración agrega tabla e índice único, sin tocar datos anteriores. No usar `stamp`, `downgrade`, `down -v` ni comandos destructivos. Reconstruir contenedores y verificar `/ready` tras sincronizar.
-
-## E2-3 A — Catálogo: ORM y migración, sin API HTTP todavía
-
-**Corte E2-3 A (08/11/2026), persistencia parcial de RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` obligatorio, FK a Empresa (`RESTRICT`) y par UNIQUE `(business_id,id)` para futuras FK comerciales del mismo tenant. Cuatro clases de ficha según la DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (bienes físicos) y `SERVICIO` (conceptualmente un servicio). Un servicio obliga unidad `SERVICIO`; un bien físico la prohíbe. Unidades físicas: `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Se almacenan nombre, clave normalizada `name_key`, categoría, SKU opcional, descripción, observaciones internas, estado `ACTIVO`/`INACTIVO`, condición `sellable`, `price_cents` y `reference_cost_cents` opcionales. Importes enteros BIGINT entre 0 y 99.999.999.999 centavos, sin Float. Dos restricciones independientes impiden repetir `name_key` y SKU no nulo **dentro de la empresa**, también en fichas inactivas; distintos tenants pueden reutilizarlos. En E2-3 B el servicio deberá calcular `name_key` de forma canónica (NFKC, espacios colapsados, equivalencia de mayúsculas) y normalizar SKU a mayúsculas **antes de insertar/editar**: SQL impone la unicidad de las claves guardadas y el formato de SKU, pero no deriva `name_key` automáticamente. Crear ficha no crea ubicación, stock, compras, ventas ni movimientos.
-
-**Evidencia:** corte de código/pruebas `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 pruebas aprobadas** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` sin cambios pendientes de Alembic. **Validación local de Windows pendiente para E2-3 A**; los 371 tests anteriores corresponden al cierre de E2-2. **No existen rutas HTTP de Catálogo** en este corte; CRUD, RBAC de catálogo, SKU/name normalization de entrada y protección de historias comerciales se implementarán en E2-3 B/C/D. No hay integración React API ni revisión independiente de E2-3 todavía. No se modificó E2-1 ni E2-2 ni frontend DEMO.
-
-**Validación local segura** desde `plataforma-pyme/backend/` con PostgreSQL 16 de desarrollo (no producción):
+**From `plataforma-pyme/backend/` after `git pull`:**
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
@@ -664,59 +598,38 @@ try {
 }
 ```
 
-Esperado **`e23a_catalog (head)`** y **407 passed**. Es una tabla nueva sin datos ni stock. Evitar `downgrade`, `stamp` y eliminación de volúmenes.
+The expected head now is **`e22b_location_casa (head)`** (the previous head was `e22a_locations`). Migration only adds the table `locations`; does not create default records or delete previous data. Integrity tests use external transactions and SAVEPOINT. **Do not run against a productive base; do not execute `downgrade`, `stamp` ni `docker compose down -v`.** The Alembic version control test was adjusted to the new head, without modifying E2-1 rules. The next step will implement API/DTO/services/authorization; do not attribute CRUD to this increase.
 
-## E2-3 B — API inicial de Catálogo
 
-**E2-3 B — API real de Catálogo (RF-04/CU-05, 08/11/2026):** cuatro rutas bajo `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 alta), `GET /catalog` (200 lista con `offset>=0`, `1<=limit<=500`; por defecto `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 edición parcial). Cada operación requiere Bearer válido, revalidación de sesión, usuario y membresía de la empresa solicitada. Titular/administrador pueden leer y escribir; encargado/trabajador con membresía activa solo leen; empresa SUSPENDIDA solo lectura; empresa o artículo ajenos/inexistentes 404. El servidor normaliza los nombres Unicode NFKC, colapsa espacios y genera `name_key` con `casefold`; normaliza SKU a mayúsculas ASCII y convierte SKU vacío en NULL. PostgreSQL conserva la unicidad por empresa de `name_key`/SKU incluso con fichas INACTIVO, y la API traduce esa colisión a 409. Datos inválidos o campos protegidos (id, tenant, status, clave derivada) reciben 422. Tipo SERVICIO exige unidad SERVICIO; ninguna otra clasificación puede usarla. Son válidos `price_cents` y `reference_cost_cents` NULL o enteros desde 0 hasta 99.999.999.999. El PATCH permite eliminar SKU/precio/costo con NULL, pero no editar estado. La ficha conserva su `status` y timestamps SQL. La creación no crea ubicación, saldo de stock, compras, ventas ni movimientos.
+### E2-2 A.1 — CASA and new head (08/11/2026)
 
-**Límites explícitos:** E2-3 B no expone todavía `PATCH /status` ni borrado físico (se evaluarán en E2-3 C). No existe integración del frontend React con esta API; no se implementan recepción, ventas, snapshots comerciales ni protección de edición de unidad con historia, pues esos módulos son posteriores. Los tests nuevos comprueban permisos, rollback de duplicados, SKU/nombres normalizados, aislamiento multiempresa, lectura bajo suspensión y fallas 401/403/404/409/422. **Evidencia CI E2-3 B:** GitHub Actions 42506409757 finalizó **3/3 trabajos exitosos**, **498 pruebas aprobadas** tanto en Python 3.12 (53.96s) como Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` sin operaciones, imagen Docker/liveness aprobado. Código funcional validado: `35ff901855397c024cee50fa590c6c05a7f04cfe`. El CI anterior `42506050141` había detectado dos fallos de mapeo HTTP en PATCH con tipo/unidad incompatible; se corrigieron y ambos casos pasan ahora. **La validación Windows local de E2-3 B sigue pendiente**; el último resultado local confirmado es 407/407 de E2-3 A.
+`CASA` is added to the rates accepted; `can_sell`/`can_store` still independent. Additive migration `e22b_location_casa` after `e22a_locations`, no changes to previous data, and protected reversal when CASA locations exist. **CI backend** (run): **217 tests approved, Python 3.12.3.14, Alembic `e22b_location_casa (head)` sin deriva, Docker 3/3**. **CI frontend** (run): **2/2 successful jobs including build/lint and E2E**. Previous Windows result of E2-2 A: 212 tests; **Additional migration CASA and 217 tests must still be replicated locally**. No location endpoints up to E2-2 B/C and no React–API connection.
 
-**Validación:** desde `plataforma-pyme/backend/`, Alembic sigue en `e23a_catalog (head)`; ejecutar Pytest con `RUN_DB_INTEGRATION=1` en una base segura migrada. Swagger tendrá las cuatro rutas de `/api/v1/businesses/{business_id}/catalog`. Reconstruir Docker antes de probarlas localmente. E2-3 C incorporará una ruta propia para activar/desactivar, no un campo mutable en el PATCH actual.
+**Secure command from `plataforma-pyme/backend/`:** first `python -m alembic upgrade head`, later `python -m alembic current`, `python -m alembic check`, y `RUN_DB_INTEGRATION=1` con `pytest -q` in a known local DB. Do not run downgrade on real data.
 
-## E2-3 C — Estado ACTIVO/INACTIVO
+## E2-2 B — Creation and reading of locations by API (partial cut)
 
-**E2-3 C (08/11/2026):** se implementó `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` con cuerpo exclusivo `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, validación estricta y rechazo de atributos extra (422). La ruta revalida sesión y membresía y exige titular/administrador de empresa ACTIVA para escribir (401/403/404/409 según caso). El artículo se bloquea dentro del tenant y se cambia de estado en una sola transacción. El cambio repetido es idempotente, sin alterar `updated_at`. El artículo inactivo continúa visible en GET/listados, con UUID, nombre y SKU reservados incluso ante altas duplicadas; no hay DELETE ni stock ficticio. El PATCH genérico mantiene `status` protegido. Esta funcionalidad tampoco modifica el campo independiente `sellable`.
+**State E2-2 B (08/11/2026):** Three real routes were published for low locations `/api/v1/businesses/{business_id}/locations` (`POST` 201, `GET` ready 200, `GET /{location_id}` 200). The creation valid DTO without protected fields, revalidates identity/session, blocks the company and membership of the actor, demands tenant `ACTIVA` y rol `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, and confirms a single transaction. A first location receives `is_primary=true`; the subsequent ones do not replace it. Active members of any recognized role can consult their own locations, even with suspended company; a suspended company does not allow to create. A third party or inactive membership returns 404; role without permission 403; invalid session 401; company suspended when creating 409; incorrect body 422. `CASA` and Google Maps HTTPS validated are included. **There is no PATCH/DELETE, no pause/reactivation, change of principal, individual staff assignment or commercial consumption of locations yet.** DEMO remains independent. Backend without new migration from `e22b_location_casa`.
 
-**Dependencias:** las futuras compras/ventas deben prohibir nuevos movimientos con fichas INACTIVO y conservar snapshots históricos reales. Todavía no hay operaciones comerciales ni frontend integrado; por lo tanto, tampoco existe una restricción real de cambio de unidad por transacciones anteriores. Ninguna migración nueva: se reutiliza CHECK `ACTIVO/INACTIVO` de `e23a_catalog`.
+**Evidence of IC:** commit funcional `bdd2c84653dafb976c8cd6b49d8c2d577cc345de`; GitHub Actions E2-2 B **3/3** (Python 3.12 y 3.14 con PostgreSQL, Docker), **277 approved tests**, `e22b_location_casa (head)` and Alembic without drift. The local Windows output provided previously for **E2-2 A.1** fue **217 passed in 23.90s**. Posteriormente E2-2 B **was validated in Windows with `277 passed in 31.22s`**, Alembic without drift and healthy Docker; E2-2 C adds new tests to be verified locally. The peer review of E2-1 remains anchored in the commit delivered.
 
-**Pruebas:** CI E2-3 C **3/3 trabajos aprobados**, **527 passed** en Python 3.12 y 3.14 con PostgreSQL, `e23a_catalog (head)`, `alembic check` sin operaciones y Docker correcto; código `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pendiente**. El commit documental posterior no equivale a otra ejecución CI.
+**Suggested local verification after `git pull` from `plataforma-pyme/backend/`:** ejecutar `.\\.venv\\Scripts\\python.exe -m alembic current`, `... -m alembic check` and Pytest with `RUN_DB_INTEGRATION=1` in the development base already migrated. Head expected `e22b_location_casa (head)`; there are no E2-2 B migrations. **Do not run version rollback, downgrade or volume deletion.** The Docker container must be rebuilt to use new routes. Exhibit /docs only in development environment.
 
-**Verificar en Windows:** `alembic current`, `alembic check`, `RUN_DB_INTEGRATION=1` con Pytest (**527 passed** esperados), reconstruir Docker y consultar `/ready`. No ejecutar migraciones destructivas.
+## E2-2 C — Location management (no new migration)
 
-## E2-3 D — Integridad y regresión del catálogo
+**E2-2 C (08/11/2026) — actual location operations:** `PATCH /api/v1/businesses/{business_id}/locations/{location_id}` allows editing only `name`, `kind`, `address`, `map_url`, `can_sell` y `can_store` (optional fields in the body, but rejected `null`, empty bodies, invalid values and protected fields). `PATCH /{location_id}/status` receive only `ACTIVA` o `PAUSADA`: pause revoke `is_primary` in the same transaction and reactivate **no** recovers location ownership automatically. `PUT /{location_id}/primary` designates a location `ACTIVA`, unmarks the previous one and marks the one chosen within the **and a single transaction**, serialized by company lock and protected with the SQL index `uq_locations_one_active_primary`. The operation on an already main location does not make any additional changes. Owner/Manager with Active Membership can manage; maintainer/worker only consult. `SUSPENDIDA` read but no change; other/non-existent resource 404, role without permission 403, invalid session 401, incompatible status 409 and invalid body 422. DELETE was not enabled nor new tables were created.
 
-**E2-3 D (08/11/2026):** se reforzó el Catálogo existente, **sin agregar tablas ni migraciones**. Los tests nuevos verifican equivalencias Unicode NFKC + `casefold` en nombres, SKU NFKC y mayúsculas ASCII, rechazo de controles y formas inválidas, desbordamiento de `name_key` por expansión Unicode, importes enteros estrictos (sin booleanos ni decimales), diferenciación entre `PATCH` con campo omitido y con `null` explícito, incompatibilidad SERVICIO/unidad física, campos protegidos de `/status`, colisiones de nombre/SKU incluso en fichas INACTIVO, independencia entre dos empresas del mismo usuario, recuperación de la sesión tras 409, y rollback provocado después de `flush` tanto en alta como en edición. Se añadió un límite máximo a `offset` de catálogo (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): excederlo produce 422 antes de ejecutar SQL, manteniendo `limit` de 1 a 500 y `offset` no negativo. Los cinco endpoints de Catálogo conservan sus contratos y permisos empresariales; no se crea stock.
+**Evidence:** functional code `7abafd8208965cd99b0116e02ffc5240d23f218f`, GitHub Actions E2-2 C **3/3 successful**, 325/225 Python 3.12 and 3.14 tests with PostgreSQL, Alembic `e22b_location_casa (head)` no drift and correct Docker. Windows had previously validated E2-2 B (`277 passed in 31.22s`, `/ready` = `ready`/`ok`). **The 325 tests must still be played on Windows to close locally E2-2 C.** React/API integration, individual assignment of members to locations, inventory control when removing `can_store`, receptions/sales and operating fund management are future works; they are not attributed to this increase. E2-1 and UML 03B/03C were not modified.
 
-**Alcance y límites:** las UNIQUE por `(business_id,name_key)` y `(business_id,sku)` y las transacciones/bloqueos existentes protegen ante colisiones; los tests ejercen duplicados y recuperaciones reales en PostgreSQL, **pero no son una prueba simultánea de carga/concurrencia con múltiples conexiones independientes**. Esta última queda registrada como verificación futura antes de producción. No hay aún compras, ventas, movimientos ni snapshots, por lo que no se puede comprobar una regla de cambio de unidad/estado con historial comercial real. `sellable` no sustituye `status`. No conectar frontend DEMO ni E2-1/E2-2 para este corte.
+**Windows Validation:** from `plataforma-pyme/backend/`, ejecutar `alembic current`, `alembic check`, y `RUN_DB_INTEGRATION=1 pytest -q` with the same interpreter `.venv` Rebuild with Docker Compose and consult `/ready`Head expected `e22b_location_casa (head)`, total expected **325 tests**, pending confirmation by the developer. Do not touch the review branch of E2-1, nor run downgrades or delete volumes.
 
-**Evidencia CI del código D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 trabajos aprobados**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` sin diferencias. **Validación local Windows E2-3 C:** 527 passed in 59.60s, contenedores saludables y `/ready` correcto. **Validación local Windows E2-3 D:** todavía pendiente. No confundir CI remoto con pruebas ejecutadas en la computadora del autor.
+## E2-2 D — Operational allocations by headquarters
 
-**Para Windows, desde `plataforma-pyme/backend/`:** `alembic current`, `alembic check` y Pytest con `RUN_DB_INTEGRATION=1` (**580 passed esperados**). Después reconstruir Docker, comprobar `docker compose ps` y `/ready`. No hay migraciones nuevas ni es necesario modificar E2-1/E2-2.
+**E2-2 D AS-IMPLEMENTED:** `LocationAssignment` con clave `(business_id,location_id,user_id)` and FK composed towards `Location` y `Membership` of the same tenant. Additive migration `e22d_assignments`, single location index `(business_id,id)`. Administrative States `ACTIVA`/`REVOCADA`; date `revoked_at`No physical deletion. `GET /api/v1/businesses/{business_id}/locations/{location_id}/assignments` list of assignments from a headquarters (holder/manager); `PUT /api/v1/businesses/{business_id}/locations/{location_id}/assignments/{membership_id}` receive JSON `{"status":"ACTIVA"}` o `{"status":"REVOCADA"}` and actively/revolves. Only one member is activated ENTRY/TRAWER active towards the active location; revoke allows for paused headquarters or inactive member. Company SUSPENDED read only. Pure policy `can_operate_at_location` obliging tenant, membership, headquarters and capacity `SELL/STORE` in force, besides the active assignment to managers/workers. **The policy is not yet consumed in purchases, inventory or sales**, outside this cut. No new E2-1 functions or frontend connection.
 
-## E2-3 E — Cierre de Catálogo
+**IC checked for functional code `3cd7bce71d951218e8c77da58d147e78fb0d426e`:** run 42497556047, **371/371 tests Python 3.12 and 3.14, 3/3 jobs approved**, Alembic `e22d_assignments (head)` sin deriva y Docker saludable. **Local Windows E2-2 D is pending:** the last execution contributed corresponds to E2-2 C, 325 passed. Do not attribute to the last commit documentary own execution of tests.
 
-**E2-3 E cerrado funcional y documentalmente (08/11/2026):** catálogo `CatalogItem` con migración `e23a_catalog`, cinco rutas REST reales, verificación de tenant/RBAC y estado ACTIVO/INACTIVO. **580 passed en Windows (66.45s)**, Alembic sin deriva, API y DB Docker healthy, `/ready` ready/ok. CI D 3/3 y 580 tests en Python 3.12/3.14 sobre `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`. UML 03A v0.7 (PUML, guía y SVG editorial) actualizado; Proveedor TO-BE, 03B/03C preservados. No hay aún compras, inventario, ventas ni integración React/API. **Pendiente: entrega formal al revisor, sin merge de PR**. Los estados A/B/C/D más abajo corresponden a cortes históricos.
-
-**Validación D ya reportada desde Windows:** `580 passed in 66.45s`, Alembic `e23a_catalog (head)` sin operaciones y `/ready` `ready/ok`. Un commit solo documental no obliga a repetir el conjunto de pruebas. La auditoría independiente deberá distinguir pruebas propias de pruebas suministradas.
-
-## E2-4 — Referencia de validación y entrega consolidada (corte 08/11/2026)
-
-- **API:** cinco operaciones de Proveedores, tres de Compras, recepción `POST /purchases/{purchase_id}/receive`, consulta de recibo y consultas de `inventory/balances` / `inventory/movements`.
-- **Migraciones aditivas:** `e24a_suppliers` → `e24c_purchases` → `e24d_purchase_hash` → `e24e_receipt_stock`.
-- **Pruebas:** commit `4f88416141c09a82e744990b1aee8c00b9f31dfd`; `20 passed` archivo afectado y `797 passed` suite total en Windows sobre DB poblada; CI run 42530739959, tres trabajos exitosos.
-- **QA manual:** compra de concepto libre 12505 centavos; compra física de 10 unidades por 1000000 centavos; depósito real activo; recepción 201, replay 200, segundo intento con clave distinta 409, saldo 10000 milésimas/versión 1 y un único movimiento de entrada. [Detalle exacto, sin claves ni tokens](../docs/revisiones/E2-4_CIERRE/02_BITACORA_PRUEBAS_SWAGGER.md).
-- **Pendientes no implementados:** cancelación por API, parcial 1:N, devoluciones, ajustes, transferencias, ventas, multimoneda, permisos DB de inmutabilidad, separación completa de DB de tests, frontend React integrado, producción. [Trazabilidad](../docs/revisiones/E2-4_CIERRE/05_TRAZABILIDAD_Y_PENDIENTES.md).
-
-**Cómo revalidar:** seguir [guía segura E2-4](../docs/revisiones/E2-4_CIERRE/07_GUIA_REPRODUCCION_SEGURA.md). **No borrar volúmenes** para ejecutar pruebas ni reutilizar identificadores históricos como nuevas claves.
-
-## E2-5 A — Preparar trazabilidad de transferencias y ajustes
-
-Esta entrega suma `inventory_operations` (tipo, artículo, unidad, cantidad, origen/destino, motivo, actor e idempotencia por empresa), y amplía `stock_movements` para representar `TRASLADO_{SALIDA,ENTRADA}`, `AJUSTE_{SALIDA,ENTRADA}` y `STOCK_INICIAL` con deltas firmados, sin romper `COMPRA_RECEPCION`. Solo **modelo, migración y pruebas de integridad SQL**; no expone nuevos comandos ni modifica saldos del usuario. El endpoint de movimientos E2-4 aún está especializado en recepciones; se extenderá al publicar operaciones manuales en E2-5 B/C.
-
-Migración: `e25a_inventory_ops` (tras `e24e_receipt_stock`). Ruta y controles: [E2-5 A](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md).
-
-Desde `plataforma-pyme/backend`:
+**Local Check with PostgreSQL Development (PowerShell from `backend/`):**
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
@@ -727,4 +640,89 @@ try { .\.venv\Scripts\python.exe -m pytest -q }
 finally { Remove-Item Env:\RUN_DB_INTEGRATION -ErrorAction SilentlyContinue }
 ```
 
-**No usar downgrade, stamp o eliminación del volumen para validar**: la compra/recepción manual QA de E2-4 debe conservarse.
+Waited: `e22d_assignments (head)` y **371 passed**. Migration adds table and single index, without touching previous data. Do not use `stamp`, `downgrade`, `down -v` or destructive commands. Rebuild containers and verify `/ready` After syncing.
+
+## E2-3 A — Catalog: ORM and migration, no HTTP API yet
+
+**Cut E2-3 A (08/11/2026), partial persistence of RF-04/CU-05:** clase SQLAlchemy `CatalogItem` y tabla `catalog_items` con `business_id` Compulsory, FK to Company (`RESTRICT`) y par UNIQUE `(business_id,id)` for future commercial FK of the same tenant. Four kinds of tab according to DEMO: `ELABORADO`, `REVENTA`, `INSUMO` (physical property) and `SERVICIO` (conceptually a service). `SERVICIO`; physical property prohibits it. `UNIDAD`, `GRAMO`, `KILOGRAMO`, `MILILITRO`, `LITRO`, `PAQUETE`, `CAJA`. Name, standardized key is stored `name_key`, category, optional SKU, description, internal observations, status `ACTIVO`/`INACTIVO`, condition `sellable`, `price_cents` y `reference_cost_cents` optional. Whole amounts BIGINT between 0 and 99,999,999.999 cents, without Float. Two independent restrictions prevent repeat `name_key` and SKU not null **within the company**, also in inactive chips; different tenants can reuse them. In E2-3 B the service must calculate `name_key` canonically (NFKC, collapsed spaces, capital equivalence) and normalize SKU to uppercase **before inserting/editing**: SQL imposes the uniqueness of saved keys and SKU format, but does not derive `name_key` Create tab does not create location, stock, purchases, sales or movements.
+
+**Evidence:** code/test cut `79c2071f4e5192be95d75c78d5b1e9a75492a645`; GitHub Actions E2-3 A **3/3**, **407 approved tests** en Python 3.12 y Python 3.14 con PostgreSQL 16, Docker liveness aprobado y `e23a_catalog (head)` no pending changes from Alembic. **Local Windows Validation Pending for E2-3 A**; the above 371 tests correspond to the closure of E2-2. **No HTTP Catalog paths** in this cut; CRUD, catalog RBAC, SKU/name standardization of entry and protection of business stories will be implemented in E2-3 B/C/D. No React API integration or independent review of E2-3 yet. No change to E2-1 or E2-2 or DEMO frontend.
+
+**Secure local validation** from `plataforma-pyme/backend/` with PostgreSQL 16 development (non-production):
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic current
+.\.venv\Scripts\python.exe -m alembic check
+$env:RUN_DB_INTEGRATION = "1"
+try {
+  .\.venv\Scripts\python.exe -m pytest -q
+} finally {
+  Remove-Item Env:\RUN_DB_INTEGRATION -ErrorAction SilentlyContinue
+}
+```
+
+Expected **`e23a_catalog (head)`** y **407 passed**. It is a new table without data or stock. Avoid `downgrade`, `stamp` and elimination of volumes.
+
+## E2-3 B — Initial Catalog API
+
+**E2-3 B — Real Catalogue API (RF-04/CU-05, 08/11/2026):** four low routes `/api/v1/businesses/{business_id}/catalog`: `POST /catalog` (201 high), `GET /catalog` (200 list with `offset>=0`, `1<=limit<=500`; default `limit=100`), `GET /catalog/{item_id}` (200 detalle) y `PATCH /catalog/{item_id}` (200 part edition). Each operation requires valid Bearer, session revalidation, user and membership of the requested company. Owner/manager can read and write; maintainer/worker with active membership only read; company SUSPENDED read only; enterprise or article other/non-existent 404. The server normalizes Unicode NFKC names, collapses spaces and generates `name_key` con `casefold`; normalizes SKU to ASCII capital letters and converts empty SKU into NULL. PostgreSQL retains the uniqueness per company of `name_key`/SKU even with INACTIVE tabs, and the API translates that collision to 409. Invalid data or protected fields (id, tenant, status, derivative key) receive 422. SERVICE type requires SERVICE unit; no other classification can use it. They are valid `price_cents` y `reference_cost_cents` NULL or integers from 0 to 99.999.999.999. The PATCH allows you to remove SKU/price/cost with NULL, but do not edit status. `status` and timestamps SQL. Creation does not create location, stock balance, purchases, sales or movements.
+
+**Explicit limits:** E2-3 B not yet exposed `PATCH /status` No integration of frontend React with this API; no reception, sales, commercial snapshots or history unit editing protection are implemented as these modules are later. New tests check permissions, duplicate rollbacks, SKU/standard names, multi-company isolation, suspended reading and fault 401/403/404/409/422. **Evidence CI E2-3 B:** GitHub Actions 42506409757 finished **3/3 successful jobs**, **498 approved tests** both in Python 3.12 (53.96s) and Python 3.14 (50.12s), PostgreSQL 16, `e23a_catalog (head)` y `alembic check` No operations, Docker/liveness image approved. Validated functional code: `35ff901855397c024cee50fa590c6c05a7f04cfe`. Previous IQ `42506050141` had detected two HTTP mapping failures in PATCH with incompatible type/unit; they were corrected and both cases are now happening. **Local Windows validation of E2-3 B is still pending**; the last confirmed local result is 407/407 of E2-3 A.
+
+**Validation:** from `plataforma-pyme/backend/`, Alembic is still in `e23a_catalog (head)`; run Pytest with `RUN_DB_INTEGRATION=1` Swagger will have all four routes of `/api/v1/businesses/{business_id}/catalog`. Rebuild Docker before testing locally. E2-3 C will incorporate a path of its own to enable/disable, not a mutable field in the current PATCH.
+
+## E2-3 C — ASSETS/INACTIVE
+
+**E2-3 C (08/11/2026):** implemented `PATCH /api/v1/businesses/{business_id}/catalog/{item_id}/status` with exclusive body `{"status":"ACTIVO"}` o `{"status":"INACTIVO"}`, strict validation and rejection of extra attributes (422). The path revalidates session and membership and requires an ACTIVA company owner/manager to write (401/403/404/409 as the case may be).The article is blocked inside the tenant and changed status in a single transaction.The repeated change is idepotent, without altering `updated_at`. The inactive article remains visible on GET/listed, with UUID, name and SKU reserved even for duplicate highs; there is no DELETE or fictitious stock. Generic PATCH maintains `status` This functionality also does not modify the independent field `sellable`.
+
+**Units:** future purchases/sales must prohibit new movements with INACTIVE chips and keep real historical snapshots. There are still no commercial operations or integrated frontend; therefore, there is no real restriction on unit change for previous transactions either. No new migration: CHECK reused `ACTIVO/INACTIVO` de `e23a_catalog`.
+
+**Tests:** CI E2-3 C **3/3 work adopted**, **527 passed** in Python 3.12 and 3.14 with PostgreSQL, `e23a_catalog (head)`, `alembic check` no operations and correct Docker; code `c2153ab9b65b265eb46b3081079e0f3f15002215`. E2-3 B: **498 passed en Windows (55.79s)**, Docker/API/DB saludables. **E2-3 C: Windows pending**. The subsequent documentary committ is not equivalent to another IC execution.
+
+**Check on Windows:** `alembic current`, `alembic check`, `RUN_DB_INTEGRATION=1` with Pytest (**527 passed** expected), reconstruct Docker and consult `/ready`. Do not execute destructive migrations.
+
+## E2-3 D — Integrity and regression of the catalogue
+
+**E2-3 D (08/11/2026):** the existing Catalogue was strengthened, **without adding tables or migrations**. New tests verify Unicode NFKC+ equivalences `casefold` in names, SKU NFKC and ASCII capitals, rejection of invalid controls and forms, overflowing `name_key` per Unicode expansion, strict integer amounts (no booleans or decimals), differentiation between `PATCH` field and with `null` Explicit, incompatibility SERVICE/physical unit, protected fields of `/status`, name/SKU collisions even in INACTIVE chips, independence between two companies of the same user, session recovery after 409, and rollback provoked after `flush` both in high and in edition. A ceiling was added to `offset` catalogue (`9_223_372_036_854_775_807`, BIGINT PostgreSQL): exceed it produces 422 before running SQL, maintaining `limit` de 1 a 500 y `offset` The five Catalog endpoints retain their contracts and business permits; no stock is created.
+
+**Scope and limits:** NICK `(business_id,name_key)` y `(business_id,sku)` and existing transactions/blocks protect against collisions; tests exercise actual duplicates and recoveries in PostgreSQL, **but are not simultaneous load/concurrence testing with multiple independent connections**. The latter is registered as future verification before production. There are not yet purchases, sales, movements or snapshots, so you cannot check a unit/state change rule with real business history. `sellable` does not replace `status`. Do not connect frontend DEMO or E2-1/E2-2 for this cut.
+
+**IC evidence of code D:** commit `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`, GitHub Actions run 42508771222: **3/3 work adopted**, **580 passed** en Python 3.12 y Python 3.14 con PostgreSQL, Docker build/liveness aprobado, `e23a_catalog (head)` y `alembic check` No difference. **Local Validation Windows E2-3 C:** 527 passed in 59.60s, healthy containers and `/ready` Right. **Local Validation Windows E2-3 D:** Do not confuse remote IC with tests performed on the author's computer.
+
+**For Windows, from `plataforma-pyme/backend/`:** `alembic current`, `alembic check` and Pytest with `RUN_DB_INTEGRATION=1` (**580 passed expected**). After rebuilding Docker, check `docker compose ps` y `/ready`There are no new migrations and there is no need to modify E2-1/E2-2.
+
+## E2-3 E — Catalogue closure
+
+**E2-3 E closed functionally and documentaryly (08/11/2026):** catalogue `CatalogItem` with migration `e23a_catalog`, five actual REST routes, tenant/RBAC verification and active/INACTIVE status. **580 passed en Windows (66.45s)**, Alembic sin deriva, API y DB Docker healthy, `/ready` ready/ok. CI D 3/3 and 580 Python tests 3.12/3.14 sachet `bf4fd3fa809c9f4e6afdeb064a155acf233b1722`. UML 03A v0.7 (PUML, guide and editorial SVG) updated; To-BE Supplier, 03B/03C preserved. There are no purchases, inventory, sales or React/API integration yet. **Earrings: formal delivery to the reviewer, no PR merchandise**. The A/B/C/D states below correspond to historical cuts.
+
+**Validation D already reported from Windows:** `580 passed in 66.45s`, Alembic `e23a_catalog (head)` no operations and `/ready` `ready/ok`. A single documentary commit does not require the repeat of the set of tests; independent audit shall distinguish specific evidence from evidence provided.
+
+## E2-4 — Validation and consolidated delivery reference (cut 08/11/2026)
+
+- **API:** five vendor operations, three purchase operations, reception `POST /purchases/{purchase_id}/receive`, consultation of receipt and consultations of `inventory/balances` / `inventory/movements`.
+- **Additive migrations:** `e24a_suppliers` → `e24c_purchases` → `e24d_purchase_hash` → `e24e_receipt_stock`.
+- **Tests:** commit `4f88416141c09a82e744990b1aee8c00b9f31dfd`; `20 passed` affected file and `797 passed` Total suite in Windows over populated DB; CI run 42530739959, three successful jobs.
+- **QA manual:** free concept purchase 12505 cents; physical purchase of 10 units per 100,000 cents; active real deposit; reception 201, replay 200, second attempt with different key 409, balance 10000 thousandths/version 1 and a single input movement. [Detalle exacto, sin claves ni tokens](../docs/revisiones/E2-4_CIERRE/02_BITACORA_PRUEBAS_SWAGGER.md).
+- **Unimplemented earrings:** API cancellation, partial 1:N, returns, settings, transfers, sales, multicurrency, DB permissions for immutability, complete DB separation of tests, frontend React integrated, production. [Traceability](../docs/revisiones/E2-4_CIERRE/05_TRAZABILIDAD_Y_PENDIENTES.md).
+
+**How to revalidate:** continue [safe guide E2-4](../docs/revisiones/E2-4_CIERRE/07_GUIA_REPRODUCCION_SEGURA.md). **Do not delete volumes** to run tests or reuse historical identifiers as new keys.
+
+## E2-5 A — Prepare traceability of transfers and adjustments
+
+This delivery sum `inventory_operations` (type, article, unit, quantity, origin/destiny, motive, actor and idempotency per company), and expands `stock_movements` to represent `TRASLADO_{SALIDA,ENTRADA}`, `AJUSTE_{SALIDA,ENTRADA}` y `STOCK_INICIAL` with signed deltas, without breaking `COMPRA_RECEPCION`Alone. **SQL model, migration and integrity testing**; does not display new commands or modify user balances. The E2-4 motion endpoint is still specialized in receptions; it will be extended when publishing manual operations on E2-5 B/C.
+
+Migration: `e25a_inventory_ops` (after `e24e_receipt_stock`). Route and controls: [E2-5 A](../docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md).
+
+From `plataforma-pyme/backend`:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic current
+.\.venv\Scripts\python.exe -m alembic check
+$env:RUN_DB_INTEGRATION = "1"
+try { .\.venv\Scripts\python.exe -m pytest -q }
+finally { Remove-Item Env:\RUN_DB_INTEGRATION -ErrorAction SilentlyContinue }
+```
+
+**Do not use downgrade, stamp or volume removal to validate**: the manual purchase/reception QA of E2-4 must be kept.

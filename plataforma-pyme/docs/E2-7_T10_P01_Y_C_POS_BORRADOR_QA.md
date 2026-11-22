@@ -1,78 +1,78 @@
-# E2-7 · T10-P01 y T10-C — Política de precio y POS REAL preliminar
+# E2-7 · T10-P01 and T10-C — Price policy and preliminary REAL POS
 
-**Fecha de aprobación:** 10/11/2026. **Rama:** `feature/e2-7-t10-pos-ventas-real`. **PR:** #43, borrador, **sin merge a main**.
+**Date of adoption:** 10/11/2026. **Rama:** `feature/e2-7-t10-pos-ventas-real`. **PR:** #43, draft, **sin merge a main**.
 
-## 1. Decisión P01 aprobada expresamente por el responsable
+## 1. Decision P01 expressly approved by the responsible person
 
-Tras presentar las reglas de precios y descuentos, el responsable respondió: «Ok me parece bien». El alcance aprobado es:
+After presenting the price and discount rules, the responsible replied: 'Okay, that's fine.
 
-| Rol existente | Sede autorizada para venta | Precio en comando | Descuento |
+| Existing role | Headquarters authorized for sale | Price in command | Discount |
 |---|---|---|---|
-| `TITULAR_ADMINISTRATIVO` | Cualquier sede donde pueda operar, o sin sede para servicios | Puede elegir/preparar precio distinto al catálogo | Permitido |
-| `ADMINISTRADOR` | Cualquier sede donde pueda operar, o sin sede para servicios | Puede elegir/preparar precio distinto al catálogo | Permitido |
-| `ENCARGADO` | Solo sede con asignación `ACTIVA`, según FastAPI | **Igual al precio actual `CatalogItem.price_cents`**, no null | **Cero obligatorio** |
-| `TRABAJADOR` | Solo sede con asignación `ACTIVA`, según FastAPI | **Igual al precio actual `CatalogItem.price_cents`**, no null | **Cero obligatorio** |
-| Otros / usuarios sin membresía | Ninguna | Denegado | Denegado |
+| `TITULAR_ADMINISTRATIVO` | Any venue where you can operate, or without headquarters for services | You can choose/prepare price other than the catalog | Allowed |
+| `ADMINISTRADOR` | Any venue where you can operate, or without headquarters for services | You can choose/prepare price other than the catalog | Allowed |
+| `ENCARGADO` | Allocation only `ACTIVA`, according to FastAPI | **Same as current price `CatalogItem.price_cents`**, no null | **Zero mandatory** |
+| `TRABAJADOR` | Allocation only `ACTIVA`, according to FastAPI | **Same as current price `CatalogItem.price_cents`**, no null | **Zero mandatory** |
+| Other / users without membership | None | Denied | Denied |
 
-**Garantías FastAPI (independientes de React):**
+**FastAPI guarantees (non-React guarantees):**
 
-- En `SaleService.create()` el rol, sede, miembro activo y catálogo del tenant se revalidan en la misma transacción. El precio del catálogo se lee con `FOR SHARE` antes de crear `Sale`, `SaleLine`, `SalePayment` o `StockMovement`.
-- Si Encargado/Trabajador cambia `unit_price_cents` o intenta `discount_cents > 0`, FastAPI devuelve **403** sin persistir registros ni debitar stock.
-- Si el catálogo no tiene precio `price_cents`, devuelve **422** para esos roles; titular/admin pueden cotizarlo y fijar un precio directamente en la operación de venta.
-- Un replay auténtico de venta previamente confirmada (mismo usuario, clave UUID4 y cuerpo, con permisos vigentes de sede) continúa devolviendo **200**, aunque después cambie el precio del catálogo. Una nueva venta de un operario con el precio antiguo es rechazada.
-- Un error en una línea de una venta mixta rechaza **toda** la transacción. Ninguna excepción permite vender en una sede no asignada. No se introdujeron roles nuevos ni migraciones de DB.
+- En `SaleService.create()` the role, headquarters, active member and catalog of the tenant are revalidated in the same transaction. The price of the catalog is read with `FOR SHARE` before you create `Sale`, `SaleLine`, `SalePayment` o `StockMovement`.
+- If Maintainer/Worker changes `unit_price_cents` or try `discount_cents > 0`, FastAPI devuelve **403** no persistent records or stock.
+- If the catalogue is priceless `price_cents`, devuelve **422** for those roles; holder/admin may quote it and set a price directly on the sale transaction.
+- A previously confirmed authentic replay of sale (same user, UUID4 key and body, with valid headquarters permissions) continues to return **200**even if you later change the price of the catalogue. A new sale of a trader with the old price is rejected.
+- An error in a mixed sale line rejects **all** No exceptions allow selling at an unallocated headquarters. No new roles or DB migrations were introduced.
 
-**Pruebas P01:** `backend/tests/test_sales_price_policy_integration.py` contiene **6 pruebas** que cubren trabajadores/encargados, titular/administrador, descuentos, precios aumentados/disminuidos, ausencia de precio, replays, varias líneas y sede no asignada. Se ajustaron dos tests de regresión previos a la regla nueva para que sus trabajadores usen precio del catálogo sin perder la prueba de revocación.
+**Tests P01:** `backend/tests/test_sales_price_policy_integration.py` contains **6 tests** covering workers/managers, holder/manager, discounts, increased/decrease prices, absence of price, replays, several lines and unallocated headquarters. Two regression tests were adjusted prior to the new rule so that their workers use price from the catalog without losing proof of revocation.
 
-## 2. T10-C: alcance de la interfaz
+## 2. T10-C: interface scope
 
-**Ruta:** `/real/empresas/{business_id}/pos`, desde **Empresa REAL → Punto de venta REAL · preparar carrito**. Archivos:
-- `frontend/src/features/sales/RealPosPage.tsx`: empresa/sede, fichas paginadas, selección, cantidad, precio, descuento y carrito preliminar.
-- `frontend/src/features/sales/realPosDraft.ts`: validación pura de cantidades (milésimas, enteros para UNIDAD/PAQUETE/CAJA/SERVICIO), permisos visuales por rol, sede SELL/STORE para bienes, precios y totales exactos.
-- `frontend/src/features/auth/RealAuthApp.tsx` y `RealBusinessesPage.tsx`: nueva ruta y acceso; estilos responsive en `auth.css`.
+**Path:** `/real/empresas/{business_id}/pos`, from **Real Company → Real Point of Sale · preparing cart**Archives:
+- `frontend/src/features/sales/RealPosPage.tsx`: company/headquarters, paged tokens, selection, quantity, price, discount and preliminary cart.
+- `frontend/src/features/sales/realPosDraft.ts`: pure validation of quantities (thousandths, whole for UNIT/PACKET/CATCH/SERVICE), visual permits per role, SELL/STORE headquarters for goods, prices and exact totals.
+- `frontend/src/features/auth/RealAuthApp.tsx` y `RealBusinessesPage.tsx`: new path and access; responsive styles in `auth.css`.
 
-**Restricción deliberada:** el botón **«Confirmación de venta disponible en T10-D» está deshabilitado**. Esta vista no importa ni llama `realSaleWriteCoordinator`, no llama `journal.reserve`, no registra ventas o pagos, no modifica inventario y no persiste el carrito (se pierde al salir/reload). **No afirmar que T10-C ya permite vender.**
+**Deliberate restriction:** the **‘Sales confirmation available on T10-D’ is disabled**This view doesn't matter or call. `realSaleWriteCoordinator`He doesn't call. `journal.reserve`, does not record sales or payments, does not modify inventory and does not persist the cart (lost on exit/read). **Not to say that T10-C already allows selling.**
 
-**Paginación:** usa la API REAL `GET /catalog?offset=...&limit=100` y la misma semántica que Catálogo REAL: filtra sobre páginas cargadas e indica explícitamente cuándo hay más. No inventa endpoint `?q=`. Prueba de navegador con **501 fichas simuladas solo en el navegador de CI** para verificar 100+100+100+100+100+1 sin permitir un falso listado completo.
+**Pageing:** uses the REAL API `GET /catalog?offset=...&limit=100` and the same semantics as REAL Catalog: filters over loaded pages and explicitly indicates when there is more. Do not invent endpoint `?q=`. Browser Test with **501 simulated tiles only in the IC browser** to verify 100+100+100+100+100+1 without allowing a complete false listing.
 
-**Selección de sede:** muestra las sedes activas con `can_sell`; para bienes exige además `can_store`. El backend sigue siendo la autoridad sobre asignación del Encargado/Trabajador. La UI puede mostrar el nombre de una sede no asignada, pero **no concede permiso de venta**; mejorar filtrado de selector cuando exista un endpoint autorizado para consultar asignaciones propias.
+**Selection of headquarters:** shows the active sites with `can_sell`; for goods it also requires `can_store`. The backend remains the authority over assignment of the Maintainer/Worker. The IU may display the name of an unassigned headquarters, but **does not grant a sales permit**; improve selector filtering when there is an authorized endpoint to consult your own assignments.
 
-## 3. Evidencia y aceptación
+## 3. Evidence and acceptance
 
-- **P01 primera CI verificada:** full-stack #42920637980, **SUCCESS**: 892/892 backend, 308/308 frontend, 11/11 Playwright REAL y 6/6 DEMO.
-- **T10-C pure Node:** `frontend/tests/sales-real-pos-draft.test.mjs` con 7 casos de cantidades, roles, descuentos, sede, servicio sin sede y carrito sin efectos externos; comando `npm.cmd run test:sales-real-pos`.
-- **T10-C navegador:** `frontend/e2e/real/pos-draft.spec.ts`, dos escenarios en CI con `PYME_DISPOSABLE_QA=1` y empresa creada en PostgreSQL efímero. Verifica carrito sin POST y 501 fichas paginadas. La segunda usa fixtures de API simulados solo para la paginación, sin crear 501 artículos en la DB.
-- **CI T10-C originalmente aprobada y nueva revisión aprobada:** full-stack #42925918339, commit funcional `f6cfae57f9048eeca1e552739781d5e13c6ac877`, **SUCCESS: 892 backend, 13 Playwright REAL (incluidas ambas pruebas T10-C), 6 DEMO**, regresiones y build/lint frontend aprobados. Frontend independiente #42925917999 también **SUCCESS**. La documentación posterior no cambia código.
-- **Pruebas manuales locales T10-C (versión previa al ajuste de subtotales):** usuario confirmó el catálogo REAL y carrito mixto en TEST Empresa A mediante capturas. Los totales y descuento se calcularon correctamente, pero identificó confusión entre valor unitario y subtotal. Los cambios de visualización fueron incorporados después y están aprobados en CI; **la nueva interfaz no fue revalidada manualmente todavía**. No se realizó venta ni se confirmó un movimiento de stock.
+- **P01 first IC verified:** full-stack #42920637980, **SUCCESS**: 892/892 backend, 308/308 frontend, 11/11 Playwright REAL y 6/6 DEMO.
+- **T10-C pure Node:** `frontend/tests/sales-real-pos-draft.test.mjs` with 7 cases of quantities, roles, discounts, headquarters, service without headquarters and cart without external effects; command `npm.cmd run test:sales-real-pos`.
+- **T10-C browser:** `frontend/e2e/real/pos-draft.spec.ts`two scenarios in IC with `PYME_DISPOSABLE_QA=1` and company created in PostgreSQL ephemeral. Check cart without POST and 501 pagadas tabs. The second uses simulated API fixes only for the page, without creating 501 articles on DB.
+- **CI T10-C originally approved and new revised approved:** full-stack #42925918339, commit funcional `f6cfae57f9048eeca1e552739781d5e13c6ac877`, **SUCCESS: 892 backend, 13 Playwright REAL (incluidas ambas pruebas T10-C), 6 DEMO**, regressions and build/lint frontend approved. Independent Frontend #42925917999 also **SUCCESS**. Subsequent documentation does not change code.
+- **Local manual tests T10-C (pre-alloy version):** user confirmed the REAL catalogue and mixed cart in TEST Company A by means of catches. Totals and discount were calculated correctly, but identified confusion between unit value and subtotal. The visualization changes were incorporated later and are approved in IC; **the new interface was not manually revalidated yet**No sale or confirmation of stock movement.
 
-## 4. Próximos pasos
+## 4. Next steps
 
-**T10-D** añadirá revisión final, pagos declarados, confirmación humana explícita, reserva comprobada en IndexedDB antes de POST y resultados `201/200/409` más recuperación de pendientes. Antes de habilitar el botón, testear la seguridad de precio P01 en API y frontend, incluyendo cambio de precio de catálogo después de que se preparó el carrito y antes del POST, y errores sin duplicación.
+**T10-D** add final review, declared payments, explicit human confirmation, indexedDB checked reservation before POST and results `201/200/409` before you enable the button, test price security P01 in API and frontend, including changing catalog price after you prepared the cart and before POST, and errors without duplication.
 
-**El PR #43 sigue DRAFT, sin merge.** Toda creación real para QA debe correr en PostgreSQL efímero, no en TEST Empresa A.
-
-
-## 5. Ajuste funcional tras QA visual del usuario (10/11/2026)
-
-El usuario probó en su computadora el POS con **TEST Empresa A** y compartió capturas del producto **Producto A TEST**, el servicio **Servicio A TEST** y un artículo **Producto T08-4 CONTEO** sin precio de catálogo.
-
-**Observaciones verificables de las capturas previas:** el carrito ya multiplicaba cantidad × precio por artículo y el total general era consistente (ejemplo 5 unidades a $2.000 + 4 servicios a $1.000 = $14.000; descuento $2.000, total $12.000). Sin embargo, el subtotal de **cada artículo** no se distinguía explícitamente, el titular veía el campo unitario editable sin advertencia y, si se seleccionaba un artículo ya incluido, se mostraba un error que obligaba a quitarlo.
-
-**Cambio funcional incorporado:**
-
-1. Precio unitario **precargado desde catálogo y bloqueado por defecto**, incluso para el titular. Encargado/Trabajador lo ven siempre bloqueado. Titular/Administrador conserva P01 a través de una acción **explícita** «Modificar precio excepcionalmente» para autorizar la cotización o precio alternativo. «Restablecer precio de catálogo» cancela la excepción; con catálogo sin precio se exige habilitar explícitamente la modificación gerencial.
-2. Subtotal del artículo antes de agregarlo: `cantidad_milli × precio_unitario_cents`, HALF_UP por renglón con **BigInt**. El carrito muestra por separado nombre, cantidad, precio unitario y **subtotal del producto**, evitando confundir importe unitario con total.
-3. Al seleccionar un artículo ya incluido, el picker recupera su cantidad y precio. El botón se convierte en **«Actualizar en carrito»**; actualiza el mismo renglón sin crear duplicados y admite editarlo desde el carrito.
-4. Como integración funcional pequeña con DEMO, cada ficha muestra **«En carrito: X UNIDAD/SERVICIO»** cuando ya se seleccionó. Se reutiliza **el patrón de interacción**, no modelos DEMO ni datos ficticios.
-5. Se preserva el subtotal general, descuento y total; **no hay POST** ni movimiento de stock. El control «Confirmación de venta disponible en T10-D» permanece deshabilitado.
-
-**No se copia ahora de DEMO:** imágenes, categorías, existencias o botón «Agregar otro» con cantidad acumulativa; la fuente REAL debe obtener catálogos y stock **por empresa/sede con permisos, unidades y versiones**, y no asumir campos presentes solamente en DEMO. Antes de sumar stock disponible hay que consultar Inventario REAL de la sede y revalidar el stock atómicamente al confirmar en T10-D. La armonización estética se deja para una fase de diseño, como solicitó el usuario.
-
-**Regresiones agregadas:** 3 pruebas Node para subtotal individual (incluidos 4 × $1.500, 5 × $2.000, redondeo HALF_UP y límites de centavos) y ampliación de Playwright REAL para asegurar bloqueo inicial de precio, habilitación gerencial explícita, subtotal por artículo, actualización del renglón sin duplicados y **cero POST**. La verificación completa de la última versión debe consignarse después de observar el run final de CI; **las capturas existentes no prueban todavía los controles nuevos**.
+**PR #43 is still DRAFT, no merit.** Any real creation for QA must run in PostgreSQL ephemeral, not TEST Company A.
 
 
-### CI específica del ajuste posterior a capturas
+## 5. Functional adjustment after visual QA of the user (10/11/2026)
 
-- **10/11/2026:** Full-stack #42925918339 — **SUCCESS**; 892 Pytest en PostgreSQL descartable (3 warnings no bloqueantes), **13/13 Playwright REAL**, **6/6 DEMO**. Las pruebas T10-C verificaron carrito, precio inicial ineditable, override gerencial, subtotal por artículo, edición de cantidad sin duplicación, página 501 y **cero POST de venta**.
-- **Frontend independiente #42925917999:** **SUCCESS**; build TypeScript/Vite, Oxlint y suites explícitas del workflow. Las **3 pruebas nuevas de subtotal** se ejecutaron y aprobaron dentro del paso `node --test tests/*.test.mjs` del **full-stack #42925918339**, como confirma su registro.
-- **Commit funcional validado:** `f6cfae57`. Este acta se actualiza después del commit probado sin modificar lógica.
+The user tested the POS with **TEST Company A** and shared catches of the product **Product A TEST**service **Service A TEST** and an article **Product T08-4 CONTEO** without catalog price.
+
+**Verifiable observations of previous catches:** the cart already multiplied quantity × price per item and the overall total was consistent (example 5 units to $2,000 + 4 services to $1,000 = $14,000; discount $2,000, total $12,000). However, the subtotal of **each article** the holder saw the editable unit field without warning and, if an article already included was selected, a mistake was shown that forced it to be removed.
+
+**Built-in functional change:**
+
+1. Unit price **preloaded from catalog and locked by default**, even for the holder. Maintainer/Worker always see it blocked. Holder/Manager retains P01 through an action **explicit** ‘Exceptional price change’ to allow the quotation or alternative price. ‘Reset catalogue price’ cancels the exception; without price catalog it is required to explicitly enable management modification.
+2. Subtotal of the article before adding: `cantidad_milli × precio_unitario_cents`, HALF_UP by line with **BigInt**. The cart shows separately name, quantity, unit price and **subtotal del producto**, avoiding confusing unit amount with total.
+3. When selecting an item already included, the picker recovers its quantity and price. The button becomes **"Update in Cart"**; updates the same line without creating duplicates and supports editing from the cart.
+4. As a small functional integration with DEMO, each sheet shows **‘In-cart: X UNIT/SERVICE’** when it has already been selected. Re-use **the interaction pattern**, no DEMO models or fictitious data.
+5. The general, discount and total subtotal is preserved; **no POST** no stock movement. The ‘Sales confirmation available in T10-D’ control remains disabled.
+
+**Do not copy now from DEMO:** images, categories, stocks or button "Add another" with cumulative quantity; REAL source must obtain catalogues and stock **per company/headquarter with permissions, units and versions**, and not assume fields present only in DEMO. Before adding stock available you must consult the Real Inventory of the headquarters and revalidate the stock atomically by confirming it in T10-D. The aesthetic harmonisation is left for a design phase, as requested by the user.
+
+**Aggregate regressions:** 3 tests Node for individual subtotal (including 4 × $1,500, 5 × $2,000, rounding HALF_UP and pennies limits) and Playwright REAL expansion to ensure initial price lock, explicit management rating, subtotal per item, no duplicate row update and **zero POST**. The complete verification of the latest version should be disclosed after observing the final IC run; **existing catches do not yet prove new controls**.
+
+
+### IC specific post-catch adjustment
+
+- **10/11/2026:** Full-stack #42925918339 — **SUCCESS**; 892 Pytest in PostgreSQL disposable (3 non-blocking warnings), **13/13 Playwright REAL**, **6/6 DEMO**. T10-C tests verified cart, ineditionable initial price, managerial override, subtotal per item, editing quantity without duplication, page 501 and **zero sales POST**.
+- **Independent Frontend #42925917999:** **SUCCESS**; build TypeScript/Vite, Oxlint and explicit workflow suites. **3 new subtotal tests** were executed and approved within the passage `node --test tests/*.test.mjs` del **full-stack #42925918339**as confirmed by his record.
+- **Functional committee validated:** `f6cfae57`. This record is updated after the commit tested without changing logic.

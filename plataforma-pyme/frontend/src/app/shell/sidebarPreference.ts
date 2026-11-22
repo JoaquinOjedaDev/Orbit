@@ -5,7 +5,7 @@
  */
 export type SidebarMode = 'expanded' | 'compact' | 'hidden'
 
-const STORAGE_KEY = 'asistente-pyme.sidebar-mode.v2'
+const STORAGE_KEY = 'assistant-pyme.sidebar-mode.v2'
 
 export function loadSidebarMode(): SidebarMode {
   try {

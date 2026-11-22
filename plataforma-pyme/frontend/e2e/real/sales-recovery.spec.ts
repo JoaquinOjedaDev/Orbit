@@ -28,7 +28,7 @@ type Fixture = {
 
 async function seed(request: APIRequestContext, physical: boolean): Promise<Fixture> {
   const email = `t09-e-${randomUUID()}@example.com`
-  const password = 'QA descartable T09-E 2026'
+  const password = 'Orbit-1-' + globalThis.crypto.randomUUID()
   const registered = await request.post(api + '/auth/register', {
     data: { email, password, display_name: 'T09-E Recovery QA' },
   })
@@ -81,10 +81,10 @@ async function seed(request: APIRequestContext, physical: boolean): Promise<Fixt
 
 async function open(page: Page, f: Fixture) {
   await page.goto('/real/empresas/' + f.businessId + '/ventas')
-  await page.getByLabel('Correo electrónico', { exact: true }).fill(f.email)
-  await page.getByLabel('Contraseña', { exact: true }).fill(f.password)
+  await page.getByLabel('Email', { exact: true }).fill(f.email)
+  await page.getByLabel('Password', { exact: true }).fill(f.password)
   await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
-  await expect(page.getByRole('heading', { name: 'Historial de ventas' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Sales history' })).toBeVisible()
 }
 
 /** Browser-originated POST; the supplied token lives only in the test page memory. */
@@ -173,17 +173,17 @@ for (const physical of [true, false]) {
 
       // Neither F5 nor login automatically repeats the POST.
       await page.reload()
-      await page.getByLabel('Correo electrónico', { exact: true }).fill(f.email)
-      await page.getByLabel('Contraseña', { exact: true }).fill(f.password)
+      await page.getByLabel('Email', { exact: true }).fill(f.email)
+      await page.getByLabel('Password', { exact: true }).fill(f.password)
       await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
       await expect(page.locator('.real-sales-row')).toHaveCount(1)
       expect(captured).toHaveLength(1)
       await page.getByLabel('Clave original de solicitud (UUID4)').fill(f.key)
       await page.getByRole('button', { name: 'Consultar solicitud' }).click()
-      const receipt = page.getByRole('region', { name: 'Comprobante de venta REAL' })
+      const receipt = page.getByRole('region', { name: 'REAL sales check' })
       await expect(receipt).toContainText(saleId)
       await expect(receipt).toContainText(f.key)
-      await expect(receipt).toContainText('Pagos declarados (sin acreditación externa)')
+      await expect(receipt).toContainText('Declared payments (without external accreditation)')
       expect(captured).toHaveLength(1)
 
       // Explicit retry with the ORIGINAL key/body, not a new sale.
@@ -240,8 +240,8 @@ test('T09-E solicitud abortada ANTES de llegar al servidor: GET 404 no equivale 
     expect(missing.status()).toBe(404)
 
     await page.reload()
-    await page.getByLabel('Correo electrónico', { exact: true }).fill(f.email)
-    await page.getByLabel('Contraseña', { exact: true }).fill(f.password)
+    await page.getByLabel('Email', { exact: true }).fill(f.email)
+    await page.getByLabel('Password', { exact: true }).fill(f.password)
     await page.getByRole('button', { name: 'Ingresar', exact: true }).click()
     await expect(page.locator('.real-sales-row')).toHaveCount(0)
     await page.getByLabel('Clave original de solicitud (UUID4)').fill(f.key)
@@ -257,7 +257,7 @@ test('T09-E solicitud abortada ANTES de llegar al servidor: GET 404 no equivale 
     expect(create.status(), await create.text()).toBe(201)
     await page.getByLabel('Clave original de solicitud (UUID4)').fill(f.key)
     await page.getByRole('button', { name: 'Consultar solicitud' }).click()
-    await expect(page.getByRole('region', { name: 'Comprobante de venta REAL' }))
+    await expect(page.getByRole('region', { name: 'REAL sales check' }))
       .toContainText((await create.json()).id)
     expect(await apiGet(request, f, '/sales?offset=0&limit=10')).toHaveLength(1)
     expect(attempted).toBe(1)

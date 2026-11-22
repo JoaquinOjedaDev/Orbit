@@ -1,60 +1,60 @@
-# E2-6 A — Persistencia transaccional de Ventas y pagos declarados
+# E2-6 A — Transactional Persistence of Sales and Declared Payments
 
-**Fecha:** 09/11/2026.  
-**Estado:** implementación propuesta en rama `feat/e2-6-a-sales-persistence`, **pendiente de CI y validación local**.  
-**Alcance:** exclusivamente `plataforma-pyme/`; sin modificar código de E2-1–E2-5 ni migraciones aplicadas.  
-**Base de partida:** `main` `4fad77ea458b195ad136726e670d93a8ecf85f4e`.  
-**RF/CU:** **RF-07 / CU-10**, dependencias RF-03 (ubicaciones), RF-04 (catálogo), RF-05 (recepción), RF-06 (stock).  
-**Referencias:** `entrega-programacion-2/{01,02,03,04,05}`; `docs/ADR/ADR-004-stock-unidades-sku.md`, `docs/ADR/ADR-006-ventas-pagos-qr.md`, `docs/20_E1_C1_VENTAS_DEMO.md`. La DEMO no equivale a backend de ventas.
+**Date:** 09/11/2026.  
+**Status:** proposed implementation in the branch `feat/e2-6-a-sales-persistence`, **pending IC and local validation**.  
+**Scope:** only `plataforma-pyme/`; without modifying E2-1–E2-5 code or applied migrations.  
+**Base of departure:** `main` `4fad77ea458b195ad136726e670d93a8ecf85f4e`.  
+**RF/CU:** **RF-07 / CU-10**, RF-03 dependencies (locations), RF-04 (catalogue), RF-05 (reception), RF-06 (stock).  
+**References:** `entrega-programacion-2/{01,02,03,04,05}`; `docs/ADR/ADR-004-stock-unidades-sku.md`, `docs/ADR/ADR-006-ventas-pagos-qr.md`, `docs/20_E1_C1_VENTAS_DEMO.md`. La DEMO no equivale a backend de ventas.
 
-## 1. División ejecutable del bloque E2-6
+## 1. Executable division of block E2-6
 
-| Etapa | Objetivo | Evidencia de aceptación |
+| Stage | Objective | Evidence of acceptance |
 |---|---|---|
-| **E2-6 A** | Modelos SQL, FK tenant, snapshots, pagos declarados, origen `VENTA_SALIDA`, migración aditiva y pruebas de DB | DDL + Alembic + tests estructurales e integración PostgreSQL; ninguna venta puede ejecutarse aún por HTTP |
-| **E2-6 B** | `POST/GET /api/v1/businesses/{business_id}/sales`: validaciones Pydantic, centavos exactos, descuento, split, lectura, auth, permisos e idempotencia | Servicio y API con venta solo de servicios sin ubicación, y ventas mixtas a pasar a C; 201/200/401/403/404/409/422 |
-| **E2-6 C** | Vender bienes físicos y mixtos: locks, débito condicional, ledger `VENTA_SALIDA` una vez por renglón físico y snapshots de saldo | Dos ventas simultáneas por la última unidad: una 201 y otra 409; sin pago ni saldo parcial |
-| **E2-6 D** | Hardening y regresión: cambios de pertenencia/rol/sesión, idempotencia/replays, colisiones de compras/stock, errores SQL, límites, mezclas por tenant, QA de permisos | CI y pruebas cruzadas E2-4/E2-5/E2-6; manuales Swagger con datos propios |
-| **E2-6 E** | Documentación académica vigente, cierre QA e informe de entrega para auditor independiente | Evidencias con SHA/CI/Swagger reales, PR documental, sin secretos ni tests inventados |
+| **E2-6 A** | SQL models, FK tenant, snapshots, declared payments, origin `VENTA_SALIDA`, additive migration and DB testing | DDL + Alembic + PostgreSQL integration and structural tests; no sale can be run by HTTP yet |
+| **E2-6 B** | `POST/GET /api/v1/businesses/{business_id}/sales`: Pydantic validations, exact cents, discount, split, reading, auth, permissions and idempotence | Service and APIs with sale only of services without location, and mixed sales to C; 201/200/401/403/404/409/422 |
+| **E2-6 C** | Selling physical and mixed goods: locks, conditional debit, ledger `VENTA_SALIDA` once per line physical and snapshots balance | Two simultaneous sales for the last unit: one 201 and another 409; no payment or partial balance |
+| **E2-6 D** | Hardening and regression: membership/roll/session changes, idempotency/replays, shopping collisions/stock, SQL errors, limits, mixtures per tenant, QA permissions | IC and cross-tests E2-4/E2-5/E2-6; Swagger manuals with own data |
+| **E2-6 E** | Current academic documentation, QA closure and delivery report for independent auditor | Evidence with actual SHA/CI/Swagger, PR documentary, no secrets or invented tests |
 
-**No se habilitan ventas reales antes de E2-6 C**. La etapa B debe mantenerse acotada: si introduce ventas de servicios, no debe registrar una venta física antes de tener atomicidad de stock. Todo envío de bienes debe rechazarse hasta C.
+**No actual sales enabled before E2-6 C**. Stage B should be kept in focus: if you enter sales of services, you must not register a physical sale before having atomization of stock. Any shipment of goods must be refused up to C.
 
-## 2. Arquitectura y estados AS-IMPLEMENTED en A
+## 2. Architecture and AS-IMPLEMENTED states in A
 
-### Entidades
+### Entities
 
-- **`Sale` → `sales`**: empresa, `location_id?`, `request_id` UUID4, digest SHA-256, `status=CONFIRMADA`, subtotal, descuento, total, notas, actor y hora. `balances_after` JSONB es snapshot histórico de respuesta tras el commit, **no una fuente de saldo editable**. `request_id` es único **dentro de una empresa**.
-- **`SaleLine` → `sale_lines`**: 1..30 (obligación del servicio), `line_number` único por venta, artículo de empresa, snapshots de nombre/tipo/unidad/SKU, cantidad milésima, precio unitario y total por línea `HALF_UP`. `catalog_item_id` siempre existe; **no se ofrecen conceptos libres** en E2-6 MVP.
-- **`SalePayment` → `sale_payments`**: 1..6 (obligación del servicio), orden y método tipado, importe positivo y referencia declarativa. Medios: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`. **Ninguno** indica acreditación o movimiento bancario.
-- **`StockMovement` → `stock_movements`**: nuevo origen alternativo `sale_id` + `sale_line_id`, evento `VENTA_SALIDA`, `delta_milli < 0`, FK compuesta de tres campos a `sale_lines(business_id,sale_id,id)` y `UNIQUE(business_id,sale_id,sale_line_id)` para evitar descontar dos veces un mismo renglón. Los seis eventos históricos E2-4/E2-5 continúan conservando su origen/signo anterior y no se reescriben.
+- **`Sale` → `sales`**: company, `location_id?`, `request_id` UUID4, digest SHA-256, `status=CONFIRMADA`, subtotal, discount, total, notes, actor and time. `balances_after` JSONB is historical snapshot of response after commit, **not an editable balance source**. `request_id` is unique **within a company**.
+- **`SaleLine` → `sale_lines`**1..30 (obligation of service), `line_number` single per sale, business item, name/type/unit/SKU snapshots, thousandth quantity, unit price and total per line `HALF_UP`. `catalog_item_id` always exists; **no free concepts offered** en E2-6 MVP.
+- **`SalePayment` → `sale_payments`**: 1..6 (obligation of service), order and typed method, positive amount and declarative reference. Means: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`. **None** indicates accreditation or banking movement.
+- **`StockMovement` → `stock_movements`**: new alternative origin `sale_id` + `sale_line_id`event `VENTA_SALIDA`, `delta_milli < 0`, FK composed of three fields to `sale_lines(business_id,sale_id,id)` y `UNIQUE(business_id,sale_id,sale_line_id)` to avoid double counting the same line. The six historical events E2-4/E2-5 continue to retain their previous origin/sign and are not rewritten.
 
-### Migración
+### Migration
 
-`backend/alembic/versions/20261109_0017_sales_foundation.py`: **`e26a_sales_foundation`** desciende de `e25a_inventory_ops`. Agrega tres tablas y dos columnas **opcionales** en `stock_movements`, reemplazando únicamente el CHECK de origen/signo para admitir ventas. No ejecuta UPDATE de saldos, movimientos o compras previas. El `downgrade` **se bloquea si existen ventas**; no debe ejecutarse sobre datos QA o productivos.
+`backend/alembic/versions/20261109_0017_sales_foundation.py`: **`e26a_sales_foundation`** descends from `e25a_inventory_ops`. Add three tables and two columns **optional** en `stock_movements`, replacing only the source/sign CHECK to support sales. It does not execute UPDATE of balances, movements or previous purchases. `downgrade` **blocks if sales exist**; should not be executed on QA or productive data.
 
-### Reglas SQL vs. reglas de servicio pendientes
+### SQL vs. pending service rules
 
-**La DB protege:** tenant en FK, cabecera idempotente única, autor perteneciente a la empresa, renglón físico firmado ligado a la misma venta, cantidad y precio en rangos, unidades discretas, `HALF_UP` por línea, importes por pago positivos, total = subtotal − descuento (total >0), unicidad de renglones y de pagos. `StockBalance` existente mantiene su CHECK no negativo.
+**La DB protege:** tenant in FK, sole header idepotent, author belonging to the company, signed physical line linked to the same sale, quantity and price in ranges, discrete units, `HALF_UP` per line, positive amounts per payment, total = subtotal − discount (total >0), single lines and payments. `StockBalance` existing maintains its non-negative CHECK.
 
-**No se puede inferir de CHECK por fila:** que los pagos de todas las filas sumen exactamente el total, que la suma de renglones coincida con subtotal, que haya mínimo 1 y máximo 30 renglones o entre 1 y 6 pagos, que una venta con BIEN obligue ubicación y saldos, que el `kind_snapshot` coincida con el catálogo vigente, ni que una `VENTA_SALIDA` sea de bien físico o coincida en cantidad con el renglón. **Todas esas reglas corresponden al servicio transaccional B/C y deben probarse con API + PostgreSQL.** El esquema no certifica ventas completas por INSERT SQL aislados; no crear ventas manuales en producción.
+**Cannot infer from CHECK per row:** that payments in all rows add up to exactly the total, that the sum of lines coincide with subtotal, that there are at least 1 and maximum 30 lines or between 1 and 6 payments, that a sale with BIEN warrants location and balances, that the `kind_snapshot` the current catalogue, nor that a `VENTA_SALIDA` be of physical good or match in quantity with the line. **All these rules correspond to transactional service B/C and must be tested with API + PostgreSQL.** The scheme does not certify complete sales by INSERT SQL isolated; do not create manual sales in production.
 
-**Reglas de dominio decididas para B/C:** `location_id` es nullable para venta exclusiva de servicios. Para ventas con bienes se exige `Location.ACTIVA`, `can_sell` y `can_store`, membresía/STORE/SELL autorizadas, saldo vigente suficiente. Los servicios no generan movimiento; **no reservan ni consumen insumos automáticamente**. En una venta mixta la agrupación de artículos repetidos solo afecta stock; los precios se redondean **por renglón**.
+**Domain rules decided for B/C:** `location_id` is nullable for exclusive sale of services. For sales with goods is required `Location.ACTIVA`, `can_sell` y `can_store`, membership/STORE/SELL authorized, sufficient current balance. Services do not generate movement; **do not reserve or consume inputs automatically**. In a mixed sale the grouping of repeated items only affects stock; prices are rounded **by line**.
 
-## 3. Exactitud monetaria y ejemplo
+## 3. Currency accuracy and example
 
-- `line_total_cents = floor((quantity_milli * unit_price_cents + 500) / 1000)` para no negativos, con aritmética `NUMERIC` en PostgreSQL y enteros en servicio.
-- `subtotal_cents = sum(line_total_cents)` por línea **sin agrupar importes**.
-- `total_cents = subtotal_cents - discount_cents` **estrictamente positivo**.
+- `line_total_cents = floor((quantity_milli * unit_price_cents + 500) / 1000)` non-negative, with arithmetic `NUMERIC` in PostgreSQL and integers in service.
+- `subtotal_cents = sum(line_total_cents)` per line **without grouping amounts**.
+- `total_cents = subtotal_cents - discount_cents` **strictly positive**.
 - `sum(payment.amount_cents) = total_cents` exacto, **sin floats**.
-- Una línea de 0,333 kg a 1.050 centavos/kg totaliza 350 centavos; tres líneas separadas: 1.050 centavos, aunque el total de cantidad agregada de 0,999 kg daría 1.049 centavos.
+- A line of 0.333 kg to 1,050 cents/kg totals 350 cents; three separate lines: 1,050 cents, although the aggregate amount of 0.999 kg would give 1,049 cents.
 
-## 4. Pruebas propuestas y operación segura
+## 4. Proposed testing and safe operation
 
-- `test_sale_foundation_model.py`: registro ORM, tipos, FK tenant, origen XOR, check de cantidades y centavos, enumeraciones y SHA.
-- `test_sale_foundation_integration.py`: DB PostgreSQL, servicio-only sin sede, pago dividido, FK cruzada rechazada, misma clave duplicada, descuento inválido, unidad discreta, HALF_UP exacto y movimiento de venta no positivo/duplicado.
-- Regresión: `test_receipt_models.py` actualiza sus expectativas por **la nueva FK opcional**; pruebas E2-4/E2-5 permanecen con la semántica original de sus operaciones.
+- `test_sale_foundation_model.py`: ORM record, types, FK tenant, XOR origin, check quantities and cents, enumerations and SHA.
+- `test_sale_foundation_integration.py`: DB PostgreSQL, service-only without headquarters, split payment, cross FK rejected, same duplicate key, invalid discount, discrete unit, exact HALF_UP and non positive/duplicated sales movement.
+- Regression: `test_receipt_models.py` updates your expectations by **the new optional FK**; E2-4/E2-5 tests remain with the original semantics of their operations.
 
-**Primero validar CI de rama/PR.** Para ejecución local usar PostgreSQL **conocido y aislado**, sin borrar ni reconfigurar el volumen QA existente. En `plataforma-pyme/backend` tras el merge aprobado y migración aditiva sobre DB de desarrollo conocida:
+**First validate branch/PR IQ.** For local execution use PostgreSQL **known and isolated**, without deleting or reconfiguring the existing QA volume. `plataforma-pyme/backend` after the approved merge and additive migration on known development DB:
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
@@ -68,14 +68,14 @@ try {
 }
 ```
 
-**No ejecutar ahora** estos comandos sin decisión y sin verificar la DB: este documento se publica en **rama funcional PR**, y las pruebas de integración tienen datos temporales/rollbacks. No se ha ejecutado Pytest ni Alembic en la máquina del desarrollador durante esta entrega. En particular, nunca hacer `docker compose down -v`, `alembic downgrade`, `stamp` ni `TRUNCATE` sobre DB de desarrollo.
+**Do not execute now** these commands without decision and without checking the DB: this document is published in **functional branch PR**, and integration tests have temporary/rollback data. Pytest or Alembic has not been executed on the developer's machine during this delivery. In particular, never do `docker compose down -v`, `alembic downgrade`, `stamp` ni `TRUNCATE` on development DB.
 
-## 5. Criterios de aceptación de E2-6 A
+## 5. E2-6A acceptance criteria
 
-1. PR limitado a E2-6 A, migración nueva y cambios compatibles de ledger/DTO, sin reescribir datos o migraciones E2-4/E2-5.
-2. `alembic upgrade head`, `current` (`e26a_sales_foundation`) y `check` verde en **CI PostgreSQL 16**.
-3. Tests nuevos y suite de regresión completa verdes en CI Python 3.12/3.14.
-4. Revisión manual de SQL tenant, origen XOR, cantidad, precio, `HALF_UP` y riesgos residuales.
-5. Solo después de aprobar B/C declarar el endpoint `POST sales` como funcional. La existencia de tablas **no es una API de ventas**.
+1. PR limited to E2-6 A, new migration and compatible ledger/DTO changes without rewriting data or E2-4/E2-5 migrations.
+2. `alembic upgrade head`, `current` (`e26a_sales_foundation`) y `check` green in **CI PostgreSQL 16**.
+3. New Tests and Green Full Regression Suite in CI Python 3.12./3.14.
+4. Manual review of SQL tenant, XOR origin, quantity, price, `HALF_UP` and residual risks.
+5. Only after B/C has been approved will the endpoint be declared `POST sales` as functional. The existence of tables **is not a sales API**.
 
-**Siguiente trabajo directo:** E2-6 B, contratos Pydantic y API de ventas de servicios; E2-6 C cierre atómico de ventas físicas/mixtas, con pruebas de carrera.
+**Next direct job:** E2-6 B, Pydatic contracts and Service Sales API; E2-6 C Atomic closing of physical/mixed sales, with race tests.

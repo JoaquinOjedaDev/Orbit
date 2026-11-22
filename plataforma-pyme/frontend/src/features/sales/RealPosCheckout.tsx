@@ -58,16 +58,16 @@ const initialPayment = (amount: number | null): PosPaymentDraft => ({
 
 function readableError(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'Sesión vencida. El intento original sigue guardado: volvé a iniciar sesión.'
-    if (error.status === 403) return 'La API denegó esta venta por permisos, sede o política de precios.'
-    if (error.status === 409) return 'La API rechazó la operación (conflicto de stock o de solicitud). No generes otra clave: consultá el intento original.'
-    if (error.status === 422) return 'La API rechazó el comando. Revisá precios, stock, sede y datos; la solicitud original se conserva.'
-    return 'La API respondió HTTP ' + error.status + '. Consultá el estado antes de intentar nuevamente.'
+    if (error.status === 401) return 'The original attempt is still saved: I re-entered.'
+    if (error.status === 403) return 'The API denied this sale by permission, location or pricing policy.'
+    if (error.status === 409) return 'The API rejected the operation (stock or request conflict). Don\'t generate another key: see the original attempt.'
+    if (error.status === 422) return 'API rejected the command. Check prices, stock, headquarters and data; the original request is retained.'
+    return 'API responded to HTTP ' + error.status + '. Consultá el estado antes de intentar nuevamente.'
   }
   if (error instanceof ApiTransportError)
-    return 'No se recibió una confirmación fiable (' + error.reason +
-      '). La venta podría haberse registrado. Consultá por request_id; no crees otra venta.'
-  return error instanceof Error ? error.message : 'No se pudo comprobar el estado de la venta.'
+    return 'No reliable confirmation was received (' + error.reason +
+      ') The sale could have been registered. Consult by request_id; you don’t believe another sale.'
+  return error instanceof Error ? error.message : 'The status of the sale could not be verified.'
 }
 
 export function RealPosCheckout({
@@ -118,11 +118,11 @@ export function RealPosCheckout({
   const draft = useMemo(() => {
     try {
       const discount = pesosToCents(discountText)
-      if (discount === null) throw new RangeError('Ingresá un descuento válido.')
+      if (discount === null) throw new RangeError('Enter a valid discount.')
       const value = previewPosCart(role, businessActive, location, items, cart, discount)
       return { totals: value.totals, problem: '' }
     } catch (error) {
-      return { totals: null, problem: error instanceof Error ? error.message : 'Carrito inválido.' }
+      return { totals: null, problem: error instanceof Error ? error.message : 'Invalid cart.' }
     }
   }, [role, businessActive, location, items, cart, discountText])
 
@@ -161,7 +161,7 @@ export function RealPosCheckout({
               if (!mounted) return
               qrAttempt.current = null
               setQrUnknown(false)
-              setNotice('Se limpió una solicitud QR anterior que no existe en esta base de pruebas.')
+              setNotice('An earlier QR request was cleared that does not exist on this evidence base.')
               setStage(row ? 'pending' : 'editing')
               onDraftLock(Boolean(row))
               return
@@ -194,12 +194,12 @@ export function RealPosCheckout({
     if (qrUnknown || busy.current) return
     setNotice('')
     try {
-      if (!draft.totals) throw new RangeError(draft.problem || 'Carrito inválido.')
+      if (!draft.totals) throw new RangeError(draft.problem || 'Invalid cart.')
       const command = composePosCheckout(
         location?.id ?? null, cart, draft.totals.discount_cents, notes, shownPayments,
       )
       if (command.totals.total_cents !== draft.totals.total_cents)
-        throw new RangeError('El total cambió durante la revisión.')
+        throw new RangeError('The total changed during the review.')
       setReview(command)
       setStage('review')
       setAck(false)
@@ -221,10 +221,10 @@ export function RealPosCheckout({
       if (replayOnly) {
         const original = await qrPendingJournal.load(qrScope)
         if (!original || original.key !== qrAttempt.current?.key)
-          throw new Error('El intento QR guardado cambió. Volvé a recuperar por GET.')
+          throw new Error('The saved QR attempt changed. I recovered again for GET.')
         saved = await qrPendingJournal.reserve(original)
       } else {
-        if (!draft.totals) throw new RangeError(draft.problem || 'El carrito no tiene total válido.')
+        if (!draft.totals) throw new RangeError(draft.problem || 'The cart has no total valid.')
         const command = makeQrIntentCommand(location?.id ?? null, cart, draft.totals.discount_cents, notes)
         saved = await qrPendingJournal.reserve(newQrPending(userId, businessId, command))
       }
@@ -240,7 +240,7 @@ export function RealPosCheckout({
     } catch (error) {
       setQrUnknown(true)
       setQrRecoveryChecked(false)
-      setNotice(qrIntentError(error) + ' Recuperá el intento original por GET antes de reintentar.')
+      setNotice(qrIntentError(error) + ' It will recover the original attempt by GET before retrying.')
       setStage('editing')
       onDraftLock(true)
       if (error instanceof ApiHttpError && error.status === 401) onUnauthorized()
@@ -258,7 +258,7 @@ export function RealPosCheckout({
     setQrRecoveryChecked(false)
     try {
       const original = await qrPendingJournal.load(qrScope)
-      if (!original) throw new Error('No existe un intento QR guardado para esta cuenta y empresa.')
+      if (!original) throw new Error('There is no QR attempt saved for this account and company.')
       qrAttempt.current = original
       const found = await qrApi.byRequest(original.key)
       await qrPendingJournal.close(original, found)
@@ -276,16 +276,16 @@ export function RealPosCheckout({
             qrAttempt.current = null
             setQrUnknown(false)
             setQrRecoveryChecked(false)
-            setNotice('QR anterior inexistente: ya podés generar uno nuevo.')
+            setNotice('Previous non-existent QR: you can already generate a new one.')
             setStage('editing')
             onDraftLock(Boolean(pending))
           } catch {
-            setNotice('No se pudo limpiar la solicitud QR local. Conservamos el bloqueo para no duplicarla.')
+            setNotice('Local QR request could not be cleared. We kept the lock to avoid duplicating it.')
             onDraftLock(true)
           }
         } else {
           setQrRecoveryChecked(true)
-          setNotice('GET devolvió 404. El POST anterior podría no haber llegado. Podés reintentar explícitamente la misma clave y el mismo cuerpo guardado.')
+          setNotice('GET returned 404. The previous POST may not have arrived. You can explicitly retry the same key and saved body.')
           onDraftLock(true)
         }
       } else {
@@ -304,7 +304,7 @@ export function RealPosCheckout({
     setPending(null)
     setReview(null)
     setNotice(result.journalCleared ? '' :
-      'La venta está confirmada en PostgreSQL, pero no se pudo limpiar IndexedDB. Recuperala por GET antes de otra venta.')
+      'The sale is confirmed in PostgreSQL, but could not be cleaned IndexedDB. Recover it by GET before another sale.')
     setStage('confirmed')
     setAck(false)
     if (result.journalCleared) {
@@ -356,7 +356,7 @@ export function RealPosCheckout({
       else if (result.state === 'not-found') {
         setPending(result.pending)
         setRecoveryChecked(true)
-        setNotice('GET devolvió 404: esto NO demuestra que el POST original no llegó. Podés reintentar explícitamente la MISMA clave y cuerpo, sin modificar importes.')
+        setNotice('GET returned 404: this does NOT show that the original POST did not arrive. You can explicitly retry the SAME key and body, without modifying amounts.')
         setStage('pending')
       } else {
         setPending(null)
@@ -413,7 +413,7 @@ export function RealPosCheckout({
   function fillLastPayment(){
     setNotice('')
     try{
-      if(currentTotal===null)throw new RangeError('Primero armá un carrito con total válido.')
+      if(currentTotal===null)throw new RangeError('First arm a cart with valid total.')
       setPayments(completeLastPosPayment(currentTotal,shownPayments))
       setPaymentModified(true)
     }catch(err){
@@ -422,103 +422,103 @@ export function RealPosCheckout({
   }
 
   return <section className={'real-ops-subpanel real-pos-checkout e3-pos-checkout e3-pos-checkout-'+stage}
-      aria-label="Pagos y confirmación REAL" data-stage={stage}>
-    <h2>{stage==='review'?'Detalle final para confirmar la venta'
-      :stage==='pending'?'Recuperar venta pendiente'
-      :stage==='confirmed'?'Venta confirmada'
-      :stage==='sending'?'Procesando venta'
-      :stage==='blocked'?'Verificar venta pendiente'
-      :'4. Pagos declarados y confirmación'}</h2>
-    <p className="real-auth-note"><strong>Los pagos son declaraciones del vendedor.</strong> No se consulta ni acredita dinero en bancos, tarjetas, Cuenta DNI o Mercado Pago. Una venta confirmada sí genera comprobante y, si incluye bienes físicos, descuenta stock en PostgreSQL.</p>
+      aria-label="Real Payments and Confirmation" data-stage={stage}>
+    <h2>{stage==='review'?'Final detail to confirm sale'
+      :stage==='pending'?'Recover pending sale'
+      :stage==='confirmed'?'Confirmed sale'
+      :stage==='sending'?'Processing sale'
+      :stage==='blocked'?'Verify pending sale'
+      :'4. Declared payments and confirmation'}</h2>
+    <p className="real-auth-note"><strong>Payments are seller's statements.</strong> No money is consulted or credited in banks, cards, ID Account or Payment Market. A confirmed sale does generate proof and, if it includes physical goods, accounts stock at PostgreSQL.</p>
 
-    {stage === 'checking' && <p role="status">Verificando ventas pendientes en IndexedDB…</p>}
+    {stage === 'checking' && <p role="status">Checking pending sales in IndexedDB...</p>}
     {stage === 'blocked' && <>
-      <p role="alert" className="real-auth-message real-auth-error">{notice || 'No se pudo verificar si existe una venta pendiente. No se enviará ningún POST.'}</p>
-      <button type="button" className="real-auth-secondary" onClick={() => void verifyStorage()}>Volver a comprobar almacenamiento local</button>
+      <p role="alert" className="real-auth-message real-auth-error">{notice || 'Could not verify if an outstanding sale exists. No POST will be sent.'}</p>
+      <button type="button" className="real-auth-secondary" onClick={() => void verifyStorage()}>Recheck local storage</button>
     </>}
 
     {stage === 'editing' && <>
-      <p>Revisá los importes y declaralos en uno o varios medios. Los importes deben sumar exactamente el total de la venta.</p>
-      {draft.totals && <div className="e3-pos-payment-breakdown" aria-label="Cálculo del total a cobrar" role="status">
-        <span>Subtotal de artículos <strong>{pesos(draft.totals.subtotal_cents)}</strong></span>
-        <span>Descuento aplicado a la venta <strong>−{pesos(draft.totals.discount_cents)}</strong></span>
-        <span>Total a cobrar <strong>{pesos(draft.totals.total_cents)}</strong></span>
-        <small>El descuento cambia el total a pagar; no altera los precios unitarios de catálogo.</small>
+      <p>Check the amounts and declare them in one or more means. The amounts must add up exactly to the total of the sale.</p>
+      {draft.totals && <div className="e3-pos-payment-breakdown" aria-label="Calculation of total receivable" role="status">
+        <span>Subtotal items <strong>{pesos(draft.totals.subtotal_cents)}</strong></span>
+        <span>Discount applied to sale <strong>−{pesos(draft.totals.discount_cents)}</strong></span>
+        <span>Total receivable <strong>{pesos(draft.totals.total_cents)}</strong></span>
+        <small>The discount changes the total to pay; it does not alter the unit prices of catalog.</small>
       </div>}
-      <div className="e3-pos-qr-action" aria-label={EXHIBITION_UI ? "QR de exhibición no pagable" : "Pago alternativo con QR DEMO"}>
-        <h3>{EXHIBITION_UI ? 'QR de exhibición · NO PAGABLE' : 'Mercado Pago QR (DEMO)'}</h3>
+      <div className="e3-pos-qr-action" aria-label={EXHIBITION_UI ? "Unpayable display QR" : "Alternative payment with QR DEMO"}>
+        <h3>{EXHIBITION_UI ? 'Display QR · NOT PAYABLE' : 'Mercado Pago QR (demo)'}</h3>
         <p>{EXHIBITION_UI
-          ? 'Solo exhibición: mostrará artículos, cantidades, descuentos y total del carrito. El código no abre Mercado Pago, no crea órdenes ni registra ventas o pagos. Para registrar una venta real utilizá los medios declarados.'
-          : 'Alternativa a los pagos declarados: genera un intento para el total completo del carrito, sin registrar venta ni cobrar dinero. Podrás ver los artículos, cantidades y descuentos junto al QR.'}</p>
-        {qrConnection === 'loading' && <p role="status">Consultando la vinculación de Mercado Pago…</p>}
-        {qrConnection === 'error' && <p role="alert">No se pudo verificar la vinculación. Abrí Medios de cobro y volvé a intentar.</p>}
-        {qrConnection === 'inactive' && <p role="status">Antes de generar un QR, vinculá la cuenta de Mercado Pago DEMO de esta empresa.</p>}
+          ? 'Only display: will show items, quantities, discounts and total of the cart. The code does not open Mercado Pago, neither creates orders nor records sales or payments. To register a real sale you will use declared means.'
+          : 'Alternative to declared payments: generates an attempt for the complete total of the cart, without registering sale or charging money. You can see items, quantities and discounts next to the QR.'}</p>
+        {qrConnection === 'loading' && <p role="status">Checking the Linking Mercado Pago...</p>}
+        {qrConnection === 'error' && <p role="alert">I opened up the means of collection and tried again.</p>}
+        {qrConnection === 'inactive' && <p role="status">Before generating a QR, link the DEMO Payment Market account of this company.</p>}
         {qrUnknown && <p role="alert" className="real-auth-message real-ops-warning">
-          Hay una solicitud QR anterior pendiente. Estamos comprobando su estado para evitar duplicados.
+          There is a previous QR request pending. We are checking your status to avoid duplicates.
         </p>}
         <div className="e3-pos-qr-buttons">
           {qrConnection === 'active' && <button type="button" className="real-auth-primary"
             disabled={!draft.totals || qrBusy || qrUnknown}
             onClick={() => void beginQrIntent()}>
-              {qrBusy ? 'Generando QR…' : EXHIBITION_UI ? 'Generar QR de exhibición' : 'Generar QR de cobro (DEMO)'}
+              {qrBusy ? 'Generating QR…' : EXHIBITION_UI ? 'Generate Display QR' : 'Generate collection QR (DEMO)'}
           </button>}
           {qrUnknown && <button type="button" className="real-auth-secondary"
             disabled={qrBusy} onClick={() => void recoverQrAttempt()}>
-            Consultar intento por solicitud
+            Consult attempt by request
           </button>}
           {qrUnknown && <button type="button" className="real-auth-secondary"
             disabled={qrBusy || !qrRecoveryChecked} onClick={() => void beginQrIntent(true)}>
-            Reintentar mismo QR y clave
+            Retry QR and key
           </button>}
           <button type="button" className="real-auth-secondary"
             onClick={() => onNavigate('/real/empresas/' + businessId + '/cobros-qr')}>
-            {EXHIBITION_UI ? 'Ver QR de exhibición anteriores' : 'Ver cobros QR anteriores'}
+            {EXHIBITION_UI ? 'View Previous Display QR' : 'See previous QR collections'}
           </button>
           {qrConnection !== 'active' && <button type="button" className="real-auth-secondary"
             onClick={() => onNavigate('/real/empresas/' + businessId + '/medios-de-cobro')}>
-            Ir a Medios de cobro
+            Go to Media
           </button>}
         </div>
       </div>
       {shownPayments.map((row, i) => <div className="real-pos-payment" key={i}>
-        <label>Medio de pago {i + 1}
-          <select aria-label={'Medio de pago ' + (i + 1)} value={row.method} onChange={event =>
+        <label>Payment method {i + 1}
+          <select aria-label={'Payment method ' + (i + 1)} value={row.method} onChange={event =>
             changePayment(i, { method: event.target.value as PosPaymentDraft['method'] })}>
             {SALE_PAYMENT_METHODS.map(method =>
               <option value={method} key={method}>{POS_PAYMENT_LABELS[method]}</option>)}
           </select>
         </label>
-        <label>Importe declarado (ARS) {i + 1}
+        <label>Amount declared (ARS) {i + 1}
           <input aria-label={'Importe declarado ' + (i + 1)} inputMode="decimal"
             value={row.amountText} onChange={event => changePayment(i, { amountText: event.target.value })}/>
         </label>
-        <label>Referencia (opcional) {i + 1}
-          <input aria-label={'Referencia de pago ' + (i + 1)} maxLength={120}
+        <label>Reference (optional) {i + 1}
+          <input aria-label={'Payment reference ' + (i + 1)} maxLength={120}
             value={row.reference} onChange={event => changePayment(i, { reference: event.target.value })}/>
         </label>
         {i===shownPayments.length-1&&<div className="e3-pos-fill-payment-block">
           <button type="button" className="real-auth-secondary e3-pos-fill-payment"
-            aria-label="Completar saldo con último medio de pago" onClick={fillLastPayment}
-            disabled={currentTotal===null}>Completar saldo pendiente</button>
+            aria-label="Complete balance with last payment medium" onClick={fillLastPayment}
+            disabled={currentTotal===null}>Complete outstanding balance</button>
           {currentTotal===null&&<small role="status">
-            Primero agregá artículos al carrito y obtené un total válido para completar el saldo.
+            First add items to your cart and I obtained a valid total to complete the balance.
           </small>}
           {currentTotal!==null&&<small>
-            Calcula el importe restante después del descuento y los medios anteriores. No registra la venta.
+            Calculates the remaining amount after discount and previous media. It does not record sale.
           </small>}
         </div>}
         {shownPayments.length > 1 && <button className="real-auth-link" type="button" onClick={() => {
           setPaymentModified(true)
           setPayments(shownPayments.filter((_, index) => index !== i))
-        }}>Quitar medio {i + 1}</button>}
+        }}>Remove medium {i + 1}</button>}
       </div>)}
       <button type="button" className="real-auth-secondary" disabled={shownPayments.length >= 6}
         onClick={() => {
           setPaymentModified(true)
           setPayments([...shownPayments, { method: 'TRANSFERENCIA', amountText: '', reference: '' }])
-        }}>Agregar otro medio de pago</button>
-      <p className="real-pos-payment-summary" role="status">Pagos ingresados: <strong>{pesos(Number(totalPayments))}</strong>
-        {' · '} Total a declarar: <strong>{currentTotal === null ? '—' : pesos(currentTotal)}</strong>
+        }}>Add another means of payment</button>
+      <p className="real-pos-payment-summary" role="status">Payments entered: <strong>{pesos(Number(totalPayments))}</strong>
+        {' · '} Total to declare: <strong>{currentTotal === null ? '—' : pesos(currentTotal)}</strong>
         {outstandingCents!==null&&<span className={'e3-pos-outstanding'+
           (outstandingCents===0n?' e3-pos-paid':outstandingCents<0n?' e3-pos-excess':'')}>
           {outstandingCents===0n?' · Importe cubierto'
@@ -526,43 +526,43 @@ export function RealPosCheckout({
             :' · Excedente: '+pesos(Number(-outstandingCents))}
         </span>}
       </p>
-      <label>Notas de la venta (opcional)
-        <textarea aria-label="Notas de la venta" rows={2} maxLength={500}
+      <label>Sales notes (optional)
+        <textarea aria-label="Sales notes" rows={2} maxLength={500}
           value={notes} onChange={event => setNotes(event.target.value)}/>
       </label>
       {notice && <p role="alert" className="real-auth-message real-auth-error">{notice}</p>}
       <div className="e3-pos-finalize-bar">
-        <p>El siguiente paso muestra el detalle completo y pide confirmación. Todavía no registra la venta ni mueve stock.</p>
+        <p>The next step shows the full detail and asks for confirmation. It does not yet record the sale or move stock.</p>
         <button type="button" className="real-auth-primary" disabled={!currentTotal || qrBusy || qrUnknown}
-          onClick={reviewSale}>Finalizar venta</button>
+          onClick={reviewSale}>End sale</button>
       </div>
     </>}
 
     {stage === 'review' && review && <>
-      <div className="real-pos-final-review" aria-label="Revisión final de la venta">
-        <h3>Detalle completo de la venta · pendiente de confirmación</h3>
+      <div className="real-pos-final-review" aria-label="Final review of the sale">
+        <h3>Complete details of the sale · pending confirmation</h3>
         <p><strong>Empresa:</strong> {businessName}</p>
-        <p><strong>Sede:</strong> {location?.name ?? 'Sin sede · servicios'}</p>
-        <div className="e3-pos-review-lines" aria-label="Artículos incluidos en la venta">
+        <p><strong>Sede:</strong> {location?.name ?? 'No head office · services'}</p>
+        <div className="e3-pos-review-lines" aria-label="Items on sale">
           {review.body.lines.map((line,i)=>{
             const item=items.find(entry=>entry.id===line.catalog_item_id)
             return <div key={line.catalog_item_id} className="e3-pos-review-line">
               {item&&<RealPhotoPreview token={token} owner={{kind:'CATALOG',businessId,resourceId:item.id}}
-                alt={'Portada actual de '+item.name} className="e3-pos-review-photo"/>}
-              <div><strong>{item?.name??'Artículo'}</strong>
-                <small>{posQuantityText(line.quantity_milli)} {item?.unit??''} × {pesos(line.unit_price_cents)} por unidad</small>
+                alt={'Current cover of '+item.name} className="e3-pos-review-photo"/>}
+              <div><strong>{item?.name??'Item'}</strong>
+                <small>{posQuantityText(line.quantity_milli)} {item?.unit??''} × {pesos(line.unit_price_cents)} per unit</small>
               </div>
               <strong>{pesos(review.totals.line_totals_cents[i])}</strong>
             </div>
           })}
         </div>
-        <p className="e3-photo-reference-note">Las imágenes son referencias visuales del catálogo actual; no forman parte del comprobante ni modifican importes.</p>
-        <div className="e3-pos-review-totals" aria-label="Total con descuento">
-          <p>Subtotal de artículos <strong>{pesos(review.totals.subtotal_cents)}</strong></p>
-          <p>Descuento aplicado <strong>−{pesos(review.totals.discount_cents)}</strong></p>
-          <p className="real-pos-final-total">Total a cobrar <strong>{pesos(review.totals.total_cents)}</strong></p>
+        <p className="e3-photo-reference-note">The images are visual references of the current catalogue; they are not part of the voucher nor modify amounts.</p>
+        <div className="e3-pos-review-totals" aria-label="Total discount">
+          <p>Subtotal items <strong>{pesos(review.totals.subtotal_cents)}</strong></p>
+          <p>Discount applied <strong>−{pesos(review.totals.discount_cents)}</strong></p>
+          <p className="real-pos-final-total">Total receivable <strong>{pesos(review.totals.total_cents)}</strong></p>
         </div>
-        <h4>Pagos declarados</h4>
+        <h4>Declared payments</h4>
         <div className="e3-pos-review-payments">
           {review.body.payments.map((payment,i)=>
             <div key={i}><span>{POS_PAYMENT_LABELS[payment.method]}{payment.reference?' · '+payment.reference:''}</span>
@@ -571,69 +571,69 @@ export function RealPosCheckout({
         {review.body.notes && <p>Notas: {review.body.notes}</p>}
       </div>
       <label className="real-pos-ack">
-        <input type="checkbox" aria-label="Acepto registrar esta venta REAL"
+        <input type="checkbox" aria-label="I agree to register this REAL sale"
           checked={ack} onChange={e => setAck(e.target.checked)}/>
-        Confirmo empresa, sede, precios, cantidades y medios declarados. Entiendo que una venta confirmada registra comprobante y afecta stock físico.
+        I confirm company, headquarters, prices, quantities and means declared. I understand that a confirmed sale records proof and affects physical stock.
       </label>
-      {!MUTATIONS_ENABLED && <p className="real-auth-note">El registro de ventas REAL está deshabilitado en este entorno. Solo se habilita mediante configuración explícita en un entorno autorizado; podés revisar los datos sin registrar operaciones.</p>}
+      {!MUTATIONS_ENABLED && <p className="real-auth-note">The REAL sales log is disabled in this environment. It is only enabled by explicit configuration in an authorized environment; you can review the data without registering operations.</p>}
       <div className="real-pos-confirm-actions e3-pos-confirm-actions">
         <button type="button" className="real-auth-secondary" onClick={() => {
           setStage('editing'); setReview(null); setAck(false); onDraftLock(false)
-        }}>Volver a editar</button>
+        }}>Reedit</button>
         <button type="button" className="real-auth-primary"
           disabled={!ack || !MUTATIONS_ENABLED} onClick={() => void confirmReviewed()}>
-          Confirmar y registrar venta REAL
+          Confirm and register REAL sale
         </button>
       </div>
     </>}
 
-    {stage === 'sending' && <p role="status">{qrBusy ? 'Generando un QR DEMO y guardando su detalle en PostgreSQL…' : 'Verificando y enviando la solicitud original de venta… No cierres la sesión hasta consultar el resultado.'}</p>}
+    {stage === 'sending' && <p role="status">{qrBusy ? 'Generating a DEMO QR and saving your detail in PostgreSQL...' : 'Checking and sending the original request for sale... Do not close the session until you see the result.'}</p>}
 
     {stage === 'pending' && pending && <>
       <p role="alert" className="real-auth-message real-ops-warning">
-        Hay una solicitud de venta guardada que requiere recuperación. NO crees otra venta ni cambies su contenido.
+        There is a saved sale request that requires recovery. Do NOT create another sale or change its content.
       </p>
       <p><strong>Clave original:</strong> <code>{pending.key}</code></p>
-      <p><strong>Total original:</strong> {pesos(
+      <p><strong>Original total:</strong> {pesos(
         pending.body.lines.reduce((total, line) =>
           total + Number((BigInt(line.quantity_milli) * BigInt(line.unit_price_cents) + 500n) / 1000n), 0)
         - pending.body.discount_cents)}</p>
       {salePendingOld(pending) &&
-        <p className="real-auth-note">Este intento tiene más de 30 días. No se borra automáticamente.</p>}
+        <p className="real-auth-note">This attempt has more than 30 days. It is not automatically deleted.</p>}
       {notice && <p role="alert" className="real-auth-message real-ops-warning">{notice}</p>}
       <button type="button" className="real-auth-secondary" onClick={() => void recoverOriginal()}>
-        Recuperar comprobante por solicitud (GET)
+        Recover proof by request (GET)
       </button>
       {recoveryChecked && <>
         <label className="real-pos-ack">
-          <input type="checkbox" aria-label="Acepto reenviar la misma solicitud"
+          <input type="checkbox" aria-label="I agree to forward the same request"
             checked={ack} onChange={event => setAck(event.target.checked)}/>
-          Entiendo que el 404 es ambiguo. Autorizo reintentar exclusivamente la misma solicitud guardada (misma clave y cuerpo).
+          I understand that 404 is ambiguous. I authorize to retry the same saved request (same key and body).
         </label>
         <button type="button" className="real-auth-primary"
           disabled={!MUTATIONS_ENABLED || !ack} onClick={() => void replayOriginal()}>
-          Reintentar exactamente esta venta
+          Retry this sale exactly
         </button>
       </>}
     </>}
 
     {stage === 'confirmed' && confirmed && <>
-      <p role="status" className="real-auth-message real-ops-success">Venta confirmada en PostgreSQL. Comprobante REAL: {confirmed.receipt.id}</p>
-      <p><strong>Clave de solicitud:</strong> <code>{confirmed.receipt.request_id}</code></p>
-      <p><strong>Total confirmado:</strong> {pesos(confirmed.receipt.total_cents)}</p>
-      <p><strong>Pagos:</strong> declarados, sin acreditación externa.</p>
+      <p role="status" className="real-auth-message real-ops-success">Confirmed sale at PostgreSQL. REAL Checker: {confirmed.receipt.id}</p>
+      <p><strong>Application key:</strong> <code>{confirmed.receipt.request_id}</code></p>
+      <p><strong>Total confirmed:</strong> {pesos(confirmed.receipt.total_cents)}</p>
+      <p><strong>Pagos:</strong> declared, without external accreditation.</p>
       {!confirmed.journalCleared && <p role="alert" className="real-auth-message real-ops-warning">{notice}</p>}
       {confirmed.journalCleared
         ? <button type="button" className="real-auth-secondary" onClick={() => {
           setConfirmed(null); setPaymentModified(false); setPayments([initialPayment(null)])
           setNotes(''); setAck(false); setStage('editing'); onDraftLock(false)
-        }}>Preparar otra venta</button>
+        }}>Prepare another sale</button>
         : <button type="button" className="real-auth-secondary" onClick={() => void recoverOriginal()}>
-            Reintentar limpieza mediante GET
+            Retry cleaning using GET
           </button>}
       <button type="button" className="real-auth-link"
         onClick={() => onNavigate('/real/empresas/' + businessId + '/ventas')}>
-        Abrir historial REAL
+        Open REAL History
       </button>
     </>}
   </section>

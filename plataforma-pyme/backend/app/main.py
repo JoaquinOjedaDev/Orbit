@@ -19,8 +19,7 @@ def create_app() -> FastAPI:
     application = FastAPI(
         title="Orbit API",
         description=(
-            "Backend REST del sistema de gestion multiempresa. "
-            "E2-0.3: conexion PostgreSQL y migraciones; sin datos comerciales."
+            "Backend REST of the multi-company management system. E2-0.3: PostgreSQL connection and migrations; no commercial data."
         ),
         version="0.1.0",
     )

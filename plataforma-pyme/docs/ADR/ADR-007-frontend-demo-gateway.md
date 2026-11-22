@@ -1,32 +1,32 @@
-# ADR-007 — Frontend, navegación y repositorio DEMO
-**Fecha:** 2026-11-06  
-**Estado:** PROPUESTO, pendiente de validación del equipo al comenzar E1-A.  
-**Responsable de aprobación:** equipo del TP / responsable técnico (a designar).  
-**Fuentes:** E0-A H08/H09/H15/H17/H21; E0-B ``2–7; plan v4 ``3–4.
+# ADR-007 — Frontend, navigation and DEMO repository
+**Date:** 2026-11-06  
+**Status:** PROPOSAL, pending validation of the team at start E1-A.  
+**Responsible for approval:** TP/technical officer team (to be designated).  
+**Sources:** E0-A H08/H09/H15/H17/H21; E0-B ``2–7; plan v4 ``3–4.
 
-## Decisión técnica propuesta
-- `frontend/` como **SPA React + TypeScript + Vite** dentro de `plataforma-pyme/`. React Router para rutas, `navigation.ts` como registro único de menú/tarjetas, tokens CSS y componentes accesibles.
-- Zustand es propuesta de store DEMO. **Estado del negocio central por businessId**, no `localStorage` y funciones globales heredadas de M1/M2/M3.
-- Separar `session`, `activeBusiness`, `businessesById` y `draftsByScopedKey` (user+business+feature+location cuando aplica).
-- UI invoca comandos/consultas tipados a `AppGateway`; `DemoGateway` primero, `ApiGateway` después. Comandos empresariales siempre llevan actor, businessId y commandId; validación y resultado tipado.
-- E1-A comienza con estado en memoria y fixtures DEMO; persistencia opcional se introduciría mediante adaptador versionado, **no** como seguridad real.
-- Menú Inicio/empresa/perfil/ubicaciones/catálogo/ventas/caja con rutas explícitas; las no implementadas presentan «Próximamente».
-- WALOS es una empresa ejemplo, **no** un requisito de rubro ni una marca del producto.
+## Proposed technical decision
+- `frontend/` as **SPA React + TypeScript + Vite** dentro de `plataforma-pyme/`. React Router para rutas, `navigation.ts` as a unique menu/card record, CSS tokens and accessible components.
+- Zustand is proposed by store DEMO. **Central business status by businessId**, no `localStorage` and global functions inherited from M1/M2/M3.
+- Separate `session`, `activeBusiness`, `businessesById` y `draftsByScopedKey` (user+business+feature+location cuando aplica).
+- UI invokes typed commands/consultations to `AppGateway`; `DemoGateway` first, `ApiGateway` Business commands always carry actor, businessId and commandId; validation and typical result.
+- E1-A starts with memory status and DEMO fixtures; optional persistence would be introduced by versioned adapter, **no** as real security.
+- Start/company/profile/locations/catalogue/sales/box with explicit routes; unimplemented routes are "nextly".
+- WALOS is an example company, **no** a product description or mark.
 
-## Alternativas
-- Importar 19 HTML por iframe o copiar scripts globales: descartado, acoplamiento y datos incoherentes.
-- Estado aislado por M1/M2/M3: descartado.
-- Acoplar `fetch` directamente a cada pantalla: descartado por migración costosa a API.
-- React + Redux o microfrontends: complejidad no necesaria en primer circuito; reconsiderar sólo con evidencia.
+## Alternatives
+- Import 19 HTML by iframe or copy global scripts: discarded, linked and inconsistent data.
+- Insulated state by M1/M2/M3: discarded.
+- Acoplar `fetch` directly to each screen: discarded by costly migration to API.
+- React + Redux or microfrontends: complexity not necessary in first circuit; reconsider only with evidence.
 
-## Consecuencias y límites
-Las autorizaciones, transacciones, concurrencia y tokens verdaderos estarán en backend. Guardas UX y fixtures en memoria son **simulación**: no afirmación de seguridad ni persistencia real.
+## Consequences and limits
+The authorizations, transactions, contestation and tokens will be in backend. UX saves and fixtures in memory are **simulation**: no security statement or real persistence.
 
-## Pruebas pendientes
-- **DEMO-NAV-01:** cada tarjeta lleva a vista o «Próximamente» y coincide con menú lateral.
-- **DEMO-TEN-01:** alternar empresa A/B limpia contexto/carro/borradores.
-- **DEMO-UX-01:** shell responsive, formularios/modal teclado, foco y errores visibles.
-- Con el backend, mismas operaciones comerciales mediante `ApiGateway` sin doble autoridad.
+## Pending evidence
+- **DEMO-NAV-01:** each card leads to view or "Next" and matches the side menu.
+- **DEMO-TEN-01:** alternate company A/B cleans context/car/deletion.
+- **DEMO-UX-01:** shell responsive, forms/modal keyboard, focus and visible errors.
+- With the backend, same commercial transactions through `ApiGateway` without double authority.
 
-## Hito de revisión
-Aprobar stack antes de crear el esqueleto Vite E1-A1; si se cambia framework, documentar impacto en este ADR sin reauditar HTML.
+## Review milestone
+Approve stack before creating the Vite E1-A1 skeleton; if you change framework, document impact on this ADR without re-auditing HTML.

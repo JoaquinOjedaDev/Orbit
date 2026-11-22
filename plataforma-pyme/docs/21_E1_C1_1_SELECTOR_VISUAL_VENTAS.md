@@ -1,35 +1,35 @@
-# E1-C1.1 — Selector visual POS, sin alterar los comandos de Ventas
+# E1-C1.1 — Visual POS selector, without altering Sales commands
 
-**Fecha:** 06/11/2026. **Estado:** publicado en `main`; requiere build/lint y validación funcional local.
+**Date:** 06/11/2026. **Status:** published in `main`; requires build/lint and local functional validation.
 
-## Origen y alcance
+## Origin and scope
 
-Referencias revisadas: imágenes adjuntas del usuario y `WALOS_M3_Cargar_Venta_POS_vNext.html` original. Se aprovecha su patrón de búsqueda por producto/SKU, filtro por categoría y tarjetas de artículos con precio, imagen, stock de la ubicación y botón de agregar. **No se porta el HTML completo ni su JavaScript de stock, caja, moneda o QR.**
+Revised references: attached user images and `WALOS_M3_Cargar_Venta_POS_vNext.html` Original. Take advantage of your search pattern by product/SKU, filter by category and priced item cards, image, location stock and add button. **You do not carry the full HTML or your JavaScript stock, cash box, currency or QR.**
 
-E1-C1 ya tenía carrito editable, centavos enteros, descuento fijo, pagos divididos exactos, salida única de stock y comprobante DEMO. Esas reglas permanecen intactas.
+E1-C1 already had editable cart, whole cents, fixed discount, exact split payments, single stock out and DEMO voucher. Those rules remain intact.
 
-### Cambios visibles
+### Visible changes
 
-- Dentro de **Ventas → Nueva venta** se muestra primero un **selector visual de artículos** y luego el formulario del carrito.
-- Búsqueda por nombre, SKU, categoría o descripción, sin distinguir mayúsculas ni acentos; filtro desplegable por categoría.
-- Tarjetas con imagen opcional ya guardada en IndexedDB, nombre, SKU, categoría, precio y disponibilidad según ubicación seleccionada.
-- **Agregar** incorpora una unidad al carrito existente o incrementa la cantidad cuando el artículo ya está elegido. El formulario tradicional permite cantidades medidas, precios a cotizar y correcciones manuales.
-- En bienes físicos sin ubicación elegida, o sin al menos una unidad disponible, se deshabilita el agregado rápido. Los servicios permiten agregarse sin ubicación ni stock.
-- La cantidad ya seleccionada se resta visualmente de la disponibilidad de esa ubicación. La validación final sigue perteneciendo a `demoGateway.registerSale`; no se cambia el ledger.
-- Hasta 30 artículos por venta; la búsqueda limita la presentación a 100 tarjetas, sin perder acceso al resto por filtros.
-- Diseño adaptable al ancho del navegador, sin copiar el menú lateral, la marca WALOS ni el store propio del HTML de referencia.
+- Dentro de **Sales → New sale** a **Visual item selector** And then the cart form.
+- Search by name, SKU, category or description, without distinguishing capital letters or accents; drop-down filter by category.
+- Cards with optional image already saved in IndexedDB, name, SKU, category, price and availability according to selected location.
+- **Add** incorporates a unit into the existing cart or increases the quantity when the item is already chosen. The traditional form allows measured quantities, prices to be quoted and manual corrections.
+- In physical goods without a chosen location, or without at least one available unit, the fast addition is disabled. Services allow you to add without location or stock.
+- The quantity already selected is visually subtracted from the availability of that location. Final validation still belongs to `demoGateway.registerSale`; no se cambia el ledger.
+- Up to 30 items per sale; the search limits presentation to 100 cards, without losing access to the rest by filters.
+- Design adaptable to browser width, without copying the side menu, WALOS brand or the store of reference HTML.
 
-### Decisiones deliberadas
+### Deliberate decisions
 
-- **No incluir «Reponer» en cada tarjeta** en esta entrega: la producción propia y traslados deben pasar por las operaciones trazables ya existentes, nunca crear stock libre desde Ventas.
-- **No mostrar «Caja abierta»** si no hay una jornada real; la apertura y el arqueo pertenecen a E1-C2.
-- **No simular acreditación de Mercado Pago** desde un botón de Ventas. Se mantiene «pago declarado DEMO»; QR de cobro, expiraciones y acreditación verificada tendrán entrega separada.
-- **No cambiar a checkout de dos pantallas todavía**: la interfaz existente ya admite pagos mixtos y descuentos, que no deben perderse por simplificar a un solo medio.
-- **No agregar efectivo recibido/vuelto** sin modelo explícito de `tenderedCents` versus `appliedCents`. Será útil con Caja, pero una entrega aislada podría falsear efectivo total.
+- **Do not include "Replenishment" on each card** In this delivery: own production and transfers must go through existing traceable operations, never create free stock from Sales.
+- **Do not show ‘Open Box’** if there is no real day; the opening and arching belong to E1-C2.
+- **Do not simulate payment market accreditation** from a Sales button. It is maintained ‘declared DEMO payment’; QR of collection, expirations and verified accreditation will have separate delivery.
+- **Do not switch to two screen checkout yet**: the existing interface already supports mixed payments and discounts, which should not be missed by simplifying to a single medium.
+- **Do not add cash received/returned** without explicit model of `tenderedCents` versus `appliedCents`. It will be useful with Box, but an isolated delivery could fake total cash.
 
-## QA local recomendado
+## Recommended local QA
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ```powershell
 git pull --ff-only origin main
@@ -40,14 +40,14 @@ npm.cmd run test:inventory
 npm.cmd run dev
 ```
 
-1. Entrar a WALOS → Ventas → Nueva venta, elegir una ubicación que permita vender y almacenar. Buscar **Shampoo**, comprobar imagen, precio y disponibilidad; agregarlo dos veces y verificar que el carrito tenga una sola línea con cantidad **2**.
-2. Intentar agregar productos sin ubicación: botón inhabilitado, sin salidas de stock. Agregar un **servicio** sin ubicación: disponible.
-3. Buscar por SKU y filtrar por categoría. Comprobar que al borrar filtros aparecen los artículos nuevamente.
-4. Probar ubicación con stock cero: artículo visible y acción de agregado inhabilitada; no desaparecerlo de la búsqueda.
-5. Confirmar una venta con descuento y dos medios exactos; revisar comprobante y salida única del inventario. F5 no debe cambiar el saldo.
-6. Probar un precio del catálogo «A cotizar»: se puede seleccionar y luego ingresar manualmente el precio antes de confirmar.
-7. Probar ancho de ventana móvil: tarjetas, carrito y formulario deben conservar legibilidad y navegación.
+1. Enter WALOS → Sales → New sale, choose a location that allows you to sell and store. **Shampoo**, check image, price and availability; add it twice and verify that the cart has a single line with quantity **2**.
+2. Try adding products without location: disabled button, no stock outputs. Add a **service** no location: available.
+3. Search for SKU and filter by category. Check that the items appear again when deleting filters.
+4. Try location with zero stock: visible article and disabled aggregate action; do not disappear from search.
+5. Confirm a discount sale and two exact means; check voucher and unique inventory exit. F5 should not change balance.
+6. Test a price from the catalogue 'To quote': you can select and then enter the price manually before confirming.
+7. Try mobile window width: cards, cart and form must retain readability and navigation.
 
-**Lo que falta comprobar:** ejecución real de build/lint, respuesta del navegador y pruebas de regresión visual por el equipo. No confundir este listado de QA con tests ya ejecutados.
+**What remains to be seen:** actual build/lint execution, browser response and visual regression tests by the team. Do not confuse this QA listing with already executed tests.
 
-**Próximas entregas:** Gastos + Apertura/Cierre (E1-C2). Separación de selección y cobro, carrito persistente y monto recibido/vuelto quedan como mejoras posteriores con reglas explícitas.
+**Next deliveries:** Costs + Opening/Close (E1-C2). Selection and collection separation, persistent cart and amount received/returned are as subsequent improvements with explicit rules.

@@ -1,49 +1,49 @@
-# E1-B6 — Proveedores multirrubro (DEMO)
+# E1-B6 — Multi-rub (DEMO) Suppliers
 
-**Estado:** integrado y publicado en `main`. **Pendiente de compilación, lint, pruebas automatizadas y validación visual local.**
-**Material recibido:** `walos_proveedores.html` y capturas de directorio, ficha y formulario; `01_ESPECIFICACION_FUNCIONAL_Y_UX(1).md`, `02_REVISION_TECNICA_RIESGOS_Y_QA(1).md`, `04_DECISIONES_Y_BACKLOG(1).md`.
-**Selección E0-A:** referencia visual Z073; se preserva el shell React integrado, no se importan scripts del HTML ni sus proveedores ficticios.
+**Status:** integrated and published in `main`. **Pending compilation, lint, automated testing and local visual validation.**
+**Material received:** `walos_proveedores.html` and directory, tab and form catches; `01_ESPECIFICACION_FUNCIONAL_Y_UX(1).md`, `02_REVISION_TECNICA_RIESGOS_Y_QA(1).md`, `04_DECISIONES_Y_BACKLOG(1).md`.
+**Selection E0-A:** visual reference Z073; the integrated shell React is preserved, neither HTML scripts nor their fictitious providers are imported.
 
-## 1. Alcance funcional
+## 1. Functional scope
 
-Directorio de proveedores **por businessId**, independiente del rubro. La única información obligatoria es el nombre comercial (2–90 caracteres). Otros campos opcionales: descripción de productos/servicios ofrecidos, persona de contacto, teléfono, WhatsApp internacional, correo, dirección/referencia, enlace de Google Maps, sitio HTTPS, usuario de Instagram, medios de pago aceptados y observaciones comerciales.
+Supplier Directory **por businessId**The only information required is the commercial name (2–90 characters). Other optional fields: description of products/services offered, contact person, telephone, WhatsApp international, email, address/reference, Google Maps link, HTTPS site, Instagram user, accepted payment means and commercial observations.
 
-- Crear y editar proveedor en el contexto de la empresa actual.
-- Buscar por nombre, ofertas, contacto, teléfono, correo, dirección u observaciones y filtrar por Activos/Inactivos/Todos.
-- Nombre único por empresa, normalizado en espacios y mayúsculas, incluso entre proveedores desactivados. El mismo nombre se permite en otras empresas.
-- Desactivar/reactivar con confirmación y **sin eliminación física**: no se perderá la identidad del proveedor cuando exista una compra histórica. Compras aún no implementado.
-- Ficha detallada `dialog` nativo: Escape, botón y clic fuera; sin handler `close` propenso al bug de StrictMode detectado en Catálogo.
-- Acciones explícitas: abrir WhatsApp sólo con número E.164 internacional válido, teléfono `tel:`, `mailto:`, sitio HTTPS, enlace seguro de Maps o búsqueda por dirección e Instagram por usuario validado.
-- «Copiar datos de contacto» exige pulsación del usuario; no incluye **notas internas ni promociones**. Si el navegador bloquea el portapapeles, muestra texto seleccionable.
-- Medios de pago múltiples: efectivo, transferencia, Mercado Pago, Cuenta DNI, tarjeta, cheque, cuenta corriente. Son **métodos que declara aceptar el proveedor**, no cuentas de cobro configuradas de la empresa.
-- Promociones informativas: hasta ocho reglas con selección opcional de días (lunes=0 a domingo=6), medio requerido opcional y beneficio textual. **No se aplican descuentos automáticamente en Compras**; tampoco se garantiza vigencia o cumplimiento. No se calcula el importe descontado.
-- Un negocio sin proveedores es válido; los registros empiezan vacíos en todas las empresas DEMO.
-- Las imágenes/fotos del HTML, WhatsApp por URL de mensajería incrustada, promociones automáticas, vínculos con artículo y compras históricas ficticias **no se importan** en este corte.
+- Create and edit provider in the context of the current company.
+- Search by name, offers, contact, phone, mail, address or observations and filter through Assets/Inactive/All.
+- Single name per company, standardised in spaces and capitals, even between deactivated suppliers. The same name is allowed in other companies.
+- Deactivate/reactivate with confirmation and **without physical disposal**: the identity of the supplier will not be lost when there is a historical purchase. Purchases not yet implemented.
+- Detailed sheet `dialog` native: Escape, button and click out; no handler `close` prone to the StrintMode bug detected in Catalog.
+- Explicit actions: open WhatsApp with valid international number E.164 only, telephone `tel:`, `mailto:`, HTTPS site, secure map link or search by validated user address and Instagram.
+- ‘Copying contact details’ requires user pulsation; does not include **internal notes and promotions**. If the browser blocks the clipboard, it displays selectable text.
+- Multiple payment means: cash, transfer, Market Payment, Identifier Account, card, check, checking account. **methods that the supplier declares to accept**, not company-configured collection accounts.
+- Information promotions: up to eight rules with optional selection of days (Monday=0 to Sunday=6), optional average required and textual benefit. **No discounts automatically apply on Purchases**; no guarantee of validity or compliance. The discounted amount is not calculated.
+- A business without suppliers is valid; the records start empty in all DEMO companies.
+- HTML images/photos, WhatsApp by embedded messaging URL, automatic promotions, links to article and historical fictitious purchases **they don't care** in this cut.
 
-## 2. Reglas técnicas e integridad
+## 2. Technical rules and integrity
 
-- Datos aislados por empresa en `suppliersById` con el identificador empresarial y un ID UUID interno; comandos de update/estado siempre comprueban `businessId`.
-- Se conserva la clave `asistente-pyme.e1a2.demo.v1` y la versión de almacenamiento 1; se añade un array `suppliers` opcional. Se preservan `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers` y `catalogItems`.
-- Al cargar proveedores guardados, se valida el esquema, nombre, vínculos, promociones, IDs y pertenencia antes de incluirlos. Si un registro no es válido se descarta únicamente ese registro.
-- No hay autorización del servidor: localStorage se usa sólo para pruebas de UX, no es un repositorio comercial seguro.
-- Sitios externos: sólo URLs HTTPS válidas sin credenciales ni puertos; links `target="_blank"` usan `rel="noopener noreferrer"`. Maps reutiliza `mapsLinks.ts`; WhatsApp no añade prefijos ni presupone país; requiere `+<código país><número>`.
-- La ficha es una **vista informativa**. No hay órdenes, descuentos aplicados, facturación, compras, recepción ni stock.
-- Para el backend y TP3: `proveedor.id`, `empresa.id`, estado lógico, contactos, promociones declarativas y compras con referencia histórica. Mantener FK/tenant y snapshots de compra; nunca borrar históricos al inactivar proveedor.
+- Data isolated by company in `suppliersById` with the business identifier and an internal UID; update/state commands always check `businessId`.
+- The key is retained `asistente-pyme.e1a2.demo.v1` and storage version 1; an array is added `suppliers` optional. Preserved `profile`, `createdBusinesses`, `fixtureEdits`, `memberJobs`, `locations`, `teamInvitations`, `teamMembers` y `catalogItems`.
+- When loading saved providers, the schema, name, links, promotions, IDs and membership are validated before they are included. If a record is not valid, only that record is discarded.
+- No server authorization: localStorage is used only for UX testing, it is not a secure commercial repository.
+- External sites: only valid HTTPS URLs without credentials or ports; links `target="_blank"` use `rel="noopener noreferrer"`. Maps reuses `mapsLinks.ts`; WhatsApp does not add prefixes or presuppose country; requires `+<código país><número>`.
+- The tab is a **Informational view**. There are no orders, discounts applied, billing, purchases, receipt or stock.
+- For backend and TP3: `proveedor.id`, `empresa.id`, logical status, contacts, declarative promotions and purchases with historical reference. Keep FK/tenant and purchase snapshots; never delete history when inactivate provider.
 
-## 3. Código y pruebas
+## 3. Code and evidence
 
-- `frontend/src/data/demo/supplierPolicy.ts`: validación pura de campos, URL, WhatsApp, medios y promociones.
-- `frontend/src/data/demo/demoStore.ts`: tipos, lectura persistente compatible, CRUD/estado, aislamiento empresarial.
-- `frontend/src/features/suppliers/SupplierForm.tsx`: alta/edición seccionada.
-- `frontend/src/features/suppliers/SuppliersPage.tsx`: directorio, búsqueda, filtros, estado.
-- `frontend/src/features/suppliers/SupplierDetailDialog.tsx`: ficha, canales seguros, copiar.
-- `frontend/src/App.tsx`: ruta `/b/:businessId/proveedores` con remount contextual.
-- `frontend/src/features/dashboard/Dashboards.tsx`: acceso disponible DEMO.
-- `frontend/src/App.css`: estilos responsive.
-- `frontend/tests/supplier-policy.test.mjs`: regresiones para validaciones y enlaces.
+- `frontend/src/data/demo/supplierPolicy.ts`: pure field validation, URL, WhatsApp, media and promotions.
+- `frontend/src/data/demo/demoStore.ts`: types, compatible persistent reading, CRUD/state, business isolation.
+- `frontend/src/features/suppliers/SupplierForm.tsx`: high/sectional edition.
+- `frontend/src/features/suppliers/SuppliersPage.tsx`: directory, search, filters, status.
+- `frontend/src/features/suppliers/SupplierDetailDialog.tsx`: tab, secure channels, copy.
+- `frontend/src/App.tsx`: route `/b/:businessId/proveedores` con remount contextual.
+- `frontend/src/features/dashboard/Dashboards.tsx`: access available DEMO.
+- `frontend/src/App.css`: responsive styles.
+- `frontend/tests/supplier-policy.test.mjs`: regressions for validations and links.
 - `frontend/package.json`: `npm.cmd run test:suppliers`.
 
-Desde `plataforma-pyme/frontend`:
+From `plataforma-pyme/frontend`:
 
 ~~~powershell
 git pull --ff-only origin main
@@ -56,30 +56,30 @@ npm.cmd run test:team
 npm.cmd run dev
 ~~~
 
-## 4. Matriz de pruebas manuales
+## 4. Manual testing matrix
 
-| ID | Acción | Esperado |
+| ID | Action | Expected |
 |---|---|---|
-| PROV-01 | Abrir Proveedores en empresa nueva | Listado vacío, sin proveedores inventados |
-| PROV-02 | Crear proveedor sólo con nombre | Alta válida, ficha activa |
-| PROV-03 | Completar ofertas, contacto y teléfono ficticios | Guardados y visibles en ficha |
-| PROV-04 | Agregar WhatsApp `+5491112345678` | Link abre `wa.me/5491112345678` en otra pestaña |
-| PROV-05 | Ingresar WhatsApp `1112345678` | Validación impide el alta sin formato internacional |
-| PROV-06 | Guardar sitio HTTPS y enlace Maps de lugar público | Enlaces seguros visibles; abrir sólo al hacer clic |
-| PROV-07 | Intentar `javascript:` o URL Maps con host falso | Guardado rechazado |
-| PROV-08 | Agregar transferencia y efectivo como medios | Se muestran en la ficha como informativos |
-| PROV-09 | Registrar regla «10% martes/jueves por transferencia» | Visible, sin aplicar cambios a precios ni Compras |
-| PROV-10 | Copiar contacto y pegar en bloc de notas | Nombre, oferta y contactos; **sin observaciones ni promociones** |
-| PROV-11 | Editar proveedor y F5 | Cambios conservados |
-| PROV-12 | Intentar duplicar nombre con otras mayúsculas | Rechazo en la misma empresa |
-| PROV-13 | Crear igual nombre en otra empresa | Permitido, sin cruce de registros |
-| PROV-14 | Desactivar, filtrar Inactivos, reactivar | Ficha preservada, contadores correctos |
-| PROV-15 | Abrir ficha y presionar Escape | El modal se cierra sólo cuando se solicita |
-| PROV-16 | Cambiar empresa durante un formulario | Borrador no se arrastra a la otra empresa |
-| PROV-17 | Cambiar de sección y regresar a Perfil/Catálogo/Ubicaciones | Datos anteriores sin modificaciones |
-| PROV-18 | Pantalla 390 px | Formulario, opciones y fichas legibles sin desbordamiento |
-| PROV-19 | Ejecutar build, lint y todos los test scripts | Sin errores ni advertencias |
+| PROV-01 | Open Suppliers in new company | Empty list, no invented suppliers |
+| PROV-02 | Create Provider Only by Name | Valid High, active tab |
+| PROV-03 | Complete fictitious offers, contact and phone | Saved and visible on tab |
+| PROV-04 | Agregar WhatsApp `+5491112345678` | Link abre `wa.me/5491112345678` in another tab |
+| PROV-05 | Ingresar WhatsApp `1112345678` | Validation prevents international formatting |
+| PROV-06 | Save HTTPS site and public place maps link | Safe visible links; open only when clicking |
+| PROV-07 | Try `javascript:` o URL Maps con host falso | Rejected Saved |
+| PROV-08 | Add transfer and cash as means | Shown in the tab as information |
+| PROV-09 | Register rule "10% Tuesday/Thursday per transfer" | Visible, without applying changes to prices or purchases |
+| PROV-10 | Copy contact and paste into notepad | Name, offer and contacts; **no comments or promotions** |
+| PROV-11 | Edit Provider and F5 | Changes retained |
+| PROV-12 | Try to duplicate name with other capital letters | Rejection in the same company |
+| PROV-13 | Create the same name in another company | Allowed, no cross-recording |
+| PROV-14 | Deactivate, Inactive Filter, Reactivate | Preserved sheet, correct counters |
+| PROV-15 | Open tab and press Escape | The modal is closed only when requested |
+| PROV-16 | Change company during a form | Draft does not crawl to the other company |
+| PROV-17 | Change section and return to Profile/Catalogue/Locations | Previous data unchanged |
+| PROV-18 | Screen 390 px | Non-overflow readable form, options and tokens |
+| PROV-19 | Run build, lint and all test scripts | No errors or warnings |
 
-## 5. Próximo corte
+## 5. Next cut
 
-**Compras**: proveedor opcional, compra informativa o vinculada a artículo físico, revisión previa, importes enteros, conversión explícita unidad de compra→unidad base, recepción atómica e idempotencia al evolucionar a backend. La DEMO de proveedores todavía no modifica inventario ni medios de cobro de la propia empresa.
+**Purchases**: optional supplier, informational or related purchase to physical item, prior review, whole amounts, explicit conversion purchasing unit→base unit, atomic reception and idempotence as it evolves backend. The DEMO of suppliers still does not modify inventory or means of collection of the company itself.

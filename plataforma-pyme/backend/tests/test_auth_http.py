@@ -1,3 +1,4 @@
+import secrets
 """Contrato /register sin escribir a PostgreSQL."""
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -15,7 +16,7 @@ from app.modules.auth.service import DuplicateIdentityError
 def _payload() -> dict[str, str]:
     return {
         "email": " Persona@EXAMPLE.COM ",
-        "password": "Frase de acceso de prueba de longitud segura",
+        "password": secrets.token_urlsafe(24),
         "display_name": "Persona Ejemplo",
     }
 
@@ -60,7 +61,7 @@ def test_duplicate_returns_generic_conflict(monkeypatch: pytest.MonkeyPatch) -> 
     with TestClient(app) as client:
         response = client.post("/api/v1/auth/register", json=_payload())
     assert response.status_code == 409
-    assert response.json() == {"detail": "No se pudo completar el registro"}
+    assert response.json() == {"detail": "Could not complete registration"}
 
 
 def test_invalid_request_does_not_reach_database() -> None:

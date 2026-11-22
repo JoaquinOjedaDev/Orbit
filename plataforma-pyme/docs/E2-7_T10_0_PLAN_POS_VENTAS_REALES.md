@@ -1,83 +1,83 @@
-# E2-7 · T10-0 — Plan de implementación del POS de ventas REALES
+# E2-7 · T10-0 — Real Sales POS Implementation Plan
 
-**Fecha:** 10/11/2026. **Rama:** `feature/e2-7-t10-pos-ventas-real`. **Base verificada:** `main` en el merge de T09 PR #42, commit `a09c0152aabc1b2c110726ef7aa2f42d71d79a0a`.
+**Date:** 10/11/2026. **Rama:** `feature/e2-7-t10-pos-ventas-real`. **Verified base:** `main` en el merge de T09 PR #42, commit `a09c0152aabc1b2c110726ef7aa2f42d71d79a0a`.
 
-## Objetivo y frontera
+## Objective and border
 
-Construir el POS de ventas REALES en React, integrado con FastAPI y PostgreSQL para empresas de múltiples rubros. **WALOS no determina el dominio ni el precio ni la unidad**. El POS registrará bienes, servicios o ventas mixtas, pagos **declarados** (no confirmados por bancos/MP), descuentos, comprobantes inmutables de venta y débito atómico de stock solo cuando haya bienes.
+Build the REAL Sales POS in React, integrated with FastAPI and PostgreSQL for multi-sector companies. **WALOS does not determine the domain, price or unit**. The POS will record goods, services or mixed sales, payments **declared** (not confirmed by banks/MP), discounts, immutable sales vouchers and atomic stock debit only when there are goods.
 
-**T09 queda fusionado:** existen `POST /api/v1/businesses/{business_id}/sales`, `GET /sales`, `GET /sales/{sale_id}` y `GET /sales/by-request/{request_id}`. El backend realiza la validación efectiva de permiso de empresa/sede, catálogo vendible, importes, pagos y stock; la UI no es un control de seguridad.
+**T09 is merged:** exist `POST /api/v1/businesses/{business_id}/sales`, `GET /sales`, `GET /sales/{sale_id}` y `GET /sales/by-request/{request_id}`. The backend effectively validates company/headquarters permission, sellable catalog, amounts, payments and stock; the UI is not a security check.
 
-**No hacer cambios de ventas ni stock en TEST Empresa A para programar este bloque.** Todas las pruebas de escritura deben usar usuarios/empresas y PostgreSQL completamente descartables en CI. El frontend DEMO queda separado.
+**Do not make sales changes or stock at TEST Company A to program this block.** All writing tests must use users/businesses and PostgreSQL completely disposable in IC. The DEMO frontend is separated.
 
-## 1. Contrato verificado en backend
+## 1. Contract verified in backend
 
-`CreateSaleRequest` tiene exactamente (se pueden omitir los campos con default en la API, pero T10 usará una representación canónica completa para los reintentos):
+`CreateSaleRequest` has exactly (you can skip default fields in the API, but T10 will use a full canonical representation for retrying):
 
-- `location_id: UUID | null` (null permitido para servicio sin sede **solo** a titular/administrador según política backend vigente).
-- `discount_cents`: entero estricto de 0 a 99.999.999.999.
-- `notes`: texto normalizado, máximo 500 caracteres una vez normalizado.
+- `location_id: UUID | null` (null allowed for no-headquarters service **only** a holder/manager according to current backend policy).
+- `discount_cents`: strict integer from 0 to 99.999.999.999.
+- `notes`: Standard text, maximum 500 characters once normalized.
 - `lines`: de 1 a 30, `{catalog_item_id: UUID, quantity_milli: 1..999999999, unit_price_cents: 0..99999999999}`.
-- `payments`: de 1 a 6, `{method,amount_cents,reference}`, importe positivo. Métodos: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`.
-- Importes en centavos enteros, cantidades en milésimas. **HALF_UP por renglón:** `(quantity_milli * unit_price_cents + 500) // 1000`, **sin floats**. Total final y suma de pagos declarados deben coincidir exactamente; el total después del descuento debe ser positivo.
-- **POST exige `Idempotency-Key` UUID4**. Primera confirmación `201` con `SaleView`; replay autorizado del mismo actor/clave/cuerpo `200`; clave reaprovechada con otro cuerpo/actor `409`. Dos intentos HTTP no equivalen a dos ventas si preservan identidad.
-- No se permite vender cantidades fraccionadas de catálogo con unidades `UNIDAD`, `PAQUETE`, `CAJA` o `SERVICIO`. Se validará tanto en frontend con catálogo completo como en backend.
-- Catálogo puede tener `price_cents=null`, por lo que jamás inventar precio `0` automáticamente ni tomar precio de DEMO. La API existente permite que el comando indique precio; la política de **quién puede editarlo** es la decisión P01, todavía no aprobada para T10.
+- `payments`: de 1 a 6, `{method,amount_cents,reference}`Methods: `EFECTIVO`, `TRANSFERENCIA`, `CUENTA_DNI`, `TARJETA`, `MERCADO_PAGO_DECLARADO`.
+- Amounts in whole cents, amounts in thousandths. **HALF_UP by line:** `(quantity_milli * unit_price_cents + 500) // 1000`, **sin floats**. Final total and sum of payments declared must match exactly; the total after discount must be positive.
+- **POST requires `Idempotency-Key` UUID4**. First confirmation `201` con `SaleView`; authorized replay of the same actor/key/body `200`; key reused with another body/actor `409`Two HTTP attempts do not amount to two sales if they preserve identity.
+- No sales of split quantity catalogues with units `UNIDAD`, `PAQUETE`, `CAJA` o `SERVICIO`. Validate both in frontend with full catalogue and backend.
+- Catalog can have `price_cents=null`, so never invent price `0` automatically or take price from DEMO. The existing API allows the command to indicate price; the policy of **who can edit it** is decision P01, not yet approved for T10.
 
-## 2. Decisión formal P01 — APROBADA Y APLICADA EN FASTAPI
+## 2. Formal Decision P01 — Approved and implemented in Phasei
 
-El plan previo `E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md` exige aprobación del responsable para precio/descuerdo por rol. **No asumir que el backend restringe precios por rol:** actualmente sus reglas controlan permiso de venta por empresa/sede, pero toman `unit_price_cents` y `discount_cents` del comando y verifican consistencia.
+El plan previo `E2-7_T00_DECISIONES_Y_ORDEN_DE_EJECUCION.md` requires approval of the responsible for price/disagreement by role. **Do not assume that the backend restricts price per role:** currently their rules control sales permission by company/headquarters, but take `unit_price_cents` y `discount_cents` command and verify consistency.
 
-**Regla aprobada por el responsable (10/11/2026) y vigente desde T10-P01 en la rama:**
-- Titular administrativo y administrador: pueden modificar precio de la venta, ofrecer descuentos y registrar cualquier método **declarado**.
-- Encargado/trabajador: pueden vender en sus sedes autorizadas a precio del catálogo; **no** pueden cambiar precio unitario ni descontar. Si el catálogo no define precio, no pueden vender ese artículo hasta que un administrador defina precio o autorice una excepción formal.
-- Servicios sin sede: solo titular/admin conforme al backend.
-- Cualquier restricción aprobada deberá implementarse en FastAPI **y** React, con tests de bypass API, no solo ocultando el campo.
+**Rule approved by the responsible (10/11/2026) and in force since T10-P01 in the branch:**
+- Administrative and administrative owner: may modify the price of sale, offer discounts and register any method **declared**.
+- Maintainer/worker: may sell at their authorized premises at the price of the catalogue; **no** can change unit price or discount. If the catalogue does not define price, they cannot sell that item until a price is defined by an administrator or authorizes a formal exception.
+- Services without headquarters: only holder/admin according to the backend.
+- Any restrictions approved must be implemented in FastAPI **y** React, with API bypass tests, not just hiding the field.
 
-**Implementación:** FastAPI rechaza con 403 descuentos/precios distintos del catálogo para operarios y 422 artículos sin precio; Titular/Administrador conservan el control. Pruebas con PostgreSQL efímero y regresión de replays aprobadas. Ver [acta P01 y T10-C](E2-7_T10_P01_Y_C_POS_BORRADOR_QA.md). La regla se verificará nuevamente antes de T10-D.
+**Implementation:** FastAPI rejects with 403 discounts/prices other than the catalog for operators and 422 items without price; Owner/Manager retain control. Tests with PostgreSQL ephemeral and regression of approved replays. View [minutes P01 and T10-C](E2-7_T10_P01_Y_C_POS_BORRADOR_QA.md). The rule will be checked again before T10-D.
 
-## 3. Arquitectura de intentos idempotentes (P04)
+## 3. Architecture of idepotent attempts (P04)
 
-Antes del primer POST, persistir en IndexedDB por scope **actor + empresa + `sale.create`** un `request_id` UUID4 y un **cuerpo completo, canónico e inmutable**, sin Bearer ni credenciales. La escritura en IndexedDB debe terminar y releerse exitosamente **antes** de habilitar la transmisión. Si almacenamiento está bloqueado/corrupto, **no enviar POST**.
+Before the first POST, persist in IndexedDB by scope **actor + company + `sale.create`** un `request_id` UUID4 y un **complete, canonical and immutable body**, without Bearer or credentials. Writing in IndexedDB must be finished and reread successfully **before** if storage is locked/corrupt, **no enviar POST**.
 
-- Tras caída de red, abort, timeout, respuesta inválida o F5: guardar el intento como incierto; reautenticarse con token solo en memoria.
-- Primero ofrecer `GET /sales/by-request/{request_id}`. **404 no prueba que el POST no llegó**: conservar el intento y ofrecer reintento **explícito** de la misma clave/cuerpo; no generar nueva clave por un timeout.
-- Con `201`/`200` y comprobante verificado para empresa, clave y totales: cerrar la intención duradera. Si la eliminación del journal falla, conservarla y permitir recuperación sin nuevo POST.
-- Ante `409`: **no** borrar intento, ni reescribir su cuerpo, ni intentar nueva clave automáticamente. Exigir intervención humana/diagnóstico (puede ser stock insuficiente, empresa o sede suspendida, o clave conflictiva).
-- Si actor/tenant cambia, **aislar físicamente** el scope; no revelar un intento de otra cuenta. Advertir que la información comercial almacenada en IndexedDB no está cifrada: evitar equipos compartidos.
-- No purgar silenciosamente pendientes; definir retención y borrado manual seguro. Reutilizar patrones comprobados `supplyPendingJournal.ts`, sin reutilizar su store con otro esquema.
+- After network crash, abort, timeout, invalid response or F5: save the attempt as uncertain; reauthenticate with token only in memory.
+- First offer `GET /sales/by-request/{request_id}`. **404 doesn't prove POST didn't make it**: keep the attempt and offer retry **explicit** of the same key/body; do not generate new key by a timeout.
+- Con `201`/`200` and verified proof for company, key and total: close the lasting intention. If the elimination of the journal fails, keep it and allow recovery without new POST.
+- Ante `409`: **no** delete attempt, rewrite your body, or automatically try new key. Require human/diagnosis intervention (can be insufficient stock, suspended company or headquarters, or conflictive key).
+- If actor/tenant changes, **physical isolation** the scope; do not disclose an attempt from another account. Warn that commercial information stored in IndexedDB is not encrypted: avoid shared computers.
+- Do not quietly purge earrings; define safe manual retention and deletion. Reuse proven patterns `supplyPendingJournal.ts`without reusing your store with another scheme.
 
-## 4. Diseño mínimo del POS
+## 4. Minimum POS design
 
-1. Selector explícito de **empresa** y sede activa con permiso de venta (sede SELL y STORE para bienes). Nunca usar sede implícita para debitar stock.
-2. Catálogo paginado con estados **loading/parcial/completo/error**; probar **101 y 501 artículos**. No filtrar localmente como si fueran todos cuando solo cargó la primera página. No inventar endpoint de búsqueda `?q=`.
-3. Carrito de 1–30 renglones; unidades, cantidad en milésimas y totales HALF_UP por renglón. Precio del catálogo como sugerencia, no valor impuesto hasta decidir P01.
-4. Descuento y pagos declarados sumando total exacto; no confundir `MERCADO_PAGO_DECLARADO` con webhook/acreditación externa ni el QR del artículo con el QR de cobro.
-5. Revisión final de empresa/sede, renglones, precio, descuento y medios, consentimiento humano explícito; bloqueo de doble clic, journal persistido primero.
-6. Mostrar comprobante REAL de T09; errores 401/403/404/409/422 y resultado incierto con semántica clara. Saldo actual consultado en Inventario, saldo postventa mostrado como snapshot.
-7. Integración y pruebas con varias empresas/roles, stock suficiente/insuficiente, 409 por replay distinto, red caída tras commit, F5/relogin, servicio sin stock y venta mixta.
+1. Explicit Selector of **company** and active headquarters with sales permit (SELL and STORE premises for goods). Never use implicit headquarters to debit stock.
+2. Catalog paged with states **loading/parcial/completo/error**; probar **101 and 501 articles**. Do not filter locally as if they were all when you only loaded the first page. Do not invent search endpoint `?q=`.
+3. Cart of 1–30 lines; units, quantity in thousandths and total HALF_UP per line. Price of the catalog as suggestion, not value tax until decided P01.
+4. Discount and payments declared adding up exact total; not to confuse `MERCADO_PAGO_DECLARADO` with webhook/external accreditation or QR of the item with the QR collection.
+5. Final review of company/headquarters, lines, price, discount and means, explicit human consent; double-click lock, journal persist first.
+6. Show REAL T09 voucher; errors 401/403/404/409/422 and uncertain result with clear semantics. Current balance consulted in Inventory, after-sales balance shown as snapshot.
+7. Integration and testing with several companies/roles, sufficient/insufficient stock, 409 per different replay, network down after commit, F5/relogin, no-stock service and mixed sale.
 
-## 5. Incrementos T10 propuestos
+## 5. Proposed T10 increases
 
-| Etapa | Salida verificable | Puerta |
+| Stage | Verifiable exit | Door |
 |---|---|---|
-| **T10-0** | Plan, contratos, riesgos P01/P04 y arquitectura | Se realiza ahora |
-| **T10-A** | Validador puro TypeScript de comando y preview HALF_UP + pruebas unitarias sin POST | Seguro antes de P01 |
-| **T10-B** | Journal de venta durable scoped por tenant/actor, gateway de creación con request_id y recuperación por GET; tests sin efectos sobre base real | P04; no habilitar botón de escritura |
-| **T10-C** | POS React para sede/catálogo/carrito, paginación completa 101/501 y roles | P01 aprobada antes de aceptar descuentos/precios |
-| **T10-D** | Declaración de pagos, confirmación humana, persistir intento antes del POST, UI de resultado incierto y comprobante | P01 y B/C aprobados |
-| **T10-E** | Playwright REAL + PostgreSQL descartable: venta física/servicio/mixta, pagos, movimientos, pérdida 201, F5 y 200/409, no duplicados | CI integral verde |
-| **T10-F** | QA manual no destructiva, auditoría premerge, cierre documental y aprobación del responsable | No fusionar automáticamente |
+| **T10-0** | Plan, contracts, risks P01/P04 and architecture | It is now done |
+| **T10-A** | Pure TypeScript Validator command and preview HALF_UP + unit tests without POST | Safe before P01 |
+| **T10-B** | Journal of durable sale scoped by tenant/actor, gateway of creation with request_id and recovery by GET; tests without effects on real basis | P04; not enable write button |
+| **T10-C** | POS React for Headquarters/catalogue/cart, full page 101/501 and roles | P01 approved before accepting discounts/prices |
+| **T10-D** | Payment statement, human confirmation, persist attempt before POST, UI uncertain result and proof | P01 and B/C approved |
+| **T10-E** | Playwright REAL + PostgreSQL disposable: physical sale/service/mixture, payments, movements, loss 201, F5 and 200/409, not duplicated | Green integral CI |
+| **T10-F** | Non-destructive manual, premerge audit, documentary closure and responsible approval | Do not merge automatically |
 
-## 6. Criterios de seguridad y evidencias
+## 6. Safety and evidence criteria
 
-- Archivos propios bajo `plataforma-pyme/`, PR T10 independiente en borrador; **main no se modifica** durante desarrollo.
-- No cambiar backend de T09/T08 salvo necesidad fundada y probada. Evitar cambios en acciones GitHub globales y carpetas no rastreadas.
-- En cada bloque: Node/TS/Vite/Oxlint; backend Pytest PostgreSQL/migraciones; full-stack REAL y regresión DEMO con datos efímeros.
-- CI T09 antes del merge: 886 backend, 273 frontend, 11 Playwright REAL, 6 DEMO, todos aprobados; se usan como línea base, no como resultado de T10.
-- Este plan es una **iniciación de T10**, no autorización para ventas reales desde el navegador.
+- Own files under `plataforma-pyme/`, independent PR T10 in draft; **main no se modifica** during development.
+- Do not change backend of T09/T08 unless you need it well founded and proven. Avoid changes in global GitHub actions and untracked folders.
+- In each block: Node/TS/Vite/Oxlint; backend Python PostgreSQL/migrations; full-stack REAL and regression DEMO with ephemeral data.
+- CI T09 before the merge: 886 backend, 273 frontend, 11 Playwright REAL, 6 DEMO, all approved; used as baseline, not as a result of T10.
+- This plan is a **initiation of T10**, no authorization for real sales from the browser.
 
 
-## Actualización de estado posterior — T10-P01 / T10-C
+## Post-Status Update — T10-P01 / T10-C
 
-La política de precios fue **aprobada expresamente** y aplicada en FastAPI con pruebas de bypass, sin crear roles nuevos. Se preparó la ruta de **POS REAL /pos** con carrito, catálogo paginado y resumen; su botón de confirmación permanece **deshabilitado**, sin POST ni journal desde React. Los incrementos de T10-D/E/F siguen pendientes. Ver [acta canónica T10-P01/C](E2-7_T10_P01_Y_C_POS_BORRADOR_QA.md) para las pruebas y límites vigentes; las indicaciones anteriores sobre «P01 pendiente» se conservan como contexto histórico hasta el momento de la aprobación.
+The price policy was **expressly approved** and applied in FastAPI with bypass testing, without creating new roles. The route of **POS REAL /pos** with cart, catalogue paged and summary; your confirmation button remains **disabled**, without POST or journal from React. Increases of T10-D/E/F are still pending. View [canonical record T10-P01/C](E2-7_T10_P01_Y_C_POS_BORRADOR_QA.md) for existing tests and limits; the previous indications on ‘P01 pending’ are retained as historical context until approval.

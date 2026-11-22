@@ -5,32 +5,32 @@ export type NavigationItem = {
   label: string
   segment: string
   icon: IconName
-  group: 'Principal' | 'Operaciones' | 'Administración' | 'Más herramientas'
+  group: 'Main' | 'Operations' | 'Administration' | 'More tools'
   description: string
   phase: 'E1-A' | 'E1-B' | 'E1-C' | 'Posterior'
 }
 
 export const navigationItems: NavigationItem[] = [
-  { id: 'inicio', label: 'Inicio', segment: 'inicio', icon: 'home', group: 'Principal', description: 'Resumen de la empresa y accesos rápidos.', phase: 'E1-A' },
-  { id: 'empresa', label: 'Datos de la empresa', segment: 'empresa', icon: 'building', group: 'Administración', description: 'Información y configuración del negocio.', phase: 'E1-B' },
-  { id: 'ubicaciones', label: 'Ubicaciones', segment: 'ubicaciones', icon: 'pin', group: 'Administración', description: 'Sucursales, ferias y espacios de trabajo.', phase: 'E1-B' },
-  { id: 'equipo', label: 'Equipo de trabajo', segment: 'equipo', icon: 'users', group: 'Administración', description: 'Colaboradores, roles e invitaciones.', phase: 'E1-B' },
-  { id: 'cuentas', label: 'Cuentas y medios', segment: 'cuentas', icon: 'credit', group: 'Administración', description: 'Cuentas bancarias y billeteras de referencia por empresa (DEMO).', phase: 'E1-C' },
-  { id: 'catalogo', label: 'Catálogo', segment: 'catalogo', icon: 'package', group: 'Operaciones', description: 'Bienes y servicios del negocio.', phase: 'E1-B' },
-  { id: 'inventario', label: 'Inventario', segment: 'inventario', icon: 'boxes', group: 'Operaciones', description: 'Existencias por ubicación y artículo.', phase: 'E1-B' },
-  { id: 'movimientos', label: 'Movimientos', segment: 'movimientos', icon: 'truck', group: 'Operaciones', description: 'Traslados y ajustes con trazabilidad.', phase: 'E1-B' },
-  { id: 'proveedores', label: 'Proveedores', segment: 'proveedores', icon: 'briefcase', group: 'Operaciones', description: 'Contactos y compras relacionadas.', phase: 'E1-B' },
-  { id: 'compras', label: 'Compras', segment: 'compras', icon: 'shopping', group: 'Operaciones', description: 'Compras, recepciones y comprobantes.', phase: 'E1-B' },
-  { id: 'ventas', label: 'Ventas', segment: 'ventas', icon: 'receipt', group: 'Operaciones', description: 'Cobros, descuentos y ventas.', phase: 'E1-C' },
-  { id: 'gastos', label: 'Gastos', segment: 'gastos', icon: 'wallet', group: 'Operaciones', description: 'Gastos operativos y fondos.', phase: 'E1-C' },
-  { id: 'jornadas', label: 'Apertura y cierre', segment: 'jornadas', icon: 'clock', group: 'Operaciones', description: 'Apertura, arqueo y cierre de caja.', phase: 'E1-C' },
-  { id: 'historial', label: 'Historial', segment: 'historial', icon: 'clock', group: 'Más herramientas', description: 'Actividad y operaciones anteriores.', phase: 'E1-C' },
-  { id: 'guias', label: 'Guías de apoyo', segment: 'guias', icon: 'book', group: 'Más herramientas', description: 'Procedimientos y pasos del equipo.', phase: 'Posterior' },
-  { id: 'pedidos', label: 'Pedidos y reservas', segment: 'pedidos', icon: 'shopping', group: 'Más herramientas', description: 'Pedidos y reservas con seguimiento.', phase: 'Posterior' },
-  { id: 'analisis', label: 'Análisis', segment: 'analisis', icon: 'chart', group: 'Más herramientas', description: 'Indicadores y reportes del negocio.', phase: 'Posterior' },
+  { id: 'inicio', label: 'Home', segment: 'inicio', icon: 'home', group: 'Main', description: 'Company overview and quick links.', phase: 'E1-A' },
+  { id: 'empresa', label: 'Company details', segment: 'empresa', icon: 'building', group: 'Administration', description: 'Business information and settings.', phase: 'E1-B' },
+  { id: 'ubicaciones', label: 'Locations', segment: 'ubicaciones', icon: 'pin', group: 'Administration', description: 'Branches and other operating locations.', phase: 'E1-B' },
+  { id: 'equipo', label: 'Team', segment: 'equipo', icon: 'users', group: 'Administration', description: 'Collaborators, roles and invitations.', phase: 'E1-B' },
+  { id: 'cuentas', label: 'Accounts and payment methods', segment: 'cuentas', icon: 'credit', group: 'Administration', description: 'Bank accounts and reference wallets by company (DEMO).', phase: 'E1-C' },
+  { id: 'catalogo', label: 'Catalog', segment: 'catalogo', icon: 'package', group: 'Operations', description: 'Business goods and services.', phase: 'E1-B' },
+  { id: 'inventario', label: 'Inventory', segment: 'inventario', icon: 'boxes', group: 'Operations', description: 'Stock by location and item.', phase: 'E1-B' },
+  { id: 'movimientos', label: 'Stock movements', segment: 'movimientos', icon: 'truck', group: 'Operations', description: 'Track stock transfers and adjustments.', phase: 'E1-B' },
+  { id: 'proveedores', label: 'Suppliers', segment: 'proveedores', icon: 'briefcase', group: 'Operations', description: 'Contacts and related purchases.', phase: 'E1-B' },
+  { id: 'compras', label: 'Purchases', segment: 'compras', icon: 'shopping', group: 'Operations', description: 'Purchase orders, goods receipts, and records.', phase: 'E1-B' },
+  { id: 'ventas', label: 'Sales', segment: 'ventas', icon: 'receipt', group: 'Operations', description: 'Sales, discounts, and payments.', phase: 'E1-C' },
+  { id: 'gastos', label: 'Expenses', segment: 'gastos', icon: 'wallet', group: 'Operations', description: 'Operating expenses and funds.', phase: 'E1-C' },
+  { id: 'jornadas', label: 'Cash sessions', segment: 'jornadas', icon: 'clock', group: 'Operations', description: 'Open, reconcile, and close a cash register.', phase: 'E1-C' },
+  { id: 'historial', label: 'History', segment: 'historial', icon: 'clock', group: 'More tools', description: 'Previous activity and operations.', phase: 'E1-C' },
+  { id: 'guias', label: 'Help guides', segment: 'guias', icon: 'book', group: 'More tools', description: 'Guides for common tasks.', phase: 'Posterior' },
+  { id: 'pedidos', label: 'Orders and reservations', segment: 'pedidos', icon: 'shopping', group: 'More tools', description: 'Orders and reservations with follow-up.', phase: 'Posterior' },
+  { id: 'analisis', label: 'Analytics', segment: 'analisis', icon: 'chart', group: 'More tools', description: 'Business indicators and reports.', phase: 'Posterior' },
 ]
 
-export const navigationGroups: NavigationItem['group'][] = ['Principal', 'Operaciones', 'Administración', 'Más herramientas']
+export const navigationGroups: NavigationItem['group'][] = ['Main', 'Operations', 'Administration', 'More tools']
 
 export function businessHref(businessId: string, segment: string) {
   return '/b/' + encodeURIComponent(businessId) + '/' + segment

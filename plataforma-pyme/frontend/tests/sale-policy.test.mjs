@@ -23,10 +23,10 @@ test('dos medios concilian exactamente al centavo', () => {
   ], 200100))
   assert.throws(() => validateSalePayments([
     payment('EFECTIVO', 100000), payment('TRANSFERENCIA', 100099),
-  ], 200100), /sumar exactamente/)
+  ], 200100), /add up to exactly/i)
   assert.throws(() => validateSalePayments([
     payment('EFECTIVO', 100001), payment('TRANSFERENCIA', 100100),
-  ], 200100), /sumar exactamente/)
+  ], 200100), /add up to exactly/i)
 })
 
 test('un pago digital es declarado, no una acreditación confirmada', () => {
@@ -39,21 +39,21 @@ test('un pago digital es declarado, no una acreditación confirmada', () => {
 })
 
 test('el descuento nunca puede igualar o superar el subtotal', () => {
-  assert.throws(() => saleAmounts([line(1000)], 125050), /descuento/)
-  assert.throws(() => saleAmounts([line(1000)], 125051), /descuento/)
-  assert.throws(() => saleAmounts([line(1000)], -1), /descuento/)
+  assert.throws(() => saleAmounts([line(1000)], 125050), /discount/i)
+  assert.throws(() => saleAmounts([line(1000)], 125051), /discount/i)
+  assert.throws(() => saleAmounts([line(1000)], -1), /discount/i)
 })
 
 test('las cantidades discretas no aceptan fracciones', () => {
   assert.doesNotThrow(() => validSaleQuantity(2000, 'UNIDAD'))
-  assert.throws(() => validSaleQuantity(500, 'CAJA'), /Cantidad inválida/)
-  assert.throws(() => validSaleQuantity(-1000, 'UNIDAD'), /Cantidad inválida/)
+  assert.throws(() => validSaleQuantity(500, 'CAJA'), /Invalid quantity/i)
+  assert.throws(() => validSaleQuantity(-1000, 'UNIDAD'), /Invalid quantity/i)
   assert.doesNotThrow(() => validSaleQuantity(250, 'KILOGRAMO'))
 })
 
 test('stock insuficiente impide una salida', () => {
   assert.doesNotThrow(() => requireTransferStock(3000, 2000, 'UNIDAD'))
-  assert.throws(() => requireTransferStock(1000, 2000, 'UNIDAD'), /insuficiente/)
+  assert.throws(() => requireTransferStock(1000, 2000, 'UNIDAD'), /insufficient/i)
 })
 
 test('entrada de venta valida pago, precio y cantidad sin separadores inconsistentes', () => {
@@ -67,7 +67,7 @@ test('entrada de venta valida pago, precio y cantidad sin separadores inconsiste
   assert.throws(() => normalizeSaleInput({
     locationId, lines: [line(2000)], discountCents: 100,
     payments: [payment('EFECTIVO', 250000), payment('TARJETA', 100)], notes: '',
-  }), /sumar exactamente/)
+  }), /add up to exactly/i)
 })
 
 test('el importe por cantidad medida se redondea HALF_UP al centavo', () => {
@@ -76,14 +76,14 @@ test('el importe por cantidad medida se redondea HALF_UP al centavo', () => {
 })
 
 test('no admite nombres o importes arbitrarios en pagos', () => {
-  assert.throws(() => validateSalePayments([payment('CRYPTO', 100)], 100), /inválido/)
-  assert.throws(() => validateSalePayments([payment('EFECTIVO', 0)], 100), /inválido/)
-  assert.throws(() => validateSalePayments([], 100), /entre 1 y 6/)
+  assert.throws(() => validateSalePayments([payment('CRYPTO', 100)], 100), /invalid/i)
+  assert.throws(() => validateSalePayments([payment('EFECTIVO', 0)], 100), /invalid/i)
+  assert.throws(() => validateSalePayments([], 100), /between 1 and 6/i)
 })
 
 test('no admite una venta sin renglones ni una total cero', () => {
-  assert.throws(() => saleAmounts([], 0), /renglones/)
-  assert.throws(() => saleAmounts([line(1000, 0)], 0), /total mayor a cero/)
+  assert.throws(() => saleAmounts([], 0), /lines/i)
+  assert.throws(() => saleAmounts([line(1000, 0)], 0), /total of more than zero/i)
 })
 
 test('una venta mixta genera exactamente una salida por producto físico', () => {
@@ -128,7 +128,7 @@ test('cuenta opcional por pago se valida sin modificar el total de venta', () =>
   assert.equal(normalized.payments[0].financialAccountId, 'demo-financial-account-11111111-1111-4111-8111-111111111111')
   assert.throws(() => normalizeSaleInput({ ...input, payments: [
     { method: 'TRANSFERENCIA', amountCents: 125050, financialAccountId: 'otro-negocio' },
-  ] }), /cuenta DEMO válida/)
+  ] }), /valid DEMO account/i)
   assert.equal(normalizeSaleInput({ ...input, payments: [
     { method: 'TRANSFERENCIA', amountCents: 125050 },
   ] }).payments[0].financialAccountId, null)
@@ -139,6 +139,6 @@ test('completar saldo apunta al último medio y conserva importes previos', () =
   assert.equal(remainingLastSalePaymentCents(385000, payments), 100000)
   assert.deepEqual(payments, [85000, 200000, null])
   assert.equal(remainingLastSalePaymentCents(380000, [null]), 380000)
-  assert.throws(() => remainingLastSalePaymentCents(100000, [null, null]), /Completá primero/)
-  assert.throws(() => remainingLastSalePaymentCents(100000, [100000, null]), /cubren o superan/)
+  assert.throws(() => remainingLastSalePaymentCents(100000, [null, null]), /previous payment methods first/i)
+  assert.throws(() => remainingLastSalePaymentCents(100000, [100000, null]), /cover or exceed/i)
 })

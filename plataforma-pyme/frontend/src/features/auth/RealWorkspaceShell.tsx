@@ -85,30 +85,30 @@ export function RealWorkspaceShell({ token, userId, userName, path, businessId,
   }
 
   const active = businessId ? companies.find((company) => company.id === businessId) ?? null : null
-  const displayBusiness = state === 'loading' ? 'Consultando empresa…'
+  const displayBusiness = state === 'loading' ? 'Consulting company...'
     : active ? active.name
-    : businessId ? 'Empresa sin verificar' : 'Seleccioná una empresa'
+    : businessId ? 'Unverified company' : 'Select a company'
   const title = realWorkspaceTitle(path)
-  const sections = ['Administración', 'Operaciones'] as const
+  const sections = ['Administration', 'Operations'] as const
 
   return <>
-    {drawerOpen && <button type="button" className="rw-overlay" aria-label="Cerrar navegación" onClick={() => setDrawerOpen(false)} />}
+    {drawerOpen && <button type="button" className="rw-overlay" aria-label="Close Navigation" onClick={() => setDrawerOpen(false)} />}
     <aside id="real-workspace-nav" className={'rw-sidebar' + (drawerOpen ? ' rw-sidebar-open' : '')}
-      aria-label="Navegación REAL" role={drawerOpen ? 'dialog' : undefined} aria-modal={drawerOpen || undefined}>
+      aria-label="REAL Navigation" role={drawerOpen ? 'dialog' : undefined} aria-modal={drawerOpen || undefined}>
       <div className="rw-brand">
         <span className="rw-logo" aria-hidden="true"><Icon name="building" size={23} /></span>
-        <div className="rw-brand-copy"><strong>Orbit</strong><small>Gestión de empresas</small></div>
-        <button ref={closeRef} type="button" className="rw-close" aria-label="Cerrar menú" onClick={() => setDrawerOpen(false)}>×</button>
+        <div className="rw-brand-copy"><strong>Orbit</strong><small>Business management</small></div>
+        <button ref={closeRef} type="button" className="rw-close" aria-label="Close Menu" onClick={() => setDrawerOpen(false)}>×</button>
       </div>
-      <nav className="rw-sidebar-scroll" aria-label="Secciones disponibles en REAL">
-        <p className="rw-nav-caption">Mi espacio</p>
+      <nav className="rw-sidebar-scroll" aria-label="Sections available in REAL">
+        <p className="rw-nav-caption">My space</p>
         <button type="button" className={'rw-nav-item' + (path === '/real/empresas' ? ' rw-active' : '')}
-          aria-label="Ir al listado de empresas" title="Mis empresas"
+          aria-label="Go to the list of companies" title="My companies"
           aria-current={path === '/real/empresas' ? 'page' : undefined} onClick={() => navigate('/real/empresas')}>
-          <Icon name="home" size={18}/><span className="rw-nav-text">Mis empresas</span></button>
+          <Icon name="home" size={18}/><span className="rw-nav-text">My companies</span></button>
         <button type="button" className={'rw-nav-item' + (path === '/real/perfil' ? ' rw-active' : '')}
-          aria-current={path === '/real/perfil' ? 'page' : undefined} aria-label="Mi perfil" title="Mi perfil" onClick={() => navigate('/real/perfil')}>
-          <Icon name="user" size={18}/><span className="rw-nav-text">Mi perfil</span></button>
+          aria-current={path === '/real/perfil' ? 'page' : undefined} aria-label="My profile" title="My profile" onClick={() => navigate('/real/perfil')}>
+          <Icon name="user" size={18}/><span className="rw-nav-text">My profile</span></button>
         {businessId && active && sections.map((section) => <div className="rw-nav-section" key={section}>
           <p className="rw-nav-caption">{section}</p>
           {REAL_WORKSPACE_ITEMS.filter((item) => item.group === section).map((item) => {
@@ -119,9 +119,9 @@ export function RealWorkspaceShell({ token, userId, userName, path, businessId,
               onClick={() => navigate(target)}><Icon name={item.icon} size={18}/><span className="rw-nav-text">{item.label}</span></button>
           })}
         </div>)}
-        {businessId && state === 'error' && <p className="rw-nav-warning" role="alert">No se pudo verificar tu empresa. Abrí «Mis empresas» para actualizar.</p>}
-        {businessId && state === 'ready' && !active && <p className="rw-nav-warning" role="status">La empresa no aparece entre tus membresías activas.</p>}
-        {!businessId && <p className="rw-nav-helper">Elegí una empresa para acceder a sus operaciones.</p>}
+        {businessId && state === 'error' && <p className="rw-nav-warning" role="alert">Could not verify your company. I opened "My companies" to update.</p>}
+        {businessId && state === 'ready' && !active && <p className="rw-nav-warning" role="status">The company does not appear among your active memberships.</p>}
+        {!businessId && <p className="rw-nav-helper">I chose a company to access their operations.</p>}
       </nav>
       <div className="rw-sidebar-footer">
         <span className="rw-mode">REAL · FastAPI / PostgreSQL</span>
@@ -129,20 +129,20 @@ export function RealWorkspaceShell({ token, userId, userName, path, businessId,
     </aside>
     <header className="rw-topbar">
       <div className="rw-topbar-left">
-        <button ref={triggerRef} type="button" className="rw-trigger" aria-label="Abrir menú" aria-controls="real-workspace-nav"
+        <button ref={triggerRef} type="button" className="rw-trigger" aria-label="Open Menu" aria-controls="real-workspace-nav"
           aria-expanded={drawerOpen} onClick={() => setDrawerOpen(true)}><Icon name="menu" size={20}/></button>
         <button type="button" className="rw-toggle-desktop"
-          aria-label={collapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
-          aria-pressed={collapsed} title={collapsed ? 'Expandir menú lateral' : 'Contraer menú lateral'}
+          aria-label={collapsed ? 'Expand Side Menu' : 'Collapse Side Menu'}
+          aria-pressed={collapsed} title={collapsed ? 'Expand Side Menu' : 'Collapse Side Menu'}
           onClick={onToggleCollapse}><Icon name={collapsed ? 'panel' : 'panel-hide'} size={19}/></button>
-        <div className="rw-title-block"><span className="rw-breadcrumb">Espacio REAL / {title}</span>
+        <div className="rw-title-block"><span className="rw-breadcrumb">REAL Space / {title}</span>
           <strong>{title}</strong></div>
       </div>
       <div className="rw-topbar-actions">
         <span className="rw-real-badge">REAL</span>
-        <a className="rw-demo-link rw-demo-topbar" href="/inicio">Entrar a DEMO</a>
-        <label className="rw-company-select-label">Empresa
-          <select aria-label="Cambiar de empresa REAL" value={active?.id ?? ''}
+        <a className="rw-demo-link rw-demo-topbar" href="/inicio">Enter DEMO</a>
+        <label className="rw-company-select-label">Company
+          <select aria-label="Change of company REAL" value={active?.id ?? ''}
             disabled={state !== 'ready' || companies.length === 0}
             onChange={(event) => { if (event.target.value) navigate(realWorkspaceHref(event.target.value)) }}>
             <option value="">{displayBusiness}</option>
@@ -151,7 +151,7 @@ export function RealWorkspaceShell({ token, userId, userName, path, businessId,
         </label>
         {active && <span className="rw-role-note" title={active.membership.role}>{active.membership.role.replaceAll('_', ' ')} · {active.status}</span>}
         <button className="rw-profile-button" type="button" onClick={() => navigate('/real/perfil')}
-          title={userName} aria-label="Abrir perfil"><Icon name="user" size={17}/></button>
+          title={userName} aria-label="Open Profile"><Icon name="user" size={17}/></button>
         <button className="rw-signout" type="button" onClick={onLogout}>Salir</button>
       </div>
       {state === 'error' && <p className="rw-shell-error" role="alert">{error}</p>}

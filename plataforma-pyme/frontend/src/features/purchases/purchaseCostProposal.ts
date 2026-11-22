@@ -60,11 +60,11 @@ export function unitCostFromExactLineTotal(quantityInput: string, totalInput: st
   // Round to the nearest unit cent with exact BigInt arithmetic.
   const unit = (BigInt(total) * 1000n + BigInt(quantity) / 2n) / BigInt(quantity)
   if (unit > BigInt(MAX_CENTS)) {
-    throw new RangeError('El costo unitario calculado supera el máximo permitido.')
+    throw new RangeError('The calculated unit cost exceeds the maximum allowed.')
   }
   const unitCents = Number(unit)
   if (lineTotalCents(quantity, unitCents) !== total) {
-    throw new RangeError('Este total no puede representarse exactamente con un costo unitario en centavos para esa cantidad. Cambiá el total o utilizá otro concepto de ajuste en una etapa posterior.')
+    throw new RangeError('This total cannot be represented exactly at a unit cost in cents for that amount. Change the total or use another concept of adjustment at a later stage.')
   }
   return centsToPesos(unitCents)
 }

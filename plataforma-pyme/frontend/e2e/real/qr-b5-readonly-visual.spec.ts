@@ -9,7 +9,7 @@ test.beforeAll(()=>{
 
 test('B5: historial QR móvil→detalle→estado→POS sin escrituras desde UI',async({request,page})=>{
   const email='b5-qr-'+randomUUID()+'@example.com'
-  const password='E3 B5 clave QA descartable 2026!'
+  const password='Orbit-1-' + globalThis.crypto.randomUUID()
   const reg=await request.post(api+'/auth/register',{
     data:{email,password,display_name:'QA cobros QR'},
   })
@@ -43,23 +43,23 @@ test('B5: historial QR móvil→detalle→estado→POS sin escrituras desde UI',
   })
   await page.setViewportSize({width:390,height:844})
   await page.goto('/real/empresas/'+bid+'/cobros-qr')
-  await page.getByLabel('Correo electrónico',{exact:true}).fill(email)
-  await page.getByLabel('Contraseña',{exact:true}).fill(password)
+  await page.getByLabel('Email',{exact:true}).fill(email)
+  await page.getByLabel('Password',{exact:true}).fill(password)
   await page.getByRole('button',{name:'Ingresar',exact:true}).click()
-  await expect(page.getByRole('heading',{name:'Cobros QR',exact:true})).toBeVisible()
-  await expect(page.getByLabel('Lista de cobros QR DEMO')).toContainText(intent.reference)
-  await expect(page.getByLabel('Lista de cobros QR DEMO')).toContainText('Pendiente de simulación')
+  await expect(page.getByRole('heading',{name:'QR payments',exact:true})).toBeVisible()
+  await expect(page.getByLabel('List of collections QR DEMO')).toContainText(intent.reference)
+  await expect(page.getByLabel('List of collections QR DEMO')).toContainText('Pending simulation')
   await page.getByRole('button',{name:'Ver QR y detalle'}).click()
   await expect(page).toHaveURL(new RegExp('/qr-cobros/'+intent.id+'$'))
   await expect(page.getByRole('heading',{name:'Mercado Pago QR'})).toBeVisible()
-  await expect(page.getByText('QR DE PRUEBA · NO COBRABLE')).toBeVisible()
+  await expect(page.getByText('· NOT COBRABLE')).toBeVisible()
   await expect(page.getByText('Servicio B5')).toBeVisible()
   await expect(page.getByText('CREAR', {exact:true})).toBeVisible()
-  await page.getByRole('button',{name:'Ver cobros QR'}).click()
-  await expect(page.getByRole('heading',{name:'Cobros QR',exact:true})).toBeVisible()
-  await page.locator('.e3-qr-history-actions').getByRole('button',{name:'Medios de cobro'}).click()
-  await expect(page.getByRole('heading',{name:'Medios de cobro',exact:true})).toBeVisible()
-  await expect(page.getByRole('button',{name:'Ver cobros QR'})).toBeVisible()
+  await page.getByRole('button',{name:'See QR collections'}).click()
+  await expect(page.getByRole('heading',{name:'QR payments',exact:true})).toBeVisible()
+  await page.locator('.e3-qr-history-actions').getByRole('button',{name:'Payment methods'}).click()
+  await expect(page.getByRole('heading',{name:'Payment methods',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'See QR collections'})).toBeVisible()
   const width=await page.evaluate(()=>Math.max(document.documentElement.scrollWidth,document.body.scrollWidth))
   expect(width,'Cobros QR no debe desbordar 390px').toBeLessThanOrEqual(391)
   expect(writes,'La navegación de B5 no debe emitir escrituras comerciales').toBe(0)

@@ -34,10 +34,10 @@ class CreateQrIntentRequest(BaseModel):
     def check_quote(self):
         ids = [line.catalog_item_id for line in self.lines]
         if len(set(ids)) != len(ids):
-            raise ValueError("No se permiten artículos duplicados")
+            raise ValueError("Duplicate items not allowed")
         subtotal = sum(line_total_cents(x.quantity_milli, x.unit_price_cents) for x in self.lines)
         if not 1 <= subtotal <= MAX_CENTS or not 1 <= subtotal - self.discount_cents <= MAX_CENTS:
-            raise ValueError("El importe de cobro debe ser positivo y estar en rango")
+            raise ValueError("The amount of collection must be positive and in range")
         return self
 
     def payload_digest(self) -> str:

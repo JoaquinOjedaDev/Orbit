@@ -10,13 +10,13 @@ const history = read('../src/features/payments/RealQrHistoryPage.tsx')
 const docker = read('../../Dockerfile.public')
 
 test('QR público tiene etiqueta inequívoca NO PAGABLE y botón para exhibir', () => {
-  assert.match(pos, /QR de exhibición · NO PAGABLE/)
-  assert.match(pos, /Generar QR de exhibición/)
-  assert.match(qr, /EXHIBICIÓN · NO PAGABLE/)
-  assert.match(qr, /sin proveedor financiero/)
-  assert.match(qr, /no genera órdenes/i)
-  assert.match(history, /Exhibiciones QR/)
-  assert.match(history, /sin pago ni venta/)
+  assert.match(pos, /Display QR · NOT PAYABLE/)
+  assert.match(pos, /Generate display QR/i)
+  assert.match(qr, /EXHIBITION · NOT PAYABLE/)
+  assert.match(qr, /without a payment provider/)
+  assert.match(qr, /does not generate orders/i)
+  assert.match(history, /QR Exhibitions/)
+  assert.match(history, /no payment or sale/)
 })
 
 test('La ruta pública no consulta ni exige conexión con Mercado Pago', () => {
@@ -24,7 +24,7 @@ test('La ruta pública no consulta ni exige conexión con Mercado Pago', () => {
   assert.match(qr, /EXHIBITION_UI \? Promise\.resolve\(null\) : officialApi\.connection\(\)/)
   assert.match(qr, /EXHIBITION_UI \? Promise\.resolve\(null\) : officialApi\.sharedConnection\(\)/)
   assert.match(connections, /EXHIBITION_UI \? Promise\.resolve\(null\) : official\.connection\(\)/)
-  assert.match(connections, /No hay cuenta ni caja vinculada/)
+  assert.match(connections, /No linked account or cash register/)
 })
 
 test('El build público tiene exhibición encendida y laboratorios apagados', () => {

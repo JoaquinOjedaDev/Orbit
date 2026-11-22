@@ -1,12 +1,12 @@
-# E2-5 C — Ajustes de inventario y stock inicial (CU-11)
+# E2-5 C — Inventory and initial stock adjustments (CU-11)
 
-**Fecha:** 09/11/2026. **Estado:** implementación verificada en CI; pendiente de merge y validación local Windows.
-**Base de integración:** `main` `4f992b3beb8dda732e4cd752f828b375f240e13d` (E2-5 B; 826 tests y QA manual).
-**Scope:** RF-06 / CU-11, operaciones físicas de un artículo en una ubicación, auditoría, idempotencia y versión de saldo. **No** se tocan frontend, compras, transferencias, ventas ni migraciones anteriores.
+**Date:** 09/11/2026. **Status:** implementation verified in IC; pending to merit and local validation Windows.
+**Integration base:** `main` `4f992b3beb8dda732e4cd752f828b375f240e13d` (E2-5 B; 826 tests y QA manual).
+**Scope:** RF-06 / CU-11, physical transactions of an item in a location, audit, idempotency and balance version. **No** touch frontend, purchases, transfers, sales and previous migrations.
 
-## 1. Alcance del comando
+## 1. Scope of the command
 
-Nuevo `POST /api/v1/businesses/{business_id}/inventory/adjustments` con sesión Bearer y `Idempotency-Key` UUID4.
+New `POST /api/v1/businesses/{business_id}/inventory/adjustments` with Bearer session and `Idempotency-Key` UUID4.
 
 ```json
 {
@@ -19,84 +19,84 @@ Nuevo `POST /api/v1/businesses/{business_id}/inventory/adjustments` con sesión 
 }
 ```
 
-**Tipos autorizados:**
+**Authorised types:**
 
-| `kind` | Efecto físico | Restricciones |
+| `kind` | Physical effect | Restrictions |
 |---|---|---|
-| `AJUSTE_ENTRADA` | Agrega `quantity_milli` al saldo existente | Motivo, versión del saldo, bien activo y espacio STORE |
-| `AJUSTE_SALIDA` | Descuenta `quantity_milli` del saldo existente | Rechaza stock insuficiente, motivo y versión exacta |
-| `STOCK_INICIAL` | Crea el primer saldo de un par ubicación+artículo | Solo si **nunca** existieron saldo ni movimientos para ese par; `expected_version: 0`; rol titular/admin |
+| `AJUSTE_ENTRADA` | Add `quantity_milli` to the existing balance | Reason, balance version, well active and STORE space |
+| `AJUSTE_SALIDA` | Discount `quantity_milli` of the existing balance | Rejects insufficient stock, exact reason and version |
+| `STOCK_INICIAL` | Create the first balance of a location+article pair | Only if **Never** there were balances or movements for that pair; `expected_version: 0`; title/admin role |
 
-Cantidad en milésimas positiva `1..999999999`; unidades discretas `UNIDAD`, `PAQUETE`, `CAJA` requieren múltiplos de 1000. El cuerpo es estricto (`extra=forbid`), razón normalizada y obligatoria 3..500 caracteres, `expected_version` es entero estricto (no booleano).
+Amount in thousandths positive `1..999999999`; discrete units `UNIDAD`, `PAQUETE`, `CAJA` multiples of 1000. The body is strict (`extra=forbid`), standard and mandatory ratio 3.500 characters, `expected_version` is strict integer (not boolean).
 
-**Decisión expresa:** `AJUSTE_ENTRADA` y `AJUSTE_SALIDA` solo operan sobre un saldo previamente creado (por compra, traslado, inicial). No se crea el primer saldo con un ajuste para eludir el permiso reforzado de `STOCK_INICIAL`. Un par ya utilizado no vuelve a inicializarse **incluso con saldo igual a cero**.
+**Express decision:** `AJUSTE_ENTRADA` y `AJUSTE_SALIDA` only operate on a previously created balance (by purchase, transfer, initial). The first balance is not created with an adjustment to circumvent the reinforced permission of `STOCK_INICIAL`. A used pair does not re-initialize **even with a zero balance**.
 
-## 2. Control de versión y concurrencia
+## 2. Version control and competition
 
-El cliente **lee primero** `GET /inventory/balances`. El saldo trae `version`:
+The customer **read first** `GET /inventory/balances`. The balance brings `version`:
 
-- Si no existe registro para el par artículo+ubicación, el stock inicial usa `expected_version=0`.
-- Si existe, un ajuste debe enviar exactamente `expected_version` que observó.
-- Después de un ajuste exitoso la versión aumenta en uno.
-- Si una recepción, traslado u otro ajuste cambia el saldo entre lectura y escritura, el comando devuelve **409 Conflict** y **ninguna fila se modifica**; volver a leer el saldo antes de reintentar con una clave nueva.
-- Una versión obsoleta no se trata como una operación ejecutada; se rechaza la solicitud. El replay de un comando previamente confirmado con la **misma** clave y cuerpo devuelve su comprobante histórico con 200 incluso si el saldo actual evolucionó.
+- If there is no record for the article+location pair, the initial stock uses `expected_version=0`.
+- If it exists, an adjustment must send exactly `expected_version` that he observed.
+- After a successful adjustment the version increases by one.
+- If a reception, transfer or other setting changes the balance between reading and writing, the command returns **409 Conflict** y **no row is modified**; reread the balance before trying again with a new key.
+- An outdated version is not treated as an executed operation; the request is rejected. The replay of a command previously confirmed with the **same** key and body returns its historical voucher with 200 even if the current balance evolved.
 
-El backend revalida usuario/sesión, empresa/membresía, estado y capacidad STORE. Bloquea ubicación antes de catálogo (`FOR SHARE`) y saldo (`FOR UPDATE`), coherente con las recepciones y transferencias de E2-4/E2-5 B. El bloqueo por ubicación serializa también el alta inicial con las entradas de compras y traslados de ese mismo depósito; no hay lectura/inserción ciega del balance.
+The backend revalidates user/session, company/membership, status and capacity STORE. It blocks location before catalog (`FOR SHARE`) and balance (`FOR UPDATE`), consistent with E2-4/E2-5 B receptions and transfers.The location lock also serializes the initial discharge with the purchase and transfer entries from that same deposit; there is no blind reading/insertion of the balance.
 
-Los saldos, cabecera `InventoryOperation` y **un** movimiento firmado `StockMovement` se confirman en una sola transacción. Un fallo hace rollback; se preserva el ledger histórico. No se crea un doble saldo editable.
+Balances, header `InventoryOperation` y **un** signed movement `StockMovement` a failure makes rollback; the historical leadger is preserved. No double editable balance is created.
 
-## 3. Autorización
+## 3. Authorization
 
-- `STOCK_INICIAL`: solo `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, membresía y negocio activos, ubicación propia ACTIVA y `can_store=true`.
-- `AJUSTE_ENTRADA` / `AJUSTE_SALIDA`: los anteriores y también `ENCARGADO` **si tiene asignación ACTIVA a esa ubicación**. `TRABAJADOR` no puede ajustar por el impacto del comando en las existencias.
-- Cualquier usuario sin autorización, sin sesión o perteneciente a otra empresa no puede producir ni leer operaciones ajenas. La consulta de comprobantes aplica el permiso de lectura empresarial vigente.
+- `STOCK_INICIAL`: only `TITULAR_ADMINISTRATIVO` o `ADMINISTRADOR`, active membership and business, own location `can_store=true`.
+- `AJUSTE_ENTRADA` / `AJUSTE_SALIDA`: the previous ones and also `ENCARGADO` **if you have an Active allocation to that location**. `TRABAJADOR` cannot be adjusted by the command's impact on stocks.
+- Any user without authorization, no session or belonging to another company cannot produce or read other people's transactions. The voucher query applies the current business reading permit.
 
-## 4. API, historial e idempotencia
+## 4. API, History and Idempotency
 
-| Acción | Resultado |
+| Action | Outcome |
 |---|---|
-| `POST /inventory/adjustments` nueva operación | `201` con id, tipo, artículo, ubicación, cantidad, razón, actor, timestamp y movimiento |
-| Misma clave, actor, tipo y cuerpo idéntico | `200`, **mismo** id y movimiento, sin nueva variación |
-| Misma clave con distinta carga, actor o reutilizada en transferencia | `409`, no hay nueva operación |
-| `GET /inventory/adjustments/{adjustment_id}` | `200` comprobante inmutable; `404` si no pertenece al tenant |
-| `GET /inventory/movements` | Movimientos existentes + nuevos `AJUSTE_*` y `STOCK_INICIAL`, con delta firmado y origen referencial |
-| `GET /inventory/balances` | Nuevo saldo y versión; es la fuente actual de disponibilidad, **no** el comprobante histórico |
+| `POST /inventory/adjustments` new operation | `201` with id, type, article, location, quantity, reason, actor, timestamp and movement |
+| Same key, actor, type and identical body | `200`, **same** id and movement, without new variation |
+| Key same with different load, actor or reused in transfer | `409`No new operation. |
+| `GET /inventory/adjustments/{adjustment_id}` | `200` Unchangeable proof; `404` if it does not belong to the tenant |
+| `GET /inventory/movements` | Existing + new movements `AJUSTE_*` y `STOCK_INICIAL`, with signed delta and reference origin |
+| `GET /inventory/balances` | New balance and version; is the current source of availability, **no** historical voucher |
 
-Códigos: `401` sin sesión; `403` sin rol/asignación; `404` empresa, ficha o ubicación ausente/ajena; `409` stock insuficiente, inicial ya utilizado, clave incompatible, versión obsoleta, negocio/ubicación inactivos o desborde; `422` formato inválido o fraccionamiento incompatible.
+Codes: `401` no meeting; `403` no role/assignment; `404` company, file or missing/foreign location; `409` insufficient stock, initial already used, incompatible key, obsolete version, inactive business/location or overflow; `422` Invalid formatting or incompatible fractionation.
 
-### Compatibilidad
+### Compatibility
 
-Se reutiliza la migración ya validada `e25a_inventory_ops`. E2-5 C **no exige otra migración**. La tabla soporta exactamente los tipos usados; no se cambia el contrato E2-4 de compras, recibos, `POST /receive`, ni E2-5 B de traslados. La lectura general del ledger ya admite los tres nuevos eventos desde E2-5 B.
+Reusing already validated migration `e25a_inventory_ops`. E2-5 C **does not require another migration**. The table supports exactly the types used; the E2-4 contract of purchases, receipts, `POST /receive`The general reading of the ledger already supports the three new events from E2-5 B.
 
-## 5. Evidencia y matriz de pruebas
+## 5. Evidence and evidence matrix
 
-**CI de código E2-5 C verificado:** GitHub Actions #42616213215, **3/3 trabajos exitosos**: **840 pruebas aprobadas** con Python 3.12 (2 advertencias) y **840** con Python 3.14 (3 advertencias); PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` sin deriva, Docker build y liveness saludables. Las advertencias no afectaron el estado de CI; analizarlas como deuda técnica, no ocultarlas. **Ejecución Windows aún pendiente.**
+**IC code E2-5 C verified:** GitHub Actions #42616213215, **3/3 successful jobs**: **840 approved tests** with Python 3.12 (2 warnings) and **840** with Python 3.14 (3 warnings); PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` No drift, healthy Docker build and liveness. Warnings did not affect the status of IC; analyze them as technical debt, do not hide them. **Windows run still pending.**
 
 
-- Postgres FastAPI con rollback `isolated`: inicial positivo, replay y conflicto, veto al segundo inicial incluso tras agotarse saldo a cero, entrada/salida de saldo y ledger firmado, rechazo de cantidad insuficiente, versión obsoleta y cambio de versión posterior a traslado, unidad discreta, rango, campos desconocidos, servicio inmaterial, autorización por rol/ubicación, tenant ajeno, idempotencia compartida con transferencia y compatibilidad de `PurchaseReceiptView`.
-- Tres pruebas PostgreSQL con **conexiones HTTP independientes** y tenant efímero propio: dos salidas competidoras de una misma versión (201/409), mismo request simultáneo (201/200), dos iniciales simultáneos (201/409). Sin borrar datos ajenos.
-- CI esperado: PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` sin deriva, Python 3.12 y 3.14 + imagen Docker.
+- Postgres FastAPI con rollback `isolated`: positive initial, replay and conflict, veto to the second initial even after the balance has been exhausted at zero, in/out of balance and ledger signed, rejection of insufficient quantity, obsolete version and change from post-transfer version, discrete unit, range, unknown fields, intangible service, authorization by role/location, alien tenant, shared idempotency with transfer and compatibility of `PurchaseReceiptView`.
+- Three PostgreSQL tests with **standalone HTTP connections** and ephemeral tenant of its own: two competing outputs from the same version (201/409), same simultaneous request (201/200), two simultaneous initials (201/409).
+- IC expected: PostgreSQL 16, `e25a_inventory_ops (head)`, `alembic check` sin deriva, Python 3.12 y 3.14 + imagen Docker.
 - Local Windows: tras merge, `git pull`, `alembic current`, `alembic check`, suite completa `RUN_DB_INTEGRATION=1`, `docker compose --profile api up -d --build --wait api` y `/ready`.
 
-**Deuda no incluida:** conteo físico absoluto (`cantidadContada` → delta derivado), ajuste de múltiples artículos/lotes, cancelación compensatoria, límites agregados, política de revisión de ajustes sensibles, conciliación programada de ledger vs balance y hardening contra SQL directo. Un ajuste **no** borra ni modifica registros de compra o transferencia; deja un nuevo movimiento firmado.
+**Debt not included:** absolute physical count (`cantidadContada` → derivative delta), adjustment of multiple articles/lots, compensatory cancellation, aggregate limits, policy to review sensitive adjustments, scheduled reconciliation of ledger vs balance and hardening against direct SQL. **no** deletes or modifies purchase or transfer records; leaves a new signed move.
 
-## 6. Guía Swagger manual de E2-5 C sin alterar el ejemplo E2-5 B
+## 6. Manual E2-5 C Swagger Guide without altering example E2-5 B
 
-Datos QA observados después de E2-5 B (verificar primero su vigencia):
-- Empresa `3b161aa4-f476-4efc-8293-5978d590e0fe`
-- Artículo `e3bcd831-1ae5-48ab-b1c1-0c43e58ae84b` — Alimento balanceado QA
-- Depósito `b492ced2-0faa-42d8-b652-609fc4c2b6f4`: **6000**, versión **2**.
-- Casa `a741f945-5c88-4855-8ff0-708374ac16f8`: **4000**, versión **1**.
+QA data observed after E2-5 B (check first its validity):
+- Company `3b161aa4-f476-4efc-8293-5978d590e0fe`
+- Item `e3bcd831-1ae5-48ab-b1c1-0c43e58ae84b` — QA balanced food
+- Deposit `b492ced2-0faa-42d8-b652-609fc4c2b6f4`: **6000**version **2**.
+- Home `a741f945-5c88-4855-8ff0-708374ac16f8`: **4000**version **1**.
 
-Para probar E2-5 C sin tocar estos saldos, **crear otro artículo de prueba** con SKU nuevo, por ejemplo `INICIAL-E25C-001`, unidad `UNIDAD`, tipo `REVENTA`, y usar Casa para su primera inicialización. `GET /inventory/balances` para ese artículo debe devolver una lista vacía. Luego:
+To test E2-5 C without touching these balances, **create another test article** with new SKU, for example `INICIAL-E25C-001`unit `UNIDAD`, type `REVENTA`and use Casa for its first initialization. `GET /inventory/balances` for that item you must return an empty list.
 
-1. `POST /inventory/adjustments`, `kind=STOCK_INICIAL`, artículo nuevo, `location_id=Casa`, `quantity_milli=5000`, `expected_version=0`, `reason="Conteo inicial para pruebas E2-5 C"`, nueva clave UUID4 → **201**, un movimiento `STOCK_INICIAL +5000`.
-2. Repetir **misma clave y cuerpo** → **200**, mismo id, saldo 5000 versión1.
-3. Nueva clave, mismo `STOCK_INICIAL` → **409**, saldo sin cambio.
-4. `AJUSTE_ENTRADA` +2000 con `expected_version=1` → **201**, saldo7000 versión2.
-5. `AJUSTE_SALIDA` -1000 con `expected_version=2` → **201**, saldo6000 versión3.
-6. Intentar `AJUSTE_SALIDA` -7000 con `expected_version=3` y nueva clave → **409**, saldo y ledger intactos.
-7. Intentar ajuste +1000 con `expected_version=1` y otra clave → **409 por versión obsoleta**, saldo y ledger intactos.
-8. Consultar movimientos para el artículo: exactamente tres, `STOCK_INICIAL +5000`, `AJUSTE_ENTRADA +2000`, `AJUSTE_SALIDA -1000`, neto **6000**. Los 6000/4000 del alimento balanceado no se modificaron.
+1. `POST /inventory/adjustments`, `kind=STOCK_INICIAL`, new article, `location_id=Casa`, `quantity_milli=5000`, `expected_version=0`, `reason="Conteo inicial para pruebas E2-5 C"`, new key UUID4 → **201**, a movement `STOCK_INICIAL +5000`.
+2. Repeat **same key and body** → **200**, same id, balance 5000 version1.
+3. New key, same `STOCK_INICIAL` → **409**, balance no change.
+4. `AJUSTE_ENTRADA` +2000 con `expected_version=1` → **201**, balance7000 version2.
+5. `AJUSTE_SALIDA` -1000 con `expected_version=2` → **201**, balance6000 version3.
+6. Try `AJUSTE_SALIDA` -7000 con `expected_version=3` and new key → **409**, balance and ledger intact.
+7. Try setting +1000 with `expected_version=1` and another key → **409 by obsolete version**, balance and ledger intact.
+8. Check movements for the article: exactly three, `STOCK_INICIAL +5000`, `AJUSTE_ENTRADA +2000`, `AJUSTE_SALIDA -1000`net **6000**. The 6000/4000 of the balanced food was not modified.
 
-**No enviar en reportes ni al repositorio** Bearer tokens, contraseñas o claves idempotentes. Registrar códigos HTTP, IDs de operaciones y snapshots sanitizados. Probar la ruta en Swagger **solo después de fusionar PR y reconstruir Docker**.
+**Do not send in reports or to the repository** Bearer tokens, passwords or idepotent keys. Register HTTP codes, operations IDs and sanitized snapshots. Try the path in Swagger **only after merging PR and rebuilding Docker**.

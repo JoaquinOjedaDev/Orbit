@@ -1,65 +1,65 @@
-# E2-5 — Checklist de revisión, cierre final y publicación controlada
+# E2-5 — Checklist for revision, final closure and controlled publication
 
-**Estado actualizado tras publicación:** cierre documental **aprobado y fusionado** mediante PR #24, SHA original `c66df2f8ddaa8179ca12e342bd3099348bc6b155`. Backend sin cambios; **auditoría independiente pendiente de ejecución**, no confundir cierre documental con validación de producción.
+**Updated status after publication:** Documentary closure **approved and merged** by PR #24, Original SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`. Unchanged backend; **independent audit pending implementation**, do not confuse documentary closure with production validation.
 
-## A. Revisión técnica de los documentos de este paquete
+## A. Technical review of the documents in this package
 
-- [x] Validar que `main` de referencia es realmente `748e69319d8d04900c009d5184168a264a9deeac` (si cambió, registrar nuevo corte).
-- [x] Contrastar `01_INFORME_CONSOLIDADO.md` contra PR #21–#23 y código actual, sin asumir que las pantallas DEMO son backend.
-- [x] Comprobar secuencia B-01…B-13 y códigos 201/200/409/422; no incluir claves de reintento en los registros.
-- [x] Comprobar secuencia C-01…C-11 y códigos 201/200/409/401; confirmar que el incidente de sesión está saneado.
-- [x] Confirmar saldos y versiones con los últimos GET aportados (ART-A: 6/4, ART-B: 6/versión 3).
-- [x] Contrastar CI de merge en `main`: 816/826/840, Python 3.12/3.14, 3 jobs exitosos y Alembic sin deriva.
-- [x] Contrastar el log Windows E2-5 C: `840 passed in 110.89s`, Docker/DB Healthy, `/ready ready/ok`.
-- [x] Revisar descripciones de concurrencia/RBAC en tests y código antes de presentarlas como comportamiento general.
-- [x] Clasificar observaciones y límites en `09_RIESGOS_DEUDAS_Y_DECISIONES.md` y `13_EVALUACION_OBSERVACIONES_IA.md`; sin modificar reglas ni endpoints.
+- [x] Validate that `main` reference is really `748e69319d8d04900c009d5184168a264a9deeac` (if changed, register new cut).
+- [x] Contrast `01_INFORME_CONSOLIDADO.md` against PR #21–#23 and current code, without assuming that DEMO screens are backend.
+- [x] Check sequence B-01...B-13 and codes 201/200/409/422; do not include retry keys in records.
+- [x] Check sequence C-01...C-11 and codes 201/200/409/401; confirm that the session incident is healed.
+- [x] Confirm balances and versions with the latest GETs contributed (ART-A: 6/4, ART-B: 6/version 3).
+- [x] Contrast IC de merge en `main`: 816/826/840, Python 3.12/3.14, 3 successful jobs and Alembic without drift.
+- [x] Contrast the Windows E2-5 C log: `840 passed in 110.89s`, Docker/DB Healthy, `/ready ready/ok`.
+- [x] Review attendance/RBAC descriptions in tests and code before presenting them as general behavior.
+- [x] Sorting observations and limits in `09_RIESGOS_DEUDAS_Y_DECISIONES.md` y `13_EVALUACION_OBSERVACIONES_IA.md`; sin modificar reglas ni endpoints.
 
-## B. Control de secretos y datos antes de distribuir
+## B. Secret and data control before distribution
 
-- [x] Confirmar **revocación de la sesión del token Bearer expuesto**: `POST /api/v1/auth/logout` devolvió **204** usando el mismo token (09/11/2026, 15:23:37 GMT; **SWAGGER-REPORTADO**, no inspección SQL). No anexar su valor. Este cierre es **de esa sesión**, no de todas las posibles sesiones de la cuenta.
-- [x] Verificar que el paquete no contiene contraseñas, emails QA, tokens, claves idempotentes reales, `request_id` de comandos, `.env` ni bases de datos exportadas.
-- [x] **UUID QA autorizados por el responsable** para permanecer como evidencia de trazabilidad en el repositorio público; no equivalen a credenciales.
-- [ ] Controlar capturas nuevas: Swagger incluye `curl` con cabeceras; publicar solo **Server response** saneada.
-- [x] Regenerar **al final** el manifiesto de OID Git `12_MANIFIESTO_GIT_BLOBS.md` después de las ediciones del PR; el SHA-256 del ZIP v1.0 no aplica. **Si se edita algo después, regenerarlo de nuevo.**
+- [x] Confirm **revocation of the exposed token Bearer session**: `POST /api/v1/auth/logout` returned **204** using the same token (09/11/2026, 15:23:37 GMT; **SWAGGER-REPORTED**, not SQL inspection). Do not attach its value. This closure is **of that meeting**Not all possible account sessions.
+- [x] Verify that the package contains no passwords, QA emails, tokens, real idempotent keys, `request_id` command, `.env` nor exported databases.
+- [x] **UUID QA authorised by the responsible** to remain as evidence of traceability in the public repository; they do not amount to credentials.
+- [ ] Control new catches: Swagger includes `curl` with headers; publish only **Server response** healed.
+- [x] Regenerate **at the end** the manifesto of OID Git `12_MANIFIESTO_GIT_BLOBS.md` after PR editions; the SHA-256 of ZIP v1.0 does not apply. **If you edit something later, regenerate it again.**
 
-## C. Cierre documental definitivo — **etapa posterior a esta revisión**
+## C. Final closure — **post-review phase**
 
-- [ ] Resolver comentarios a la documentación v1.1 del PR y generar **versión aprobada** con fecha y SHA de cierre funcional inmovilizado.
-- [ ] Redactar hoja de cierre `E2-5_ENTREGA_PARA_REVISION.md` o equivalente según la guía maestra, distinguible de este informe preliminar.
-- [ ] Revisar y aprobar el **paquete de encargo de auditoría E2-5** en `../E2-5_AUDITORIA/`; preparación no equivale a ejecución.
-- [ ] Mantener la auditoría **separada** del cierre interno: la opinión de un revisor externo no se anticipa ni se inventa.
-- [ ] Fijar criterios para corregir hallazgos P0/P1 en rama específica y PR sin fusionar automáticamente.
+- [ ] Solve comments on PR v1.1 documentation and generate **approved version** with date and fixed functional closure SHA.
+- [ ] Draw closure sheet `E2-5_ENTREGA_PARA_REVISION.md` or equivalent according to the master guide, distinguishable from this preliminary report.
+- [ ] Review and approve the **E2-5 audit order package** en `../E2-5_AUDITORIA/`; preparation does not amount to execution.
+- [ ] Keeping the audit **separate** Internal closure: the opinion of an external reviewer is not anticipated or invented.
+- [ ] Set criteria for correcting P0/P1 findings in specific branch and PR without automatically merging.
 
-## D. Publicación — **completada; auditoría independiente posterior**
+## D. Publication — **completed; independent audit**
 
-Ubicación efectivamente utilizada para este PR: `plataforma-pyme/docs/revisiones/E2-5_CIERRE/`. Índice general actualizado en `plataforma-pyme/docs/revisiones/README.md`. Se suben fuentes Markdown/JSON, **no ZIP ni PDFs binarios**. El PR #24 fue revisado por el equipo y se fusionó en `main` al SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`.
+Location effectively used for this PR: `plataforma-pyme/docs/revisiones/E2-5_CIERRE/`. General index updated in `plataforma-pyme/docs/revisiones/README.md`. Se suben fuentes Markdown/JSON, **ZIP No or binary PDFs**. PR #24 was reviewed by the team and merged into `main` to the SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`.
 
-- [x] Confirmar rama de trabajo documental específica, sin edición directa no revisada de `main`.
-- [x] Comprobar que solo cambian archivos Markdown/JSON/índices autorizados; **no** tocar código, migraciones, tests, datos QA ni backend/frontend durante un cierre solo documental.
-- [x] Abrir PR de documentación con índice, manifiesto de Git blobs y changelog de la propuesta, sin presumir aprobación definitiva.
-- [x] Verificar enlaces, referencias relativas, estado de CI y que el SHA no cambió por debajo de las pruebas declaradas.
-- [x] Revisar el PR, obtener conformidad y realizar merge/publicación: PR #24, SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`.
-- [ ] Entregar al auditor la hoja de revisión y el commit **ya publicado**; no atribuirle hallazgos antes de que trabaje.
+- [x] Confirm specific documentary work branch, without direct editing not revised `main`.
+- [x] Check that only Markdown/JSON files/authorized indexes change; **no** touch code, migrations, tests, QA data and backend/frontend during a single documentary closure.
+- [x] Open PR documentation with index, Git blobs manifest and changelog of the proposal, without assuming definitive approval.
+- [x] Check links, relative references, status of IC and that SHA did not change below the evidence stated.
+- [x] Review PR, obtain compliance and perform marketing/publication: PR #24, SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155`.
+- [ ] Give the auditor the review sheet and commit **already published**; not attribute findings to him before he works.
 
-## E. Revisión de coherencia con documentos anteriores
+## E. Review of consistency with previous documents
 
-Cotejar `docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md`, `docs/E2-5_B_TRASLADOS_ATOMICOS.md`, `docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md`, Documento 01–05 y ADR-004. Sus encabezados históricos (p.ej. «pendiente de merge») no son prueba de que la función siga ausente; señalar que los cortes A/B/C **ya se fusionaron** en el índice de cierre. No sobrescribir retroactivamente evidencias previas sin nota de revisión.
+Cotejar `docs/E2-5_A_MODELO_OPERACIONES_INVENTARIO.md`, `docs/E2-5_B_TRASLADOS_ATOMICOS.md`, `docs/E2-5_C_AJUSTES_Y_STOCK_INICIAL.md`, Document 01–05 and ADR-004. Its historical headings (e.g. ‘to be merge’) are not proof that the function remains absent; note that cuts A/B/C **They're all merged.** Do not retroactively overwrite previous evidence without a review note.
 
-## Dictamen editorial propuesto y control final pendiente
+## Proposed editorial opinion and final review pending
 
-**Se propone aceptar E2-5 como funcionalmente cerrado para A–C** siempre que el responsable apruebe estas evidencias y límites. **No se propone** declarar producción, aprobar RF-07 por arrastre, reescribir UML sin contraste, ni iniciar de manera automática otro módulo. La auditoría independiente será una etapa posterior y expresa.
+**It is proposed to accept E2-5 as functionally closed for A-C** provided that the person responsible approves these evidences and limits. **Not proposed** declare production, approve RF-07 by drag, rewrite UML without contrast, or automatically start another module. Independent auditing will be a later and express stage.
 
-## F. Control de calidad para esta revisión con observaciones externas
+## F. Quality control for this review with external observations
 
-- [x] Comparar el planteo de locks de Ajustes/Traslados con los servicios **síncronos reales**: no etiquetar un 409 esperado como pérdida de stock probada.
-- [x] Conservar `STOCK_INICIAL` único aunque saldo actual sea 0; proponer conteo físico como caso de uso separado y futuro.
-- [x] Distinguir reversión compensatoria ausente (deuda) de falla funcional del flujo actual.
-- [x] Priorizar revisión de privilegios SQL y aprobaciones por merma antes de producción, sin declarar incidente real no demostrado.
-- [x] Corregir referencia normativa: **RFC 9457** (no 7807) para futura interfaz de errores; no cambiar códigos HTTP mediante documentación.
-- [ ] Agregar/correr en PR de código futuro la carrera cruzada Ajuste vs Traslado al mismo destino y los controles de permisos SQL.
-- [x] Obtener conformidad documental y fusionar el PR; la hoja de encargo está publicada, pero la **auditoría independiente aún no fue ejecutada**.
+- [x] Compare the setting of Settings/Transfers locks with services **actual synchrons**: do not label an expected 409 as proven stock loss.
+- [x] Store `STOCK_INICIAL` only though current balance is 0; propose physical count as case of separate use and future.
+- [x] Distinguish absent compensatory reversal (debt) of functional failure of current flow.
+- [x] Prioritize revision of SQL privileges and write-off approvals before production, without declaring actual incident unproven.
+- [x] Correct regulatory reference: **RFC 9457** (No 7807) for future error interface; do not change HTTP codes by document.
+- [ ] Add/run in PR future code cross-race Adjustment vs Transfer to same destination and SQL permission controls.
+- [x] Get documentary compliance and merge the PR; the order sheet is published, but the **independent audit not yet implemented**.
 
 
-## G. Resultado de revisión interna v1.2
+## G. Outcome of internal review v1.2
 
-El [acta de control editorial y técnico](14_REVISION_INTEGRAL_DOCUMENTAL.md) emite **OK para revisión del equipo y preparación de auditoría**, pero **NO** para producción ni merge automático. La [hoja E2-5](../E2-5_ENTREGA_PARA_REVISION.md) y el [paquete del auditor](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md) están preparados. **Aprobación y merge documental completados**, SHA original `c66df2f8ddaa8179ca12e342bd3099348bc6b155` ya conocido. Falta únicamente ejecutar la auditoría independiente con el HEAD que corresponda.
+El [editorial and technical control report](14_REVISION_INTEGRAL_DOCUMENTAL.md) emite **OK for team review and audit preparation**but **NO** for production or automatic merge. [sheet E2-5](../E2-5_ENTREGA_PARA_REVISION.md) y el [auditor package](../E2-5_AUDITORIA/00_LEEME_Y_PRECONDICIONES.md) They're ready. **Approval and Merge Completed Documentary**, Original SHA `c66df2f8ddaa8179ca12e342bd3099348bc6b155` known. Only the independent audit with the corresponding HEAD is required.

@@ -1,120 +1,120 @@
-# E3-1G — Punto de venta e historial de ventas REAL
+# E3-1G — Sales point and sales history REAL
 
-**Base aprobada:** PR #58 / \`feature/e3-1f1-inventario-vistas-real\`, commit \`dbdb219\`.  
-**Rama:** \`feature/e3-1g-pos-ventas-visual-real\`, PR apilado contra #58.  
-**Estado:** implementación para CI y revisión visual, no integrada en \`main\`.
+**Approved basis:** PR #58 / \`feature/e3-1f1-inventario-vistas-real\`, commit \`dbdb219\`.  
+**Rama:** \`feature/e3-1g-pos-ventas-visual-real\`, PR stacked against #58.  
+**Status:** implementation for IC and visual review, not integrated into \`main\`.
 
-## Objetivo
+## Objective
 
-Continuar la coherencia visual de E3. Reorganizar el **POS REAL** y el **Historial de ventas** de modo que la selección del catálogo y preparación del carrito sean claras, mientras que la revisión/confirmación y la visualización de un comprobante ocupen vistas exclusivas. No introducir lógica de cobro, stock o descuentos nueva.
+Continue the visual consistency of E3. **POS REAL** y el **Sales history** so that the selection of the catalogue and preparation of the cart are clear, while the revision/confirmation and display of a voucher occupy exclusive views. Do not introduce new collection logic, stock or discounts.
 
 ## POS REAL
 
-- Mantiene selector de sede, búsqueda de artículos (solo catálogo cargado), selección con precio de lista no editable por defecto, excepción de precio solo para roles autorizados, subtotales exactos, máximo de 30 artículos y carrito.
-- Presentación visual: cabecera empresarial, tarjetas de catálogo en rejilla, carrito en columna lateral en escritorio y debajo en móvil, controles de pago ordenados.
-- \`RealPosCheckout\` **permanece montado** durante el flujo para preservar la revisión de IndexedDB y el estado del intento. Al pasar a \`review\`, \`sending\`, \`pending\` o \`confirmed\` el borrador del carrito queda **visualmente oculto**, pero no destruido. \`Volver a editar\` de la revisión restaura la pantalla completa sin perder datos.
-- \`pending\` se abre directamente como pantalla de recuperación ante reingreso si existe intento guardado. Solo una decisión explícita y el mismo \`request_id\`/cuerpo permiten reenvío. No hay POST automático.
-- Confirmar venta REAL continúa **deshabilitado por defecto**. Se habilita únicamente cuando el entorno se configura explícitamente con \`VITE_PYME_ENABLE_REAL_SALES=1\`, además de las reglas de negocio y permisos de FastAPI. Esta bandera frontend nunca sustituye RBAC.
-- Los pagos son **declaraciones**; Mercado Pago declarado no implica acreditación bancaria/externa.
+- Maintains headquarters selector, search for items (only catalog loaded), selection with non-editable list price by default, price exception only for authorized roles, exact subtotals, maximum 30 items and cart.
+- Visual presentation: business header, catalog cards in grid, cart in side column on desktop and below mobile, ordered payment controls.
+- \`RealPosCheckout\` **remains mounted** during the flow to preserve IndexedDB review and attempt status. When passing \`review\`, \`sending\`, \`pending\` o \`confirmed\` the draft of the cart remains **visually hidden**but not destroyed.`Volver a editar\` Review restores full screen without losing data.
+- \`pending\` opens directly as a re-entry recovery screen if there is saved attempt. Only one explicit decision and the same \`request_id\`/body allows forwarding. No automatic POST.
+- Confirm Real sale continues **disabled by default**. Enables only when environment is explicitly configured with \`VITE_PYME_ENABLE_REAL_SALES=1\`, besides FastAPI business rules and permissions. This frontend flag never replaces RBAC.
+- Payments are **declarations**; Market Payment declared does not imply bank/external accreditation.
 
-## Historial de ventas REAL
+## REAL Sales History
 
-- Listado con tarjetas, indicador de cantidad cargada (sin afirmar totales globales), filtro de sede enviado a API y búsqueda local de IDs, sede y responsable. La búsqueda local solo aplica a páginas consultadas.
-- **Ver comprobante** cambia a una pantalla exclusiva con «Volver al historial» y conserva los filtros previos. Las consultas por UUID y por \`request_id\` siguen siendo exclusivamente \`GET\`.
-- Comprobante muestra fecha, sede, **nombre de quien registró la venta**, renglones y snapshots originales, subtotales/descuento/total, pagos declarados y saldos históricos de inventario. El UUID de usuario y las claves quedan en «Identificadores de trazabilidad».
-- Los nombres se resuelven exclusivamente desde el usuario actual o desde el directorio empresarial cuando \`canReadTeam\` permite consultarlo. Si la identidad no está disponible, se muestra «Nombre no disponible». Se muestran nombres actuales de perfil, no snapshots históricos de nombres.
-- Recuperación mediante solicitud 404 mantiene advertencia original; **404 no prueba que la venta original no ocurrió**. No se ofrece un POST nuevo desde el historial.
+- Listed with cards, loaded quantity indicator (without asserting global totals), headquarters filter sent to API and local ID search, location and responsible. Local search only applies to pages consulted.
+- **See voucher** changes to an exclusive display with "Back to History" and retains the previous filters.`request_id\` remain exclusively \`GET\`.
+- Check sample date, location, **name of the person who registered the sale**, original lines and snapshots, subtotal/discount/total, declared payments and historical inventory balances. UUID user and keys remain in ‘Trafficking identifiers’.
+- Names are resolved exclusively from the current user or from the business directory when \`canReadTeam\` allows you to consult it. If the identity is not available, "Name not available" is displayed. Current profile names are shown, not historical name snapshots.
+- Recovery by request 404 maintains original warning; **404 does not prove that the original sale did not occur**. No new POST is offered from history.
 
-## No se modifica
+## Not amended
 
-Backend, SQL, Alembic, contratos DTO, permisos y aislamientos por empresa, algoritmos BigInt/HALF_UP, condición de inventario, versiones, carrito persistido/no persistido, IndexedDB, \`Idempotency-Key\`, precio unitario y sus excepciones, políticas de descuentos ni modo de validación T10.
+Backend, SQL, Alembic, DTO contracts, permissions and isolations per company, BigInt/HALF_UP algorithms, inventory condition, versions, persistent/not persisted cart, IndexedDB, \`Idempotency-Key\`, unit price and exceptions, discount policies and T10 validation mode.
 
-## Pruebas
+## Evidence
 
-- Nuevo E2E \`frontend/e2e/real/e3-pos-sales-visual.spec.ts\`: empresa PostgreSQL descartable; ventas confirmadas por API; navegación listado → comprobante exclusivo → POS → revisión exclusiva → volver; nombre del actor, búsqueda local, 390px y cero POST UI.
-- Regresión de \`sales.spec.ts\` adaptada al regreso desde el comprobante antes de buscar por otra solicitud.
-- Se mantienen sin suprimir: \`pos-draft.spec.ts\`, \`sales-read.spec.ts\`, \`sales-recovery.spec.ts\`, \`sales-invalid-payment-policy.spec.ts\` y \`flow-purchase-to-sale.spec.ts\`.
-- Compilar con TypeScript, lint Oxlint y pruebas \`test:sales-real-pos\`, \`test:sales-real-checkout\`, \`test:sales-real-read\`, \`test:sales-real-pending\`, \`test:sales-real-write\`; ejecutar E2E con \`PYME_DISPOSABLE_QA=1\` y backend PostgreSQL **descartable**.
-- Si la CI del PR está incompleta o falla, mantener en borrador y corregir antes de solicitar revisión.
+- New E2E`frontend/e2e/real/e3-pos-sales-visual.spec.ts\`: PostgreSQL company disposable; API confirmed sales; navigation listed → exclusive proof → POS → exclusive review → back; actor name, local search, 390px and zero POST UI.
+- Fallback`sales.spec.ts\` adapted to return from voucher before searching for another request.
+- Keeping undelete: \`pos-draft.spec.ts\`, \`sales-read.spec.ts\`, \`sales-recovery.spec.ts\`, \`sales-invalid-payment-policy.spec.ts\` y \`flow-purchase-to-sale.spec.ts\`.
+- Compile with TypeScript, Lint Oxlint and Tests \`test:sales-real-pos\`, \`test:sales-real-checkout\`, \`test:sales-real-read\`, \`test:sales-real-pending\`, \`test:sales-real-write\`; ejecutar E2E con \`PYME_DISPOSABLE_QA=1\` y backend PostgreSQL **disposable**.
+- If the PR IC is incomplete or fails, keep in draft and correct before requesting revision.
 
-## QA manual (sin generar escrituras)
+## Manual QA (without generating scripts)
 
-1. Entrar al **Punto de venta REAL** con empresa de prueba: seleccionar sede, artículo, cantidad; comprobar precio unitario y subtotal. Agregar al carrito; revisar importe declarado.
-2. Presionar «Revisar venta y pagos»: verificar la pantalla exclusiva con renglones y total; «Volver a editar» recupera el carrito y pagos. **No confirmar ventas sobre tu base habitual**.
-3. Abrir **Historial de ventas**: verificar filtros, las tarjetas y nombre del vendedor.
-4. Seleccionar «Ver comprobante»: observar pantalla completa sin listado debajo, pagos **declarados** y saldos históricos. Volver al historial; probar consulta por \`request_id\`.
-5. Probar anchos 390px y escritorio. Verificar permisos, operación de caja no incluida, y que el historial no crea nuevas ventas.
+1. Enter **REAL POSITION** with test company: select venue, item, quantity; check unit and subtotal price. Add to cart; review declared amount.
+2. Press "Check sale and payments": check the exclusive screen with lines and total; "Re-edit" recovers the cart and payments. **Do not confirm sales on your usual basis**.
+3. Open **Sales history**: verify filters, cards and seller's name.
+4. Select "See voucher": observe full screen without listing below, payments **declared** and historical balances. Back to history; try query by \`request_id\`.
+5. Test 390px widths and desktop. Check permissions, box operation not included, and that history does not create new sales.
 
-## Dependencias
+## Units
 
-Cadena E3 todavía sin merge: #55 → #57 → #58 → PR de E3-1G. No fusionar hasta aprobación manual y controles de CI; no tocar \`main\` ni bases locales en esta etapa.
+E3 string still unmerged: #55 → #57 → #58 → E3-1G PR. Do not merge until manual approval and IC controls; do not touch \`main\` or local bases at this stage.
 
-## Pendiente de posteriores incrementos
+## Pending further increments
 
-Optimización de bundle, refinamiento transversal final de estética, fotos con almacenamiento REAL y dinero/caja/QR reales no se implementan por este cambio visual.
+Boundle optimization, final cross-cutting refinement of aesthetics, real photos with REAL storage and money/box/QR are not implemented by this visual change.
 
-## Ajustes posteriores a la revisión manual del usuario — E3-1G
+## Adjustments after manual user review — E3-1G
 
-Tras probar el POS y el historial en VS Code, el usuario propuso tres mejoras de operabilidad tomadas como referencia de la DEMO:
+After testing the POS and history in VS Code, the user proposed three operating improvements taken as a DEMO reference:
 
-### A. Descuento visible en el cálculo de cobro
+### A. Visible discount in collection calculation
 
-- El descuento sigue siendo **global a la venta**, no una modificación de precio unitario, categoría o inventario. Los descuentos de monto fijo están disponibles solo para los roles ya autorizados.
-- Se visualiza explícitamente dentro de **Pagos declarados** la cuenta **subtotal de artículos − descuento = total a cobrar**, con formato ARS.
-- La cifra inicial de pago sigue el total calculado mientras no se edite manualmente. Si se modifican montos a mano, se indica faltante/exceso y el control de completar permite ajustar el último medio.
-- No se modifica el algoritmo exacto HALF_UP, ni contratos o persistencia de pagos.
+- The discount remains **global a la venta**, not a change in unit price, category or inventory. Fixed amount discounts are available only for previously authorized roles.
+- It is explicitly displayed within **Declared payments** the account **subtotal items − discount = total receivable**ARS format.
+- The initial payment figure follows the total calculated as long as it is not edited manually. If amounts are changed by hand, missing/excess is indicated and the completion control allows adjusting the last medium.
+- The exact HALF_UP algorithm, contracts or persistent payments are not modified.
 
-### B. Límite orientativo de stock disponible
+### B. Available stock guideline limit
 
-- Solo para **bienes físicos**, al elegir artículo y sede habilitada para almacenamiento, se consulta exclusivamente por **GET** inventory/balances filtrando ubicación y artículo, leyendo un saldo autorizado por empresa.
-- Se muestra cantidad en unidad real (milésimas exactas), sede y fecha del saldo si existe. Sin fila de saldo se informa cero; servicios no requieren stock físico.
-- Se bloquea agregar o actualizar la línea si la cantidad supera el último saldo consultado o si la lectura sigue pendiente/falló; existe **Actualizar disponibilidad** explícito.
-- El borrador **no reserva stock**. FastAPI conserva rechazo 409 si la disponibilidad cambia antes de confirmar. E2E de carrera: stock existente al agregar, agotado por otra operación antes de registrar.
-- Sin endpoints nuevos, cambios de stock automáticos ni lecturas de sedes ajenas.
+- Just for **physical property**when choosing article and venue enabled for storage, it is consulted exclusively by **GET** inventory/balances filtering location and item, reading an authorized balance per company.
+- Amount shown in real unit (exact thousandths), location and date of balance if available. No balance row reported zero; services do not require physical stock.
+- The line is blocked to add or update if the amount exceeds the last balance consulted or if the reading is still pending/failed; it exists **Update availability** explicit.
+- The draft **no reserva stock**. FastAPI retains 409 rejection if availability changes before confirming. Race E2E: stock existing when adding, exhausted by another operation before registering.
+- No new endpoints, automatic stock changes or readings from other people's locations.
 
-### C. Completar último medio de pago
+### C. Completing last payment method
 
-- Se agrega **Completar saldo restante en este medio** en el último medio declarado, respetando anteriores.
-- La función pura completa el importe exacto como **total a cobrar − suma de medios anteriores**, en centavos BigInt, actualizando únicamente el último.
-- Si los anteriores ya cubren el total, tienen importe inválido o no queda un importe positivo, se muestra error sin modificar pagos.
-- No se acredita dinero bancario, tarjetas, Cuenta DNI ni Mercado Pago.
+- Add **Complete balance remaining in this medium** in the last declared medium, respecting previous ones.
+- The pure function completes the exact amount as **total receivable − amount of prior means**BigInt cents, updating only the last.
+- If the above already cover the total, have invalid amount or there is no positive amount left, error is shown without changing payments.
+- No bank money, cards, ID Account or Payment Market is credited.
 
-### Regresiones y cierre
+### Regressions and closure
 
-Se amplían tests de centavos exactos, cambios de descuento, pagos mixtos y errores, además de E2E con stock cero, refresco por GET y límites. Las pruebas existentes de F5, precio excepcional, 409 concurrente, pago mixto e idempotencia se conservan.
+Exact pennies tests, discount changes, mixed payments and errors are extended, in addition to E2E with zero stock, soft drinks for GET and limits. Existing tests of F5, exceptional price, 409 concurrent, mixed payment and idempotence are preserved.
 
-Se actualiza la prueba histórica que esperaba el encabezado Punto de venta en el estado **Recuperación de venta** tras F5, reflejando la pantalla independiente de E3-1G sin cambiar el código transaccional.
+Updates historical proof that expected the point of sale header in the state **Sales recovery** after F5, reflecting the independent E3-1G display without changing the transactional code.
 
-**No fusionar a main sin CI verde y aprobación del usuario.**
-
-
-## Refinamiento de interacción POS posterior a la revisión del usuario (12/11/2026)
-
-Las capturas REAL y DEMO orientaron un cierre visual adicional. Se mantiene la distinción entre selección y confirmación, que protege la trazabilidad.
-
-1. **Tarjetas del catálogo y unidades:** fichas con icono neutro, categoría, SKU, precio, existencia de la sede seleccionada y acción visible «Agregar unidades». Elegir un artículo abre su editor de cantidad y precio autorizado; no hace una venta. El carrito incluye botones +/− para cambiar una unidad sin alterar el precio, más «Editar cantidad» para unidades fraccionables. No se duplica un renglón para el mismo catálogo.
-2. **Stock en la sede:** los saldos se leen desde \`GET /inventory/balances\` filtrado por ubicación y paginado (hasta 20 páginas de 500), con indicador de resultado incompleto. Cada tarjeta muestra únicamente un saldo **conocido**, por su propia unidad. Un artículo ausente de un resultado incompleto se muestra como «Saldo no verificado», nunca como cero. No se suma stock de diferentes artículos o sedes. El editor conserva su consulta por artículo/sede y bloquea agregar más que el saldo consultado; el botón + del carrito también respeta disponibilidad conocida. FastAPI vuelve a validar el stock al confirmar, y ninguna vista reserva inventario.
-3. **Descuento y total:** dentro del resumen del carrito, subtotal de renglones, campo de descuento, descuento aplicado y total a cobrar quedan en ese orden, usando los cálculos exactos ya existentes. Carrito vacío o inválido no inventa un total final.
-4. **Completar pago:** se conserva \`completeLastPosPayment\` (BigInt/centavos exactos) y se agrega indicación contextual. Este botón requiere un carrito con total positivo; sin carrito no hay saldo que completar y queda deshabilitado. Rellena exclusivamente el último medio después de deducir importes anteriores, sin POST.
-5. **Dos pasos inequívocos:** «Finalizar venta» abre la **pantalla exclusiva de detalle completo pendiente de confirmación**: empresa, sede, renglones, cantidades, precio, subtotales, descuento, total, medios declarados y notas. Recién allí aparece «Confirmar y registrar venta REAL», condicionado a aceptación explícita y a la bandera de habilitación de mutaciones. El botón «Volver a editar» recupera carrito y pagos sin nuevo intento.
-6. **Imágenes:** se usan iconos de reserva mientras no exista almacenamiento REAL de fotografías de artículos. Las futuras miniaturas deben obtenerse del **Catálogo REAL**, con vínculo al artículo, validación y persistencia backend por empresa. No cargar imágenes desde DEMO/localStorage como datos reales ni incorporar fotos hardcodeadas.
-
-QA: suites existentes POS/recovery, test E2E E3-1G extendido para saldo visible de un producto físico, límite de cantidad, incremento/decremento de carrito, descuento y completar pago; integración en DB descartable. No fusionar hasta CI y aprobación del usuario.
+**Do not merge to main without green IC and user approval.**
 
 
-## E3-1G — Corrección del catálogo/carrito y ticket (QA del 12/11/2026)
+## POS interaction refinement after user review (12/11/2026)
 
-**Hallazgo:** en el diseño anterior la ficha completa del catálogo era un botón asociado a `choose(item)`. Por ese motivo «Agregar unidades» solo seleccionaba o cambiaba el editor activo: el producto NO se agregaba al detalle hasta presionar una segunda acción, cuyo lugar visual confundía al usuario.
+The REAL and DEMO catches guided an additional visual closure. The distinction between selection and confirmation is maintained, which protects traceability.
 
-**Nuevo recorrido:**
-- La ficha del catálogo pasa a ser informativa: nombre, categoría, SKU, unidad, precio, saldo físico de la **sede seleccionada** cuando está verificado. Su botón propio **«Agregar unidades» incorpora directamente UNA unidad al detalle**, suma una unidad si el artículo ya estaba, y nunca reemplaza los demás artículos. En la ficha se muestra «En detalle: X unidades».
-- El carrito ocupa la **sección completa bajo el catálogo**, de ancho suficiente. Cada línea tiene nombre, unidad, cantidad, precio unitario, subtotal y controles horizontales `−` / `+`, «Editar cantidad» y «Quitar». La edición manual, incluidas cantidades fraccionarias, ocurre en el mismo detalle; no aparece un editor desplegable debajo del catálogo.
-- Si un artículo no tiene precio, no se agrega con un importe inventado. El titular/administrador puede elegir «Definir precio», utilizar el editor excepcional del detalle y guardarlo. Los roles sin permiso de precios continúan bloqueados.
-- El resumen del detalle conserva el orden: **Subtotal de artículos → Descuento (si el rol está autorizado) → Descuento aplicado → Total a cobrar**. Al pasar a «Finalizar venta», la vista exclusiva muestra los **mismos renglones** y precios, descuento y pagos declarados antes de la confirmación explícita.
-- Las cantidades para bienes no pueden superar el saldo conocido en la sede. Una disponibilidad ausente o una página incompleta no se interpreta como cero; mientras el saldo no esté verificado no se permite agregar rápidamente. El usuario puede iniciar una consulta específica de ese artículo. No se reserva mercadería; la confirmación revalida todo en FastAPI.
-- La UI utiliza iconos neutros temporales. La carga futura de fotografías deberá realizarse en **Catálogo REAL**, con almacenamiento persistente y aislamiento por empresa, y luego alimentar estas mismas fichas; no se emplean imágenes de DEMO ni de navegador.
-- Se conserva el circuito de `Idempotency-Key` e IndexedDB, los precios de catálogo, el cálculo HALF_UP, el límite de líneas y la política de permisos, sin cambios de backend ni migraciones.
+1. **Catalogue cards and units:** tabs with neutral icon, category, SKU, price, existence of selected headquarters and visible action "Add units". Choosing an article opens your editor of quantity and authorized price; does not make a sale. The cart includes buttons +/− to change a unit without altering the price, plus "Edit quantity" for fractionable units. No double one line for the same catalog.
+2. **Stock en la sede:** balances are read from \`GET /inventory/balances\` filtered by location and pagination (up to 20 pages of 500), with incomplete result indicator. Each card shows only one balance **known**, for its own unit. An article absent from an incomplete result is shown as "Unverified balance", never as zero. No stock of different items or locations is added. The editor retains his query by article/headquarters and blocks adding more than the balance consulted; the + button of the cart also respects known availability. FastAPI revalidates the stock when confirming, and no inventory reservation view.
+3. **Discount and total:** inside the summary of the cart, subtotal lines, discount field, applied and total to collect are in that order, using the exact calculations already existing. Empty or invalid cart does not invent a final total.
+4. **Complete payment:** is preserved`completeLastPosPayment\` (Exact BigInt/cents) and contextual indication is added. This button requires a cart with positive total; without cart there is no balance to complete and it is disabled. It fills only the last medium after deducting previous amounts, without POST.
+5. **Two clear steps:** ‘Finish sale’ opens the **Full detail exclusive screen pending confirmation**: company, headquarters, lines, quantities, price, subtotals, discount, total, declared means and notes. Only there is "Confirming and registering REAL sale", conditioned to explicit acceptance and the mutation rating flag. The "Re-edit" button recovers cart and payments without further attempt.
+6. **Images:** Reserve icons are used as long as there is no REAL storage of articles photographs. Future thumbnails should be obtained from **REAL Catalog**, with link to article, validation and persistence backend by company. Do not upload images from DEMO/localStorage as real data or incorporate hardcoded photos.
 
-**Regresión:** tests unitarios nuevos para suma directa al carrito, preservación de otros renglones, precio excepcional y límite de stock; E2E de POS/ventas adaptadas a la interacción nueva, incluida una compra con producto físico y servicio, y suite de integración completa contra PostgreSQL **descartable**.
+QA: existing POS/recovery suites, extended E2E E3-1G test for visible balance of a physical product, quantity limit, increase/decrease of cart, discount and complete payment; integration into disposable DB. Do not merge until IC and user approval.
 
-**Integración:** PR #59 en borrador, apilado sobre #58 → #57 → #55. Este ajuste NO constituye autorización de merge.
+
+## E3-1G — Catalogue/cart and ticket correction (QA of 12/11/2026)
+
+**Finding:** in the previous design the complete tab of the catalog was a button associated with `choose(item)`. For this reason "Add units" only selected or changed the active editor: the product was NOT added to detail until a second action was pressed, whose visual location confused the user.
+
+**New tour:**
+- The catalogue sheet becomes informative: name, category, SKU, unit, price, physical balance of the **selected venue** when it is checked. Your own button **‘Add units’ incorporates one unit directly into the detail**, adds one unit if the article is already in place, and never replaces the other articles. The tab shows "Detail: X units".
+- The cart occupies the **full section under the catalogue**Each line has name, unit, quantity, unit price, subtotal and horizontal controls `−` / `+`, "Edit quantity" and "Remove". Manual editing, including fractional quantities, occurs in the same detail; no drop-down editor appears under the catalog.
+- If an item is priceless, it is not added with a invented amount. The owner/manager may choose "Define Price", use the exceptional detail editor and save it. Roles without price permission remain blocked.
+- The summary of the detail retains the order: **Subtotal articles → Discount (if role is authorized) → Discount applied → Total to be charged**. When moving to ‘Finish sale’, the exclusive view shows the **same lines** and prices, discount and payments declared before explicit confirmation.
+- The amounts for goods cannot exceed the known balance at headquarters. An absent availability or an incomplete page is not interpreted as zero; as long as the balance is not verified it is not allowed to add quickly. The user can start a specific query of that article. No merchandise is reserved; confirmation validates everything in FastAPI.
+- The UI uses temporary neutral icons. Future loading of photographs should be done in **REAL Catalog**, with persistent storage and isolation by company, and then feed these same tokens; neither DEMO nor browser images are used.
+- The circuit of `Idempotency-Key` and IndexedDB, catalog prices, HALF_UP calculation, line limit and permission policy, no backend changes or migrations.
+
+**Regression:** new unit tests for direct addition to the cart, preservation of other lines, exceptional price and stock limit; POS E2E/sales adapted to new interaction, including a purchase with physical product and service, and complete integration suite against PostgreSQL **disposable**.
+
+**Integration:** PR #59 in draft, stacked on #58 → #57 → #55. This setting does NOT constitute merge authorization.

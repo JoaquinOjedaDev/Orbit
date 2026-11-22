@@ -1,51 +1,51 @@
-# E1-B3.1 — Google Maps y compartir ubicaciones (sin API)
+# E1-B3.1 — Google Maps and share locations (without API)
 
-**Estado:** integrado en el frontend React de main. Build, lint y prueba manual local pendientes de confirmar.
+**Status:** integrado en el frontend React de main. Build, lint y prueba manual local pendientes de confirmar.
 
-## Referencia
+## Reference
 
-HTML original de Ubicaciones proporcionado por el equipo: formularios con «Link de Google Maps (URL)», botón «Ver en Google Maps» y acción «Compartir Ficha Completa». Las capturas aportadas sirven de referencia de presentación, no de fuente de datos.
+Original HTML of Locations provided by the team: forms with "Google Maps Link (URL)", "View in Google Maps" button and "Share Full Sheet" action. The screenshots provided serve as a presentation reference, not a data source.
 
-## Decisiones implementadas
+## Decisions implemented
 
-1. Al **crear o editar una ubicación**, la dirección sigue siendo opcional; se agrega **Enlace de Google Maps (opcional)**. Se pega un vínculo copiado desde Google Maps. No hay necesidad de API key.
-2. El botón «Buscar esta dirección en Google Maps» abre una **búsqueda** de la dirección escrita usando la API pública de URLs de Google Maps. Una búsqueda **no es una geolocalización verificada**: el usuario debe confirmar el lugar en Maps, compartirlo y pegar el enlace si necesita un punto exacto.
-3. En cada tarjeta, con enlace guardado aparece «Ver ubicación en Google Maps»; si no hay enlace pero sí dirección, aparece «Buscar dirección en Google Maps», que **no** afirma que sea un lugar exacto. Sin ninguno se indica «Sin mapa ni dirección asignados».
-4. «Copiar ubicación» genera nombre de negocio, nombre del lugar, referencia y vínculo, sólo tras acción explícita. Usa portapapeles del navegador, con fallback de texto seleccionable si el navegador no lo permite.
-5. Se aceptan solamente vínculos HTTPS de Google Maps con hosts y rutas permitidos. Se rechazan esquemas inseguros, URLs externas y credenciales incrustadas. Al leer localStorage, enlaces inválidos se ignoran sin descartar la ubicación.
-6. La propiedad `mapUrl` se guarda **opcionalmente** dentro de cada ubicación, en la **misma clave y versión de almacenamiento** que antes; las ubicaciones existentes sin `mapUrl` se cargan con cadena vacía. No se borran empresas, perfiles, datos de negocio ni funciones laborales.
-7. No se incrusta iframe ni se envía a Google una búsqueda de fondo: Google Maps se abre en pestaña nueva sólo si la persona pulsa el enlace. El botón de búsqueda sí comparte con Maps la dirección escrita en la URL de búsqueda.
-8. No se comparten automáticamente direcciones de lugares privados, y no se copian fichas de responsables, teléfonos ni permisos. El usuario decide si pegar el texto copiado en otra aplicación.
+1. Al **create or edit a location**, address is still optional; added **Google Maps Link (optional)**. Paste a link copied from Google Maps. No need for API key.
+2. The "Find this address in Google Maps" button opens a **search** of the address written using the public URL API of Google Maps. A search **is not a verified geolocation**: the user must confirm the place in Maps, share it and paste the link if you need an exact point.
+3. On each card, with a saved link appears "View Location in Google Maps", if there is no link but yes address, it appears "Search Address in Google Maps", which **no** The Commission has not yet taken the view that the aid is an appropriate measure.
+4. 'Copy Location' generates business name, place name, reference and link only after explicit action. Use browser clipboards, with selectable text failback if the browser does not allow.
+5. Only HTTPS links to hosts and permitted paths are accepted from Google Maps. Insecure schemas, external URLs and embedded credentials are rejected. Reading localStorage, invalid links are ignored without discarding the location.
+6. The property `mapUrl` se guarda **optionally** within each location, in the **same key and storage version** before; existing locations without `mapUrl` are loaded with empty chain. Businesses, profiles, business data and job functions are not deleted.
+7. No iframe embedding or sending a background search to Google: Google Maps opens in new tab only if the person presses the link. The search button does share with Maps the address written on the search URL.
+8. Addresses from private places are not automatically shared, and data sheets, phones or permissions are not copied. The user decides whether to paste the text copied into another application.
 
-## Pendiente para integración avanzada
+## Pending for Advanced Integration
 
-El selector visual de un pin **dentro** de la plataforma, búsqueda autocompletada, geocodificación de dirección, vista previa embebida, permisos de compartir y fotos requieren una decisión posterior sobre Google Maps Platform, condiciones de uso, privacidad y credenciales/API. No fingir un mapa con imágenes de marcador de posición.
+El selector visual de un pin **dentro** platform, autocomplete search, address geocoding, embedded preview, sharing permissions and photos require a later decision about Google Maps Platform, terms of use, privacy and credentials/API. Do not fake a map with placemark images.
 
-## Archivos
+## Files
 
-- `frontend/src/data/demo/mapsLinks.ts`: validación, URL de búsqueda y texto para copiar.
-- `frontend/src/data/demo/demoStore.ts`: `mapUrl` en DTO, comandos y lectura persistente compatible.
-- `frontend/src/features/locations/LocationsPage.tsx`: enlace en formulario, abrir/buscar/copiar desde tarjeta.
-- `frontend/src/App.css`: estilos responsivos.
+- `frontend/src/data/demo/mapsLinks.ts`: validation, search URL and text to copy.
+- `frontend/src/data/demo/demoStore.ts`: `mapUrl` in DTO, commands and compatible persistent reading.
+- `frontend/src/features/locations/LocationsPage.tsx`: link in form, open/search/copy from card.
+- `frontend/src/App.css`: responsive styles.
 
-## Casos para validar en VS Code
+## Cases to validate in VS Code
 
-Desde `plataforma-pyme/frontend`: `git pull --ff-only origin main`, `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run dev`.
+From `plataforma-pyme/frontend`: `git pull --ff-only origin main`, `npm.cmd run build`, `npm.cmd run lint`, `npm.cmd run dev`.
 
-| Caso | Procedimiento | Esperado |
+| Case | Procedure | Expected |
 |---|---|---|
-| MAP-01 | Crear ubicación sin dirección ni enlace | Se guarda; la tarjeta indica que no hay mapa |
-| MAP-02 | Completar sólo una dirección ficticia | Botón de **búsqueda** en Maps, no marcador confirmado |
-| MAP-03 | Pegar enlace real copiado desde Google Maps de un lugar público | Guardar, F5, abrir enlace en pestaña nueva |
-| MAP-04 | Pegar `https://maps.app.goo.gl/...` | URL admitida si su formato es válido |
-| MAP-05 | Pegar `javascript:...` o un host imitador de Google | Error visible, no se guarda ni abre |
-| MAP-06 | Copiar ubicación | Pega el nombre, dirección de prueba y link en un bloc de notas |
-| MAP-07 | Denegar portapapeles en el navegador | Ofrece texto seleccionable manualmente |
-| MAP-08 | Cambiar A→B y volver | Enlaces y direcciones no se cruzan |
-| MAP-09 | Cargar ubicaciones creadas antes de añadir `mapUrl` | Datos anteriores intactos |
-| MAP-10 | Reducir ancho a 390 px | Controles legibles, sin desbordamiento |
-| MAP-11 | Build + lint | Sin errores ni advertencias |
+| MAP-01 | Create Location Without Address or Link | Saves; card indicates no map |
+| MAP-02 | Complete only one fictitious address | Button of **search** in Maps, no bookmark confirmed |
+| MAP-03 | Paste real link copied from Google Maps from a public place | Save, F5, open link in new tab |
+| MAP-04 | Paste `https://maps.app.goo.gl/...` | URL supported if its formatting is valid |
+| MAP-05 | Paste `javascript:...` or a Google copycat host | Visible error, not saved or opened |
+| MAP-06 | Copy Location | Paste the name, test address and link into a notepad |
+| MAP-07 | Deny clipboard in browser | Offers manually selectable text |
+| MAP-08 | Change A→B and go back | Links and directions do not cross |
+| MAP-09 | Load created locations before adding `mapUrl` | Previous data intact |
+| MAP-10 | Reduce width to 390 px | Readable controls, no overflow |
+| MAP-11 | Build + lint | No errors or warnings |
 
-**Precaución de privacidad:** usar datos ficticios para las pruebas. El usuario debe confirmar que el enlace corresponde al sitio correcto antes de compartirlo.
+**Privacy Caution:** use fictitious data for testing. The user must confirm that the link corresponds to the correct site before sharing it.
 
-Referencia técnica externa: https://developers.google.com/maps/documentation/urls/get-started y ayuda de Google Maps sobre «Compartir o incorporar mapa».
+External technical reference: https://developers.google.com/maps/documentation/urls/get-started and help from Google Maps on "Share or incorporate map".

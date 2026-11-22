@@ -12,7 +12,7 @@ bearer = HTTPBearer(auto_error=False)
 def unauthorized() -> HTTPException:
     return HTTPException(
         status_code=401,
-        detail="Credenciales invalidas o sesion vencida",
+        detail="Invalid credentials or expired session",
         headers={"WWW-Authenticate": "Bearer"},
     )
 

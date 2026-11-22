@@ -89,7 +89,7 @@ test('respuesta ajena, importes falsos, QR externo o estado inválido fallan cer
 test('pantalla QR pertenece a negocio y es recuperable tras refresh/login', () => {
   const path = '/real/empresas/' + business + '/qr-cobros/' + intentId
   assert.equal(realWorkspaceBusinessId(path), business)
-  assert.equal(realWorkspaceTitle(path), 'Cobro QR DEMO')
+  assert.equal(realWorkspaceTitle(path), 'Demo QR payment')
   assert.equal(realWorkspaceBusinessId('/real/empresas/' + business + '/qr-cobros/otro'), null)
   assert.equal(realWorkspaceBusinessId('/real/empresas/' + other + '/qr-cobros/' + intentId), other)
 })

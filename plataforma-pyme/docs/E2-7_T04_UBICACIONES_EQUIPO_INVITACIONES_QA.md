@@ -1,50 +1,50 @@
-# E2-7 T04 — Ubicaciones, equipo, invitaciones y asignaciones REAL
+# E2-7 T04 — Locations, equipment, invitations and assignments REAL
 
-**Estado:** implementación en rama para validación; NO fusionada.  
-**Base:** `main` `884fa56abac490d0ffde961426d0537357bff045` (T03 integrado).  
+**Status:** branch implementation for validation; NOT merged.  
+**Base:** `main` `884fa56abac490d0ffde961426d0537357bff045` (T03 integrated).  
 **Rama:** `feature/e2-7-t04-ubicaciones-equipo-invitaciones`.  
-**Límite de cambios:** `plataforma-pyme/frontend`, este documento y workflow de frontend. Sin modificar backend, migraciones, datos DEMO ni pagos.
+**Limit of change:** `plataforma-pyme/frontend`, this document and workflow of frontend. No modification backend, migrations, DEMO data or payments.
 
-## 1. Qué se integra
+## 1. What is integrated
 
-| Pantalla | Endpoints REST reales | Protección |
+| Display | Endpoints REST reales | Protection |
 |---|---|---|
-| Empresa → Ubicaciones | `GET/POST /businesses/{id}/locations`, `PATCH /{location_id}`, `PATCH /{location_id}/status`, `PUT /{location_id}/primary` | Lectura de miembros activos; escritura solo titular/admin de empresa ACTIVA |
-| Ubicación → Asignaciones | `GET /businesses/{id}/locations/{location_id}/assignments`; `PUT /{membership_id}` | Solo titular/admin. El miembro debe ser ENCARGADO/TRABAJADOR activo, del mismo tenant y la sede ACTIVA |
-| Empresa → Equipo | `GET /businesses/{id}/memberships`, `PATCH /{membership_id}` | Ver equipo: titular/admin. Cambiar rol/estado: exclusivamente titular, sin modificar su propia membresía protegida |
-| Equipo → Emitir invitación | `POST /businesses/{id}/invitations` | Titular/admin de empresa ACTIVA; solo roles propuestos ENCARGADO o TRABAJADOR |
-| Mi perfil REAL → Aceptar invitación | `POST /invitations/accept` | Cuenta REAL destinataria autenticada; token opaco de invitación de exactamente 43 caracteres |
+| Company → Locations | `GET/POST /businesses/{id}/locations`, `PATCH /{location_id}`, `PATCH /{location_id}/status`, `PUT /{location_id}/primary` | Reading of active members; deed only holder/admin of company ACTIVA |
+| Location → Allocations | `GET /businesses/{id}/locations/{location_id}/assignments`; `PUT /{membership_id}` | Holder only/admin. The member must be ENTRY/ACTRACTOR active, of the same tenant and the active headquarters |
+| Company → Equipment | `GET /businesses/{id}/memberships`, `PATCH /{membership_id}` | View team: holder/admin. Change role/state: exclusive holder, without modifying its own protected membership |
+| Team → Issue invitation | `POST /businesses/{id}/invitations` | Active business owner/admin; only proposed roles ENTRY OR WORKER |
+| My REAL profile → Accept invitation | `POST /invitations/accept` | REAL Account authenticated recipient; exactly 43 characters opaque invitation token |
 
-Todas las rutas anteriores viven bajo `/api/v1` y requieren Bearer **opaco** vigente, no JWT. Los cuerpos de petición usan los campos reales en los DTO de FastAPI, sin mezclar nombres/IDs de `demoStore`.
+All the previous routes live low `/api/v1` y requieren Bearer **opaque** JWT. The petition bodies use the real fields in FastAPI DTOs, without mixing names/IDs of `demoStore`.
 
-## 2. Navegación y acciones
+## 2. Navigation and actions
 
-Desde `/real/login` ingresás a `/real/perfil`. Desde Mis empresas seleccionás una empresa A o B y tenés:
-- `/real/empresas/{business_id}/ubicaciones`: crear y consultar sedes, editar nombre/tipo/dirección/link Google Maps/capacidades, pausar/reactivar, elegir sede principal, consultar y gestionar asignaciones de encargados/trabajadores;
-- `/real/empresas/{business_id}/equipo`: consultar integrantes y sus roles, titular cambia rol o estado de terceros; titular/admin emite invitación;
-- `/real/invitaciones/aceptar`: el destinatario con su propia sesión pega el código y acepta la membresía; después aparece la empresa real en su cuenta.
+From `/real/login` enter `/real/perfil`. From My companies you select a company A or B and have:
+- `/real/empresas/{business_id}/ubicaciones`: create and consult locations, edit name/type/address/link Google Maps/capacitys, pause/reactivate, choose head office, consult and manage assignments of managers/workers;
+- `/real/empresas/{business_id}/equipo`: consult members and their roles, holder changes role or status of third parties; titular/admin issues invitation;
+- `/real/invitaciones/aceptar`: the recipient with his own session pastes the code and accepts membership; then the real company appears in his account.
 
-**No se usa la DEMO como respaldo cuando falla FastAPI.** No se han conectado compras, inventario, ventas, caja, cuentas financieras ni documentos reales.
+**DEMO is not used as backup when FastAPI fails.** No actual purchases, inventory, sales, cashier, financial accounts or documents have been connected.
 
-## 3. Seguridad y comportamiento de invitaciones
+## 3. Security and behaviour of invitations
 
-- El endpoint de emisión **no manda automáticamente correos electrónicos**: el titular debe entregar el código por canal seguro. No enviarlo al chat, capturas, repositorios ni logs.
-- El código de invitación se recibe en el POST y se muestra **solo una vez** en la vista de emisión. No hay `GET` que lo recupere. Si se oculta, navega o se recarga, desaparece de React.
-- El código no se persiste en `localStorage`/`sessionStorage`, ni se coloca en URL o query string. Se pega en un formulario tipo contraseña.
-- El receptor debe tener cuenta propia con el email de destino y estar autenticado.
-- Un POST puede confirmarse en PostgreSQL y perder la respuesta. No hay reintentos automáticos. En resultados inciertos se instruye a **consultar primero** el estado de la empresa/equipo antes de intentar otra escritura. Recuperación durable de intenciones sigue siendo T06.
-- Cada ruta se forma con UUID validado; el backend exige pertenencia empresarial y permisos. Un botón oculto en React **no sustituye** los permisos del servidor.
-- Los GET y resultados de escritura se ignoran si el componente fue desmontado por navegación/logout, y los datos de sedes/equipo no se reutilizan entre empresas A y B.
+- The emission endpoint **does not automatically send emails**: the holder must deliver the code by secure channel. Do not send it to chat, captures, repositories or logs.
+- The invitation code is received in the POST and displayed **only once** in the broadcast view. `GET` If it hides, navigates or recharges, it disappears from React.
+- The code does not persist in `localStorage`/`sessionStorage`, neither placed in URL or query string. Paste into a password form.
+- The recipient must have its own account with the target email and be authenticated.
+- A POST can be confirmed in PostgreSQL and lose the answer. There are no automatic retryings. In uncertain results you are instructed to **consult first** the state of the company/team before trying another writing. Durable recovery of intentions remains T06.
+- Each route is formed with validated UUID; the backend requires business ownership and permissions. A hidden button in React **does not replace** server permissions.
+- The GETs and writing results are ignored if the component was removed by navigation/logout, and headquarters/equipment data is not reused between A and B companies.
 
-## 4. Advertencias de T03
+## 4. T03 Warnings
 
-Se corrigieron las dos causas señaladas en el log local de T03, sin agregar excepciones ni suprimir reglas de lint:
-- `react(set-state-in-effect)`: se eliminó el `setLoading(...)` sincrónico del efecto de lectura de empresas. El estado inicial depende del tipo de ruta, y las respuestas de red actualizan el estado después.
-- `react-hooks(exhaustive-deps)`: `go` y `onBusinessAuthLost` ahora son callbacks estables; el efecto declara `onUnauthorized` como dependencia.
+The two cases identified in the local log of T03 were corrected, without adding exceptions or deleting rules of lint:
+- `react(set-state-in-effect)`: the `setLoading(...)` synchronous of the reading effect of companies. Initial status depends on the type of route, and network responses update the state afterwards.
+- `react-hooks(exhaustive-deps)`: `go` y `onBusinessAuthLost` Now they are stable callbacks; the effect declares `onUnauthorized` as a dependency.
 
-La advertencia Vite de paquete JavaScript mayor de 500 kB se mantiene visible deliberadamente; es una optimización de bundle pendiente, no se cambia el umbral.
+The Vite JavaScript package warning over 500 kB is deliberately kept visible; it is a pending bulk optimization, the threshold is not changed.
 
-## 5. Validación en Windows, desde `plataforma-pyme/frontend`
+## 5. Validation on Windows, from `plataforma-pyme/frontend`
 
 ```powershell
 git pull --ff-only origin feature/e2-7-t04-ubicaciones-equipo-invitaciones
@@ -63,7 +63,7 @@ npm.cmd run lint
 if ($LASTEXITCODE -ne 0) { throw "Falló lint" }
 ```
 
-Para probar desde navegador (usar **datos de prueba**; estas escrituras modifican la DB PostgreSQL Docker configurada):
+To test from browser (use **test data**; these scripts modify the PostgreSQL Docker DB configured:
 
 ```powershell
 docker compose --profile api up -d --wait
@@ -71,33 +71,33 @@ $env:PYME_API_PROXY_TARGET = "http://127.0.0.1:18000"
 npm.cmd run dev
 ```
 
-Abrir `http://localhost:5173/real/login`. El token de login se conserva solo en memoria y **F5 obliga a iniciar sesión otra vez**, según T00.
+Open `http://localhost:5173/real/login`. El token de login se conserva solo en memoria y **F5 forces to log in again**According to T00.
 
-## 6. QA guiado con TEST Empresa A / TEST Empresa B
+## 6. QA guided with TEST Company A/TEST Company B
 
-| Escenario | Acción | Resultado esperado |
+| Scenario | Action | Expected outcome |
 |---|---|---|
-| T04-01 | Usuario titular ingresa a A → Ubicaciones y crea `Sede A TEST` | Se ve en A; no en B |
-| T04-02 | En B crear `Sede B TEST` | Solo aparece en B |
-| T04-03 | Editar sede A (dirección, tipo, capacidades) | Cambios persisten tras releer |
-| T04-04 | Hacer principal sede A; pausarla; reactivarla | Principal único; pausa lo quita y bloquea operaciones no aptas |
-| T04-05 | Abrir Equipo en A | Aparecen membresías reales, incluyendo titular |
-| T04-06 | Emitir invitación para un segundo usuario de prueba como TRABAJADOR | La API devuelve código una sola vez; no se envía email automático |
-| T04-07 | Logout; login como usuario destinatario; Aceptar invitación (código recibido) | A aparece en su lista de empresas, B no |
-| T04-08 | Invitado TRABAJADOR abre A → Ubicaciones y Equipo | Puede leer sedes; no puede editar ni ver listado privado del equipo |
-| T04-09 | Titular regresa a A, asigna trabajador a Sede A | Se guarda una asignación ACTIVA solo para A y esa sede |
-| T04-10 | Titular revoca asignación | Se registra REVOCADA; no se altera B |
-| T04-11 | Titular cambia rol o desactiva miembro tercero | Backend guarda cambio; titularidad protegida no puede editarse desde UI |
-| T04-12 | Invitado intenta abrir URL de B | 404/no acceso; no contenido ni datos DEMO de B |
-| T04-13 | Navegar A→B rápidamente; luego logout/F5 | No aparecen datos antiguos de A en B ni de sesión anterior |
-| T04-14 | Usar código inválido y volver a aceptar uno consumido | Errores seguros 422/409; no elevación de privilegios |
-| T04-15 | Abrir DEMO `/inicio` | Se mantiene independiente sin datos de usuario REAL |
-| T04-16 | Pantallas móviles | Cards, selects, botones y paneles legibles y funcionales |
+| T04-01 | User owner enters A → Locations and creates `Sede A TEST` | Se ve en A; no en B |
+| T04-02 | En B crear `Sede B TEST` | It only appears in B. |
+| T04-03 | Edit A-Site (direction, type, capabilities) | Changes persist after rereading |
+| T04-04 | Make main headquarters A; pause it; reactivate it | Single Main; pause removes and blocks unfit operations |
+| T04-05 | Open Equipment in A | Real memberships appear, including headline |
+| T04-06 | Issue invitation for a second trial user as WORKER | API returns code only once; no automatic email is sent |
+| T04-07 | Logout; login as recipient user; Accept invitation (code received) | A appears on your list of companies, B no |
+| T04-08 | Guest WORKER opens A → Locations and Equipment | You can read venues; you cannot edit or view private computer listings |
+| T04-09 | Headline returns to A, assigns worker to Headquarters A | An Active Assignment is Saved for A Only and that Headquarters |
+| T04-10 | Holder revokes allocation | Recorded Revoke; not altered B |
+| T04-11 | Holder changes role or disables third member | Backend saves change; protected title cannot be edited from IU |
+| T04-12 | Guest tries to open B URL | 404/no access; no B DEMO content or data |
+| T04-13 | Navigate A→B quickly; then logout/F5 | No old B-A or previous session data appear |
+| T04-14 | Use invalid code and accept one consumed again | Safe errors 422/409; no privilege elevation |
+| T04-15 | Open DEMO `/inicio` | It remains independent without REAL user data |
+| T04-16 | Mobile screens | Cards, selects, botones y paneles legibles y funcionales |
 
-**Para probar invitaciones no reutilizar un correo activo en la empresa:** el backend rechaza miembros e invitaciones pendientes duplicados. No pegar el token en mensajes a asistentes ni capturas.
+**To test invitations do not reuse an active mail in the company:** backend rejects duplicate pending members and invitations. Do not paste token into messages to attendees or captures.
 
-## 7. Evidencia y puerta de cierre
+## 7. Evidence and door of closure
 
-Se ampliaron las comprobaciones de GitHub Actions de frontend para ejecutar `test:api`, `test:auth`, `test:businesses` y `test:operations-real` además de compilación, lint y tests DEMO previos. El CI prueba contratos simulados; no sustituye pruebas de roles y tenant con dos usuarios y PostgreSQL.
+GitHub Actions Frontend checks were extended to execute `test:api`, `test:auth`, `test:businesses` y `test:operations-real` In addition to previous compilation, lint and DEMO tests. The IC tests simulated contracts; it does not substitute role testing and tenant with two users and PostgreSQL.
 
-**No fusionar T04** hasta que la rama actual supere CI y el equipo confirme los flujos principales de sedes, equipo, invitación/aceptación, asignación y aislamiento A/B con evidencia. Solo después arrancar T05 (catálogo real y paginación).
+**No fusionar T04** until the current branch exceeds IC and the team confirms the main flows of headquarters, equipment, invitation/acceptance, assignment and isolation A/B with evidence. Only after booting T05 (real catalogue and pagination).

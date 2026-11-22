@@ -216,15 +216,15 @@ const transferMovement=()=>({
 
 test('T08-2: leyenda singular/plural correcta, 0 vacío y página incompleta explícita',()=>{
  assert.equal(loadedInventoryCountLabel('balances',0,false),
-  '0 combinaciones artículo/sede cargadas · Última página consultada.')
+  '0 item/location balances loaded · Last page loaded.')
  assert.equal(loadedInventoryCountLabel('balances',1,false),
-  '1 combinación artículo/sede cargada · Última página consultada.')
+  '1 item/location balance loaded · Last page loaded.')
  assert.equal(loadedInventoryCountLabel('balances',2,true),
-  '2 combinaciones artículo/sede cargadas · Puede haber más páginas.')
+  '2 item/location balances loaded · More pages may be available.')
  assert.equal(loadedInventoryCountLabel('movements',1,false),
-  '1 movimiento cargado · Última página consultada.')
+  '1 movement loaded · Last page loaded.')
  assert.equal(loadedInventoryCountLabel('movements',3,true),
-  '3 movimientos cargados · Puede haber más páginas.')
+  '3 movements loaded · More pages may be available.')
  assert.throws(()=>loadedInventoryCountLabel('balances',-1,false),RangeError)
 })
 
@@ -255,11 +255,11 @@ test('T08-2: filtrar evento exacto no confunde venta con recepción ni transfere
 
 test('T08-2: búsqueda local de nombre, SKU, sede y tipo ignora tildes y mayúsculas',()=>{
  const rows=[movement(),saleMovement()]
- for(const q of [' COLAGENO  ', 'art-003','sede a test','Recepcion de compra']){
+ for(const q of [' COLAGENO  ', 'art-003','sede a test','Purchase receipt']){
   const result=filterLoadedHistory(rows,'TODOS',q,historyLabels)
-  assert.equal(result.length,q==='Recepcion de compra'?1:2)
+  assert.equal(result.length,q==='Purchase receipt'?1:2)
  }
- assert.equal(filterLoadedHistory(rows,'TODOS','Sin coincidencias',historyLabels).length,0)
+ assert.equal(filterLoadedHistory(rows,'TODOS','No matches',historyLabels).length,0)
 })
 
 test('T08-2: admite búsqueda por ID de movimiento, responsable, recepción y operación interna',()=>{
@@ -273,23 +273,23 @@ test('T08-2: admite búsqueda por ID de movimiento, responsable, recepción y op
 
 test('T08-2: trazabilidad de recepción conserva IDs reales sin inventar factura ni compra',()=>{
  const fields=movementTraceFields(movement())
- assert.equal(fields.find(x=>x.label==='ID del movimiento').value,movementId)
- assert.equal(fields.find(x=>x.label==='Responsable (ID)').value,actor)
- assert.ok(fields.some(x=>x.label==='Recepción interna (ID)'))
- assert.ok(fields.some(x=>x.label==='Renglón de compra (ID)'))
- assert.ok(!fields.some(x=>x.label==='Venta (ID)'))
+ assert.equal(fields.find(x=>x.label==='Movement ID').value,movementId)
+ assert.equal(fields.find(x=>x.label==='Responsible (ID)').value,actor)
+ assert.ok(fields.some(x=>x.label==='Internal reception (ID)'))
+ assert.ok(fields.some(x=>x.label==='Purchase line (ID)'))
+ assert.ok(!fields.some(x=>x.label==='Sale (ID)'))
  assert.ok(!fields.some(x=>/factura|comprobante de pago/i.test(x.label)))
 })
 
 test('T08-2: trazabilidad de venta y traslado diferencia campos opcionales/null del backend',()=>{
  const saleFields=movementTraceFields(saleMovement())
- assert.ok(saleFields.some(x=>x.label==='Venta (ID)'))
- assert.ok(saleFields.some(x=>x.label==='Renglón de venta (ID)'))
- assert.ok(!saleFields.some(x=>x.label==='Recepción interna (ID)'))
+ assert.ok(saleFields.some(x=>x.label==='Sale (ID)'))
+ assert.ok(saleFields.some(x=>x.label==='Sales line (ID)'))
+ assert.ok(!saleFields.some(x=>x.label==='Internal reception (ID)'))
  const transferFields=movementTraceFields(transferMovement())
- assert.ok(transferFields.some(x=>x.label==='Operación de inventario (ID)'))
- assert.equal(transferFields.find(x=>x.label==='Tipo de operación del servidor').value,'TRASLADO')
- assert.ok(!transferFields.some(x=>x.label==='Recepción interna (ID)'))
+ assert.ok(transferFields.some(x=>x.label==='Inventory operation (ID)'))
+ assert.equal(transferFields.find(x=>x.label==='Server operation type').value,'TRASLADO')
+ assert.ok(!transferFields.some(x=>x.label==='Internal reception (ID)'))
 })
 
 test('T08-2: con 100 movimientos cargados el filtro local no presume consultar páginas futuras',()=>{
@@ -298,18 +298,18 @@ test('T08-2: con 100 movimientos cargados el filtro local no presume consultar p
  }))
  assert.equal(filterLoadedHistory(rows,'SALIDAS','',historyLabels).length,0)
  assert.equal(loadedInventoryCountLabel('movements',rows.length,true),
-  '100 movimientos cargados · Puede haber más páginas.')
+  '100 movements loaded · More pages may be available.')
  assert.equal(rows.length,100)
 })
 
 test('T08-3 QA visual: resumen singular, plural y sin movimientos por sede',()=>{
- assert.equal(loadedHistorySummary(1,1,0),'En el movimiento cargado: 1 entrada y 0 salidas.')
- assert.equal(loadedHistorySummary(1,0,1),'En el movimiento cargado: 0 entradas y 1 salida.')
- assert.equal(loadedHistorySummary(4,3,1),'En los 4 movimientos cargados: 3 entradas y 1 salida.')
- assert.equal(loadedHistorySummary(0,0,0),'No hay movimientos cargados: 0 entradas y 0 salidas.')
- assert.equal(loadedMatchCountLabel(1),'Se muestra 1 coincidencia del filtro local.')
- assert.equal(loadedMatchCountLabel(0),'Se muestran 0 coincidencias del filtro local.')
- assert.equal(loadedMatchCountLabel(3),'Se muestran 3 coincidencias del filtro local.')
+ assert.equal(loadedHistorySummary(1,1,0),'1 movement loaded: 1 entry and 0 exits.')
+ assert.equal(loadedHistorySummary(1,0,1),'1 movement loaded: 0 entries and 1 exit.')
+ assert.equal(loadedHistorySummary(4,3,1),'4 movements loaded: 3 entries and 1 exit.')
+ assert.equal(loadedHistorySummary(0,0,0),'0 movements loaded: 0 entries and 0 exits.')
+ assert.equal(loadedMatchCountLabel(1),'Showing 1 local match.')
+ assert.equal(loadedMatchCountLabel(0),'Showing 0 local matches.')
+ assert.equal(loadedMatchCountLabel(3),'Showing 3 local matches.')
  for(const values of [[1,2,0],[-1,0,0],[2,0,3],[2,1,-1]]){
   assert.throws(()=>loadedHistorySummary(...values),RangeError)
  }
@@ -319,7 +319,7 @@ test('E3-1F1: nombre real del actor de un movimiento, sin reemplazar el UUID de 
  const viewer={id:actor,displayName:'Jorge_Prueba'}
  assert.equal(movementActorName(movement().actor_id,viewer), 'Jorge_Prueba')
  const trace=movementTraceFields(movement())
- assert.ok(trace.some(field=>field.label==='Responsable (ID)'&&field.value===actor))
+ assert.ok(trace.some(field=>field.label==='Responsible (ID)'&&field.value===actor))
 })
 
 test('E3-1F1: persona diferente a quien consulta, nombre de equipo autorizado',()=>{
@@ -335,7 +335,7 @@ test('E3-1F1: persona diferente a quien consulta, nombre de equipo autorizado',(
 test('E3-1F1: directorio no disponible o actor histórico ausente no atribuye autor erróneo',()=>{
  const viewer={id:actor,displayName:'Jorge'}
  const pastActor='be8382b4-1ac8-4405-8c49-83f17e34f339'
- assert.equal(movementActorName(pastActor,viewer,[]),'Nombre no disponible')
- assert.equal(movementActorName(pastActor,viewer,[{user_id:actor,display_name:'Jorge'}]),'Nombre no disponible')
- assert.equal(movementActorName(actor,{id:actor,displayName:'  '}),'Tu cuenta')
+ assert.equal(movementActorName(pastActor,viewer,[]),'Name not available')
+ assert.equal(movementActorName(pastActor,viewer,[{user_id:actor,display_name:'Jorge'}]),'Name not available')
+ assert.equal(movementActorName(actor,{id:actor,displayName:'  '}),'Your account')
 })

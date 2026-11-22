@@ -67,9 +67,9 @@ export function DemoImagePicker({ imageKey, label }: { imageKey: string; label: 
     try {
       const blob = await optimizeDemoImage(file)
       await writeDemoImage(imageKey, blob)
-      setNotice('Imagen guardada en este navegador.')
+      setNotice('Image saved in this browser.')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No se pudo cargar la imagen.')
+      setError(caught instanceof Error ? caught.message : 'Could not load image.')
     } finally {
       setBusy(false)
     }
@@ -82,9 +82,9 @@ export function DemoImagePicker({ imageKey, label }: { imageKey: string; label: 
     setNotice('')
     try {
       await removeDemoImage(imageKey)
-      setNotice('Imagen quitada de esta ficha.')
+      setNotice('Image removed from this file.')
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'No se pudo quitar la imagen.')
+      setError(caught instanceof Error ? caught.message : 'Could not remove image.')
     } finally {
       setBusy(false)
     }
@@ -102,9 +102,9 @@ export function DemoImagePicker({ imageKey, label }: { imageKey: string; label: 
         </button>
         <input ref={fileRef} disabled={busy} type="file" accept="image/jpeg,image/png,image/webp"
           className="demo-image-picker-file" tabIndex={-1} onChange={(event) => void upload(event)}/>
-        {src && <button type="button" className="button button-secondary" disabled={busy} onClick={() => void remove()}>Quitar imagen</button>}
+        {src && <button type="button" className="button button-secondary" disabled={busy} onClick={() => void remove()}>Remove Image</button>}
       </div>
-      <small>JPG, PNG o WebP hasta 8 MB. Se reduce a 512 px y se guarda inmediatamente en este navegador (no se sube a Internet).</small>
+      <small>JPG, PNG or WebP up to 8 MB. It is reduced to 512 px and saved immediately in this browser (it is not uploaded to the Internet).</small>
       {error && <p className="form-message error" role="alert">{error}</p>}
       {notice && <p className="form-message success" role="status">{notice}</p>}
     </div>

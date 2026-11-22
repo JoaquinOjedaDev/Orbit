@@ -1,48 +1,48 @@
-# E2-5 B — Bitácora de QA manual en Swagger (traslados)
+# E2-5 B — Manual QA log in Swagger (transfers)
 
-**Procedencia:** respuestas HTTP proporcionadas por el desarrollador en esta conversación, el 09/11/2026. No fue una ejecución remota independiente. **Ningún token ni clave idempotente real se transcribe.**
+**Origin:** HTTP responses provided by the developer in this conversation, 09/11/2026. It was not an independent remote execution. **No token or real idepotent key is transcribed.**
 
-**Escenario controlado:** un usuario QA con membresía titular, una empresa QA, dos ubicaciones activas con `can_store=true` (Depósito QA y Casa) y un artículo físico `UNIDAD`. La prueba utilizó compra y recepción del bloque E2-4 como preparación, no como nuevo código E2-5 B.
+**Controlled scenario:** a QA user with a membership holder, a QA company, two active locations with `can_store=true` (QA deposit and House) and a physical article `UNIDAD`The test used the purchase and receipt of block E2-4 as preparation, not as new code E2-5 B.
 
-## 1. Secuencia observada y resultados
+## 1. Observed sequence and results
 
-| ID | Solicitud/operación | HTTP observado | Evidencia / lectura técnica |
+| ID | Application/operation | Observed HTTP | Evidence / technical reading |
 |---|---|---|---|
-| B-01 | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` | Alta y autenticación correctas | Se creó identidad QA y se operó con sesión válida. No se retienen credenciales. |
-| B-02 | `POST /businesses` | **201** | Empresa de QA con titular habilitado. |
-| B-03 | `POST /businesses/{business_id}/locations` dos veces | **201 / 201** | Depósito QA: `DEPOSITO`, `can_store=true`, `can_sell=false`; Casa: `CASA`, misma capacidad de almacenamiento. |
-| B-04 | `POST /catalog` artículo A | **201** | `Alimento balanceado QA`, `REVENTA`, `item_type=BIEN`, `unit=UNIDAD`, `status=ACTIVO`. |
-| B-05 | Intento inicial de `POST /purchases` con ejemplo de Swagger, `quantity_milli=1` | **422** | Rechazo correcto: una unidad discreta exige milésimas múltiplos de 1000. Además el formulario conservaba un ID de ejemplo; el intento **no creó una compra**. |
-| B-06 | `POST /purchases` corregido: 10 unidades, costo unitario 10000 centavos | **201** | Compra `REGISTRADA`, total `100000` centavos ($1.000 ARS); todavía sin ingreso físico. |
-| B-07 | `POST /purchases/{purchase_id}/receive` en Depósito QA | **201** | `purchase_status=RECIBIDA`, movimiento `COMPRA_RECEPCION +10000`, saldo destino 10000, versión 1. |
-| B-08 | `POST /inventory/transfers` Depósito QA → Casa de `4000` milésimas | **201** | Operación `TRASLADO`, dos hechos: salida `-4000` y entrada `+4000`; ambos ligados a la misma operación. |
-| B-09 | `GET /inventory/balances` filtrado por artículo A | **200** | Casa `4000`, versión 1; Depósito QA `6000`, versión 2; total 10000. |
-| B-10 | Repetición **idéntica** de B-08 (mismo cuerpo, misma clave no publicada) | **200** | ID de transferencia, fecha e IDs de ambos movimientos iguales a la primera respuesta. |
-| B-11 | Intento de traslado de 7000 desde Depósito QA (disponibles 6000), clave nueva no publicada | **409** | `Stock insuficiente en la ubicacion de origen`. |
-| B-12 | `GET /inventory/balances` después del 409 | **200** | Casa `4000`, versión 1; Depósito QA `6000`, versión 2, `updated_at` del traslado original. |
-| B-13 | `GET /inventory/movements` filtrado por artículo A | **200** | **Exactamente tres movimientos:** salida -4000, entrada +4000, recepción +10000. No hay doble traslado ni entrada por el 409. |
+| B-01 | `POST /auth/register`, `POST /auth/login`, `GET /auth/me` | Correct High and Authentication | QA identity was created and operated with valid session. No credentials are retained. |
+| B-02 | `POST /businesses` | **201** | QA company with enabled holder. |
+| B-03 | `POST /businesses/{business_id}/locations` twice | **201 / 201** | QA deposit: `DEPOSITO`, `can_store=true`, `can_sell=false`; House: `CASA`same storage capacity. |
+| B-04 | `POST /catalog` Article A | **201** | `Alimento balanceado QA`, `REVENTA`, `item_type=BIEN`, `unit=UNIDAD`, `status=ACTIVO`. |
+| B-05 | Initial attempt to `POST /purchases` with Swagger example, `quantity_milli=1` | **422** | Correct rejection: a discrete unit requires thousandths multiples of 1000. In addition the form retained an example ID; the attempt **didn't create a purchase**. |
+| B-06 | `POST /purchases` Fixed: 10 units, unit cost 10,000 cents | **201** | Purchase `REGISTRADA`total `100000` cents ($1,000 ARS); still no physical income. |
+| B-07 | `POST /purchases/{purchase_id}/receive` QA Deposit | **201** | `purchase_status=RECIBIDA`, movement `COMPRA_RECEPCION +10000`, destination balance 10000, version 1. |
+| B-08 | `POST /inventory/transfers` QA Deposit → House of `4000` Thousandthies | **201** | Operation `TRASLADO`, two facts: exit `-4000` and entry `+4000`; both linked to the same operation. |
+| B-09 | `GET /inventory/balances` filtered by article A | **200** | Home `4000`, version 1; QA deposit `6000`version 2; total 10000. |
+| B-10 | Repeat **identical** of B-08 (same body, same unpublished key) | **200** | Transfer ID, date and IDs of both movements equal to the first response. |
+| B-11 | Attempted transfer of 7000 from QA Deposit (available 6000), new key not published | **409** | `Stock insuficiente en la ubicacion de origen`. |
+| B-12 | `GET /inventory/balances` after 409 | **200** | Home `4000`, version 1; QA deposit `6000`version 2, `updated_at` of the original transfer. |
+| B-13 | `GET /inventory/movements` filtered by article A | **200** | **Exactly three moves:** -4000 departure, entrance +4000, reception +10000. No double transfer or entry for 409. |
 
-## 2. Invariantes contrastados con los datos
+## 2. Invariants contrasted with data
 
-- **Conservación del traslado:** `(-4000) + 4000 = 0` milésimas. No se registró ganancia/pérdida física al cambiar ubicación.
-- **Conservación del total tras recepción:** `6000 + 4000 = 10000` milésimas; concuerda con `COMPRA_RECEPCION +10000`.
-- **Versiones:** Depósito pasó a 2 tras la salida; Casa se creó con versión 1 al recibir el traslado.
-- **Ledger común:** cada origen tiene relación histórica correcta: la recepción conserva `receipt_id`/`purchase_line_id`; los traslados usan `inventory_operation_id`/`operation_kind`.
-- **Idempotencia:** B-10 devolvió mismo `id` y movimientos, y B-13 no evidenció filas nuevas.
-- **Rechazo sin efectos parciales:** B-11 fue 409 y B-12/B-13 mostraron saldos y movimientos sin cambios.
-- **Validación estricta:** B-05 fue un error de entrada/ejemplo de Swagger, **no** un bug demostrado de la API.
+- **Storage of the transfer:** `(-4000) + 4000 = 0` thousandths. No physical gain/loss was recorded when changing location.
+- **Keeping of total after reception:** `6000 + 4000 = 10000` thousandths; matches `COMPRA_RECEPCION +10000`.
+- **Versions:** Deposit went to 2 after departure; Casa was created with version 1 upon receipt of the transfer.
+- **Common Ledger:** each origin has a correct historical relationship: reception preserves `receipt_id`/`purchase_line_id`; transfers use `inventory_operation_id`/`operation_kind`.
+- **Idempotency:** B-10 returned itself `id` and movements, and B-13 did not show new ranks.
+- **Rejection without partial effects:** B-11 was 409 and B-12/B-13 showed unchanged balances and movements.
+- **Strict validation:** B-05 was an input/example error from Swagger, **no** a proven API bug.
 
-## 3. Identificadores de comprobantes para contraste (no credenciales)
+## 3. Contrast voucher identifiers (not credentials)
 
-- Compra: `c890b079-5d4c-4977-8143-258946d92060`.
-- Recepción: `b5c6ce63-d99a-473a-83a1-2ee07eba1132`.
-- Traslado: `be1de1eb-90bc-4be3-ac6e-84f5e9d1640f`.
-- Movimiento de recepción: `faffad9c-6134-4714-b243-58c38315757b`.
-- Movimiento de salida: `e73c0ec9-c976-45b4-8c1f-ce3cea21398b`.
-- Movimiento de entrada: `d2e3ee16-b1f8-4466-a5eb-f4130b3caa8e`.
+- Purchase: `c890b079-5d4c-4977-8143-258946d92060`.
+- Reception: `b5c6ce63-d99a-473a-83a1-2ee07eba1132`.
+- Transfer: `be1de1eb-90bc-4be3-ac6e-84f5e9d1640f`.
+- Reception movement: `faffad9c-6134-4714-b243-58c38315757b`.
+- Exit movement: `e73c0ec9-c976-45b4-8c1f-ce3cea21398b`.
+- Input movement: `d2e3ee16-b1f8-4466-a5eb-f4130b3caa8e`.
 
-Los UUID anteriores son **IDs de recursos**, no claves de autenticación ni idempotencia. Permiten reconocer una respuesta futura, pero no conceden acceso sin permisos. Identificadores empresariales/artículos/ubicaciones: ver `07_FICHA_QA_SANITIZADA.md`.
+The previous UUIDs are **Resource IDs**, not authentication keys or idempotence. They allow recognition of a future response, but do not grant access without permissions. Business identifiers/articles/locations: see `07_FICHA_QA_SANITIZADA.md`.
 
-## 4. Lo que NO prueba esta bitácora
+## 4. What this log does NOT prove
 
-No hubo en Swagger manual dos clientes concurrentes, un ensayo entre tenants, revocación de permisos durante una escritura ni estrés de bloqueo. Esos riesgos se analizan mediante **tests automatizados** documentados en `04_PRUEBAS_AUTOMATIZADAS_CI_Y_WINDOWS.md`; no se atribuyen a esta sesión manual.
+There were no two concurrent clients in Swagger manual, a trial among tenants, revocation of permissions during writing or blocking stress. **automated tests** documented in `04_PRUEBAS_AUTOMATIZADAS_CI_Y_WINDOWS.md`; are not attributed to this manual session.

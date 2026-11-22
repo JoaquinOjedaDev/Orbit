@@ -13,43 +13,43 @@ type Props={
 }
 export function RealReceiptDetail({receipt,purchase,locations,viewer,actors=[],onClose}:Props){
   const info=receiptDisplay(receipt,purchase,locations,viewer,actors)
-  return <section className="real-supply-receipt-detail" aria-label="Detalle de recepción confirmada">
+  return <section className="real-supply-receipt-detail" aria-label="Confirmed reception detail">
     <div className="real-supply-receipt-heading">
       <div>
-        <h3>Detalle de recepción</h3>
+        <h3>Reception detail</h3>
         <p>{info.purchaseTitle}</p>
       </div>
-      <span className="real-catalog-status real-catalog-active">CONFIRMADA</span>
+      <span className="real-catalog-status real-catalog-active">CONFIRMED</span>
     </div>
     <dl className="real-supply-receipt-facts">
-      <div><dt>Ubicación de recepción</dt><dd>{info.locationName}</dd></div>
-      <div><dt>Fecha y hora de confirmación</dt><dd>{info.confirmedAt}</dd></div>
-      <div><dt>Registró la compra</dt><dd>{info.purchaseCreatorName}</dd></div>
-      <div><dt>Confirmó la recepción</dt><dd>{info.responsibleName}</dd></div>
+      <div><dt>Reception location</dt><dd>{info.locationName}</dd></div>
+      <div><dt>Date and time of confirmation</dt><dd>{info.confirmedAt}</dd></div>
+      <div><dt>He registered the purchase.</dt><dd>{info.purchaseCreatorName}</dd></div>
+      <div><dt>Confirmed reception</dt><dd>{info.responsibleName}</dd></div>
     </dl>
     <div className="real-supply-receipt-movements">
-      <h4>Entradas de inventario <span>({info.movementLines.length})</span></h4>
+      <h4>Inventory entries <span>({info.movementLines.length})</span></h4>
       {info.movementLines.length===0
-        ?<p>No se informaron movimientos físicos para este comprobante.</p>
+        ?<p>No physical movements were reported for this voucher.</p>
         :<ul>{info.movementLines.map(m=><li key={m.id}>
           <div><strong>{m.description}</strong>
-            <small>{m.balanceAfter===null?'Saldo posterior no informado':`Saldo posterior: ${m.balanceAfter} ${m.unit}`}</small>
+            <small>{m.balanceAfter===null?'Uninformed posterior balance':`Saldo posterior: ${m.balanceAfter} ${m.unit}`}</small>
           </div>
           <strong className="real-supply-receipt-delta">+{m.entered} {m.unit}</strong>
         </li>)}</ul>}
     </div>
     <div className="real-supply-receipt-footer">
-      <p>Registro interno confirmado en FastAPI y PostgreSQL. No es una factura del proveedor ni un archivo PDF.</p>
+      <p>Internal registration confirmed in FastAPI and PostgreSQL. It is not a supplier invoice or PDF file.</p>
       <details>
-        <summary>Identificadores de trazabilidad</summary>
+        <summary>Traceability identifiers</summary>
         <dl>
-          <dt>Recepción</dt><dd className="real-supply-receipt-id">{info.receiptId}</dd>
-          <dt>Ubicación</dt><dd className="real-supply-receipt-id">{info.locationId}</dd>
-          {info.purchaseCreatorId&&<><dt>Usuario que registró la compra</dt><dd className="real-supply-receipt-id">{info.purchaseCreatorId}</dd></>}
-          <dt>Usuario que confirmó la recepción</dt><dd className="real-supply-receipt-id">{info.responsibleId}</dd>
+          <dt>Receipt</dt><dd className="real-supply-receipt-id">{info.receiptId}</dd>
+          <dt>Location</dt><dd className="real-supply-receipt-id">{info.locationId}</dd>
+          {info.purchaseCreatorId&&<><dt>User who registered the purchase</dt><dd className="real-supply-receipt-id">{info.purchaseCreatorId}</dd></>}
+          <dt>User who confirmed receipt</dt><dd className="real-supply-receipt-id">{info.responsibleId}</dd>
         </dl>
       </details>
-      <button className="real-auth-secondary" type="button" onClick={onClose}>Cerrar detalle</button>
+      <button className="real-auth-secondary" type="button" onClick={onClose}>Close detail</button>
     </div>
   </section>
 }

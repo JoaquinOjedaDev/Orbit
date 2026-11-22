@@ -1,42 +1,42 @@
-# E3-1E1 — Compras REAL: listado y formulario en vistas independientes
+# E3-1E1 — REAL Purchases: Listing and form in independent views
 
 **Base:** `main` integrado en commit `03fa329` (PR #50–#54).  
 **Rama:** `feature/e3-1e1-compras-visual-real`.  
-**Estado:** incremento visual inicial de E3-1E, para revisión manual en PR borrador.
+**Status:** initial visual increase of E3-1E, for manual revision in draft PR.
 
-## Objetivo
+## Objective
 
-Adecuar la carga de compras REAL a la interacción aprobada para Ubicaciones, Catálogo y Proveedores: una vista de listado y una pantalla exclusiva de alta, con navegación para volver. Conservar íntegramente las reglas existentes de compra, recepción, idempotencia y stock.
+To adapt the REAL shopping load to the approved interaction for Locations, Catalog and Suppliers: a list view and an exclusive high screen, with navigation to return. To fully preserve the existing rules of purchase, reception, idempotency and stock.
 
-## Incluye
+## Includes
 
-- Encabezado empresarial, tarjeta de seguridad indicando que una compra no mueve stock, indicadores **solo de compras cargadas** y búsqueda local por referencia/proveedor, filtro por estado y tarjetas más legibles.
-- `Registrar compra REAL` abre una pantalla separada que oculta el listado; `Volver a compras` y `Cancelar` descartan el borrador no enviado.
-- En el formulario se conservan fecha, proveedor, renglones, costo unitario, total editable exacto, validaciones, disponibilidad de más páginas, consentimiento IndexedDB, registro y reintento con identidad preexistente.
-- **Operación pendiente recuperada:** se mantiene visible como formulario. Se deshabilita Volver/Cancelar hasta completar o resolver la intención: nunca se elimina silenciosamente el registro local.
-- Encabezados/foco en cambio de vista, diseño de tarjetas responsive y estilos aislados `e3-purchases-*`, sin importar elementos DEMO.
-- **Sin cambios** en gateway, backend, bases, migraciones, roles, contratos, compras, recepción, ledger, ni clave `Idempotency-Key`.
+- Business head, security card indicating that a purchase does not move stock, indicators **only of loaded purchases** and local search by reference/supplier, filter by status and more readable cards.
+- `Registrar compra REAL` opens a separate screen that hides the listing; `Volver a compras` y `Cancelar` They rule out the unsending draft.
+- The form retains date, supplier, lines, unit cost, total exact editable, validations, availability of more pages, indexedDB consent, registration and retry with pre-existing identity.
+- **Recovered pending operation:** is kept visible as a form. Return/Cancel is disabled until the intention is completed or resolved: the local registration is never quietly deleted.
+- Headers/focus in return for view, responsive card design and isolated styles `e3-purchases-*`, regardless of DEMO elements.
+- **No change** in gateway, backend, bases, migrations, roles, contracts, purchases, reception, leader, nor key `Idempotency-Key`.
 
-## Corrección puntual aprobada en QA manual: nombre del responsable
+## Timely correction approved in manual QA: name of the responsible
 
-La revisión visual de Compras E3-1E1 fue funcionalmente aceptada. Se solicitó que el comprobante de recepción muestre el nombre de la persona en lugar de privilegiar su UUID.
+The visual review of E3-1E1 Purchases was functionally accepted. Proof of receipt was requested to show the person's name rather than privilege his UUID.
 
-- Se muestran dos autores distintos: **«Registró la compra»** vinculado a `purchase.created_by_id` y **«Confirmó la recepción»** vinculado a `receipt.confirmed_by_id`. No suponer que necesariamente fueron la misma persona.
-- La identidad del usuario conectado solo se usa cuando su UUID coincide con el campo de auditoría correspondiente. Para otros integrantes, se resuelve el **nombre de perfil actual** con la lista real de membresías de la empresa, únicamente si `canReadTeam(business)` lo autoriza. FastAPI sigue siendo la autoridad para la lectura de ese directorio.
-- Si el nombre no es consultable para el rol o ya no está disponible, mostrar **«Nombre no disponible»** en lugar de inventar una atribución o revelar el listado privado del equipo.
-- Se conservan los UUID del autor de compra y de recepción, pero quedan exclusivamente dentro de **«Identificadores de trazabilidad»** para revisión técnica.
-- No se agregan campos al contrato de compra/recepción, ni escrituras, migraciones o cambios de permisos; el recibo sigue siendo de solo lectura.
-- Pruebas unitarias aseguran que el autor de compra y el de recepción se muestren por separado, sin atribuir el nombre de sesión a otro UUID. El comportamiento para personas sin permiso de equipo permanece restringido.
+- Two different authors are shown: **‘Registered purchase’** linked to `purchase.created_by_id` y **‘Received’** linked to `receipt.confirmed_by_id`. Do not suppose that they were necessarily the same person.
+- The identity of the connected user is only used when its UUID matches the corresponding audit field. For other members, the **current profile name** with the actual list of company memberships only if `canReadTeam(business)` FastAPI remains the authority for reading that directory.
+- If the name is not queryable for the role or is no longer available, display **‘Name not available’** instead of inventing an attribution or revealing the private list of the equipment.
+- The UUIDs of the author of purchase and reception are retained, but remain exclusively within **‘Trafficking identifiers’** for technical review.
+- No fields are added to the purchase/reception contract, no deeds, migrations or changes of permissions; receipt is still read-only.
+- Unitary tests ensure that the author of purchase and the recipient are shown separately, without assigning the session name to another UUID. Behavior for people without equipment permission remains restricted.
 
-**Limitación conocida:** los nombres corresponden al perfil actual de la membresía, no son un snapshot histórico inmutable del nombre al momento de la operación. Para resolver nombres históricos de actores que no pueden consultar el directorio hace falta una decisión de backend/permisos posterior.
+**Known limitation:** names correspond to the current membership profile, they are not an immutable historical snapshot of the name at the time of operation. To resolve historical names of actors who cannot consult the directory requires a later backend/permit decision.
 
-## Alcance de esta primera parte
+## Scope of this first part
 
-La vista de selección y confirmación de recepción se conserva como estaba (todavía bajo el listado), para no mezclar la migración visual de alta con el flujo irreversible de movimiento de stock. La parte siguiente **E3-1E2** abordará recepción/comprobante en vistas exclusivas con revisión de recuperación tras timeouts y F5.
+The selection and confirmation of reception view is preserved as it was (still under the list), so that no high visual migration is mixed with irreversible flow of stock movement. **E3-1E2** board reception/check in exclusive views with recovery review after timesouts and F5.
 
-## Validación
+## Validation
 
-- E2E nueva en `frontend/e2e/real/purchases-visual-navigation.spec.ts` con PostgreSQL descartable: listado, filtro por estado, búsqueda, creación de borrador, Cancelar/Volver, ausencia de POST en cancelación, foco y 390px.
+- E2E new in `frontend/e2e/real/purchases-visual-navigation.spec.ts` with Disposable PostgreSQL: list, filter by status, search, creation of draft, Cancel/Back, absence of POST in cancellation, focus and 390px.
 - Ejecutar build, lint, scripts de supply REAL, suite E2E y full-stack PostgreSQL.
-- QA manual sin operaciones irreversibles: verificar botón Registrar, formulario y cancelación; las recepciones con stock solamente en base descartable.
-- No fusionar a `main` sin revisión y autorización posteriores.
+- Manual QA without irreversible operations: check button Register, form and cancellation; receptions with stock only on disposable basis.
+- No fusionar a `main` without subsequent review and authorization.

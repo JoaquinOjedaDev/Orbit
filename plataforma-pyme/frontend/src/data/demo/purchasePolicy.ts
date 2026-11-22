@@ -50,12 +50,12 @@ export function isDiscreteUnit(unit: PurchaseUnit): boolean {
 
 export function parseQuantityMilli(input: string, unit: PurchaseUnit): number {
   if (typeof input !== 'string' || !/^(?:0|[1-9]\d{0,5})(?:[.,]\d{1,3})?$/.test(input.trim())) {
-    throw new Error('Cantidad inválida: escribí un número positivo sin separadores de miles y con hasta tres decimales.')
+    throw new Error('Invalid quantity: I wrote a positive number without separators of thousands and with up to three decimals.')
   }
   const [whole, fractional = ''] = input.trim().replace(',', '.').split('.')
   const value = Number(whole) * 1000 + Number(fractional.padEnd(3, '0'))
-  if (!Number.isSafeInteger(value) || value <= 0) throw new Error('La cantidad debe ser mayor a cero.')
-  if (isDiscreteUnit(unit) && value % 1000 !== 0) throw new Error('Esta unidad sólo admite cantidades enteras (sin fracciones).')
+  if (!Number.isSafeInteger(value) || value <= 0) throw new Error('The amount must be greater than zero.')
+  if (isDiscreteUnit(unit) && value % 1000 !== 0) throw new Error('This unit only supports whole quantities (without fractions).')
   return value
 }
 
@@ -68,24 +68,24 @@ export function quantityText(quantityMilli: number, unit: PurchaseUnit): string 
 export function lineTotalCents(quantityMilli: number, unitCostCents: number): number {
   if (!Number.isSafeInteger(quantityMilli) || quantityMilli <= 0 || quantityMilli >= 1_000_000_000 ||
       !Number.isSafeInteger(unitCostCents) || unitCostCents < 0 || unitCostCents > MAX_CENTS) {
-    throw new Error('Cantidad o costo unitario fuera de rango.')
+    throw new Error('Amount or cost of unit outside range.')
   }
   const cents = (BigInt(quantityMilli) * BigInt(unitCostCents) + 500n) / 1000n
-  if (cents > BigInt(MAX_CENTS)) throw new Error('Importe de línea supera el límite de la DEMO.')
+  if (cents > BigInt(MAX_CENTS)) throw new Error('Line amount exceeds the DEMO limit.')
   return Number(cents)
 }
 
 export function sumLineTotals(lines: Pick<PurchaseLineSnapshot, 'totalCents'>[]): number {
   const total = lines.reduce((sum, line) => sum + BigInt(line.totalCents), 0n)
-  if (total > BigInt(MAX_CENTS)) throw new Error('Total de compra fuera de rango.')
+  if (total > BigInt(MAX_CENTS)) throw new Error('Total purchase out of range.')
   return Number(total)
 }
 
 function cleanText(value: unknown, label: string, max: number, min = 0): string {
-  if (typeof value !== 'string') throw new Error(label + ': formato inválido.')
+  if (typeof value !== 'string') throw new Error(label + ': Invalid format.')
   const clean = value.trim().replace(/[\t ]+/g, ' ')
   if (clean.length < min || clean.length > max || [...clean].some((char) => { const code = char.charCodeAt(0); return code <= 8 || code === 11 || code === 12 || (code >= 14 && code <= 31) || code === 127 })) {
-    throw new Error(label + ': longitud o caracteres inválidos.')
+    throw new Error(label + ': length or invalid characters.')
   }
   return clean
 }
@@ -98,33 +98,33 @@ export function validPurchaseDate(value: string): boolean {
 }
 
 export function normalizePurchaseInput(input: PurchaseInput): PurchaseInput {
-  if (!input || !validPurchaseDate(input.purchasedOn)) throw new Error('Seleccioná una fecha válida (año 2000–2100).')
+  if (!input || !validPurchaseDate(input.purchasedOn)) throw new Error('Select a valid date (year 2000–2100).')
   if (input.supplierId !== null &&
       (typeof input.supplierId !== 'string' || !/^demo-supplier-[a-f0-9-]{36}$/.test(input.supplierId))) {
-    throw new Error('El proveedor seleccionado no es válido.')
+    throw new Error('The selected provider is invalid.')
   }
-  const reference = cleanText(input.reference, 'Comprobante/referencia', 70)
+  const reference = cleanText(input.reference, 'Check/reference', 70)
   const notes = cleanText(input.notes, 'Observaciones', 500)
   if (!Array.isArray(input.lines) || input.lines.length < 1 || input.lines.length > 30) {
-    throw new Error('Una compra debe tener entre 1 y 30 renglones.')
+    throw new Error('A purchase must have between 1 and 30 lines.')
   }
   const lines = input.lines.map((raw, i) => {
-    if (!raw || typeof raw !== 'object') throw new Error('Renglón ' + (i + 1) + ' inválido.')
+    if (!raw || typeof raw !== 'object') throw new Error('Line ' + (i + 1) + ' inválido.')
     const description = cleanText(raw.description, 'Concepto ' + (i + 1), 140, 2)
     const unit: PurchaseUnit = raw.unit
     if (unit !== 'CONCEPTO' && !Object.hasOwn(catalogUnitLabels, unit)) {
-      throw new Error('Unidad inválida en renglón ' + (i + 1) + '.')
+      throw new Error('Invalid unit in line ' + (i + 1) + '.')
     }
     if (raw.catalogItemId !== null &&
       (typeof raw.catalogItemId !== 'string' || !/^demo-catalog-[a-f0-9-]{36}$/.test(raw.catalogItemId))) {
-      throw new Error('Artículo inválido en renglón ' + (i + 1) + '.')
+      throw new Error('Invalid article in line ' + (i + 1) + '.')
     }
     if ((raw.catalogItemId === null) !== (unit === 'CONCEPTO')) {
-      throw new Error('Los conceptos libres no pueden modificar stock ni usar unidades de artículos.')
+      throw new Error('Free concepts cannot modify stock or use article units.')
     }
     if (!Number.isSafeInteger(raw.quantityMilli) || raw.quantityMilli < 1 ||
       raw.quantityMilli >= 1_000_000_000 || (isDiscreteUnit(unit) && raw.quantityMilli % 1000 !== 0)) {
-      throw new Error('Cantidad inválida en renglón ' + (i + 1) + '.')
+      throw new Error('Invalid amount in line ' + (i + 1) + '.')
     }
     lineTotalCents(raw.quantityMilli, raw.unitCostCents)
     return {

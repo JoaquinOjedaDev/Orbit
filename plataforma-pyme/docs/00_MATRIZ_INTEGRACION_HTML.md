@@ -1,251 +1,251 @@
-# E0-A — Matriz de integración de pantallas HTML
+# E0-A — HTML screen integration matrix
 
-**Producto:** plataforma generalista de gestión para PyMEs, multiempresa y multirrubro. **WALOS:** empresa de demostración, no nombre ni rubro obligatorio del producto.  
-**Fecha de corte de las fuentes:** 2026-11-06.  
-**Estado del entregable:** **COMPLETADO COMO MATRIZ DOCUMENTAL**; las elecciones de diseño son **candidatas/propuestas**, no validaciones interactivas ni autorizaciones para producción.  
-**Destino canónico propuesto:** `/docs/00_MATRIZ_INTEGRACION_HTML.md`.  
-**Alcance E0-A:** inventariar y seleccionar referencias HTML, conservar características útiles, señalar dependencias/reglas y ordenar el primer circuito. **No** desarrollar componentes, rehacer la auditoría integral, ejecutar operaciones reales, generar UML ni fijar contratos REST.
+**Product:** generalist management platform for SMEs, multi-company and multi-rubre. **WALOS:** demonstration company, not name or required product item.  
+**Date of source cut:** 2026-11-06.  
+**Status of deliverable:** **COMPLETED AS A DOCUMENTARY MATRIZ**; design choices are **candidates/proposals**, no interactive validations or production authorisations.  
+**Proposed canonical destination:** `/docs/00_MATRIZ_INTEGRACION_HTML.md`.  
+**Scope E0-A:** inventory and select HTML references, preserve useful features, identify dependencies/rules and sort the first circuit. **No** develop components, re-do the comprehensive audit, execute real operations, generate UML or fix REST contracts.
 
-## 1. Fuentes y método
+## 1. Sources and method
 
-- **Z:** `Plataforma_PyME_Astra_Integracion_Completa_v3(1).zip`, bajo la carpeta interna `material_fuente/`; 93 originales, incluidos **19 HTML**.
-- **A:** `Auditoria_PyME_Integracion_2026-11-06(1).zip`, especialmente `01_DIAGNOSTICO.md` (H01–H26), `02_INVENTARIO_Y_COBERTURA.md`, `03_COMPARATIVA_UX.md`, `05_TRAZABILIDAD.md`, `06_MENU_Y_FLUJOS.md`, `12_INVARIANTES_Y_QA.md` y `14_DECISIONES_PENDIENTES.md` (D01–D15).
-- **V3:** `DECISIONES_CONFIRMADAS_MULTINEGOCIO_v3.md` dentro del ZIP fuente; tiene prioridad sobre menús o modelos de prototipos antiguos.
+- **Z:** `Plataforma_PyME_Astra_Integracion_Completa_v3(1).zip`under the internal folder `material_fuente/`; 93 originals, including **19 HTML**.
+- **A:** `Auditoria_PyME_Integracion_2026-11-06(1).zip`especially `01_DIAGNOSTICO.md` (H01–H26), `02_INVENTARIO_Y_COBERTURA.md`, `03_COMPARATIVA_UX.md`, `05_TRAZABILIDAD.md`, `06_MENU_Y_FLUJOS.md`, `12_INVARIANTES_Y_QA.md` y `14_DECISIONES_PENDIENTES.md` (D01–D15).
+- **V3:** `DECISIONES_CONFIRMADAS_MULTINEGOCIO_v3.md` inside the source ZIP; it has priority over menus or models of old prototypes.
 - **V4:** `01_PLAN_RECTOR_Y_SECUENCIA(1).md`, `02_BACKLOG_VERTICAL_Y_PRUEBAS(1).md`, `03_MERCADO_PAGO_QR(1).md`, `04_PROMPT_DE_EJECUCION_PARA_ASTRA(1).md`.
-- **Complemento:** `Revision_Critica_Auditoria_Astra_Plataforma_PyME.md`, que precisa las decisiones no aprobadas sobre titularidad, invitaciones, cierre y retorno.
+- **Plugin:** `Revision_Critica_Auditoria_Astra_Plataforma_PyME.md`which specifies the unapproved decisions on ownership, invitations, closure and return.
 
-**Comprobación efectuada específicamente para E0-A:** extracción de ambos ZIP sin modificarlos; lectura de las matrices y hallazgos existentes; inspección estática de los 19 HTML (títulos, jerarquía visible, identificadores, funciones, superficies de navegación y almacenamiento); comprobación de SHA-256 de duplicados; revisión selectiva de capturas originales de M1, M2 y Ventas. **No se abrió ni probó un flujo en navegador en esta entrega.** La auditoría anterior también identifica sus propias limitaciones de prueba. Los criterios de aceptación siguientes son **pendientes**, no tests aprobados.
+**Specific verification for E0-A:** extraction of both ZIPs without modification; reading existing matrices and findings; static inspection of 19 HTML (titles, visible hierarchy, identifiers, functions, navigation surfaces and storage); SHA-256 duplicate check; selective review of original M1, M2 and Sales catches. **A browser flow was not opened or tested in this delivery.** The previous audit also identifies its own test limitations. The following acceptance criteria are **outstanding**Not approved tests.
 
-### Convenciones
+### Conventions
 
-- **P0:** necesario para comenzar el shell/aislamiento de la primera demo. **P1:** necesario para el recorrido comercial vertical. **P2:** complemento o fase posterior. La prioridad está alineada con el backlog v4, no con el número histórico «M1/M2/M3».
-- **BASE:** referencia principal de diseño/flujo, no código para copiar. **APOYO:** preservar un comportamiento puntual. **LEGADO:** consulta histórica. **DUP:** copia idéntica, no segunda implementación.
-- **E:** evidencia estática inspeccionada en E0-A. **A:** comportamiento/limitación documentado por la auditoría o una especificación de origen. **NV:** interacción integrada **no verificada**. **F:** no existe HTML completo de la capacidad; hay que diseñarla en E1.
-- **Hxx:** hallazgo de la auditoría. **Dxx:** decisión pendiente/propuesta del documento `14_DECISIONES_PENDIENTES.md` de la auditoría (**no** se confunde con los `D-xx` de M2). Los estados `PROPUESTO` y `PENDIENTE` **no equivalen a aprobado**.
-- En rutas de destino `/b/:businessId/...`, `businessId` representa la **empresa activa y autorizada**, no una elección arbitraria del navegador. Son rutas sugeridas, no rutas ya implementadas.
+- **P0:** necessary to start the shell/isolation of the first demo. **P1:** necessary for vertical commercial travel. **P2:** The priority is aligned with backlog v4, not the historical number ‘M1/M2/M3’.
+- **BASE:** main design/flow reference, no copy code. **SUPPORT:** to preserve punctual behaviour. **LEGITLE:** historical consultation. **DUP:** identical copy, not second implementation.
+- **E:** static evidence inspected in E0-A. **A:** conduct/limitation documented by the audit or source specification. **NV:** integrated interaction **unverified**. **F:** there is no complete HTML capacity; it has to be designed in E1.
+- **Hxx:** audit finding. **Dxx:** decision pending/proposal for document `14_DECISIONES_PENDIENTES.md` audit (**no** is confused with the `D-xx` The states `PROPUESTO` y `PENDIENTE` **not equivalent to approved**.
+- On destination routes `/b/:businessId/...`, `businessId` represents the **active and authorised company**, not an arbitrary choice of the browser. They are suggested routes, not already implemented routes.
 
-## 2. Registro completo de los 19 HTML
+## 2. Full registration of the 19 HTML
 
-**Prefijo de todas las rutas de esta tabla:** `material_fuente/` dentro del ZIP fuente v3. Los IDs `Zxxx` coinciden con el inventario de la auditoría, de modo que cada elección sea trazable.
+**Prefix all routes in this table:** `material_fuente/` inside the source ZIP v3. IDs `Zxxx` match the audit inventory, so that each choice is traceable.
 
-| ID | Ruta HTML exacta dentro de `material_fuente/` | Papel para integración | Capacidad recuperable / límite más importante | Estado |
+| ID | Accurate HTML path within `material_fuente/` | Role for integration | Recoverable capacity/most important limit | Status |
 |---|---|---|---|---|
-| **Z001** | `Modulo 1/Boton_Editar_Perfil_Empresa.html` | **BASE** de formulario Empresa | Datos generales, imagen, contactos/redes, edición por campo; el gestor genérico de archivos no pertenece al circuito P0 | E/A/NV |
-| **Z002** | `Modulo 1/Lista de Empleados.html` | **BASE** de Equipo y permisos visuales | Directorio, solicitudes, fichas, revisión, asociación por ubicación y vista de rol; seguridad real ausente | E/A/NV |
-| **Z003** | `Modulo 1/Menu_Principal.html` | **APOYO** al panel y marco | Tarjetas, empresa y accesos, perfil y menú; no conservar la navegación parcial como menú final | E/A/NV |
-| **Z004** | `Modulo 1/Ubicaciones.html` | **BASE** de Ubicaciones | Listado, alta/edición, principal, pausa/reactivación, detalle; adaptar a servicios sin depósito | E/A/NV |
-| **Z014** | `Modulo 1/WALOS_Modulo1_v1_2/WALOS_Modulo1_Prototipo.html` | **BASE** de estructura organizativa y **APOYO** a gastos fijos, perfil, alta | Panel Mi empresa, setup, ubicaciones, equipo, solicitudes, cuentas, gastos recurrentes y perfil; `walos_demo_m1_v12` es almacén aislado | E/A/NV |
-| **Z042** | `Modulo 1/cuentas_bancarias_asociadas.html` | **BASE** de Cuentas y métodos informativos | Alta/ficha/alias/CBU-CVU/estado, compartir/copiar; QR de datos bancarios **no acredita** cobro | E/A/NV |
-| **Z050** | `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/WALOS_Modulo2_Prototipo_UX_v5_1.html` | **BASE** de navegación funcional M2, catálogo/stock/compras y movimientos | Cobertura de 8 áreas, formularios, compra, traslado, retorno, guías/historial; `walos_demo_mod2_v5` no comparte estado con M1/M3 | E/A/NV |
-| **Z067** | `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/referencia/WALOS_Modulo2_v5_original.html` | **LEGADO/APOYO** de comportamiento antes de ajustes | Sirve para comparar funciones alteradas entre v5 original y kit posterior; no elegir como versión final por nombre | E/A/NV |
-| **Z068** | `Modulo 2/WALOS_Modulo2_Prototipo_viejo.html` | **DUP de Z050** | SHA-256 idéntico; **no** es una variante distinta aunque se llame «viejo» | E, hash confirmado |
-| **Z069** | `Modulo 2/catalogo_modulo2.html` | **BASE** de Catálogo y ficha | Galería/foto principal, categoría/tipo, alta/edición, pausa, elaboración contextual, guías; normalizar rubros | E/A/NV |
-| **Z070** | `Modulo 2/walos_compras_y_gastos_separados.html` | **BASE** de UX Compras + Gastos de operación | Listas, filtros, borradores, líneas, detalle, adjuntos y alta contextual; compra, recepción y pago son hechos distintos | E/A/NV |
-| **Z071** | `Modulo 2/walos_guias_apoyo.html` | **BASE** de editor de Guías | Pasos independientes, imágenes por paso, borradores/publicación/archivo; fase complementaria | E/A/NV |
-| **Z072** | `Modulo 2/walos_m_dulo_2_inventario_y_control_de_stock(3).html` | **BASE** de conteo/control de stock | Asistente de recuento, diferencias y conflicto simulado; la concurrencia real no existe | E/A/NV |
-| **Z073** | `Modulo 2/walos_proveedores.html` | **BASE** de Proveedores | Ficha rica, contactos, condiciones, medios, compras relacionadas y alta/edición; no obligar a completar todos los campos | E/A/NV |
-| **Z074** | `Modulo 3/WALOS_M3_Cargar_Venta_POS_vNext.html` | **BASE** del **diseño del POS en dos pasos** | Selección de productos, revisar/cobrar, carrito y estados visuales; no equivale a integración de QR real | E/A/NV |
-| **Z075** | `Modulo 3/WALOS_Modulo_Ventas_UX_v4_0.html` | **BASE** de operaciones Ventas, Gastos, Historial y cierre comercial | Checkout, descuento, ventas, devoluciones, pagos, cierre e informe; su estado no está sincronizado con M2 | E/A/NV |
-| **Z081** | `Modulo 3/WALOS_Ventas_v4_0/WALOS_Modulo_Ventas_UX_v4_0.html` | **DUP de Z075** | SHA-256 idéntico; se usa como referencia documental/capturas en su carpeta, **no** como segunda implementación | E, hash confirmado |
-| **Z092** | `Modulo 3/walos_m3_apertura_y_cierre_v3(2).html` | **APOYO** a rendición, informes y flujo de jornada | Pasos de apertura/cierre, conteos, asignaciones, informe; almacenamiento demo separado | E/A/NV |
-| **Z093** | `Modulo 3/walos_m3_apertura_y_cierre_v8.html` | **BASE visual** del asistente Cierre/retorno, **NO** de su commit | Checklist, cantidades, destinos y panel; `commitFinalClosure` pierde borrador sin snapshot (H06); parseos numéricos problemáticos (H07/H26) | E/A/NV |
+| **Z001** | `Modulo 1/Boton_Editar_Perfil_Empresa.html` | **BASE** Form Company | General data, image, contacts/networks, field editing; generic file manager does not belong to the P0 circuit | E/A/NV |
+| **Z002** | `Modulo 1/Lista de Empleados.html` | **BASE** and visual permits | Directory, requests, tabs, review, association by location and role view; real security absent | E/A/NV |
+| **Z003** | `Modulo 1/Menu_Principal.html` | **SUPPORT** to the panel and frame | Cards, company and accesses, profile and menu; do not retain partial navigation as a final menu | E/A/NV |
+| **Z004** | `Modulo 1/Ubicaciones.html` | **BASE** Locations | Listing, high/editing, main, pause/reactivation, detail; adapting to services without deposit | E/A/NV |
+| **Z014** | `Modulo 1/WALOS_Modulo1_v1_2/WALOS_Modulo1_Prototipo.html` | **BASE** de estructura organizativa y **SUPPORT** at fixed costs, profile, high | My company panel, setup, locations, equipment, requests, accounts, recurring expenses and profile; `walos_demo_m1_v12` is isolated warehouse | E/A/NV |
+| **Z042** | `Modulo 1/cuentas_bancarias_asociadas.html` | **BASE** of Accounts and Information Methods | High/fiche/alias/CBU-CVU/state, share/copy; QR bank data **not accredited** collection | E/A/NV |
+| **Z050** | `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/WALOS_Modulo2_Prototipo_UX_v5_1.html` | **BASE** M2, catalog/stock/purchases and movements | Coverage of 8 areas, forms, purchase, transfer, return, guides/history; `walos_demo_mod2_v5` does not share status with M1/M3 | E/A/NV |
+| **Z067** | `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/referencia/WALOS_Modulo2_v5_original.html` | **LEGISLATION/ SUPPORT** before adjustments | It is useful to compare altered functions between original v5 and subsequent kit; do not choose as final version by name | E/A/NV |
+| **Z068** | `Modulo 2/WALOS_Modulo2_Prototipo_viejo.html` | **DUP de Z050** | identical SHA-256; **no** is a different variant even if it is called "old" | E, hash confirmed |
+| **Z069** | `Modulo 2/catalogo_modulo2.html` | **BASE** Catalogue and tab | Main gallery/photo, category/type, high/editing, pause, contextual elaboration, guides; normalizing headings | E/A/NV |
+| **Z070** | `Modulo 2/walos_compras_y_gastos_separados.html` | **BASE** of UX Purchases + Operating expenses | Lists, filters, drafts, lines, details, attachments and high context; purchase, receipt and payment are made different | E/A/NV |
+| **Z071** | `Modulo 2/walos_guias_apoyo.html` | **BASE** of Guide Editor | Independent steps, step images, drafts/publication/file; complementary phase | E/A/NV |
+| **Z072** | `Modulo 2/walos_m_dulo_2_inventario_y_control_de_stock(3).html` | **BASE** count/stock control | Counting, Differences and Simulated Conflict Wizard; Real Attendance Doesn't Exist | E/A/NV |
+| **Z073** | `Modulo 2/walos_proveedores.html` | **BASE** of Suppliers | Rich sheet, contacts, conditions, media, related purchases and high/edit; do not force to complete all fields | E/A/NV |
+| **Z074** | `Modulo 3/WALOS_M3_Cargar_Venta_POS_vNext.html` | **BASE** del **POS design in two steps** | Product selection, review/collect, cart and visual status; does not amount to real QR integration | E/A/NV |
+| **Z075** | `Modulo 3/WALOS_Modulo_Ventas_UX_v4_0.html` | **BASE** Sales, Expenses, History and Commercial Closure | Checkout, discount, sales, returns, payments, closing and report; your status is not synchronized with M2 | E/A/NV |
+| **Z081** | `Modulo 3/WALOS_Ventas_v4_0/WALOS_Modulo_Ventas_UX_v4_0.html` | **DUP de Z075** | identical SHA-256; used as documentary/capture reference in your folder, **no** as a second implementation | E, hash confirmed |
+| **Z092** | `Modulo 3/walos_m3_apertura_y_cierre_v3(2).html` | **SUPPORT** a surrender, reporting and day-flow | Opening/closing steps, counting, mapping, reporting; separate demo storage | E/A/NV |
+| **Z093** | `Modulo 3/walos_m3_apertura_y_cierre_v8.html` | **BASE visual** from the Close/Return Assistant, **NO** de su commit | Checklist, quantities, destinations and panel; `commitFinalClosure` lose draft without snapshot (H06); problematic numerical parsing (H07/H26) | E/A/NV |
 
-**Verificación de duplicados:** `SHA256(Z050) = SHA256(Z068) = 43141140eac1…` y `SHA256(Z075) = SHA256(Z081) = 50439a1f7d1…`. Por tanto, **19 rutas HTML = 17 contenidos HTML distintos**. `Z067` es una versión anterior **diferente**, no duplicada. En Z050 el título interno dice «v5.0» aunque el directorio sea `v5_1`: usar el ID/ruta/hash como identidad de origen, no el título.
+**Verification of duplicates:** `SHA256(Z050) = SHA256(Z068) = 43141140eac1…` y `SHA256(Z075) = SHA256(Z081) = 50439a1f7d1…`. Therefore, **19 HTML paths = 17 different HTML contents**. `Z067` is an older version **different**, not duplicated. In Z050 the internal title says "v5.0" even if the directory is `v5_1`: use ID/path/hash as source identity, not title.
 
-## 3. Matriz funcional completa — pantalla destino → fuente → comportamiento → riesgo
+## 3. Full functional matrix — target screen → source → behavior → risk
 
-Esta sección decide **qué reutilizar como diseño o regla funcional**. No implica copiar scripts, `window.*`, `innerHTML` ni archivos `localStorage` de una fuente a otra. **Todas las filas son NV respecto de la aplicación integrada**, incluso cuando el HTML original contiene una demostración parcial.
+This section decides **what to reuse as a design or functional rule**. It does not involve copying scripts, `window.*`, `innerHTML` files `localStorage` From one source to another. **All rows are NV with respect to integrated application**even when the original HTML contains a partial demo.
 
-### 3.1 Marco global, persona y organización (primer corte E1-A / E1-B)
+### 3.1 Global framework, person and organization (first cut E1-A / E1-B)
 
-| Pantalla o vista destino | Fuente seleccionada (principal; apoyo) | Conservar diseño y funcionalidad | Regla crítica / qué corregir o NO copiar | Prioridad · dependencias · referencias |
+| Display or destination view | Selected source (main; support) | Preserve design and functionality | Critical rule/what to correct or NOT copy | Priority · Dependencies · references |
 |---|---|---|---|---|
-| **Acceso y registro DEMO** `/acceso` | **F**; Z014 solo como inspiración de setup | Formulario simple y estado explícito «DEMO» | No hay registro/login real reutilizable de los 19 HTML; no almacenar contraseña simulada ni fingir auth efectiva | **P0** · User demo · R01, QA-01 |
-| **Inicio personal sin empresa** `/inicio` | Z014 (setup); Z003 (tarjetas) | Bienvenida, crear empresa, incorporarse por invitación, perfil | Persona puede existir con 0 empresas; sin dashboard comercial ni catálogo WALOS | **P0** · identidad/empresa · R01/R02, D01 |
-| **Crear/configurar empresa inicial** `/empresas/nueva` | Z014 (`setup`, `submitCompany`); Z001 | Formulario progresivo: nombre, rubro/capacidades, identidad visual; completar configuración más tarde | Fundador histórico ≠ titular legal; responsable inicial único; no crear ubicación/caja obligatoria; no arrastrar demo WALOS | **P0** · User, Business, Membership · R02, H01; titularidad: ADR específico pendiente (ver §5) |
-| **Selector de empresa activa** en shell | **F**; Z003/Z014 solo como referencia de encabezado | Mostrar logo/nombre activos y cambio controlado de empresa | No existe selector multiempresa completo en HTML. Cambiar A→B debe resetear datos visibles, permisos, consultas y asociar borradores a empresa correcta | **P0** · scoping por `business_id` · R03/R05, H01/H09/H14; QA-02/20 |
-| **Inicio empresarial / dashboard** `/b/:businessId/inicio` | Z003 + Z014; Z050/Z075 como referencia de resúmenes especializados | Panel compacto, resumen contextual, alertas, tarjetas grandes y accesos rápidos | Un solo Inicio general, **no** tres dashboards M1/M2/M3. Tarjetas llevan a ruta real o «Próximamente»; cifras desde el mismo estado | **P0** · shell + empresa · R05, H09; DEMO-01/02 |
-| **Barra superior y menú izquierdo** global | Z003 y capturas Z014; apoyo Z050/Z075 | Hamburguesa izquierda, empresa activa, perfil a derecha, drawer responsive; rutas sin módulos visibles | Un registro único de rutas alimenta tarjetas y menú; no reutilizar `nav`, `render`, `goto` globales ni submenús duplicados | **P0** · router/permisos demo · R05, H17/H21; DEMO-01 |
-| **Mi perfil personal** `/perfil` | Z014 (`profile`); Z002 modal perfil como apoyo | Datos propios, avatar y edición separada de Empresa | Perfil global independiente del negocio; datos personales no se clonan ni editan desde el perfil comercial | **P0** · User · R06 |
-| **Datos de la empresa** `/b/:businessId/empresa` | Z001; apoyo Z002/Z014 | Grupos de campos, imagen, contactos, redes, acciones Editar/Guardar | Sólo empresa activa y permiso; validaciones reales; manejo visible de error de guardado; gestor documental general puede diferirse | **P1** · shell + permisos · R02, H08/H14 |
-| **Ubicaciones: lista y detalle** `/b/:businessId/ubicaciones` | Z004; apoyo Z014 y capturas `22`–`25` M1 | Tarjetas/filas, estado, detalle, principal, acceso COMERCIAL/RESTRINGIDA | Capacidad `vender` distinta de `almacenar`; pausa ≠ cierre; sin local requerido para servicios; no borrar historial | **P1** · Business + permissions · R07, H02; DEMO-03 |
-| **Ubicaciones: alta/edición/pausa** misma sección | Z004 (`saveNewLocation`, `saveEditedLocation`); Z014 (`submitLocation`) | Formulario corto, confirmación de pausa, ubicación principal | No crear depósitos ficticios; alcance por ubicación; antes de pausar mostrar pendientes y stock | **P1** · locations/manage · R07, H02, QA-21 |
-| **Equipo: integrantes/ficha/permisos** `/b/:businessId/equipo` | Z002; Z014 como modelo de solicitudes/accesos | Lista, ficha, asignación por ubicación, actividad y estado | Rol visual no concede permiso; fundador y titular administrativo diferentes; impedir dejar negocio sin responsable | **P1** · Membership + roles · R03/R04, H01/H12/H14; D03, QA-16 |
-| **Equipo: invitación nominada** subvista Equipo | Z002 (UI invitación); documentación v4 | Modal/destinatario, rol permitido, estado de invitación | Email nominativo con destinatario/token/expiración/revocación; no convertir aceptación en solicitud general | **P1** · Membership · R04, H12, D02, QA-17 |
-| **Equipo: enlace/QR para solicitar ingreso** subvista Equipo | Z014 (`copyInvite`, `requestJoin`, `approve`); Z002 (`openReviewRequestModal`) | Compartir enlace, solicitud pendiente, revisión/aprobación | Flujo **distinto** de invitación nominada; la demo puede mostrarlo sin autorización automática. Primera implementación bajo ADR explícito | **P1** · team/requests · R04, H12, D02 |
-| **Cuentas y medios de cobro** `/b/:businessId/cuentas` | Z042; Z014 y capturas M1 `18`–`19` | Ficha, alias, CBU/CVU, estado, copia/compartir, medios configurables | Cuenta financiera ≠ método de pago ≠ fondo de caja ≠ saldo del día; QR bancario informativo no acredita dinero. No colocar datos sensibles en contexto público | **P1** · BusinessAccount + permisos · R17, H09/H14, D08 |
-| **Gastos fijos / recurrentes** subvista Gastos o Empresa | Z014 (`expenses`, `expenseForm`); M1 spec | Previsión periódica, vigencia, detalles; acceso desde Gastos con referencia en Empresa | Plan recurrente ≠ gasto ya pagado; no generar doble egreso, respetar historial al cambiar vigencia | **P2** · Expenses · R16, QA-23/24 |
+| **DEMO access and registration** `/acceso` | **F**; Z014 only as a setup inspiration | Simple form and explicit state "DEMO" | No reusable real log/login of 19 HTML; no simulated password storage or fake effective auth | **P0** · User demo · R01, QA-01 |
+| **Uncompanyed personal start-up** `/inicio` | Z014 (setup); Z003 (cards) | Welcome, start up company, join by invitation, profile | Person can exist with 0 companies; without commercial dashboard or catalog WALOS | **P0** · identity/company · R01/R02, D01 |
+| **Create/configurate start-up** `/empresas/nueva` | Z014 (`setup`, `submitCompany`); Z001 | Progressive form: name, category/capacity, visual identity; complete configuration later | Historical Founder • Legal holder; single initial responsible; not creating mandatory location/box; not dragging demo WALOS | **P0** · User, Business, Membership · R02, H01; title: specific pending ADR (see §5) |
+| **Active company selector** en shell | **F**; Z003/Z014 only as header reference | Show active logo/name and controlled business change | No full multi-company selector in HTML. Change A→B should reset visible data, permissions, queries and associate drafts to correct company | **P0** · scoping por `business_id` · R03/R05, H01/H09/H14; QA-02/20 |
+| **Business Home / Dashboard** `/b/:businessId/inicio` | Z003 + Z014; Z050/Z075 as reference to specialized summaries | Compact panel, contextual summary, alerts, big cards and shortcuts | One General Start, **no** three M1/M2/M3 dashboards. Cards lead to actual route or ‘Next’; figures from the same state | **P0** · shell + company · R05, H09; DEMO-01/02 |
+| **Top bar and left menu** global | Z003 and catches Z014; support Z050/Z075 | Hamburger left, active company, profile right, drawr responsive; routes without visible modules | A unique path log feeds cards and menu; do not reuse `nav`, `render`, `goto` Global and duplicate submenus | **P0** · router/demo permits · R05, H17/H21; DEMO-01 |
+| **My personal profile** `/perfil` | Z014 (`profile`); Z002 modal profile as support | Own data, avatar and separate edition of Enterprise | Global independent business profile; personal data are not cloned or edited from the commercial profile | **P0** · User · R06 |
+| **Company details** `/b/:businessId/empresa` | Z001; support Z002/Z014 | Groups of fields, image, contacts, networks, Edit/Save actions | Only active company and permission; actual validations; visible handling of save error; general document manager may differ | **P1** · shell + permissions · R02, H08/H14 |
+| **Locations: list and detail** `/b/:businessId/ubicaciones` | Z004; support Z014 and catches `22`–`25` M1 | Cards/filers, status, detail, main, access COMMERCIAL/RESTRINGIDA | Capacity `vender` other than `almacenar`; pause • closing; no local required for services; no erasing history | **P1** · Business + permissions · R07, H02; DEMO-03 |
+| **Locations: high/editing/pause** same section | Z004 (`saveNewLocation`, `saveEditedLocation`); Z014 (`submitLocation`) | Short form, pause confirmation, main location | Do not create fictitious deposits; range by location; before pause display earrings and stock | **P1** · locations/manage · R07, H02, QA-21 |
+| **Equipment: members/fiche/permits** `/b/:businessId/equipo` | Z002; Z014 as a model of applications/access | List, tab, location, activity and status allocation | Visual role does not grant permission; different founder and administrative holder; preventing leaving business without responsibility | **P1** · Membership + roles · R03/R04, H01/H12/H14; D03, QA-16 |
+| **Team: Nominated invitation** Subsistence | Z002 (UI invitation); documentation v4 | Modal/target, role allowed, invitation status | Nominative email with recipient/token/expiration/revocation; not to convert acceptance into general request | **P1** · Membership · R04, H12, D02, QA-17 |
+| **Team: link/QR to request admission** Subsistence | Z014 (`copyInvite`, `requestJoin`, `approve`); Z002 (`openReviewRequestModal`) | Share link, pending request, review/approval | Flow **different** Nominated invitation; demo can display it without automatic authorization. First implementation under explicit ADR | **P1** · team/requests · R04, H12, D02 |
+| **Accounts and means of collection** `/b/:businessId/cuentas` | Z042; Z014 and M1 catches `18`–`19` | Profile, alias, CBU/CVU, status, copy/share, configurable media | Financial account • payment method • cash fund • day balance; QR information bank does not credit money. Do not place sensitive data in public context | **P1** · BusinessAccount + permisos · R17, H09/H14, D08 |
+| **Fixed/recurring costs** subvista Expenses or Company | Z014 (`expenses`, `expenseForm`); M1 spec | Periodic forecast, validity, details; access from expenses with reference in Company | Recurrent plan - expenditure already paid; not generate double output, respect history when changing validity | **P2** · Expenses · R16, QA-23/24 |
 
-**Capturas de referencia visual existentes (rutas relativas a `material_fuente/`):** `Modulo 1/WALOS_Modulo1_v1_2/assets/01_panel_mi_empresa_desktop.png`, `03_datos_empresa.png`, `04_ubicaciones.png`, `06_equipo.png`, `13_mi_perfil.png`, `14_panel_mi_empresa_mobile.png`, `18_datos_empresa_cobros_v11.png`, `22_form_ubicacion_acceso_v12.png`, `24_ficha_colaborador_v12.png`. Se inspeccionaron selectivamente las pantallas clave; la biblioteca de imágenes **no sustituye E2E**.
+**Existing visual reference captures (paths relating to `material_fuente/`):** `Modulo 1/WALOS_Modulo1_v1_2/assets/01_panel_mi_empresa_desktop.png`, `03_datos_empresa.png`, `04_ubicaciones.png`, `06_equipo.png`, `13_mi_perfil.png`, `14_panel_mi_empresa_mobile.png`, `18_datos_empresa_cobros_v11.png`, `22_form_ubicacion_acceso_v12.png`, `24_ficha_colaborador_v12.png`. Key screens were selectively inspected; the image library **does not replace E2E**.
 
-### 3.2 Catálogo, stock, proveedores, compras e historial (primer circuito E1-B)
+### 3.2 Catalogue, stock, suppliers, purchases and history (first E1-B circuit)
 
-| Pantalla o vista destino | Fuente seleccionada (principal; apoyo) | Conservar diseño y funcionalidad | Regla crítica / qué corregir o NO copiar | Prioridad · dependencias · referencias |
+| Display or destination view | Selected source (main; support) | Preserve design and functionality | Critical rule/what to correct or NOT copy | Priority · Dependencies · references |
 |---|---|---|---|---|
-| **Catálogo: lista, búsqueda/filtros** `/b/:businessId/catalogo` | Z069; Z050 | Tarjetas con foto/ícono, tipo, categoría, precio/estado, filtros y acciones contextuales | Un catálogo **BIEN/SERVICIO** genérico: reventa, insumo y elaborado son capacidades de un bien; SKU estable por empresa, homónimos a decidir. Quitar categorías caninas globales | **P1** · Business, catálogo · R08, H16/H22, D04; DEMO-04 |
-| **Catálogo: alta/edición de bien** `/b/:businessId/catalogo/nuevo` y ficha | Z069 (`openItemModal`, `saveItemForm`, galería); Z050 (`itemForm`) | Formulario progresivo, foto principal, galería, unidad explícita, detalle | Evitar doble catálogo entre Ventas y M2; precio «a cotizar» distinto de precio cero; desactivar no destruye venta histórica | **P1** · unidades/ubicación opcional · R08, H16/H22, QA-35 |
-| **Catálogo: servicio** ficha/alta | Z069/Z050, extendido según v3/v4 (**no hay pantalla especializada completa verificada**) | Misma ficha base y disponibilidad comercial, sin stock | No exigir lote, ubicación, receta ni saldo; precio fijo/a cotizar debe quedar diferenciado | **P1** · BIEN/SERVICIO · R08, H02/H22, QA-09 |
-| **Catálogo: elaboración contextual** detalle de bien | Z069 (`openElaborateModal`); Z050 (`submitElaboration`) | Acción «Elaborar» sólo en bienes configurados para producción y resumen de insumos | No imponer fabricación al comercio ni tratar traslado como consumo; producción/consumo atómicos. No esencial al primer recorrido | **P2** · inventario + receta opcional · R21, H19, D13 |
-| **Inventario: listado y existencias** `/b/:businessId/inventario` | Z050; Z072 como apoyo | Tabla desktop + tarjetas móvil, filtros por ubicación, físico/reservado/disponible y encargos pendientes separados | Disponibilidad nunca negativa por pedido pendiente; servicio no tiene StockBalance; cifras derivan de movimientos, no contadores aislados | **P1** · catálogo + locations + ledger · R09, H09/H19/H21; DEMO-05 |
-| **Inventario: detalle e historial por artículo** subvista Inventario | Z072 (`openFichaModal`, `openHistorialModal`); Z050 | Ficha, movimientos y saldos por ubicación; información de partida cuando aplique | Historias pertenecen al mismo registro fuente de verdad; no «stock propio» en Ventas | **P1** · ledger y catálogo · R09/R20, H09 |
-| **Inventario: conteo/reconciliación** `/b/:businessId/inventario/conteo` | Z072 (`initAuditStep1`, `confirmAuditAndApply`, `executeAuditCommit`) | Asistente de recuento, diferencias legibles, revisión antes de aplicar y estado de conflicto | Su `concurrencySimulated` es demostración: un conteo no pisa venta posterior; cantidades fraccionarias sin truncar; ajuste con motivo | **P1** (tras recepción/traslados) · ledger + versions · R11, H07/H19/H26; QA-08/31 |
-| **Movimientos: listado y nuevo traslado** `/b/:businessId/movimientos` | Z050 (`movementsPage`, `submitMovement`) | Selección múltiple, origen/destino, unidades, carrito de movimientos y resumen | Origen/destino **misma empresa**; conserva suma global; todo o nada; prohibir mover más del disponible; no copiar fecha fija 2026-10-30 ni `confirm()` nativo | **P1** · catálogo + inventario + ubicaciones · R10, H18/H19; DEMO-05 |
-| **Movimientos: retorno de feria** subvista Movimientos/Jornadas | Z050 (`openFairReturn`, `confirmFairReturn`); Z093 interfaz de destinos | Comparación esperado/contado, elección de destinos, nota, referencia a salida/jornada | **No copiar la operación** que descuenta `expected` y retorna sólo `returned`: H25 provoca desaparición de diferencia. Retorno físico explícito, no automático al cierre | **P2** · ledger + CashSession + cierre · R10/R18, H25/H06, D06 |
-| **Proveedores: listado/ficha** `/b/:businessId/proveedores` | Z073; Z050 (`suppliersPage`) | Ficha detallada, contacto, descuentos/promociones, observaciones, compras vinculadas | Campos avanzados opcionales, vínculos seguros, proveedor perteneciente a empresa activa | **P1** · Business · R12, H11; DEMO-04 |
-| **Proveedores: alta/edición** misma sección | Z073 (`handleFormSubmit`); Z070 alta contextual | Formulario progresivo; alta rápida sin salir de Compra | Proveedor opcional en compra según M2, no forzar uno ficticio al recibir; no copiar validación académica incompatible | **P1** · proveedores + compras · R12/R13, H11, D10 |
-| **Compras: listado/borrador/detalle** `/b/:businessId/compras` | Z070; Z050 (`purchaseFormOriginalV4`, `submitPurchase`) | Listado, filtros, líneas, totales, comprobante, detalle, crear proveedor/artículo en contexto | **Registrar compra ≠ recibir stock ≠ pagarla.** Una línea informativa no ingresa mercadería; proveedor puede ser opcional | **P1** · supplier opcional + catálogo · R13, H11, D10; DEMO-04 |
-| **Compras: recepción de mercadería** `/b/:businessId/compras/:id/recepcion` | Z050 (modelo de compra/movimiento); Z070 (detalle); **F** para separación Receipt definitiva | Revisión de cantidades/unidades/ubicación y confirmación clara | Cada recepción acredita stock **una vez**, con operación idempotente; la cantidad recibida puede diferir de la comprada, sin duplicar pago ni registrar transferencia bancaria | **P1** · compras + ledger · R09/R13, H09/H19; QA-STK-01 |
-| **Guías: lista/lector** `/b/:businessId/guias` | Z050; Z071 | Lista, búsqueda, lectura contextual desde ficha | No produce ni modifica stock por consultar una guía | **P2** · catálogo opcional · R19, H24 |
-| **Guías: editor por pasos** `/b/:businessId/guias/nueva` | **Z071**; Z050 sólo como guía estética | Pasos ordenados, fotos/notas por paso, borrador, publicar/archivar | La galería global simple de Z050 **no reemplaza** imágenes por paso; verificar foco y guardado de borrador | **P2** · permisos + guías · R19, H24 |
-| **Historial transversal: lista/detalle** `/b/:businessId/historial` | Z050 (`historyPageOriginalV4`); Z075 (`historyView`, `saleDetail`); Z073 audit visual | Filtros por fecha/ubicación/tipo, detalle, actor, signo +/−, vínculo a compra/venta/movimiento | Una sola línea de eventos por negocio; registros de demo no son auditoría inmutable; permisos limitan finanzas y datos ajenos | **P1** · todas las operaciones · R20, H14/H09; DEMO-07 |
+| **Catalogue: list, search/filters** `/b/:businessId/catalogo` | Z069; Z050 | Cards with photo/icon, type, category, price/state, filters and contextual actions | A catalogue **GOOD/SERVICE** generic: resale, input and processing are capacities of a good; SKU stable by company, homonymous to decide. Remove global canine categories | **P1** · Business, catalogue · R08, H16/H22, D04; DEMO-04 |
+| **Catalogue: high/good edition** `/b/:businessId/catalogo/nuevo` y ficha | Z069 (`openItemModal`, `saveItemForm`, gallery); Z050 (`itemForm`) | Progressive form, main photo, gallery, explicit unity, detail | Avoid double catalog between Sales and M2; price "to be quoted" other than zero price; disable does not destroy historical sale | **P1** · units/location optional · R08, H16/H22, QA-35 |
+| **Catalogue: service** tab/high | Z069/Z050, extended according to v3/v4 (**no specialized screen complete verified**) | Same basic file and commercial availability, no stock | Do not require lot, location, recipe or balance; fixed price quotation should be differentiated | **P1** · GOOD/SERVICE · R08, H02/H22, QA-09 |
+| **Catalogue: context-based elaboration** detail of good | Z069 (`openElaborateModal`); Z050 (`submitElaboration`) | ‘Develop’ action only in goods configured for production and summary of inputs | Do not impose manufacturing on trade or treat transfer as consumption; atomic production/consumption. Not essential to the first route | **P2** · inventory + optional recipe · R21, H19, D13 |
+| **Inventory: Listing and stock** `/b/:businessId/inventario` | Z050; Z072 as support | Desktop table + mobile cards, filters by location, physical/reserved/available and separate pending orders | Never negative availability per outstanding order; service has no StockBalance; figures derive from movements, not isolated counters | **P1** · catalogue + locations + leader · R09, H09/H19/H21; DEMO-05 |
+| **Inventory: detail and history per article** survey Inventory | Z072 (`openFichaModal`, `openHistorialModal`); Z050 | Statement, movements and balances by location; starting information when applying | Stories belong to the same source of truth record; not "own stock" in Sales | **P1** · ledger and catalogue · R09/R20, H09 |
+| **Inventory: counting/reconciliation** `/b/:businessId/inventario/conteo` | Z072 (`initAuditStep1`, `confirmAuditAndApply`, `executeAuditCommit`) | Count Wizard, legible differences, pre-application review and conflict status | Su `concurrencySimulated` is demonstration: a count does not step on sale after; fractional quantities without truncation; adjustment with motive | **P1** (after reception/transfers) · leadger + versions · R11, H07/H19/H26; QA-08/31 |
+| **Movements: Listing and new transfer** `/b/:businessId/movimientos` | Z050 (`movementsPage`, `submitMovement`) | Multiple selection, origin/destiny, units, movement cart and summary | Origin/destiny **same company**; retains lump sum; all or nothing; forbids moving more than available; does not copy fixed date 2026-10-30 nor `confirm()` native | **P1** · catalog + inventory + locations · R10, H18/H19; DEMO-05 |
+| **Movements: return of fair** subvista Movements/Days | Z050 (`openFairReturn`, `confirmFairReturn`); Z093 destination interface | Expected/counted comparison, choice of destinations, note, departure/day reference | **Do not copy the operation** that it does not count `expected` and returns only `returned`: H25 causes disappearance of difference. Physical return explicit, not automatic to the closure | **P2** · ledger + CashSession + cierre · R10/R18, H25/H06, D06 |
+| **Suppliers: Listing/ticket** `/b/:businessId/proveedores` | Z073; Z050 (`suppliersPage`) | Detailed sheet, contact, discounts/promotions, observations, related purchases | Optional advanced fields, secure links, active company supplier | **P1** · Business · R12, H11; DEMO-04 |
+| **Suppliers: high/edited** same section | Z073 (`handleFormSubmit`); Z070 high contextual | Progressive form; high fast without leaving Purchase | Optional supplier in purchase according to M2, do not force a fictitious one upon receiving; do not copy incompatible academic validation | **P1** · suppliers + purchases · R12/R13, H11, D10 |
+| **Shopping: list/delete/detail** `/b/:businessId/compras` | Z070; Z050 (`purchaseFormOriginalV4`, `submitPurchase`) | Listing, filters, lines, totals, voucher, detail, create provider/article in context | **Register purchase** A line of information does not enter merchandise; supplier may be optional | **P1** · optional supplier + catalog · R13, H11, D10; DEMO-04 |
+| **Purchases: receipt of goods** `/b/:businessId/compras/:id/recepcion` | Z050 (purchase/movement model); Z070 (detail); **F** for final Receipt separation | Review of quantities/units/location and clear confirmation | Each reception credits stock **once**, with an idempotent operation; the amount received may differ from the purchased one, without doubling payment or recording bank transfer | **P1** · compras + ledger · R09/R13, H09/H19; QA-STK-01 |
+| **Guides: list/reader** `/b/:businessId/guias` | Z050; Z071 | List, search, context read from tab | Does not produce or modify stock by consulting a guide | **P2** · optional catalogue · R19, H24 |
+| **Guides: Editor by steps** `/b/:businessId/guias/nueva` | **Z071**; Z050 only as aesthetic guide | Ordered steps, photos/notes by step, draft, publish/archive | The simple global gallery of Z050 **does not replace** images per step; verify focus and save draft | **P2** · permissions + guides · R19, H24 |
+| **Cross-sectional history: list/detail** `/b/:businessId/historial` | Z050 (`historyPageOriginalV4`); Z075 (`historyView`, `saleDetail`); Z073 audit visual | Filters by date/location/type, detail, actor, sign +/−, link to purchase/sale/movement | A single line of events per business; demo records are not immutable auditing; permits limit finances and other data | **P1** · all operations · R20, H14/H09; DEMO-07 |
 
-**Capturas M2 de referencia:** `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/capturas/02_catalogo_escritorio.png`, `02_catalogo_movil.png`, `03_inventario_escritorio.png`, `03_inventario_movil.png`, `04_movimientos_escritorio.png`, `05_proveedores_escritorio.png`, `06_compras_escritorio.png`, `06_compras_movil.png`, `07_guias_escritorio.png`, `08_historial_escritorio.png`. La auditoría registra posible densidad/recorte de tablas móviles (H21): adaptar en E1, **no** declararlo resuelto.
+**Reference M2 captures:** `Modulo 2/WALOS_Modulo2_Kit_Final_UX_v5_1/capturas/02_catalogo_escritorio.png`, `02_catalogo_movil.png`, `03_inventario_escritorio.png`, `03_inventario_movil.png`, `04_movimientos_escritorio.png`, `05_proveedores_escritorio.png`, `06_compras_escritorio.png`, `06_compras_movil.png`, `07_guias_escritorio.png`, `08_historial_escritorio.png`. The audit records possible density/cutting of mobile tables (H21): adapt to E1, **no** declare it solved.
 
-### 3.3 Ventas, dinero, jornadas y extensiones (primer circuito E1-C / E1-D)
+### 3.3 Sales, money, days and extensions (first circuit E1-C/E1-D)
 
-| Pantalla o vista destino | Fuente seleccionada (principal; apoyo) | Conservar diseño y funcionalidad | Regla crítica / qué corregir o NO copiar | Prioridad · dependencias · referencias |
+| Display or destination view | Selected source (main; support) | Preserve design and functionality | Critical rule/what to correct or NOT copy | Priority · Dependencies · references |
 |---|---|---|---|---|
-| **Ventas: lista/resumen** `/b/:businessId/ventas` | Z075; capturas en carpeta Z081 | Historial comercial, ubicación, operador, estado y acceso a Nueva venta | No duplicar estado de carrito/productos de M2; filtrar datos y permisos por negocio | **P1** · catálogo + stock + caja opcional · R14, H09 |
-| **POS: selección de productos/servicios** `/b/:businessId/ventas/nueva` | **Z074 diseño**; **Z075 lógica y variantes** | Catálogo ancho completo, búsqueda sin tildes, selección, carrito visible y acceso «Revisar y cobrar» | Para bienes: stock disponible por origen; para servicios: **sin** stock o caja física obligatoria; no copiar lista fija WALOS | **P1** · catálogo/stock · R14, H02/H09/H22; DEMO-06 |
-| **POS: revisión, descuentos y pagos divididos** subvista checkout | Z074 (separación de pantallas); Z075 (`payRows`, `addPay`, `paymentDraftFromDOM`) | Resumen por línea, descuentos, medios de pago múltiples y comprobación antes de confirmar | Checkout principal v4 terminó con selector simple (**H10**), aunque conserva funciones `payRows/addPay`; reconstruir UI multiaplicación; total = suma **exacta** de pagos declarados; no usar floats para dinero | **P1** · cuentas + venta + reglas de dinero · R14, H10/H26, D07/08; QA-MON-01 |
-| **POS: confirmación y ticket interno** venta/detalle | Z075 (`completeSale`, `showTicket`, `printTicket`) | Confirmación explícita, ticket no fiscal consultable/imprimible en Historial | Una venta física deduce stock una sola vez; ticket ≠ factura; corrección referenciada, no eliminación silenciosa | **P1** · venta + ledger + historial · R14/R20, H09/H19; DEMO-06 |
-| **Ventas: devolución/anulación** subvista detalle | Z075 (`returnsLog`, `voidSale`, funciones de devolución según fuente) | Consulta venta original, detalle y acciones de retorno controlado | No devolver más unidades/importe que lo aplicado; mercadería dañada no vuelve automáticamente a disponible; reembolso ≠ retorno físico | **P2** · Sale + refund + stock · R15, QA-07/30 |
-| **Gastos operativos: lista/nuevo/detalle** `/b/:businessId/gastos` | **Z070** diseño y formulario; **Z075** flujo caja; Z014 para gastos fijos | Lista a ancho completo, formulario lateral, clasificación, fecha, importe, fondo/medio, comprobante | Gastos operativos ≠ compras/recepciones ≠ planes recurrentes; gasto pagado crea salida **una vez** y sólo en fondo indicado; billetera compartida no es saldo de jornada | **P1** · cuentas + jornada opcional · R16/R17, H09; DEMO-06 |
-| **Apertura de jornada** `/b/:businessId/jornadas` | Z092; Z093; Z075 | Seleccionar ubicación/caja, fondo efectivo contado, responsable, estado visible | La jornada es **opcional** para operaciones de servicios sin caja; no sumar saldo digital como efectivo inicial; una caja abierta no se duplica | **P1** · Location/Account/Register · R18, D05, QA-JOR-01 |
-| **Jornada activa: resumen** `/b/:businessId/jornadas/:id` | Z075 (resumen comercial); Z093 (panel) | Efectivo esperado, cobros digitales **declarados**, movimientos y gastos por jornada | Cuenta MP/bancaria puede ser compartida entre jornadas: no exhibir ni reiniciar su saldo global como saldo de caja; no inventar acreditación | **P1** · ventas/gastos/cuentas · R17/R18, H09/H13, QA-25 |
-| **Arqueo y revisión previa al cierre** `/b/:businessId/jornadas/:id/cierre` | **Z093 visual** (checklist/ubicación/destinos); **Z092** rendición; **Z075** recuento y diferencias | Wizard con conteo, diferencias, observaciones, revisión y confirmación final | Contado normal por defecto; «sin arqueo» sólo si se aprueba por ADR/permiso; retornar mercadería es operación **aparte**; entrada inválida `12abc`/`1,2,3` debe rechazarse | **P1** · ledger de caja + conteo · R18, H06/H07/H13/H26, D06 |
-| **Snapshot, informe e historial de cierre** `/b/:businessId/jornadas/:id/informe` | **Z075** (`v4SnapshotFor` referido en auditoría, informe); Z092 (`viewClosureReport`); Z093 **sólo visual** | Informe con actor, fecha, corte, arqueo, diferencias y justificativos; imprimir/consultar histórico | **PROHIBIDO portar `commitFinalClosure()` de Z093:** marca CLOSED y borra `closureDraft` sin snapshot. Un cierre debe conservar evidencia inmutable y nunca reabrir por doble clic | **P1** · ClosureSnapshot + historial · R18/R20, H06/H13, QA-12; DEMO-07 |
-| **QR de cobro DEMO desde checkout** en Ventas | Z074 (pantalla de «esperando confirmación»), Z075 (medio MP simulado); **V4 QR** guía conceptual | Mostrar importe, QR/estado de **simulación**, pendiente/cancelado/aprobado como **estados de prueba** | **QR de cobro por venta ≠ QR de artículo**; botón «Ya pagué» no acredita pago real; nunca usar vendedor/plataforma global como receptor de empresas distintas; sin OAuth ni claves reales en demo | **P1** · sale checkout + mock aislado · MP v4 §§1–6, QA-MP-01/02; DEMO-08 |
-| **QR de artículo/ficha** desde Catálogo | **F**; Z069 como origen ficha | Eventual enlace por empresa/artículo a ficha y añadir a venta | No es QR de cobro ni pago demostrado; no integrar al POS como cobro fijo; diseñar para autoservicio sólo si se prioriza | **P2** · catálogo + acceso público futuro · MP v4 §1/§5 |
-| **Pedidos / reservas / señas** `/b/:businessId/pedidos` | Z075 contiene mock de Pedidos **sólo como referencia** | Tarjeta «Próximamente», sin afirmar que existe pedido real | La versión v3/v4 posterga módulo; no reactivar lógica anterior de stock reservado/seña como si fuera flujo validado | **P2 FUTURO** · ventas/pagos/stock · R22, D14 |
-| **Análisis del negocio** `/b/:businessId/analisis` | **F**; resúmenes Z050/Z075 sólo inspiración | Tarjeta «Próximamente» y lugar reservado en navegación | No mostrar «ganancia real» sin costos/comisiones/impuestos y conciliación; no derivar saldos globales de caja | **P2 FUTURO** · operaciones consolidadas · R23, D14 |
+| **Sales: list/summary** `/b/:businessId/ventas` | Z075; catches in folder Z081 | Commercial history, location, operator, status and access to New Sales | Do not duplicate M2 cart/product status; filter data and permissions per business | **P1** · catalog + stock + optional box · R14, H09 |
+| **POS: selection of products/services** `/b/:businessId/ventas/nueva` | **Z074 design**; **Z075 logic and variants** | Full wide catalog, unticked search, selection, visible cart and "Review and collect" access | For goods: stock available by origin; for services: **sin** stock or compulsory physical box; do not copy fixed list WALOS | **P1** · catalogue/stock · R14, H02/H09/H22; DEMO-06 |
+| **POS: Review, discounts and split payments** subview checkout | Z074 (screen separation); Z075 (`payRows`, `addPay`, `paymentDraftFromDOM`) | Summary by line, discounts, multiple payment means and check before confirming | Main checkout v4 ended with simple selector (**H10**), although it retains functions `payRows/addPay`; rebuilding multi-application IU; total = sum **exact** of payments declared; do not use floats for money | **P1** · accounts + sale + money rules · R14, H10/H26, D07/08; QA-MON-01 |
+| **POS: confirmation and internal ticket** sale/detail | Z075 (`completeSale`, `showTicket`, `printTicket`) | Express confirmation, non-tax ticket referenceable/printable in History | A physical sale deducts stock once; ticket | **P1** · venta + ledger + historial · R14/R20, H09/H19; DEMO-06 |
+| **Sales: refund/annulment** sub-view detail | Z075 (`returnsLog`, `voidSale`, return functions according to source) | Original sale consultation, detail and controlled return actions | Do not return more units/amount than applied; damaged goods do not automatically return to available; reimbursement | **P2** · Sale + refund + stock · R15, QA-07/30 |
+| **Operational expenditure: list/new/detail** `/b/:businessId/gastos` | **Z070** design and form; **Z075** cash flow; Z014 for fixed costs | Full width list, side form, classification, date, amount, background/medium, voucher | Operational expenditure • purchases/receptions • recurring plans; paid expenditure creates exit **once** and only in the indicated background; shared wallet is not working balance | **P1** · accounts + optional day · R16/R17, H09; DEMO-06 |
+| **Opening of the day** `/b/:businessId/jornadas` | Z092; Z093; Z075 | Select location/box, cash fund counted, responsible, visible status | The day is **optional** for services operations without cash; do not add up digital balance as initial cash; an open box is not duplicated | **P1** · Location/Account/Register · R18, D05, QA-JOR-01 |
+| **Active day: summary** `/b/:businessId/jornadas/:id` | Z075 (commercial summary); Z093 (panel) | Expected cash, digital collections **declared**movements and expenses per day | MP/Bank Account can be shared between days: do not display or restart your global balance as a cash balance; do not invent accreditation | **P1** · sales/expenditures/accounts · R17/R18, H09/H13, QA-25 |
+| **Arching and pre-closure review** `/b/:businessId/jornadas/:id/cierre` | **Z093 visual** (checklist/location/destinations); **Z092** surrender; **Z075** count and differences | Wizard with count, differences, observations, review and final confirmation | Default normal count; ‘without arching’ only if approved by ADR/permission; return goods is operation **Other**; Invalid entry `12abc`/`1,2,3` to be rejected | **P1** · box ledger + count · R18, H06/H07/H13/H26, D06 |
+| **Snapshot, informe e historial de cierre** `/b/:businessId/jornadas/:id/informe` | **Z075** (`v4SnapshotFor` referred to in audit, report); Z092 (`viewClosureReport`); Z093 **visual only** | Report with actor, date, cut, arching, differences and justifications; print/consult history | **Forbidden to carry `commitFinalClosure()` de Z093:** marca CLOSED y borra `closureDraft` no snapshot. A closure must retain immutable evidence and never reopen by double click | **P1** · ClosureSnapshot + historial · R18/R20, H06/H13, QA-12; DEMO-07 |
+| **QR DEMO collection from checkout** in Sales | Z074 (screen ‘waiting confirmation’), Z075 (prevented MP medium); **V4 QR** conceptual guide | Show amount, QR/state of **simulation**, pending/cancelled/approved as **test states** | **QR of sales collection**; Ya Págué button does not credit real payment; never use global vendor/platform as receiver of different companies; no OAuth or actual demo keys | **P1** · checkout + isolated mock · MP v4 ~1–6, QA-MP-01/02; DEMO-08 |
+| **Article/fiche QR** from Catalogue | **F**; Z069 as source tab | Eventually link by company/article to sheet and add for sale | It is not QR of collection or payment demonstrated; do not integrate the POS as fixed charge; design for self service only if prioritized | **P2** · catalogue + future public access · MP v4 §1/§5 |
+| **Orders/reservations/signs** `/b/:businessId/pedidos` | Z075 contains order mock **only as reference** | Next card, without stating that there is a real order | Version v3/v4 defers module; does not reactivate previous reserved stock logic as if it were validated flow | **P2 FUTURE** · sales/payments/stock · R22, D14 |
+| **Business analysis** `/b/:businessId/analisis` | **F**; summaries Z050/Z075 only inspiration | Next card and place reserved for navigation | Do not show "real gain" without costs/commissions/taxes and reconciliation; do not derive global cash balances | **P2 FUTURE** · consolidated transactions · R23, D14 |
 
-**Capturas M3 de referencia:** `Modulo 3/WALOS_Ventas_v4_0/capturas/02_cargar_venta_checkout.png`, `04_gastos_lista.png`, `05_historial.png`, `06_cierre.png`, `07_cierre_asistente.png`, `08_informe.png`, `09_venta_movil.png`. El v4 declara pruebas parciales propias en `02_RIESGOS_Y_QA.md`; **no se interpretan como tests nuevos ni como validación de la integración**.
+**Reference M3 captures:** `Modulo 3/WALOS_Ventas_v4_0/capturas/02_cargar_venta_checkout.png`, `04_gastos_lista.png`, `05_historial.png`, `06_cierre.png`, `07_cierre_asistente.png`, `08_informe.png`, `09_venta_movil.png`. v4 declares partial evidence of its own `02_RIESGOS_Y_QA.md`; **are not interpreted as new tests or as validation of integration**.
 
-## 4. Selección consolidada: qué imagen/UX se adopta y qué lógica no
+## 4. Consolidated selection: which image/UX is adopted and what logic does not
 
-| Área | Elección inicial E0-A | Rescate funcional específico | Descartar/cambiar antes de E1 |
+| Area | Initial election E0-A | Specific functional rescue | Discard/change before E1 |
 |---|---|---|---|
-| **Shell/Inicio** | Z003 + capturas M1 v1.2 | Tarjetas, perfil, menú lateral y resumen | Marca WALOS global, menús segmentados M1/M2/M3, datos no contextualizados |
-| **Empresa/Ubicaciones/Equipo** | Z001, Z004, Z002 | Modales, estados, fichas, ámbitos por ubicación; solicitudes Z014 | Roles sólo visuales, singleton SQL, exigir local/deposito |
-| **Cuentas** | Z042 | Ficha bancaria y compartir datos | CBU/CVU como confirmación de pago; saldo digital inferido |
-| **Catálogo** | Z069 con estilo integrado Z050 | Foto principal, variantes, tipos, elaboración contextual | Tipos veterinarios/caninos globales, doble fuente de catálogo |
-| **Inventario y traslado** | Z050 + conteo Z072 | Físico/reservado/disponible, traslados múltiples, wizard de conteo | Stock aislado por HTML, bloqueo simulado como concurrencia, fecha fija H18, retorno con pérdida H25 |
-| **Compras y Proveedores** | Z070/Z073, apoyo Z050 | Listados y formularios, proveedor rápido, ficha, recibo | Egreso por comprar, ingreso automático de toda línea, proveedor obligatorio ficticio |
-| **Guías** | Z071 | Pasos ordenados, notas e imágenes por paso, borrador/publicación | Reemplazarla por galería simple de Z050 |
-| **Ventas** | Z074 **UX** + Z075 **reglas** | Checkout separado, pagos divididos recuperados desde funciones heredadas, ticket | Un solo selector de pago, stock sin sincronizar, precios/redondeos flojos |
-| **Jornadas/cierre** | Z093 **aspecto visual** + Z075 **reporte** + Z092 **rendición** | Checklist, arqueo, diferencias, informe histórico | `commitFinalClosure` de v8, `parseInt`/`parseARSStrict`, retorno/pausa/cierre confundidos |
-| **Gastos/Historial** | Z070 + Z075 + Z050 | Formularios, clasificación, filtros y signos | Historiales separados, recurrente como pago consumado, logs locales como auditoría segura |
-| **QR** | Flujo de venta Z074 + reglas del documento MP v4 | UI «DEMO», estados por intento | Presentar QR de producto como cobro o aprobación manual como pago confirmado |
+| **Shell/Start** | Z003 + catches M1 v1.2 | Cards, profile, side menu and summary | Global WALOS markup, segmented menus M1/M2/M3, non-contextualized data |
+| **Company/Locations/Team** | Z001, Z004, Z002 | Modals, states, tokens, fields by location; Z014 requests | Visual-only roles, singleton SQL, demand local/deposit |
+| **Accounts** | Z042 | Bank card and data sharing | CBU/CVU as confirmation of payment; digital balance inferred |
+| **Catalog** | Z069 with integrated style Z050 | Main photo, variants, types, context processing | Veterinary types/global canines, double catalog source |
+| **Inventory and transfer** | Z050 + Z072 count | Physical/reserved/available, multiple transfers, count wizard | Stock isolated by HTML, simulated blocking as concurring, fixed date H18, return with loss H25 |
+| **Purchases and Suppliers** | Z070/Z073, support Z050 | Listed and forms, fast supplier, token, receipt | Purchase fee, automatic entry of all lines, fictitious mandatory supplier |
+| **Guides** | Z071 | Sorting steps, notes and images by step, draft/publication | Replace it with simple Z050 gallery |
+| **Sales** | Z074 **UX** + Z075 **rules** | Separate checkout, split payments recovered from inherited functions, ticket | Single payment selector, unsynchronised stock, loose prices/roundings |
+| **Days/closure** | Z093 **aspecto visual** + Z075 **report** + Z092 **surrender** | Checklist, arching, differences, historical report | `commitFinalClosure` de v8, `parseInt`/`parseARSStrict`, return/pause/closing confused |
+| **Expenditure/History** | Z070 + Z075 + Z050 | Forms, classification, filters and signs | Separate, recurring records as a consummate payment, local logs as a secure audit |
+| **QR** | Sales flow Z074 + rules of MP v4 document | IU ‘DEMO’, States by attempt | Submit QR product as collection or manual approval as confirmed payment |
 
-## 5. Dependencias y decisiones que habilitan el primer circuito
+## 5. Units and decisions enabling the first circuit
 
-**Dependencia funcional (no implica implementaciones actuales):**
+**Functional dependency (does not involve current implementations):**
 
 `Persona/Empresa/Membresía → Shell/empresa activa → (Ubicaciones opcionales + Catálogo + Cuentas/Proveedores) → Compra → Recepción → Inventario/Movimientos → Venta + pagos declarados → Gasto → Jornada/Cierre → Historial`.
 
-Para un **servicio sin depósito ni caja física**: `Persona/Empresa → Catálogo(Servicio) → Venta → Historial`. No obligar a pasar por Stock, Compras o Jornada.
+For a **Service without deposit or physical box**: `Persona/Empresa → Catálogo(Servicio) → Venta → Historial`. Do not force to pass through Stock, Shopping or Day.
 
-### Decisiones necesarias, sin aprobarlas silenciosamente
+### Necessary decisions, without silently approving them
 
-| Decisión (auditoría) | Estado al cerrar E0-A | Opción provisional para prototipo; punto por formalizar en E0-C |
+| Decision (audit) | Status at close E0-A | Provisional option for prototype; point to be formalized in E0-C |
 |---|---|---|
-| **Titularidad administrativa** (tema transversal, no idéntico a D01 de auditoría) | **PROPUESTA, pendiente de ADR** | `founder_user_id` histórico y **un responsable administrativo activo**; transferencia/revocación nunca deja a la empresa sin responsable. No implica propiedad legal ni rol irrevocable |
-| **D01 — Crear varias empresas** | **PROPUESTA de modelo, sin política comercial** | Modelar muchas empresas por persona desde el inicio, sin límite comercial en demo |
-| **D02 — Invitaciones** | **PENDIENTE** | Mantener **dos** flujos distintos documentados: nominada por email y enlace/QR→solicitud→aprobación. El orden del MVP no borra el segundo |
-| **D03 — Permisos** | **PENDIENTE** | Roles demo y permisos por acción/ubicación claramente simulados; la API deberá autorizar servidor por servidor |
-| **D04 — SKU/nombres** | **PROPUESTA** | SKU estable único por negocio, generado si falta; admitir homónimos con advertencia, validar modo precio fijo/a cotizar |
-| **D05 — Cajas** | **PROPUESTA** | Una caja por ubicación **que use caja**, no para toda empresa; modelar Register para futura ampliación |
-| **D06 — Cierre y retorno** | **PENDIENTE** | Cierre contado con snapshot; sin arqueo **deshabilitado por defecto**; retorno físico separado y explícito |
-| **D07 — Venta/cobro** | **PROPUESTA** | Venta inmediata con 1..n pagos declarados cuya suma coincide exactamente con total; créditos/señas futuros |
-| **D08 — Moneda** | **PROPUESTA** | Moneda por empresa; ARS para fixtures; dinero exacto (centavos/Decimal); sin facturación fiscal implícita |
-| **D09 — Stock negativo** | **PROPUESTA** | No permitir negativo. Demanda pendiente separada; reservas explícitas cuando corresponda |
-| **D10 — Proveedor/recepción** | **Conservar requisito documentado M2; implementación pendiente** | Proveedor opcional; documento de compra distinto de recepción, recepción única e idempotente |
-| **D11 — Framework** | **Fuera de E0-A; propuesto para E0-B** | React + TypeScript con pantallas recreadas como componentes, **no** iframes ni scripts globales |
-| **QR de cobro y cuenta vendedora** (nuevo V4) | **Separación conceptual confirmada; API real futura** | DEMO de intención vinculada a venta; después OAuth por **cada empresa**, Orders QR, webhooks y reconciliación sin compartir tokens |
+| **Administrative authority** (cross-cutting theme, not identical to audit D01) | **Proposal pending by ADR** | `founder_user_id` history and **an active administrative officer**; transfer/revocation never leaves the company unaccounted for. It does not imply legal property or irrevocable role |
+| **D01 — Creating multiple companies** | **Model proposal without trade policy** | Model many companies per person from the start, without commercial limit in demo |
+| **D02 — Invitations** | **PENDING** | Keep **dos** different documented flows: nominated by email and link/QR→request→approval. The order of the MVP does not delete the second |
+| **D03 — Permits** | **PENDING** | Demo roles and clearly simulated action/location permissions; API must authorize server-by-server |
+| **D04 — SKU/names** | **PROPOSAL** | SKU stable single per business, generated if missing; admit homonyms with warning, validate fixed price mode |
+| **D05 — Boxes** | **PROPOSAL** | One box per location **use box**, not for every company; model Register for future expansion |
+| **D06 — Closure and return** | **PENDING** | Locking with snapshot; without arching **disabled by default**; separate and explicit physical return |
+| **D07 — Sale/collection** | **PROPOSAL** | Immediate sale with 1.n declared payments whose sum exactly matches total; future credits/signs |
+| **D08 — Currency** | **PROPOSAL** | Currency per company; ARS for fixtures; exact money (centavos/Decimal); no implicit tax billing |
+| **D09 — Stock negative** | **PROPOSAL** | Do not allow negative. Separate pending claim; explicit reservations where appropriate |
+| **D10 — Provider/reception** | **Keep documented M2 requirement; pending implementation** | Optional supplier; non-receiving, single and idempotent purchase document |
+| **D11 — Framework** | **Outside E0-A; proposed for E0-B** | React + TypeScript with screens recreated as components, **no** iframes ni scripts globales |
+| **QR collection and sales account** (new V4) | **Confirmed conceptual separation; future real API** | DEMO of related intention to sale; then OAuth by **Each company**, Orders QR, webhooks and reconciliation without sharing tokens |
 
-**Invariantes a llevar desde E0-A hacia E0-B/E1:**
+**Invariants to be carried from E0-A to E0-B/E1:**
 
-1. Toda operación y recurso empresarial identifica `business_id`, con permiso y posible `location_id`; la identidad personal vive fuera de cualquier empresa.
-2. Una recepción aumenta stock **una vez** y un traslado resta/acredita en **un solo comando**; los saldos se derivan del registro de movimientos.
-3. La venta de bien físico usa su stock disponible; la venta de servicio no exige StockBalance.
-4. Descuentos y pagos se concilian al centavo; cobro declarado **no** equivale a acreditación bancaria.
-5. Cierre guarda snapshot y diferencias antes de pasar a cerrado; nunca borra evidencias, inventa merma o retorna stock por sí mismo.
-6. Los borradores de formularios/carrito deben pertenecer a la empresa y, cuando aplique, ubicación del origen; cambiar tenant no los traslada.
-7. Una pantalla sin implementación muestra «Próximamente»; una operación demo muestra «DEMO» y no informa seguridad/concurrencia/pago reales.
+1. Any business operation and resource identifies `business_id`with permission and possible `location_id`; personal identity lives outside any company.
+2. A reception increases stock **once** and a transfer subtract/credit in **one command only**; balances are derived from the movement register.
+3. The sale of physical good uses its stock available; the service sale does not require StockBalance.
+4. Discounts and payments are reconciled to the penny; stated collection **no** amounts to bank accreditation.
+5. Close saves snapshots and differences before going into closed; never erases evidence, invents decrease or returns stock by itself.
+6. Draft forms/carts must belong to the company and, when applied, location of origin; change tenant does not transfer them.
+7. A display without implementation displays "Next", a demo operation shows "DEMO" and does not report actual security/concurrence/payment.
 
-## 6. Orden de implementación que surge de la matriz (entrada para E0-B/E1)
+## 6. Implementation order arising from the matrix (entry for E0-B/E1)
 
-| Corte | Pantallas de partida | Resultado observable | Pruebas de referencia **pendientes** |
+| Cut | Starting screens | Observable result | Reference tests **outstanding** |
 |---|---|---|---|
-| **DEMO-01 / E1-A1** | Shell, Inicio personal y empresarial, drawer, perfil | Menú y tarjetas apuntan a vistas o «Próximamente», usable en móvil | R05, QA-18 |
-| **DEMO-02 / E1-A2** | Crear/seleccionar empresa, cuenta personal demo y permisos visuales | Empresa A→B no deja catálogo/ventas/borradores visibles de A; usuario sin empresa válido | QA-01/02/20, QA-TEN-01/02 |
-| **DEMO-03 / E1-B1** | Empresa, Ubicaciones, Equipo, Cuentas | Empresa de servicios sin local; roles simulados diferenciados, invitaciones por modalidad | QA-09, QA-16/17 |
-| **DEMO-04 / E1-B2** | Catálogo, Proveedores, Compras, Recepción | 1 bien + 1 servicio; compra de 10 recibe **exactamente 10** una vez | QA-10, QA-STK-01, QA-CAT-01 |
-| **DEMO-05 / E1-B3** | Inventario, Movimientos, Conteo | Traslado 3 de origen 10 deja **7/3** y un único historial | QA-06/08, QA-STK-02 |
-| **DEMO-06 / E1-C1** | Venta, checkout, gastos | En ubicación destino vender 2 bienes + servicio con descuento y **dos pagos exactos**; stock de destino pasa 3→1 | QA-05/09, QA-MON-01 |
-| **DEMO-07 / E1-C2** | Jornada, arqueo, cierre, informe, historial | Snapshot con actor, efectivo contado y diferencia; cierre no reabre ni reescribe | QA-11/12, QA-JOR-01/02 |
-| **DEMO-08 / E1-D1** | QR **simulado** desde Ventas | Pantalla marcada DEMO; pendiente no equivale a cobrado; empresa vendedora visible | QA-MP-01/02 como especificación futura |
-| **DEMO-09 / E1-D2** | Todos los recorridos | Navegación con teclado, móviles, errores, estados vacíos; ningún control inerte disfrazado de acción | QA-18/19/20, QA-E2E-01 |
+| **DEMO-01 / E1-A1** | Shell, Personal and business starter, drawer, profile | Menu and cards point to views or "Next", usable on mobile | R05, QA-18 |
+| **DEMO-02 / E1-A2** | Create/select company, personal demo account and visual permissions | Company A→B does not leave catalog/sales/displays visible of A; user without valid company | QA-01/02/20, QA-TEN-01/02 |
+| **DEMO-03 / E1-B1** | Company, Locations, Equipment, Accounts | Services company without premises; differentiated simulated roles, invitations by modality | QA-09, QA-16/17 |
+| **DEMO-04 / E1-B2** | Catalog, Suppliers, Shopping, Reception | 1 or + 1 service; purchase of 10 receive **exactly 10** once | QA-10, QA-STK-01, QA-CAT-01 |
+| **DEMO-05 / E1-B3** | Inventory, Movements, Counting | Transfer 3 of origin 10 leaves **7/3** and a single history | QA-06/08, QA-STK-02 |
+| **DEMO-06 / E1-C1** | Sales, checkout, expenses | In destination location sell 2 goods + service with discount and **two exact payments**; stock destination passes 3→1 | QA-05/09, QA-MON-01 |
+| **DEMO-07 / E1-C2** | Day, arching, closing, report, history | Snapshot with actor, cash count and difference; closure does not reopen or rewrite | QA-11/12, QA-JOR-01/02 |
+| **DEMO-08 / E1-D1** | QR **simulated** from Sales | DEMO marked display; pending does not equal to cash; company sales visible | QA-MP-01/02 as future specification |
+| **DEMO-09 / E1-D2** | All tours | Keyboard navigation, mobile phones, errors, empty states; no inert control disguised as action | QA-18/19/20, QA-E2E-01 |
 
-**Fixture E2E mínimo v4:** crear empresa → crear artículo + servicio + proveedor + dos ubicaciones → compra y recepción de 10 → traslado de 3 → abrir caja en ubicación destino → vender 2 y servicio con descuento y pagos divididos → gasto desde fondo explícito → arqueo y cierre → historial → cambiar de empresa y comprobar aislamiento → registrar servicio en negocio sin local. **No ejecutado en E0-A.**
+**Fixture E2E minimum v4:** create company → create article + service + provider + two locations → purchase and reception of 10 → transfer of 3 → open box at destination location → sell 2 and service with discount and split payments → expense from explicit background → arching and closing → history → change business and check isolation → register service in business without local. **Not executed in E0-A.**
 
-## 7. Riesgos específicos heredados que NO deben copiarse
+## 7. Specific inherited risks that should NOT be copied
 
-| Hallazgo | Fuente y problema | Acción obligatoria en E1/E2 |
+| Finding | Source and problem | Compulsory action in E1/E2 |
 |---|---|---|
-| **H01/H02/H14** | SQL M1 singleton, membresía única global, dependencia errónea venta–almacenamiento y FKs/eventos sin tenant | Nuevo modelo por empresa; negocio de servicios sin depósito; restricciones y permisos en backend futuro |
-| **H06** | Z093 `commitFinalClosure` marca cierre y elimina borrador sin snapshot | Reescribir caso de uso; persistir inmutable antes de cerrar y mostrar errores |
-| **H07/H26** | Z093 recuento `parseInt` y parser supuestamente estricto acepta importes malformados | Cantidades tipadas por unidad, validación completa, redondeo explícito |
-| **H08/H09** | Z014/M2/M3 guardan en claves demo separadas y pueden silenciar error | Fuente demo única por empresa, resultado de guardado observable, cero éxito falso |
-| **H10** | Checkout visual v4 usa un medio aunque conserva funciones de varios | Reconstruir lista de aplicaciones y validar total exacto |
-| **H11/H12** | Proveedor opcional M2 vs. obligación académica; enlace solicitud M1 vs nominada TP | Conservar reglas de producto; mantener dos máquinas de invitación distintas |
-| **H13** | Cierre sin arqueo v4 vs verificación v8 | Cierre contado por defecto; ADR y permiso explícitos si habilita excepción |
-| **H15/H17** | HTML duplicados y funciones globales superpuestas | Usar IDs/hash; componentes y servicios nuevos sin sobrescrituras de `render/nav` |
-| **H16/H22** | Nombre único y SKU opcional en repo vs SKU automático M2; servicio «a cotizar» | Modelo genérico por capacidad; contratos y restricciones propios del producto |
-| **H18/H19** | Fecha literal en traslado y «concurrencia» simulada | Fecha correcta y versión/corte; locks y concurrencia **sólo** backend |
-| **H21/H24** | Tablas compras móviles densas; editor M2 básico pierde guías por paso | Tablas→tarjetas en móvil; conservar editor rico separado |
-| **H25** | Retorno descuenta 10 de origen y acredita 8 al destino, perdiendo 2 sin ajuste explícito | Conservar diferencia mediante pendiente/ajuste trazable, no borrar saldo automáticamente |
+| **H01/H02/H14** | SQL M1 singleton, global unique membership, misselling dependency–storage and FKs/events without tenant | New model per company; no deposit service business; restrictions and permissions in future backend |
+| **H06** | Z093 `commitFinalClosure` mark close and delete draft without snapshot | Rewrite use case; persist unchangeable before closing and displaying errors |
+| **H07/H26** | Z093 count `parseInt` and parser supposedly strict accepts malformed amounts | Quantity typed per unit, complete validation, explicit rounding |
+| **H08/H09** | Z014/M2/M3 save in separate demo keys and can mute error | Single demo source per company, observable save result, no false success |
+| **H10** | Visual checkout v4 uses a medium although it retains functions of several | Rebuild application list and validate accurate total |
+| **H11/H12** | Optional provider M2 vs. academic obligation; M1 application link vs nominated TP | Maintain product rules; maintain two separate invitation machines |
+| **H13** | Closing without arching v4 vs verification v8 | Default counted closure; explicit ADR and permission if exception enabled |
+| **H15/H17** | Duplicate HTML and Overlay Global Functions | Use IDs/hash; new components and services without overwriting `render/nav` |
+| **H16/H22** | Optional single name and SKU in repo vs automatic SKU M2; "to quote" service | Generic capacity model; product contracts and restrictions |
+| **H18/H19** | A simulated literal date in transfer and ‘concurrence’ | Correct date and version/cut; locks and matching **only** backend |
+| **H21/H24** | Tables dense mobile shopping; basic M2 editor loses guides per step | Tables→ mobile cards; keep rich editor separate |
+| **H25** | Returns count 10 of origin and credits 8 to destination, losing 2 without explicit adjustment | Keep difference by slope/traceable adjustment, do not delete balance automatically |
 
-## 8. Validación pendiente para no transformar preferencia en hecho
+## 8. Pending validation to avoid transforming preference into fact
 
-**Estado uniforme de las selecciones:** candidato **E/A/NV** hasta ejecutar E1 en navegador. Se eligió la mejor **referencia inicial** por función utilizando la auditoría y la inspección estática. No se afirma que sea visualmente la mejor versión definitiva en cada ancho/estado; las capturas sólo representan estados puntuales.
+**Uniform status of selections:** candidate **E/A/NV** until running E1 in browser. The best was chosen **initial reference** by function using the audit and static inspection. It is not claimed to be visually the best final version in each width/state; catches only represent point states.
 
-Antes de **consolidar la pantalla implementada**, comprobar en navegador (mínimo desktop 1440 y móvil 430; ampliar 320/390/768 y zoom 200%):
+Before **consolidate the implemented screen**, check in browser (minimum desktop 1440 and mobile 430; expand 320/390/768 and zoom 200%):
 
-- Z003/Z014: menú/Inicio sin dependencia de WALOS, perfil usable sin empresa y selector A/B diseñado.
-- Z001/Z004/Z002/Z042: formularios, teclado, confirmaciones de pausa, acceso por ubicación, acciones sin permisos.
-- Z069/Z050/Z072/Z073/Z070: búsqueda, fichas, campos opcionales, varias líneas, unidades fraccionarias, recuento y traslado.
-- Z074/Z075: carrito, descuento, 1..n pagos, venta servicio sin depósito, historial y ticket.
-- Z092/Z093/Z075: conteo, diferencias, cierre e informe sin pérdida de evidencia; retorno físico separado.
-- Estado de carga/vacío/error, foco/lectura, borradores conservados al cambiar pantalla, indicadores **DEMO** y no confirmación ficticia.
+- Z003/Z014: menu/start without WALOS dependency, enterprise-free user profile and designed A/B selector.
+- Z001/Z004/Z002/Z042: forms, keyboard, pause confirmations, location access, actions without permission.
+- Z069/Z050/Z072/Z073/Z070: search, tiles, optional fields, multiple lines, fractional units, counting and transfer.
+- Z074/Z075: cart, discount, 1..n payments, sale service without deposit, history and ticket.
+- Z092/Z093/Z075: count, differences, closure and report without loss of evidence; separate physical return.
+- Load/empty/error status, focus/reading, save drafts when changing screen, indicators **DEMO** and not fictitious confirmation.
 
-**Prueba que este documento NO declara:** funcionamiento de React, backend, seguridad, pagos reales, conmutación tenant o CI. Esas funciones todavía no existen como integración.
+**Proof that this document does NOT state:** React, backend, security, real payments, tenant or IC switching. These functions do not yet exist as integration.
 
-## 9. Acta E0-A y transferencia a E0-B
+## 9. Act E0-A and transfer to E0-B
 
-### Entregado
+### Delivered
 
-- [x] 19/19 rutas HTML identificadas y clasificadas; 17 contenidos distintos por SHA-256.
-- [x] Matriz de destinos con fuente principal/apoyo, diseño, funcionalidades a conservar, reglas y conflictos Hxx/Dxx.
-- [x] Priorización del primer circuito y dependencias, incluido servicio sin stock ni caja física.
-- [x] Separación explícita entre QR de ficha y QR de cobro; QR de cobro **DEMO** por venta, MP OAuth/Orders/webhooks posteriores.
-- [x] Registro de decisiones propuestas/pendientes, sin aprobación silenciosa.
-- [x] Riesgos conocidos y controles de aceptación heredados de auditoría/v4.
+- [x] 19/19 HTML paths identified and classified; 17 different contents by SHA-256.
+- [x] Target matrix with main source/support, design, features to be preserved, rules and conflicts Hxx/Dxx.
+- [x] Priority of the first circuit and dependencies, including service without stock or physical box.
+- [x] Explicit separation between QR of tab and QR of collection; QR of collection **DEMO** by sale, MP OAuth/Orders/posterior webhooks.
+- [x] Registration of proposed/pending decisions, without silent approval.
+- [x] Known risks and accepted controls inherited from audit/v4.
 
-### No realizado, deliberadamente
+### Not realized, deliberately
 
-- [ ] Pruebas interactivas en navegador y mediciones visuales definitivas.
-- [ ] Programación de frontend/backend y pruebas de integración.
-- [ ] ADRs aprobados, UML final o contratos OpenAPI.
-- [ ] Modificación del TP o de repositorios externos.
+- [ ] Interactive browser tests and definitive visual measurements.
+- [ ] Frontend/backend programming and integration testing.
+- [ ] Approved ADRs, final UML or OpenAPI contracts.
+- [ ] Modification of the TP or external repositories.
 
-### Insumo exacto para E0-B
+### Accurate input for E0-B
 
-Con esta matriz, preparar `docs/01_NAVEGACION_Y_ARQUITECTURA.md` con: router de una sola aplicación, menú/tarjetas desde una única definición de rutas, jerarquía persona→empresas→ubicaciones, separación estado `session`/`business`/`draft`, contratos internos del repositorio DEMO, operaciones de inventario y dinero, estructura React+TypeScript y ADRs mínimos **marcados por estado**. **No** fusionar HTML antiguos; reconstruir componentes con evidencia de esta matriz. Empezar implementación E1 sólo con las reglas provisionales explícitas y los casos P0 aprobados para ese incremento.
+With this matrix, prepare `docs/01_NAVEGACION_Y_ARQUITECTURA.md` with: single application router, menu/cards from a single route definition, person hierarchy→companies→locations, separation status `session`/`business`/`draft`, internal DEMO repository contracts, inventory and money operations, React+TypeScript structure and minimum ADRs **marked by status**. **No** merge old HTML; rebuild components with evidence from this matrix. Start implementation E1 only with the explicit provisional rules and P0 cases approved for that increase.
 
 ---
 
-**Responsable del artefacto:** asistencia de integración E0-A; **aprobación funcional final:** responsable del proyecto, aún pendiente.  
-**Fuentes conservadas sin alteración:** ZIP v3, ZIP auditoría y plan v4.  
-**Documentación relacionada:** auditoría `03_COMPARATIVA_UX.md`, `01_DIAGNOSTICO.md`, `02_INVENTARIO_Y_COBERTURA.md` y plan v4 `02_BACKLOG_VERTICAL_Y_PRUEBAS.md`.
+**Responsible for the device:** E0-A integration assistance; **Final functional approval:** project manager, still outstanding.  
+**Sources preserved without alteration:** ZIP v3, ZIP audit and plan v4.  
+**Related documentation:** audit `03_COMPARATIVA_UX.md`, `01_DIAGNOSTICO.md`, `02_INVENTARIO_Y_COBERTURA.md` y plan v4 `02_BACKLOG_VERTICAL_Y_PRUEBAS.md`.

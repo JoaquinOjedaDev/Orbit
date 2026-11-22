@@ -1,81 +1,81 @@
-# E3-2B · B6 — Mercado Pago oficial TEST: OAuth, QR Orders, conciliación y venta QA
+# E3-2B · B6 — Market Official payment TEST: OAuth, QR Orders, conciliation and sale QA
 
-**Rama de trabajo:** `feature/e3-2b-mercadopago-qr-demo`.  
-**Modo de operación:** exclusivamente **cuentas y credenciales de prueba**, en PostgreSQL **descartable**. **Desactivado por defecto. No preparado para producción.**  
-**Política:** mantener B1–B6 en esta rama; NO modificar `main` sin autorización expresa. La conexión a MP real no se valida sin autorización efectiva y Seller Test.
+**Workforce:** `feature/e3-2b-mercadopago-qr-demo`.  
+**Mode of operation:** only **test accounts and credentials**, en PostgreSQL **disposable**. **Deactivated by default. Not prepared for production.**  
+**Policy:** keep B1–B6 in this branch; DO NOT modify `main` without express authorization. The connection to real MP is not validated without effective authorisation and Seller Test.
 
-## Fuentes oficiales y decisiones (consultadas 12/11/2026)
+## Official sources and decisions (requested 12/11/2026)
 
-- [Integrar el procesamiento de pagos QR](https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing). Orders API POST `/v1/orders`; `config.qr.mode=dynamic`, `config.qr.external_pos_id` de caja previamente registrada, `X-Idempotency-Key`, `transactions.payments[0].amount` decimal exacto; obtener `type_response.qr_data` e imprimir QR.
-- [Migrar QR dinámicos a Orders](https://www.mercadopago.com.ar/developers/es/docs/qr-code/resources/migrate-dynamic-qr-model-to-orders). Preferir Orders API y tópico `order` en lugar de APIs legacy.
-- [OAuth authorization code + PKCE](https://www.mercadopago.com.ar/developers/es/docs/security/oauth/creation). Credenciales solo backend; `state` aleatorio; `code_verifier` de un solo uso; `code_challenge_method=S256`; `test_token=true`.
-- [Webhooks QR](https://www.mercadopago.com.ar/developers/es/docs/qr-code/notifications). Validar `x-signature` y `x-request-id` con HMAC SHA256; notificación NO es acreditación por sí misma: GET a Orders API con token de vendedor de su empresa.
-- [Crear sucursal y caja](https://www.mercadopago.com.ar/developers/es/docs/qr-code/create-store-and-pos). Se requiere configurar vendedor, sucursal y caja. `external_pos_id` es el `external_id` de caja: **no** es CBU/CVU ni token.
+- [Integrate QR payment processing](https://www.mercadopago.com.ar/developers/es/docs/qr-code/payment-processing). Orders API POST `/v1/orders`; `config.qr.mode=dynamic`, `config.qr.external_pos_id` pre-registered cash register, `X-Idempotency-Key`, `transactions.payments[0].amount` exact decimal place; obtain `type_response.qr_data` and print QR.
+- [Migrate Dynamic QR to Orders](https://www.mercadopago.com.ar/developers/es/docs/qr-code/resources/migrate-dynamic-qr-model-to-orders). Prefer Orders API and Topic `order` instead of APIs legacy.
+- [OAuth authorization code + PKCE](https://www.mercadopago.com.ar/developers/es/docs/security/oauth/creation). Credenciales solo backend; `state` random; `code_verifier` single use; `code_challenge_method=S256`; `test_token=true`.
+- [Webhooks QR](https://www.mercadopago.com.ar/developers/es/docs/qr-code/notifications)Validate `x-signature` y `x-request-id` with HMAC SHA256; notification is NOT self-accredited: GET to Orders API with vendor token from your company.
+- [Create branch and box](https://www.mercadopago.com.ar/developers/es/docs/qr-code/create-store-and-pos). It is required to configure seller, branch and box. `external_pos_id` es el `external_id` box: **no** es CBU/CVU ni token.
 
-## UX tomada de los HTML aportados
+## UX taken from the HTML provided
 
-- `WALOS_M3_Cargar_Venta_POS_vNext(2).html`: conservar revisión del carrito, snapshot por renglón, cantidades, subtotal, descuento, total y transición a QR con caducidad; NO adoptar su `PaymentMockEngine` como prueba de un pago real.
-- `WALOS_Modulo_Ventas_UX_v4_0(4).html`: separar historial, comprobante, registro de pago y cierre de venta; no confundir importes comerciales con saldos bancarios.
-- `cuentas_bancarias_asociadas(2).html`: conservar tarjetas de cuenta, roles y estados claros con diseño `md:grid-cols-2`, móvil una columna. No reutilizar URLs de imágenes QR genéricas, CBU/CVU ficticios, datos personales del ejemplo ni formularios de pegar tokens.
-- La app es multiempresa y multirrubro. WALOS es solo un cliente de ejemplo.
+- `WALOS_M3_Cargar_Venta_POS_vNext(2).html`: keep review of the cart, snapshots per line, quantities, subtotal, discount, total and transition to QR with expiration; DO NOT adopt your `PaymentMockEngine` as proof of a real payment.
+- `WALOS_Modulo_Ventas_UX_v4_0(4).html`: separate history, proof, payment record and closing of sale; do not confuse commercial amounts with bank balances.
+- `cuentas_bancarias_asociadas(2).html`: keep clear cards, roles and states with design `md:grid-cols-2`, mobile a column. Do not reuse generic QR image URLs, fictitious CBU/CVU, example personal data or token paste forms.
+- The app is multi-company and multi-rub. WALOS is just an example client.
 
-## Arquitectura B6
+## Architecture B6
 
-### 1. Bases de datos y cifrado
+### 1. Databases and encryption
 
-Migración `e32b_mp_official` después de `e32b_qr_sales`:
-- `mp_oauth_pending`: hash SHA256 de `state`, `code_verifier` cifrado, usuario y empresa vinculados, expiración de 10 min y uso único.
-- `mp_test_accounts`: 1 vendedor por empresa, vendedor MP identificado y único globalmente, token y refresh cifrados con Fernet, estado, vencimiento y caja externa.
-- `mp_test_orders`: 1 order por QR original, idempotencia empresa + request UUID4, importe exacto en centavos, referencia y ID de order únicos, respuesta `qr_data` de prueba, estado MP conciliado, enlace opcional único a `Sale`.
-- Relaciones mediante claves foráneas compuestas por `business_id` hacia QrPaymentIntent/Sale/Account. Nunca enviar tokens en JSON ni usar `localStorage` para credenciales.
+Migration `e32b_mp_official` after `e32b_qr_sales`:
+- `mp_oauth_pending`: hash SHA256 de `state`, `code_verifier` encryption, user and related company, 10 min expiration and single use.
+- `mp_test_accounts`: 1 seller per company, single and identified MP seller globally, token and refresh encrypted with Fernet, status, maturity and external box.
+- `mp_test_orders`: 1 order per original QR, idempotencia + requestUUID4, exact amount in single cents, reference and ID order, answer `qr_data` test, reconciled MP status, optional single link to `Sale`.
+- Relationships by foreign keys composed of `business_id` hacia QrPaymentIntent/Sale/Account. Nunca enviar tokens en JSON ni usar `localStorage` for credentials.
 
-### 2. Bloqueo intencional
+### 2. Intentional blocking
 
-B1–B5 conservan `MOCK_QA`; B6 introduce por separado `official-test`.
-- Una order oficial TEST solo puede emitirse desde un QR original `ESPERANDO_PAGO` sin caducar.
-- Cuando ya existe `mp_test_orders` para ese QR, el simulador B3 y cierre DEMO B4 quedan bloqueados (409); no se puede sumar otra venta por el mismo carrito.
-- Ordenes oficiales se crean con `X-Idempotency-Key` igual al `request_id` del QR congelado. Recuperación por `GET orders/for-qr/{source_intent_id}` tras F5. Respuestas inciertas requieren reenviar **la misma** orden y clave, no generar otra.
-- Los importes, catálogo y notas provienen del snapshot en servidor, nunca de un nuevo formulario del navegador.
-- La UI muestra QR ficticio en modo B2 y QR oficial TEST separado solo si MP devuelve `type_response.qr_data` válido; ningún QR genérico de URL externa.
+B1–B5 conserved `MOCK_QA`; B6 introduces separately `official-test`.
+- An official TEST order can only be issued from an original QR `ESPERANDO_PAGO` sin caducar.
+- When it already exists `mp_test_orders` For that QR, the simulator B3 and closure DEMO B4 are locked (409); you can not add another sale by the same cart.
+- Official orders are created with `X-Idempotency-Key` equal to `request_id` of the frozen QR. Recovery by `GET orders/for-qr/{source_intent_id}` after F5. Uncertain responses require forwarding **same** order and key, not generate another.
+- The amounts, catalogue and notes come from snapshots on server, never from a new browser form.
+- The IU displays fictional QR in mode B2 and official QR TEST separated only if MP returns `type_response.qr_data` valid; no generic external URL QR.
 
-### 3. Estados confiables
+### 3. Reliable States
 
-| Estado | Significado | Impacto inventario |
+| Status | Meaning | Impact inventory |
 |---|---|---|
-| `PREPARANDO` | Preparación persistida antes del POST remoto | Ninguno |
-| `INDETERMINADA` | Timeout/resultado remoto desconocido | Ninguno; conservar identidad |
-| `CREADA` | Order TEST creada y QR dinámico mostrado | Ninguno |
-| `PROCESADA` | GET al proveedor confirma `status=processed` + transacción procesada | Todavía ninguno |
-| `REQUIERE_REVISION` | Pago TEST procesado pero no se pudo crear venta por catálogo/stock | Ninguno parcial; revisión humana |
-| `CANCELADA`, `EXPIRADA`, `REEMBOLSADA` | Estados remotos conciliados | No vender; revisar restitución si ya hubo venta |
+| `PREPARANDO` | Preparation persisted before remote POST | None |
+| `INDETERMINADA` | Timeout/Distant Unknown result | None; preserving identity |
+| `CREADA` | Order TEST created and QR dynamic displayed | None |
+| `PROCESADA` | Get to supplier confirms `status=processed` + processed transaction | None yet |
+| `REQUIERE_REVISION` | TEST payment processed but could not create catalog/stock sale | None partial; human review |
+| `CANCELADA`, `EXPIRADA`, `REEMBOLSADA` | Reconciled remote States | Do not sell; review refund if already sold |
 
-El estado `PROCESADA` no es sinónimo de venta. La operación `settle-qa` reconsulta proveedor, exige `status_detail=accredited`, rol administrativo y registra venta, renglones, pago `MERCADO_PAGO_QR_TEST`, movimiento/stock y enlace `sale_id` con un solo `COMMIT`. Repetición retorna el mismo `sale_id` sin redescuento.
+The state `PROCESADA` is not synonymous with sale. `settle-qa` supplier consultation, requires `status_detail=accredited`, administrative role and records sale, lines, payment `MERCADO_PAGO_QR_TEST`, movement/stock and link `sale_id` with one `COMMIT`. Repeat returns the same `sale_id` No rescount.
 
-**Importante:** un pago test procesado con faltante de stock queda `REQUIERE_REVISION`, sin venta parcial; no se implementan reembolsos automáticos ni compensaciones de stock en B6. Un reembolso posterior a una venta requiere proceso humano de compensación, jamás borrado retroactivo.
+**Important:** a test payment processed with missing stock remains `REQUIERE_REVISION`, without partial sale; no automatic refund or stock compensation is implemented in B6. A post-sales reimbursement requires human process of compensation, never retroactively deleted.
 
 ### 4. Endpoints
 
-| Ruta bajo `/api/v1` | Acción |
+| Low path `/api/v1` | Action |
 |---|---|
-| `GET /businesses/{bid}/mercadopago/official-test/connection` | Cuenta OAuth sin secretos |
-| `POST /businesses/{bid}/mercadopago/official-test/oauth/start` | URL oficial de autorización PKCE (titular/admin) |
-| `GET /mercadopago/official-test/oauth/callback` | Code/state de un solo uso, guardar tokens cifrados |
-| `PUT /businesses/{bid}/mercadopago/official-test/pos` | Vincular caja external_pos_id MP |
-| `POST /businesses/{bid}/mercadopago/official-test/orders/from-qr/{qr_id}` | Crear orden dinámica TEST con clave idéntica al QR original |
-| `GET /businesses/{bid}/mercadopago/official-test/orders/for-qr/{qr_id}` | Recuperación tras F5 |
-| `GET /businesses/{bid}/mercadopago/official-test/orders/{order_id}` | Leer estado local |
-| `POST /businesses/{bid}/mercadopago/official-test/orders/{order_id}/reconcile` | GET a Mercado Pago y validación de merchant, QR, moneda e importe |
-| `POST /businesses/{bid}/mercadopago/official-test/orders/{order_id}/settle-qa` | Confirmar venta QA sin duplicados, desde estado procesado verificado |
-| `POST /mercadopago/official-test/orders/webhook` | Firma HMAC + reconciliación por GET (sin aceptación del body como prueba) |
+| `GET /businesses/{bid}/mercadopago/official-test/connection` | OAuth account without secrets |
+| `POST /businesses/{bid}/mercadopago/official-test/oauth/start` | Official PKCE authorisation URL (title/admin) |
+| `GET /mercadopago/official-test/oauth/callback` | Code/state of single use, save encrypted tokens |
+| `PUT /businesses/{bid}/mercadopago/official-test/pos` | Link external box_pos_id MP |
+| `POST /businesses/{bid}/mercadopago/official-test/orders/from-qr/{qr_id}` | Create dynamic TEST command with identical key to the original QR |
+| `GET /businesses/{bid}/mercadopago/official-test/orders/for-qr/{qr_id}` | Recovery after F5 |
+| `GET /businesses/{bid}/mercadopago/official-test/orders/{order_id}` | Read local state |
+| `POST /businesses/{bid}/mercadopago/official-test/orders/{order_id}/reconcile` | Get to Market Payment and validation of merchant, QR, currency and amount |
+| `POST /businesses/{bid}/mercadopago/official-test/orders/{order_id}/settle-qa` | Confirm QA sale without duplicates, from verified processed status |
+| `POST /mercadopago/official-test/orders/webhook` | HMAC + GET reconciliation signature (without body acceptance as evidence) |
 
-### 5. Configuración segura, NO ejecutar en la base habitual
+### 5. Secure configuration, DO NOT run on the usual base
 
-El servicio está apagado salvo **ambas** banderas:
+The service is off except **both** flags:
 ```text
 PYME_DISPOSABLE_QA=1
 PYME_MP_QR_TEST_ENABLED=1
 ```
-Antes de pruebas oficiales el operador debe configurar las siguientes variables como secretos del entorno QA (nunca versionarlas, pegarlas en ChatGPT ni enviarlas al frontend):
+Before official testing, the operator must configure the following variables as secrets of the QA environment (never cover them, paste them in ChatGPT or send them to the frontend):
 ```text
 PYME_MP_CLIENT_ID=<APP_ID del integrador TEST>
 PYME_MP_CLIENT_SECRET=<secreto de la aplicación, SOLO backend>
@@ -84,41 +84,41 @@ PYME_MP_FERNET_KEY=<clave Fernet generada y custodiada fuera del repositorio>
 PYME_MP_WEBHOOK_SECRET=<firma secreta configurada en Developers TEST>
 PYME_MP_FRONTEND_RETURN_URL=https://qa.example.net/real/empresas
 ```
-`PYME_MP_REDIRECT_URI` debe coincidir exactamente con el registro de la aplicación MP. Requiere HTTPS público para OAuth/webhooks (excepto la opción de retorno frontend loopback admitida en modo QA). No se configura `API_ROOT` por input: el host del proveedor es fijo. Crear la app y la caja requiere acción del titular de la cuenta de prueba, fuera de GitHub.
+`PYME_MP_REDIRECT_URI` must match exactly the MP application log. It requires public HTTPS for OAuth/webhooks (except frontend loopback return option supported in QA mode). It is not set `API_ROOT` by input: the provider host is fixed. Creating the app and box requires action from the trial account holder, outside GitHub.
 
-El secreto Fernet debe preservarse entre reinicios: su pérdida vuelve ilegibles los tokens, y su sustitución requiere migración/rotación controlada. No habilitar acceso a producción con estas rutas, ni mezclar fondos reales con DEMO.
+Fernet must be preserved between restarts: its loss makes tokens illegible, and its replacement requires migration/controlled rotation. Do not enable access to production with these routes, nor mix real funds with DEMO.
 
-### 6. Seguridad y UX móvil
+### 6. Security and mobile UX
 
-- Botones y controles con estados accesibles, `role=alert/status` y tamaños táctiles de al menos 44 px; tarjetas y comprobante legibles sin zoom.
-- No hay campos para pegar access tokens, ni Webhook Secret en HTML, ni redirección a host de OAuth elegido por el usuario.
-- OAuth siempre abierto en dominio `auth.mercadopago.com`; retorno fijo y sin reflejar `code`/`state`.
-- Bitácora de B3 se conserva; orders oficiales tienen referencia e identificadores de proveedor, pero no invocan el simulador B3.
-- La confirmación QA es explícita y requiere titular/administrador. Un vendedor puede consultar la orden que creó, pero no asentar fondos y stock sin rol administrativo.
-- No usar un QR como prueba de pago: solo consulta autenticada de Orders API y validación completa.
+- Buttons and controls with accessible status, `role=alert/status` and touch sizes of at least 44 px; readable cards and vouchers without zoom.
+- There are no fields to paste access tokens, Webhook Secret into HTML, or redirect to OAuth host chosen by the user.
+- OAuth always open in domain `auth.mercadopago.com`; fixed and unreflected return `code`/`state`.
+- B3 log is preserved; official orders have supplier reference and identifiers, but do not invoke the B3 simulator.
+- QA confirmation is explicit and requires a holder/manager. A seller may consult the order he created, but not settle funds and stock without administrative role.
+- Do not use a QR as proof of payment: only authenticated order API query and complete validation.
 
-### 7. QA automático y condiciones de aceptación
+### 7. Automatic QA and acceptance conditions
 
 Python/SQLAlchemy/PostgreSQL + Node/Vite + Playwright Chromium:
-- PKCE S256, state expira y solo se usa una vez; rechazo de OAuth `live_mode=true`.
-- Tokens cifrados, permiso administrativo y aislamiento por empresa.
-- HMAC correcto, replay, timestamp ±5 min, rechazo de datos ajenos.
-- Request y response de Orders: `mode=dynamic`, `external_pos_id`, importes decimal exacto ARS, usuario vendedor, referencias y suma de pagos.
-- Idempotencia ante doble click/respuesta incierta y recuperación por QR.
-- Validación de venta único y bloqueo mutuo B3/B4/B6; stock no se descuenta antes del cierre QA.
-- UI escritorio/móvil, rotulado no producción, OAuth externo sin secretos en cliente.
-- Regressión completa de módulos y Alembic `current/check`.
+- PKCE S256 state expires and is only used once; OAuth rejection `live_mode=true`.
+- Encrypted tokens, administrative permission and company isolation.
+- Correct HMAC, replay, timestamp ±5 min, rejection of other data.
+- Request y response de Orders: `mode=dynamic`, `external_pos_id`, exact decimal amounts ARS, seller user, references and sum of payments.
+- Idempotence before double click/uncertain response and recovery by QR.
+- Single sale validation and mutual locking B3/B4/B6; stock is not discounted before QA closure.
+- Desktop/mobile UI, non-production labeling, external OAuth without customer secrets.
+- Full module and Alembic regression `current/check`.
 
-**La suite HTTP simulada no certifica el funcionamiento de Mercado Pago real.** Una prueba oficial exitosa todavía requiere: Seller Test, app de Developers, sucursal/caja MP, URL de callback y Webhook HTTPS accesibles, una compra desde comprador TEST, evento firmado y GET remoto confirmado. Esto no se puede ejecutar sin esas credenciales y una cuenta de prueba aportadas por el usuario en el entorno QA.
+**The simulated HTTP suite does not certify the operation of Real Payment Market.** A successful official test still requires: Seller Test, Developers app, MP branch/box, accessible callback URL and HTTPS Webhook, a purchase from TEST buyer, signed event and remote GET confirmed. This cannot be executed without those credentials and a user-provided trial account in the QA environment.
 
-## 8. Momento de pruebas funcionales manuales
+## 8. Time of manual functional testing
 
-Después de CI verde de B1–B6 en **el mismo commit**, documentación y revisión de seguridad. Se entregará una matriz guiada para verificar:
-1. Registro/empresa/rol, DEMO y TEST diferenciados.
-2. Vinculación OAuth Seller Test, caja, y QR por venta detallada.
-3. Lectura móvil y F5/reintentos: no duplicar orden ni stock.
-4. Compra con usuario comprador TEST, webhook HMAC, reconciliación.
-5. Sale + inventario + comprobante e incidentes de stock; rechazo/refund.
-6. Aislamiento multiempresa; control de titulares y trabajadores.
+After green CI of B1–B6 in **el mismo commit**, documentation and security review. A guided matrix will be delivered to verify:
+1. Registration/company/rol, DEMO and TEST differentiated.
+2. Linking OAuth Seller Test, box, and QR for detailed sale.
+3. Mobile reading and F5/reintents: do not duplicate order or stock.
+4. Buy with buyer TEST user, webhook HMAC, reconciliation.
+5. Sales + inventory + proof and stock incidents; rejection/refund.
+6. Multi-company isolation; control of holders and workers.
 
-No realizar merge ni modificar la base local hasta aprobación expresa. Tras B6, las limitaciones de ambiente/test se dejan como pendientes concretos, no se finge aprobación de la pasarela externa.
+Do not make a merge or modify the local base until express approval. After B6, the environmental/test limitations are left as specific slopes, no external gateway approval is faked.

@@ -20,14 +20,14 @@ test('QR DEMO requiere sólo Mercado Pago declarado conciliado al centavo', () =
   assert.equal(normalizeQrSaleInput(sale).payments[0].amountCents, 123000)
   assert.throws(() => normalizeQrSaleInput({ ...sale, payments: [
     { method: 'EFECTIVO', amountCents: 123000 },
-  ] }), /único medio Mercado Pago/)
+  ] }), /Mercado Pago as the only/i)
   assert.throws(() => normalizeQrSaleInput({ ...sale, payments: [
     { method: 'MERCADO_PAGO_DECLARADO', amountCents: 123001 },
-  ] }), /sumar exactamente/)
+  ] }), /add up to exactly/i)
   assert.throws(() => normalizeQrSaleInput({ ...sale, payments: [
     { method: 'MERCADO_PAGO_DECLARADO', amountCents: 100000 },
     { method: 'EFECTIVO', amountCents: 23000 },
-  ] }), /único medio Mercado Pago/)
+  ] }), /Mercado Pago as the only/i)
 })
 
 test('intención pendiente se recupera sin venta y rechaza datos adulterados', () => {

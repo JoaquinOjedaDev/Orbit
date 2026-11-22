@@ -19,10 +19,10 @@ export const PHOTO_TYPES = ['image/jpeg','image/png','image/webp'] as const
 
 export function photoCollectionPath(owner: PhotoOwner): string {
   if (owner.kind === 'PROFILE') return '/me'
-  if (!UUID_PATTERN.test(owner.businessId)) throw new TypeError('Empresa no válida')
+  if (!UUID_PATTERN.test(owner.businessId)) throw new TypeError('Invalid company')
   const root = '/businesses/' + owner.businessId
   if (owner.kind === 'BUSINESS') return root
-  if (!UUID_PATTERN.test(owner.resourceId)) throw new TypeError('Recurso no válido')
+  if (!UUID_PATTERN.test(owner.resourceId)) throw new TypeError('Invalid appeal')
   return root + (owner.kind === 'CATALOG' ? '/catalog/' : '/suppliers/') + owner.resourceId
 }
 
@@ -44,7 +44,7 @@ function parsePhoto(value: unknown, kind: PhotoOwner['kind']): PhotoRecord {
 }
 
 export function createPhotoGateway(token: string, owner: PhotoOwner, fetchImpl: typeof fetch = fetch) {
-  if (!token) throw new TypeError('Se necesita una sesión REAL')
+  if (!token) throw new TypeError('A REAL Session Needed')
   const collection = photoCollectionPath(owner)
   async function raw(path: string, method = 'GET', file?: File, signal?: AbortSignal): Promise<Response> {
     const controller = new AbortController()
@@ -95,14 +95,14 @@ export function createPhotoGateway(token: string, owner: PhotoOwner, fetchImpl: 
     },
     async upload(file: File): Promise<PhotoRecord> {
       if (!PHOTO_TYPES.includes(file.type as typeof PHOTO_TYPES[number]))
-        throw new RangeError('Seleccioná una foto JPG, PNG o WebP.')
+        throw new RangeError('Select a JPG, PNG or WebP photo.')
       if (!file.size || file.size>MAX_UPLOAD_BYTES)
-        throw new RangeError('Cada foto debe pesar hasta 5 MB.')
+        throw new RangeError('Each photo must weigh up to 5 MB.')
       const response=await raw(collection,'POST',file)
       return parsePhoto(await response.json(),owner.kind)
     },
     async content(id: string, signal?: AbortSignal): Promise<Blob> {
-      if (!UUID_PATTERN.test(id)) throw new TypeError('ID de foto inválido')
+      if (!UUID_PATTERN.test(id)) throw new TypeError('Invalid photo ID')
       const response=await raw('/'+id+'/content','GET',undefined,signal)
       if (!(response.headers.get('content-type')??'').toLowerCase().startsWith('image/webp'))
         throw new ApiTransportError('invalid-response',false)
@@ -112,7 +112,7 @@ export function createPhotoGateway(token: string, owner: PhotoOwner, fetchImpl: 
       return blob
     },
     async remove(id: string): Promise<void> {
-      if (!UUID_PATTERN.test(id)) throw new TypeError('ID de foto inválido')
+      if (!UUID_PATTERN.test(id)) throw new TypeError('Invalid photo ID')
       const response=await raw('/'+id,'DELETE')
       if (response.status!==204) throw new ApiTransportError('invalid-response',true)
     },
@@ -121,17 +121,17 @@ export function createPhotoGateway(token: string, owner: PhotoOwner, fetchImpl: 
 
 export function photoErrorMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status===401) return 'La sesión venció. Volvé a ingresar.'
-    if (error.status===403) return 'Tu cuenta no tiene permiso para cambiar estas fotos.'
-    if (error.status===404) return 'La foto o el recurso no están disponibles en esta empresa.'
-    if (error.status===409) return 'No se pudo agregar otra foto: revisá el límite de imágenes o el estado de la empresa.'
-    if (error.status===413) return 'La foto supera el tamaño o la resolución permitidos.'
-    if (error.status===415 || error.status===422) return 'El archivo no es una imagen JPG, PNG o WebP válida.'
-    return 'La API no pudo completar la carga de imágenes.'
+    if (error.status===401) return 'The session expired. I re-entered.'
+    if (error.status===403) return 'Your account is not allowed to change these photos.'
+    if (error.status===404) return 'The photo or resource is not available in this company.'
+    if (error.status===409) return 'Could not add another photo: review the image limit or company status.'
+    if (error.status===413) return 'The photo exceeds the size or resolution allowed.'
+    if (error.status===415 || error.status===422) return 'The file is not a valid JPG, PNG or WebP image.'
+    return 'The API could not complete the image upload.'
   }
   if (error instanceof ApiTransportError) {
-    return error.outcomeUnknown ? 'Resultado incierto. Actualizá la galería para comprobar si la foto se guardó antes de reintentar.'
-      : 'No se pudo consultar la imagen. Verificá la conexión.'
+    return error.outcomeUnknown ? 'Uncertain result. Update the gallery to check if the photo was saved before retrying.'
+      : 'Could not see image. Check connection.'
   }
-  return error instanceof Error ? error.message : 'No se pudo completar la operación.'
+  return error instanceof Error ? error.message : 'Could not complete the operation.'
 }

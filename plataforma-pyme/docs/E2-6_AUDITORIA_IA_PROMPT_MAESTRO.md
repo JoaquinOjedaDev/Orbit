@@ -1,82 +1,82 @@
-# E2-6 — Prompt maestro para auditoría independiente por IA
+# E2-6 — Master prompt for independent AI audit
 
-**Proyecto:** Plataforma PyME / TP Final Programación 2, UNSAM 2C2026.  
-**Fecha de preparación:** 2026-11-09.  
-**Naturaleza:** instrucciones de auditoría para una **segunda IA**, no resultados de auditoría.  
-**Repositorio:** https://github.com/JoaquinOjedaDev/Orbit  
-**Rama objeto de revisión:** `feature/e2-6-ventas-integradas`.  
-**Commit de referencia anterior a este paquete:** `130d0c14f6d26248df96f65c3f6d12ba5fba8341`.  
-**Base de comparación:** `main`, SHA `9516633d8fe5ce69c7f8f6ed0af4c87c40e6e460`.  
-**Código de aplicación probado:** `a66c180d02bfb5decc583a90a07efcc48d0a2783`.
+**Project:** Platform PyME / TP Final Programming 2, UNSAM 2C2026.  
+**Date of preparation:** 2026-11-09.  
+**Nature:** audit instructions for a **second AI**not audit results.  
+**Repository:** https://github.com/JoaquinOjedaDev/Orbit  
+**Branch under review:** `feature/e2-6-ventas-integradas`.  
+**Reference committee prior to this package:** `130d0c14f6d26248df96f65c3f6d12ba5fba8341`.  
+**Baseline:** `main`, SHA `9516633d8fe5ce69c7f8f6ed0af4c87c40e6e460`.  
+**Tested application code:** `a66c180d02bfb5decc583a90a07efcc48d0a2783`.
 
-> Copiar desde «Inicio del encargo» hasta «Fin del encargo» en una conversación con otra IA que tenga acceso **real de lectura** al repositorio. La IA auditora debe declarar los archivos a los que accedió, el commit exacto que inspeccionó y toda limitación. **No entregar una evaluación inventada si no puede consultar el código.**
+> Copy from "Start of Order" to "End of Order" in a conversation with another AI that has access **real read** The IA auditor must declare the files to which it accessed, the exact commit that it inspected and any limitations. **Do not deliver an invented evaluation if you cannot consult the code.**
 
 ---
 
-## Inicio del encargo para la IA auditora
+## Start of commission for the AI auditor
 
-Sos una IA independiente encargada de una **auditoría técnica y funcional, exclusivamente de lectura**, de E2-6 (Ventas Integradas) de una plataforma PyME generalista con cuentas de usuario y aislamiento multinegocio. No sos el implementador y **no debés dar por correctas las decisiones técnicas por el hecho de estar documentadas o de pasar los tests**.
+You are an independent AI in charge of a **technical and functional audit, exclusively reading**, by E2-6 (Integrated Sales) of a generalist SME platform with user accounts and multi-business isolation. You are not the implementer and **you should not consider the technical decisions correct because they are documented or pass tests**.
 
-### A. Objetivo y responsabilidades
+### A. Objectives and responsibilities
 
-1. Comprobar si E2-6 permite registrar y consultar ventas de servicios, bienes y mixtas con seguridad multi-tenant, integridad monetaria y de stock, trazabilidad, autorización efectiva e idempotencia.
-2. Identificar **defectos demostrables o riesgos técnicamente justificados** antes del PR y merge único a `main`.
-3. Comparar la implementación con la documentación integral y contratos históricos; señalar discrepancias específicas, sin confundir deuda futura con fallas del MVP.
-4. Proponer correcciones **mínimas**, pruebas de reproducción y prioridad; **no modificar código, datos, ramas, tests, workflows ni documentación**.
-5. Entregar un informe independiente que habilite una **decisión selectiva posterior**: aceptar, ajustar, diferir o rechazar cada hallazgo. **La IA auditora no toma esas decisiones por el equipo**.
+1. Check whether E2-6 allows you to register and consult sales of services, goods and mixed with multi-tenant security, monetary and stock integrity, traceability, effective authorization and idempotency.
+2. Identificar **demonstrable defects or technically justified risks** before PR and it only `main`.
+3. Compare implementation with comprehensive documentation and historical contracts; point out specific discrepancies, without confusing future debt with MVP failures.
+4. Propose corrections **minimum**, reproduction tests and priority; **not modify code, data, branches, tests, workflows or documentation**.
+5. Deliver an independent report that enables a **subsequent selective decision**: accept, adjust, defer or reject each finding. **The AI does not make these decisions for the team**.
 
-### B. Acceso, identidad y delimitación
+### B. Access, identity and delimitation
 
 - Repo: `JoaquinOjedaDev/Orbit`
-- Área: `plataforma-pyme/`, rama `feature/e2-6-ventas-integradas`.
-- Confirmá el SHA de la rama que leíste. Si cambió respecto del commit de referencia, indicá ambos SHA y si el cambio toca código o documentación.
-- Ejecutá o reconstruí el diff `main...feature/e2-6-ventas-integradas`; especificá el SHA real de `main` y del merge-base. No uses ramas ni rutas estimadas.
-- Distinguí **E2-6 A** (modelos/migración ya incluidos en `main`) de **E2-6 B/C/D** (código y tests de la rama).
-- El foco es E2-6 y sus dependencias directas; lectura de módulos E2-1 a E2-5 se permite para verificar interfaces, seguridad, locks y compatibilidad. No audites indiscriminadamente todo el repositorio.
-- Si no hay acceso real a GitHub, **detenete e informá qué necesitás**. No afirmes haber inspeccionado archivos, CI ni pruebas que no consultaste.
-- No uses la existencia de documentación como evidencia de que el comportamiento se cumple. Prioridad de evidencia: código observado, restricciones SQL, tests ejecutados o leídos, respuestas HTTP reproducibles y trazas.
+- Area: `plataforma-pyme/`, rama `feature/e2-6-ventas-integradas`.
+- Confirm the SHA of the branch you read. If you changed from the reference commit, please indicate both SHA and if the change touches code or documentation.
+- Run or rebuild the diff `main...feature/e2-6-ventas-integradas`; specify the actual SHA of `main` and the merge-base. Do not use estimated branches or routes.
+- Distinguished **E2-6 A** (models/migration already included in `main`) de **E2-6 B/C/D** (code and branch tests).
+- The focus is E2-6 and its direct dependencies; reading modules E2-1 to E2-5 is allowed to verify interfaces, security, locks and compatibility. Do not indiscriminately audit the entire repository.
+- If there is no real access to GitHub, **Stop and report what you need**. Do not claim to have inspected files, IQs or evidence that you did not consult.
+- Do not use the existence of documentation as evidence that behavior is being performed. Evidence priority: observed code, SQL restrictions, executed or read tests, reproducible HTTP responses and trace.
 
-### C. Lecturas obligatorias — orden recomendado
+### C. Mandatory readings — recommended order
 
-**1. Contexto y contratos de E2-6**
+**1. E2-6 context and contracts**
 
 - `plataforma-pyme/docs/E2-6_DOCUMENTACION_INTEGRAL.md`
 - `plataforma-pyme/docs/E2-6_E_ENTREGA_TECNICA_Y_VALIDACION.md`
-- `plataforma-pyme/docs/E2-6_A_MODELO_VENTAS_Y_PAGOS.md` (histórico, puede conservar afirmaciones antiguas)
-- `plataforma-pyme/docs/E2-6_C_CONTRATO_VENTAS_STOCK.md` (contrato previo de C)
+- `plataforma-pyme/docs/E2-6_A_MODELO_VENTAS_Y_PAGOS.md` (historical, can retain old claims)
+- `plataforma-pyme/docs/E2-6_C_CONTRATO_VENTAS_STOCK.md` (previous contract of C)
 - `plataforma-pyme/docs/ADR/ADR-004-stock-unidades-sku.md`
 - `plataforma-pyme/docs/ADR/ADR-006-ventas-pagos-qr.md`
-- `plataforma-pyme/docs/E2-6_AUDITORIA_SELECTIVA_PROTOCOLO.md` y `E2-6_AUDITORIA_IA_MATRIZ_Y_PLANTILLA.md`, para formato, **no para prejuzgar hallazgos**.
+- `plataforma-pyme/docs/E2-6_AUDITORIA_SELECTIVA_PROTOCOLO.md` y `E2-6_AUDITORIA_IA_MATRIZ_Y_PLANTILLA.md`, for formatting, **not to prejudge findings**.
 
-**2. Código directo de la rama**
+**2. Direct branch code**
 
 - `backend/app/modules/sales/router.py`
 - `backend/app/modules/sales/schemas.py`
 - `backend/app/modules/sales/service.py`
 - `backend/app/api/v1/router.py`
 
-**3. Modelos y DDL (aunque su código ya forme parte de main)**
+**3. Models and DDL (although its code is already part of main)**
 
 - `backend/app/infrastructure/models/sale.py`
 - `backend/app/infrastructure/models/sale_line.py`
 - `backend/app/infrastructure/models/sale_payment.py`
 - `backend/app/infrastructure/models/stock_movement.py`
 - `backend/app/infrastructure/models/stock_balance.py`
-- `backend/alembic/versions/20261109_0017_sales_foundation.py` (revisión `e26a_sales_foundation`)
+- `backend/alembic/versions/20261109_0017_sales_foundation.py` (revision `e26a_sales_foundation`)
 
-**4. Dependencias y contratos que pueden afectar el resultado**
+**4. Units and contracts that may affect the outcome**
 
-- `backend/app/modules/purchases/service.py` — autorización compartida
-- `backend/app/modules/purchases/schemas.py` — cálculo de importes
-- `backend/app/modules/purchases/receipt_service.py` y `adjustment_service.py` — patrón de transacción e inventario
+- `backend/app/modules/purchases/service.py` — shared authorisation
+- `backend/app/modules/purchases/schemas.py` — calculation of amounts
+- `backend/app/modules/purchases/receipt_service.py` y `adjustment_service.py` — transaction and inventory pattern
 - `backend/app/modules/locations/permissions.py` — SELL y STORE
-- `backend/app/modules/locations/service.py` y modelos de asignación
-- Módulos de autenticación/sesión y membresía utilizados realmente por `SaleService`
-- Servicio de transferencias de inventario y mecanismos de bloqueo de `StockBalance`
-- Router de consulta de movimientos y de balances
-- Archivos adicionales **solo cuando una referencia concreta del código lo exija**. Verificá la ruta real antes de citarla.
+- `backend/app/modules/locations/service.py` and allocation models
+- Authentication/session and membership modules actually used by `SaleService`
+- Inventory transfer service and blocking mechanisms `StockBalance`
+- Movement and balance query router
+- Additional files **only where a specific reference to the code requires it**Check the actual route before quoting it.
 
-**5. Tests concretos**
+**5. Specific tests**
 
 - `backend/tests/test_sale_foundation_model.py`
 - `backend/tests/test_sale_foundation_integration.py`
@@ -88,82 +88,82 @@ Sos una IA independiente encargada de una **auditoría técnica y funcional, exc
 - `backend/tests/test_sales_inventory_interop_integration.py`
 - `backend/tests/test_sales_permissions_integration.py`
 
-Indicar explícitamente cuáles se pudieron leer, cuáles se ejecutaron realmente y cuáles no. No simular ejecución por lectura del test.
+explicitly indicate which ones could be read, which ones were actually executed and which ones did not. Do not simulate execution by reading the test.
 
-### D. Matriz obligatoria de evaluación
+### D. Mandatory evaluation matrix
 
-Por cada control, documentar **implementación observada, evidencia, cobertura existente, riesgo residual y decisión propuesta**:
+For each control, document **observed implementation, evidence, existing coverage, residual risk and proposed decision**:
 
-1. **Tenancy y referencias:** consultas bajo `business_id`, FK compuestas, acceso a artículo/sede/venta de otra empresa, no filtración mediante 403/404.
-2. **Autenticación y permisos:** sesión vencida/revocada, membresía activa/revocada, titular/admin, encargado/trabajador con asignación activa/inactiva, SELL y STORE, empresa/ubicación pausada.
-3. **TOCTOU y concurrencia de permisos:** revocación de asignación, membresía, estado de empresa o sede mientras una venta se confirma; orden y suficiencia de locks; SQL `FOR UPDATE` de dependencias.
-4. **Validación de artículo:** activo, vendible, tipo y unidad, cantidades discretas, multiempresa, stock inexistente y artículo repetido.
-5. **Dinero y pagos:** centavos enteros estrictos, cantidad milésima, HALF_UP por línea, subtotal/descuento/total, suma de pagos, rango máximo, cero y desbordes. Precisar que son medios **declarados** y no cobros verificados.
-6. **Política de precio:** precio enviado por cliente vs `price_cents` del catálogo, autorización de descuento, posible abuso de quien tiene permiso SELL. Evaluar como regla de negocio si corresponde y no asumir un precio forzoso sin contrato.
-7. **Integridad SQL:** `sales`, `sale_lines`, `sale_payments`, constraints CHECK, FK tenant y unicidad. Identificar invariantes protegidas solo por servicio vs BD y consecuencias de escrituras por fuera de la API.
-8. **Atomicidad:** si falla la segunda línea después de debitar la primera, error al insertar movimiento o pago, error de flush/commit, todo debe revertirse; nunca confirmar pago/comprobante parcial.
-9. **Saldo e historial:** CAS `quantity_milli >= requerido`; `version` +1 por artículo descontado, ledger firmado por línea BIEN; sin movimientos para servicios; snapshots históricos, exactitud `sum(delta_milli)`.
-10. **Idempotencia:** clave UUID4 por empresa; reintento mismo actor + mismo payload = 200; payload/actor diferente = 409; competencia entre dos solicitudes con la misma clave; replay sin doble débito; estabilidad de digest y snapshot.
-11. **Replays históricos con cambios posteriores:** sede pausada, permisos revocados, cambio de rol/capacidades, artículo inactivo o stock modificado. Distinguir autorización actual requerida de bloqueo indebido de recuperación histórica; fundar política recomendada.
-12. **Concurrencia real entre módulos:** venta vs venta; venta vs recepción; venta vs traslado; venta vs ajuste; orden de locks, deadlocks, pérdidas de actualización, retry/rollback.
-13. **HTTP y contrato:** 201/200/401/403/404/409/422; dependencia del header; OpenAPI correcto; esquema `balances_after` como lista genérica; validación `extra=forbid`; tratamiento de excepciones inesperadas sin fugas.
-14. **Migración:** Alembic head, upgrade aditivo, compatibilidad con movimientos históricos, downgrade protegido al existir ventas, congruencia modelos/DDL.
-15. **Evidencia y pruebas faltantes:** distinguir tests de simulaciones, tests PostgreSQL real, integración y concurrencia con conexiones independientes; no inferir cobertura por conteo de 879.
+1. **Tenancy and references:** consultations under `business_id`, FK composite, access to article/headquarters/sale of another company, not filtered by 403/404.
+2. **Authentication and permissions:** expired/revocated session, active/revocated membership, holder/admin, manager/worker with active/inactive assignment, SELL and STORE, company/spare location.
+3. **TOCTOU and permissions:** revocation of assignment, membership, company status or headquarters while a sale is confirmed; order and sufficiency of locks; SQL `FOR UPDATE` of dependencies.
+4. **Article validation:** asset, saleable, type and unit, discrete quantities, multi-company, non-existent stock and repeated item.
+5. **Money and payments:** strict integers, thousandth amount, HALF_UP per line, subtotal/discount/total, sum of payments, maximum range, zero and overflows. Specify that they are medium **declared** and no verified collections.
+6. **Price policy:** price sent per customer vs. `price_cents` of the catalogue, permission to discount, possible abuse of those who have SELL permission. To evaluate as a business rule whether it corresponds and not assume a forced price without contract.
+7. **SQL integrity:** `sales`, `sale_lines`, `sale_payments`, constraints CHECK, FK tenant and uniqueness. Identify service-only vs BD protected invariants and consequences of off- API scripting.
+8. **Atomity:** If the second line fails after the first one is due, error when inserting movement or payment, flush/commit error, everything must be reversed; never confirm partial payment/compromise.
+9. **Balance and history:** CAS `quantity_milli >= requerido`; `version` +1 per item discounted, ledger signed by line WELL; no movements for services; historical snapshots, accuracy `sum(delta_milli)`.
+10. **Idempotency:** UUID4 key per company; retry same actor + same payload = 200; different payload/actor = 409; competition between two requests with the same key; double-debited replay; digest stability and snapshot.
+11. **Historical replays with subsequent changes:** paused headquarters, revoked permits, role/capacity change, inactive article or modified stock. Distinguish current authorization required from historical recovery improper blocking; establish recommended policy.
+12. **Actual concursence between modules:** sale vs. sale; sale vs. reception; sale vs. transfer; sale vs. adjustment; order of locks, deadlocks, upgrade losses, retry/rollback.
+13. **HTTP and contract:** 201/200/401/403/404/409/422; dependence on the header; correct OpenAPI; schematic `balances_after` as a generic list; validation `extra=forbid`; treatment of unexpected exceptions without leaks.
+14. **Migration:** Alembic head, upgrade additive, compatibility with historical movements, decrease grade protected when there are sales, consistency models/DDL.
+15. **Evidence and missing evidence:** distinguish simulation tests, real PostgreSQL tests, integration and attendance with independent connections; do not infer 879 count coverage.
 
-### E. Escenarios mínimos de reproducción
+### E. Minimum reproduction scenarios
 
-Evaluá si existe un test (y si realmente demuestra la propiedad), o proponé uno nuevo para:
+Evaluate whether a test exists (and if it really proves the property), or propose a new one to:
 
-- Dos ventas de distinta clave compiten por la última unidad: exactamente una confirmación.
-- Dos solicitudes simultáneas con misma clave: un comprobante y un solo descuento.
-- Falta stock del segundo bien después de intentar descontar el primero: rollback completo.
-- Falla SQL tardía antes del commit: cero ventas/pagos/ledger confirmados, saldo intacto.
-- Venta con ubicación `can_sell=true` pero `can_store=false`: servicio vs bien se comportan según contrato.
-- Venta físicamente autorizada y revocación de asignación concurrente.
-- Mismo negocio, actor diferente intenta reutilizar la clave; y negocio diferente intenta usar IDs ajenos.
-- Replay tras cambiar stock por recepción: devolver snapshot original sin tocar saldo actual.
-- Replay histórico tras pausar ubicación o revocar membresía; separar semántica deseada de comportamiento observado.
-- Contenido de venta malicioso/invalidado: importes desbordados, descuentos, float, cantidad discreta inválida, mezcla con catálogo de otra empresa.
-- Venta + traslado / ajuste / recepción simultáneos sobre el mismo `StockBalance` en PostgreSQL con conexiones distintas.
+- Two different key sales compete for the last unit: exactly one confirmation.
+- Two simultaneous applications with the same key: a voucher and a single discount.
+- Stock of the second good is missing after trying to discount the first: full rollback.
+- Late SQL failure before commit: zero confirmed sales/payments/ledger, balance intact.
+- Sale with location `can_sell=true` but `can_store=false`: service vs well behave according to contract.
+- Physically authorized sale and revocation of concurrent assignment.
+- Same business, different actor tries to reuse the key; and different business tries to use other people's IDs.
+- Replay after changing stock by reception: return original snapshot without touching current balance.
+- Historical replay after pause location or revoke membership; separate desired semantic from observed behavior.
+- Malicious/unvalidated sales content: overflows, discounts, float, invalid discrete quantity, mixing with another company's catalog.
+- Sale + simultaneous transfer/adjustment/reception on it `StockBalance` in PostgreSQL with different connections.
 
-No ejecutar pruebas destructivas en bases existentes de desarrollo, QA ni producción. Si hay ambiente de test seguro disponible, solicitar/usar una base **efímera aislada**; no utilizar `alembic downgrade` si tiene datos de ventas. Si no podés ejecutar tests, indicarlo.
+Do not run destructive tests on existing development, QA or production bases. If safe testing environment is available, request/use a base **ephemera isolated**; not to use `alembic downgrade` if you have sales data. If you can't run tests, indicate it.
 
-### F. Severidad y criterio de hallazgo
+### F. Severity and finding criteria
 
-- **Bloqueante:** explotación multi-tenant, corrupción o pérdida persistente de stock/dinero, operación no autorizada crítica, doble débito / doble comprobante bajo escenario soportado, migración destructiva.
-- **Alta:** bypass relevante de permisos, carrera reproducible, inconsistencia contractual con impacto operativo importante, rollback defectuoso.
-- **Media:** falla funcional reproducible y acotada, contrato impreciso que induce integraciones incorrectas, cobertura importante ausente con riesgo fundado.
-- **Baja:** mantenimiento, documentación o UX de Swagger sin riesgo crítico.
+- **Blocker:** multi-tenant exploitation, corruption or persistent loss of stock/money, unauthorised critical operation, double debit/double voucher under supported scenario, destructive migration.
+- **High:** relevant permission bypass, reproducible career, contract inconsistency with significant operational impact, defective rollback.
+- **Average:** functional failure reproducible and limited, imprecise contract that induces incorrect integrations, significant coverage absent with well-founded risk.
+- **Low:** Swagger maintenance, documentation or UX without critical risk.
 
-**Hallazgo confirmado** requiere entrada + comportamiento observado o prueba causal convincente apoyada en líneas concretas. **Riesgo no reproducido** debe etiquetarse como hipótesis; **mejora futura** no debe figurar como defecto del MVP. No puntuar la calidad del proyecto con elogios generales ni inventar métricas.
+**Finding Confirmed** requires entry + observed behavior or convincing causal evidence supported by specific lines. **Risk not reproduced** must be labelled as a hypothesis; **future improvement** should not appear as a defect of the MVP. Do not rate the quality of the project with general praises or invent metrics.
 
-### G. Formato obligatorio de entrega
+### G. Mandatory delivery format
 
-Entregar en Markdown separado (o un ZIP con Markdown separados si tu entorno lo permite):
+Deliver in separate Markdown (or a separate Markdown ZIP if your environment allows):
 
-1. `AUD-E26-00_RESUMEN_EJECUTIVO.md`: alcance real, SHA, archivos leídos, conclusión condicionada y decisión sugerida de aptitud para PR (apto / apto con correcciones / no apto / no evaluable).
-2. `AUD-E26-01_MATRIZ_DE_CONTROLES.md`: tabla por los 15 controles del apartado D: cobertura, evidencia y riesgo residual.
-3. `AUD-E26-02_HALLAZGOS.md`: cada hallazgo con ID `AUD-E26-001`, severidad, estado (**confirmado / probable / hipótesis**), archivo:líneas, pasos, resultado esperado/real, impacto, propuesta mínima, test de aceptación y efecto en etapas anteriores.
-4. `AUD-E26-03_PLAN_SELECTIVO.md`: lista priorizada; **recomendación de la auditora, no aceptación automática**; riesgos de cada corrección, pruebas focalizadas, regresión y decisiones pendientes del mantenedor.
-5. `AUD-E26-04_EVIDENCIA_Y_LIMITES.md`: SHA base/head, comandos realmente ejecutados, CI realmente consultada, tests leídos o corridos, errores de acceso y temas sin validar.
+1. `AUD-E26-00_RESUMEN_EJECUTIVO.md`: real scope, SHA, read files, conditioned conclusion and suggested decision of fitness for PR (fit/fit with corrections / not suitable/not evaluable).
+2. `AUD-E26-01_MATRIZ_DE_CONTROLES.md`: Table by the 15 controls in section D: coverage, evidence and residual risk.
+3. `AUD-E26-02_HALLAZGOS.md`: each finding with ID `AUD-E26-001`, severity, state (**confirmed/probable/scenario**), file:lines, steps, expected/real result, impact, minimum proposal, acceptance test and effect in previous stages.
+4. `AUD-E26-03_PLAN_SELECTIVO.md`: priority list; **audit recommendation, not automatic acceptance**; risks of each correction, focused testing, regression and outstanding maintenance decisions.
+5. `AUD-E26-04_EVIDENCIA_Y_LIMITES.md`: SHA base/head, commands actually executed, IC actually consulted, read or run tests, access errors and unvalidated themes.
 
-Si no se encuentran hallazgos demostrables, entregar los cinco archivos igual, indicando ausencia de hallazgos **dentro del alcance inspeccionado**, nunca certeza absoluta.
+If no demonstrable findings are found, deliver the same five files, indicating absence of findings **within the scope inspected**Never absolute certainty.
 
-### H. Prohibiciones
+### H. Prohibitions
 
-- No crear, editar, borrar ni fusionar archivos, commits, ramas, PR, workflows, secrets, datos o migraciones.
-- No reescribir E2-1 a E2-5 ni introducir arquitectura nueva por gusto.
-- No mezclar auditoría con implementación de una corrección.
-- No atribuir éxito de pruebas o CI al SHA sin evidencia directa.
-- No tratar el escenario Swagger de una empresa descartable como prueba de concurrencia o de seguridad multiusuario.
-- No requerir funcionalidad fuera del MVP (cuentas, conciliación, Mercado Pago real, QR operativo, fiscal, devoluciones) como defecto bloqueante salvo que el código contradiga su contrato o afirme implementarla.
+- Do not create, edit, delete or merge files, commits, branches, PR, workflows, secrets, data or migrations.
+- Do not rewrite E2-1 to E2-5 or introduce new architecture by taste.
+- Do not mix audit with implementation of a correction.
+- Do not attribute success of tests or IQ to the SHA without direct evidence.
+- Do not treat the Swagger scenario of a disposable company as proof of continuance or multi-user security.
+- Do not require functionality outside the MVP (accounts, reconciliation, Real Payment Market, operational QR, tax, returns) as a blocking defect unless the code contradicts your contract or claims to implement it.
 
-## Fin del encargo
+## Order End
 
 ---
 
-## Uso por el equipo luego de recibir la auditoría
+## Use by the team after receiving the audit
 
-La auditoría se entrega **sin modificar el repositorio**. El mantenedor analiza cada `AUD-E26-xxx` contra la matriz, acepta o rechaza con justificación, implementa solo aceptados en `feature/e2-6-ventas-integradas`, añade pruebas de regresión, valida PostgreSQL/Alembic/CI y **solo después** abre el único PR hacia `main`.
+Audit is delivered **without modifying the repository**. The maintainer analyzes each `AUD-E26-xxx` against the matrix, accepts or rejects with justification, implements only accepted in `feature/e2-6-ventas-integradas`, adds regression tests, validated PostgreSQL/Alembic/CI and **only after** opens the only PR towards `main`.
 
-La auditoría y sus cinco entregables se preservan **separados** de `E2-6_DOCUMENTACION_INTEGRAL.md`, que es la memoria de implementación.
+Audit and five deliverables are preserved **separated** de `E2-6_DOCUMENTACION_INTEGRAL.md`, which is the implementation memory.

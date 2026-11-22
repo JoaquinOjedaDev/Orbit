@@ -7,11 +7,11 @@ import { salePaymentLabels } from './salePolicy.ts'
 import type { SalePaymentMethod } from './salePolicy.ts'
 
 export const expenseCategories = {
-  ALQUILER: 'Alquiler y servicios',
-  INSUMOS: 'Insumos / materiales (gasto operativo)',
-  TRANSPORTE: 'Transporte y logística',
+  ALQUILER: 'Rental and services',
+  INSUMOS: 'Inputs/materials (operational expenditure)',
+  TRANSPORTE: 'Transport and logistics',
   PERSONAL: 'Personal',
-  IMPUESTOS: 'Impuestos y tasas',
+  IMPUESTOS: 'Taxes and fees',
   MANTENIMIENTO: 'Mantenimiento',
   OTROS: 'Otros',
 } as const
@@ -19,7 +19,7 @@ export type ExpenseCategory = keyof typeof expenseCategories
 export type ExpensePaymentMethod = SalePaymentMethod | 'OTRO_DECLARADO'
 export const expensePaymentLabels: Record<ExpensePaymentMethod, string> = {
   ...salePaymentLabels,
-  OTRO_DECLARADO: 'Otro medio declarado',
+  OTRO_DECLARADO: 'Other means declared',
 }
 export type ExpenseInput = {
   paidOn: string
@@ -72,17 +72,17 @@ export const MAX_CASH_CENTS = 99_999_999_999
 export function cashCents(value: unknown, label: string, permitZero = false): number {
   if (!Number.isSafeInteger(value) || (value as number) < (permitZero ? 0 : 1) ||
       (value as number) > MAX_CASH_CENTS) {
-    throw new Error(label + ': ingresá un importe válido en ARS.')
+    throw new Error(label + ': enter a valid amount in ARS.')
   }
   return value as number
 }
 
 export function cashText(value: unknown, label: string, max: number, required = false): string {
-  if (typeof value !== 'string') throw new Error(label + ': formato inválido.')
+  if (typeof value !== 'string') throw new Error(label + ': Invalid format.')
   const clean = value.trim().replace(/[\t ]+/g, ' ')
   if ((required && clean.length < 2) || clean.length > max ||
       [...clean].some((char) => { const n = char.charCodeAt(0); return n <= 8 || n === 11 || n === 12 || (n >= 14 && n <= 31) || n === 127 })) {
-    throw new Error(label + ': longitud o caracteres inválidos.')
+    throw new Error(label + ': length or invalid characters.')
   }
   return clean
 }
@@ -93,31 +93,31 @@ export function validCalendarDate(value: string): boolean {
     Number(value.slice(0, 4)) >= 2000 && Number(value.slice(0, 4)) <= 2100
 }
 export function normalizeExpense(input: ExpenseInput): ExpenseInput {
-  if (!input || !validCalendarDate(input.paidOn)) throw new Error('Elegí una fecha válida.')
+  if (!input || !validCalendarDate(input.paidOn)) throw new Error('I chose a valid date.')
   if (input.locationId !== null && (typeof input.locationId !== 'string' ||
       !/^demo-location-[a-f0-9-]{36}$/.test(input.locationId))) {
-    throw new Error('Ubicación de gasto inválida.')
+    throw new Error('Invalid spending location.')
   }
-  if (!Object.hasOwn(expenseCategories, input.category)) throw new Error('Seleccioná una categoría válida.')
-  if (!Object.hasOwn(expensePaymentLabels, input.paymentMethod)) throw new Error('Medio de pago inválido.')
+  if (!Object.hasOwn(expenseCategories, input.category)) throw new Error('Select a valid category.')
+  if (!Object.hasOwn(expensePaymentLabels, input.paymentMethod)) throw new Error('Invalid payment means.')
   const financialAccountId = input.financialAccountId ?? null
   if (financialAccountId !== null && (typeof financialAccountId !== 'string' ||
       !/^demo-financial-account-[a-f0-9-]{36}$/.test(financialAccountId))) {
-    throw new Error('La cuenta de origen debe ser una ficha DEMO válida.')
+    throw new Error('The source account must be a valid DEMO card.')
   }
   return {
     paidOn: input.paidOn, locationId: input.locationId,
     category: input.category, paymentMethod: input.paymentMethod, financialAccountId,
-    description: cashText(input.description, 'Concepto del gasto', 140, true),
+    description: cashText(input.description, 'Expense description', 140, true),
     notes: cashText(input.notes, 'Observaciones', 500),
-    amountCents: cashCents(input.amountCents, 'Importe del gasto'),
+    amountCents: cashCents(input.amountCents, 'Amount of expenditure'),
   }
 }
 export function normalizeClose(input: CashCloseInput): CashCloseInput {
-  if (!input) throw new Error('Ingresá el arqueo contado.')
+  if (!input) throw new Error('Enter the archaeology counted.')
   return {
-    countedCashCents: cashCents(input.countedCashCents, 'Efectivo contado', true),
-    notes: cashText(input.notes, 'Observaciones del cierre', 500),
+    countedCashCents: cashCents(input.countedCashCents, 'Cash counted', true),
+    notes: cashText(input.notes, 'Closing remarks', 500),
   }
 }
 
@@ -146,7 +146,7 @@ export function cashSessionTotals(session: DemoCashSession, sales: CashSale[], e
   const expected = BigInt(session.openingCashCents) + cashSales - cashExpenses
   if (expected > BigInt(MAX_CASH_CENTS) || cashSales > BigInt(MAX_CASH_CENTS) ||
       cashExpenses > BigInt(MAX_CASH_CENTS) || expected < 0n) {
-    throw new Error('El saldo esperado de efectivo está fuera de rango o es negativo. Revisá gastos y movimientos.')
+    throw new Error('The expected cash balance is out of range or negative. Check out expenses and movements.')
   }
   return {
     cashSalesCents: Number(cashSales), cashExpensesCents: Number(cashExpenses),
@@ -158,14 +158,14 @@ export function makeCloseSnapshot(
   session: DemoCashSession, sales: CashSale[], expenses: CashExpense[],
   input: CashCloseInput, now: string,
 ): CashCloseSnapshot {
-  if (session.status !== 'ABIERTA' || session.closeSnapshot) throw new Error('La jornada ya está cerrada.')
+  if (session.status !== 'ABIERTA' || session.closeSnapshot) throw new Error('The day is already closed.')
   const { countedCashCents, notes } = normalizeClose(input)
   const totals = cashSessionTotals(session, sales, expenses)
   const difference = countedCashCents - totals.expectedCashCents
   if (difference !== 0 && notes.length < 2) {
-    throw new Error('Explicá la diferencia entre el efectivo esperado y el contado.')
+    throw new Error('Explain the difference between expected and counted cash.')
   }
-  if (!Number.isFinite(Date.parse(now))) throw new Error('Fecha de cierre inválida.')
+  if (!Number.isFinite(Date.parse(now))) throw new Error('Invalid closing date.')
   return {
     ...totals, openingCashCents: session.openingCashCents,
     countedCashCents, differenceCents: difference,

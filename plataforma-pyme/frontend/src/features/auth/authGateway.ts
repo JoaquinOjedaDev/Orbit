@@ -84,16 +84,16 @@ export function createAuthGateway(fetchImpl?: typeof fetch) {
 
 export function authErrorMessage(error: unknown, operation: 'register' | 'login' | 'me' | 'logout'): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'Sesión vencida o credenciales incorrectas. Iniciá sesión nuevamente.'
-    if (error.status === 409 && operation === 'register') return 'No se pudo completar el registro. Revisá los datos o utilizá otra cuenta.'
-    if (error.status === 422) return 'Revisá el correo, el nombre y los requisitos de la contraseña.'
-    if (error.status === 403 || error.status === 404) return 'No tenés acceso a este recurso.'
-    return 'El servidor no pudo completar la solicitud. Intentá nuevamente.'
+    if (error.status === 401) return 'Expired session or incorrect credentials. Log in again.'
+    if (error.status === 409 && operation === 'register') return 'Could not complete the registration. Check the data or use another account.'
+    if (error.status === 422) return 'Check the email, name and password requirements.'
+    if (error.status === 403 || error.status === 404) return 'You don\'t have access to this resource.'
+    return 'The server could not complete the request. Try again.'
   }
   if (error instanceof ApiTransportError) {
     if (error.reason === 'aborted') return 'Solicitud cancelada.'
-    if (error.reason === 'timeout') return 'La respuesta está tardando demasiado. Verificá la conexión.'
-    return 'No se pudo comunicar con FastAPI. Verificá que la API esté funcionando.'
+    if (error.reason === 'timeout') return 'The answer is taking too long. Check the connection.'
+    return 'Could not communicate with FastAPI. Check that the API is working.'
   }
-  return 'No se pudo completar la operación.'
+  return 'Could not complete the operation.'
 }

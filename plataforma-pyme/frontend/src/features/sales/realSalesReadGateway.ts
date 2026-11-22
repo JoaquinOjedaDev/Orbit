@@ -212,16 +212,16 @@ export function createSalesReadGateway(
   token: string, businessId: string, fetchImpl?: typeof fetch,
 ) {
   if (!token || !UUID_PATTERN.test(businessId))
-    throw new TypeError('Se requiere sesión y empresa REAL válidas')
+    throw new TypeError('Valid Real session and company required')
   const api = createApiClient({ getAccessToken: () => token, fetchImpl })
   return {
     async list(offset = 0, limit = SALES_PAGE_SIZE, filters: SaleListFilters = {},
                signal?: AbortSignal): Promise<SaleSummary[]> {
       if (!Number.isSafeInteger(offset) || offset < 0 ||
         !Number.isSafeInteger(limit) || limit < 1 || limit > 100)
-        throw new TypeError('Paginación de ventas inválida')
+        throw new TypeError('Invalid sales page')
       if (filters.locationId !== undefined && !UUID_PATTERN.test(filters.locationId))
-        throw new TypeError('Sede inválida para filtrar ventas')
+        throw new TypeError('Invalid Headquarters to Filter Sales')
       const params = new URLSearchParams({ offset: String(offset), limit: String(limit) })
       if (filters.locationId) params.set('location_id', filters.locationId)
       return parseSaleSummaryList(await api.request<unknown>(
@@ -229,7 +229,7 @@ export function createSalesReadGateway(
       ), businessId)
     },
     async byRequest(requestId: string, signal?: AbortSignal): Promise<SaleReceipt> {
-      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Clave de solicitud inválida')
+      if (!UUID_V4_PATTERN.test(requestId)) throw new TypeError('Invalid application key')
       const raw = await api.request<unknown>(
         '/businesses/' + businessId + '/sales/by-request/' + requestId, { signal },
       )
@@ -239,7 +239,7 @@ export function createSalesReadGateway(
     },
     /** Historical GET by sale UUID; no writes and no implicit retries. */
     async get(saleId: string, signal?: AbortSignal): Promise<SaleReceipt> {
-      if (!UUID_PATTERN.test(saleId)) throw new TypeError('ID de venta inválido')
+      if (!UUID_PATTERN.test(saleId)) throw new TypeError('Invalid sales ID')
       const raw = await api.request<unknown>(
         '/businesses/' + businessId + '/sales/' + saleId, { signal },
       )
@@ -252,16 +252,16 @@ export function createSalesReadGateway(
 
 export function salesReadErrorMessage(error: unknown): string {
   if (error instanceof ApiHttpError) {
-    if (error.status === 401) return 'Sesión vencida o revocada. Volvé a iniciar sesión.'
-    if (error.status === 403) return 'No tenés permiso para leer esta venta.'
-    if (error.status === 404) return 'No existe una venta accesible con este ID en la empresa.'
-    return 'FastAPI no pudo consultar el comprobante de venta.'
+    if (error.status === 401) return 'Session expired or revoked. Log in again.'
+    if (error.status === 403) return 'You don\'t have permission to read this sale.'
+    if (error.status === 404) return 'There is no accessible sale with this ID in the company.'
+    return 'FastAPI was unable to consult the sales voucher.'
   }
   if (error instanceof ApiTransportError) {
-    if (error.reason === 'invalid-response') return 'La API devolvió un comprobante incompatible.'
-    if (error.reason === 'timeout') return 'Se agotó el tiempo de consulta.'
+    if (error.reason === 'invalid-response') return 'The API returned an incompatible voucher.'
+    if (error.reason === 'timeout') return 'The request timed out.'
     if (error.reason === 'aborted') return 'Consulta cancelada.'
-    return 'No se pudo consultar FastAPI. Verificá tu conexión.'
+    return 'Could not consult FastAPI. Check your connection.'
   }
-  return error instanceof Error ? error.message : 'No se pudo consultar el comprobante.'
+  return error instanceof Error ? error.message : 'Could not close temporary folder: %s'
 }

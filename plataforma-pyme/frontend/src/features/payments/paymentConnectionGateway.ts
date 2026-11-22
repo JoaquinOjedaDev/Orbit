@@ -25,7 +25,7 @@ function parse(value: unknown, businessId: string): DemoPaymentConnection {
 }
 
 export function createPaymentConnectionGateway(token: string, businessId: string) {
-  if (!token || !UUID_PATTERN.test(businessId)) throw new TypeError('Sesión o empresa inválida')
+  if (!token || !UUID_PATTERN.test(businessId)) throw new TypeError('Invalid session or company')
   const api = createApiClient({ getAccessToken: () => token })
   const path = '/businesses/' + businessId + '/payment-connections/mercadopago'
   return {

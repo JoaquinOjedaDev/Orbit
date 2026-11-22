@@ -19,9 +19,9 @@ export type PosPaymentDraft = {
 export const POS_PAYMENT_LABELS: Record<SalePaymentMethod, string> = {
   EFECTIVO: 'Efectivo (declarado)',
   TRANSFERENCIA: 'Transferencia (declarada)',
-  CUENTA_DNI: 'Cuenta DNI (declarado)',
+  CUENTA_DNI: 'INI account (declared)',
   TARJETA: 'Tarjeta (declarada)',
-  MERCADO_PAGO_DECLARADO: 'Mercado Pago (solo declarado)',
+  MERCADO_PAGO_DECLARADO: 'Mercado Pago (declared only)',
 }
 
 const methods = new Set<string>(SALE_PAYMENT_METHODS)
@@ -35,13 +35,13 @@ export function composePosCheckout(
   paymentRows: readonly PosPaymentDraft[],
 ): { body: SaleCommand; totals: SaleTotals } {
   if (!Array.isArray(paymentRows) || paymentRows.length < 1 || paymentRows.length > 6)
-    throw new RangeError('Se requieren entre 1 y 6 medios de pago declarados.')
+    throw new RangeError('Between 1 and 6 declared means of payment are required.')
   const payments = paymentRows.map(row => {
     if (!row || !methods.has(row.method))
-      throw new RangeError('Medio de pago no admitido.')
+      throw new RangeError('Means of unin admitted payment.')
     const amount = pesosToCents(row.amountText)
     if (amount === null || amount < 1)
-      throw new RangeError('Cada pago declarado debe tener un importe positivo.')
+      throw new RangeError('Each declared payment must be of a positive amount.')
     return { method: row.method, amount_cents: amount, reference: row.reference }
   })
   return validateSaleCommand({
@@ -59,19 +59,19 @@ export function completeLastPosPayment(
   payments: readonly PosPaymentDraft[],
 ): PosPaymentDraft[] {
   if (!Number.isSafeInteger(totalCents) || totalCents <= 0)
-    throw new RangeError('Primero ingresá un carrito con total positivo.')
+    throw new RangeError('First enter a cart with positive total.')
   if (!Array.isArray(payments) || payments.length < 1 || payments.length > 6)
-    throw new RangeError('Se requieren de 1 a 6 medios de pago.')
+    throw new RangeError('1 to 6 means of payment are required.')
   let previousCents=0n
   for (const payment of payments.slice(0,-1)) {
     const cents=pesosToCents(payment.amountText)
     if (cents===null || cents<=0)
-      throw new RangeError('Completá los importes anteriores antes de calcular el último.')
+      throw new RangeError('Complete the above amounts before calculating the last.')
     previousCents+=BigInt(cents)
   }
   const remaining=BigInt(totalCents)-previousCents
   if (remaining<=0n)
-    throw new RangeError('Los medios anteriores ya cubren o exceden el total. Ajustalos o quitá el último medio.')
+    throw new RangeError('The above means already cover or exceed the total. Adjust them or remove the last medium.')
   // La conversión reutiliza los límites de centavos existentes.
   const text=centsToPesos(Number(remaining))
   return payments.map((payment,i)=>i===payments.length-1

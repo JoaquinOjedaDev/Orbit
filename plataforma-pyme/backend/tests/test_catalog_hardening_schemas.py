@@ -48,7 +48,7 @@ def test_invalid_sku_rejected(bad):
 def test_casefold_expansion_cannot_overflow_key():
     name = "ß" * 46
     assert len(name) == 46
-    with pytest.raises(ValueError, match="normalizado"):
+    with pytest.raises(ValueError, match="normalized"):
         normalized_name_key(name)
     with pytest.raises(ValidationError):
         valid(name=name)
