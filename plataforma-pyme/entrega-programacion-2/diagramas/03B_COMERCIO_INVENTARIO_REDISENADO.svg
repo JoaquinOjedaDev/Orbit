@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:ev="http://www.w3.org/2001/xml-events" xmlns:xlink="http://www.w3.org/1999/xlink" baseProfile="full" height="3360px" version="1.1" viewBox="0 0 4800 3360" width="4800px">
+  <defs/>
+  <rect fill="#F4F7FB" height="3360" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="4800" x="0" y="0"/>
+  <rect fill="#17314D" height="14" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="4800" x="0" y="0"/>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="62" font-weight="700" text-anchor="start" x="78" y="99">03B  /  COMPRAS · RECEPCIÓN · INVENTARIO · VENTAS</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="30" font-weight="400" text-anchor="start" x="78" y="159">Orbit · UML de clases · AS-IMPLEMENTED · corte main c6a77137 (T11) · T12-C3</text>
+  <rect fill="#E8F7F3" height="48" opacity="1" rx="24.0" ry="24.0" stroke="none" stroke-width="0" width="238" x="4205" y="66"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="700" text-anchor="middle" x="4324.0" y="96">MODELO REAL</text>
+  <rect fill="#EAF3FD" height="2548" opacity="1" rx="24" ry="24" stroke="#D5E2EB" stroke-width="2" width="1500" x="52" y="212"/>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="39" font-weight="700" text-anchor="start" x="92" y="281">01  COMPRAS Y RECEPCIÓN</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="92" y="323">Registro sin stock; ingreso físico posterior</text>
+  <polyline fill="none" points="87,344 1517,344" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <rect fill="#F0ECFC" height="2548" opacity="1" rx="24" ry="24" stroke="#D5E2EB" stroke-width="2" width="1536" x="1579" y="212"/>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="39" font-weight="700" text-anchor="start" x="1619" y="281">02  VENTAS Y PAGOS</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="1619" y="323">Comprobante confirmado y medios declarados</text>
+  <polyline fill="none" points="1614,344 3080,344" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <rect fill="#E8F7F3" height="2548" opacity="1" rx="24" ry="24" stroke="#D5E2EB" stroke-width="2" width="1605" x="3142" y="212"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="39" font-weight="700" text-anchor="start" x="3182" y="281">03  INVENTARIO Y LEDGER</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3182" y="323">Movimientos, trazabilidad y saldo versionado</text>
+  <polyline fill="none" points="3177,344 4712,344" stroke="#168279" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <polyline fill="none" points="795,792 795,1023" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <polygon fill="#2775AE" points="783.0,1019.0 807.0,1019.0 795,1037"/>
+  <circle cx="795" cy="792" fill="#2775AE" r="5"/>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="51" x="625" y="894.5"/>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="650.5" y="919.5">1</text>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="94" x="820" y="894.5"/>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="867.0" y="919.5">1..30</text>
+  <polyline fill="none" points="2335,792 2335,1023" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <polygon fill="#7868B7" points="2323.0,1019.0 2347.0,1019.0 2335,1037"/>
+  <circle cx="2335" cy="792" fill="#7868B7" r="5"/>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="51" x="2165" y="894.5"/>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="2190.5" y="919.5">1</text>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="94" x="2360" y="894.5"/>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="2407.0" y="919.5">1..30</text>
+  <polyline fill="none" points="3940,915 3940,1066" stroke="#168279" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <polygon fill="#168279" points="3928.0,1062.0 3952.0,1062.0 3940,1080"/>
+  <circle cx="3940" cy="915" fill="#168279" r="5"/>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="51" x="3770" y="977.5"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="3795.5" y="1002.5">1</text>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="81" x="3965" y="977.5"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="4005.5" y="1002.5">1..2</text>
+  <polyline fill="none" points="3940,1805 3940,1930" stroke="#168279" stroke-dasharray="12,12" stroke-linecap="round" stroke-linejoin="round" stroke-width="4"/>
+  <polygon fill="#168279" points="3928.0,1926.0 3952.0,1926.0 3940,1944"/>
+  <circle cx="3940" cy="1805" fill="#168279" r="5"/>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="139" x="3770" y="1854.5"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="3839.5" y="1879.5">actualiza</text>
+  <rect fill="#F4F7FB" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="98" x="3965" y="1854.5"/>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="4014.0" y="1879.5">saldo</text>
+  <polyline fill="none" points="1492,545 1512,545 1512,1908 1507,1908" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.7"/>
+  <polygon fill="#2775AE" points="1518.08,1899.2 1518.08,1916.8 1504,1908"/>
+  <circle cx="1492" cy="545" fill="#2775AE" r="5"/>
+  <polyline fill="none" points="3050,545 3080,545 3080,1920 3065,1920" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3.7"/>
+  <polygon fill="#7868B7" points="3076.08,1911.2 3076.08,1928.8 3062,1920"/>
+  <circle cx="3050" cy="545" fill="#7868B7" r="5"/>
+  <rect fill="#DFE8F0" height="448" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="107" y="352"/>
+  <rect fill="#FFFFFF" height="448" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1392" x="100" y="344"/>
+  <rect fill="#EAF3FD" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="100" y="344"/>
+  <rect fill="#EAF3FD" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1392" x="100" y="399"/>
+  <rect fill="#2775AE" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="100" y="344"/>
+  <circle cx="140" cy="384" fill="#2775AE" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="140" y="391">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="175" y="395">Compra</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="1465" y="391">purchases</text>
+  <polyline fill="none" points="108,423 1484,423" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="469">+ id / empresaId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="512">+ requestId: UUID · requestSha256: String?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="555">+ proveedorId: UUID? · nombreSnapshot: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="598">+ fechaCompra: Date · estado: EstadoCompra</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="641">+ totalCentavos: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="684">+ referencia / notas: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="727">+ creadaPorId: UUID · creadaEn: DateTime</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="1463" y="771">SQL REAL</text>
+  <rect fill="#DFE8F0" height="502" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="107" y="1045"/>
+  <rect fill="#FFFFFF" height="502" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1392" x="100" y="1037"/>
+  <rect fill="#EAF3FD" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="100" y="1037"/>
+  <rect fill="#EAF3FD" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1392" x="100" y="1092"/>
+  <rect fill="#2775AE" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="100" y="1037"/>
+  <circle cx="140" cy="1077" fill="#2775AE" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="140" y="1084">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="175" y="1088">DetalleCompra</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="1465" y="1084">purchase_lines</text>
+  <polyline fill="none" points="108,1116 1484,1116" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1162">+ id / compraId / empresaId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1206">+ numeroLinea: 1..30 · articuloId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1250">+ descripcionSnapshot: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1294">+ tipoSnapshot: BIEN / SERVICIO / CONCEPTO</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1338">+ unidadSnapshot / skuSnapshot: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1382">+ cantidadMilli: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1426">+ costoUnitarioCentavos: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="133" y="1470">+ totalCentavos: Long</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="1463" y="1518">SQL REAL</text>
+  <rect fill="#DFE8F0" height="414" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="107" y="1770"/>
+  <rect fill="#FFFFFF" height="414" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1392" x="100" y="1762"/>
+  <rect fill="#EAF3FD" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1392" x="100" y="1762"/>
+  <rect fill="#EAF3FD" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1392" x="100" y="1817"/>
+  <rect fill="#2775AE" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="100" y="1762"/>
+  <circle cx="140" cy="1802" fill="#2775AE" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="140" y="1809">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="175" y="1813">Recepcion</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="1465" y="1809">purchase_receipts</text>
+  <polyline fill="none" points="108,1841 1484,1841" stroke="#2775AE" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="1887">+ id / compraId / empresaId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="1933">+ ubicacionId / confirmadaPorId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="1979">+ requestId: UUID · requestSha256: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="2025">+ confirmadaEn: DateTime</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="133" y="2071">+ balancesAfter: JSONB (array)</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="1463" y="2155">SQL REAL</text>
+  <rect fill="#DFE8F0" height="387" opacity="1" rx="17" ry="17" stroke="none" stroke-width="0" width="1392" x="105" y="2290"/>
+  <rect fill="#FFFFFF" height="387" opacity="1" rx="17" ry="17" stroke="#C6D6E4" stroke-width="1.7" width="1392" x="100" y="2283"/>
+  <rect fill="#2775AE" height="36" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="8" x="121" y="2306"/>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="start" x="148" y="2336">REGLA DE COMPRA</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="127" y="2385">• Compra REGISTRADA no modifica stock.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="127" y="2429">• Recepción completa: 0..1 por compra.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="127" y="2473">• Una sola sede STORE; solo líneas BIEN.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="127" y="2517">• CANCELADA: estado SQL, endpoint diferido.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="127" y="2561">• Idempotencia y snapshot por comando.</text>
+  <rect fill="#DFE8F0" height="448" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1635" y="352"/>
+  <rect fill="#FFFFFF" height="448" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1422" x="1628" y="344"/>
+  <rect fill="#F0ECFC" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1628" y="344"/>
+  <rect fill="#F0ECFC" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1422" x="1628" y="399"/>
+  <rect fill="#7868B7" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="1628" y="344"/>
+  <circle cx="1668" cy="384" fill="#7868B7" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="1668" y="391">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="1703" y="395">Venta</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="3023" y="391">sales</text>
+  <polyline fill="none" points="1636,423 3042,423" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="469">+ id / empresaId / ubicacionId?: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="512">+ requestId: UUID · requestSha256: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="555">+ estado: CONFIRMADA</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="598">+ subtotal / descuento / total: centavos</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="641">+ creadaPorId: UUID · creadaEn: DateTime</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="684">+ balancesAfter: JSONB (array)</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="727">+ notas: String</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="3021" y="771">SQL REAL</text>
+  <rect fill="#DFE8F0" height="502" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1635" y="1045"/>
+  <rect fill="#FFFFFF" height="502" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1422" x="1628" y="1037"/>
+  <rect fill="#F0ECFC" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1628" y="1037"/>
+  <rect fill="#F0ECFC" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1422" x="1628" y="1092"/>
+  <rect fill="#7868B7" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="1628" y="1037"/>
+  <circle cx="1668" cy="1077" fill="#7868B7" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="1668" y="1084">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="1703" y="1088">DetalleVenta</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="3023" y="1084">sale_lines</text>
+  <polyline fill="none" points="1636,1116 3042,1116" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1162">+ id / ventaId / empresaId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1206">+ numeroLinea: 1..30 · articuloId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1250">+ descripcionSnapshot: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1294">+ tipoSnapshot: BIEN / SERVICIO</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1338">+ unidadSnapshot / skuSnapshot: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1382">+ cantidadMilli: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1426">+ precioUnitarioCentavos: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1470">+ totalCentavos: Long</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="3021" y="1518">SQL REAL</text>
+  <rect fill="#DFE8F0" height="414" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1635" y="1770"/>
+  <rect fill="#FFFFFF" height="414" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1422" x="1628" y="1762"/>
+  <rect fill="#F0ECFC" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1422" x="1628" y="1762"/>
+  <rect fill="#F0ECFC" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1422" x="1628" y="1817"/>
+  <rect fill="#7868B7" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="1628" y="1762"/>
+  <circle cx="1668" cy="1802" fill="#7868B7" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="1668" y="1809">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="1703" y="1813">AplicacionPago</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="3023" y="1809">sale_payments</text>
+  <polyline fill="none" points="1636,1841 3042,1841" stroke="#7868B7" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1887">+ id / ventaId / empresaId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1931">+ numeroSecuencia: 1..6</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="1975">+ medio: EFECTIVO / TRANSFERENCIA / CUENTA_DNI</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="2019">+ TARJETA / MERCADO_PAGO_DECLARADO</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="2063">+ importeCentavos: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="1661" y="2107">+ referencia: String</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="3021" y="2155">SQL REAL</text>
+  <rect fill="#DFE8F0" height="387" opacity="1" rx="17" ry="17" stroke="none" stroke-width="0" width="1422" x="1633" y="2290"/>
+  <rect fill="#FFFFFF" height="387" opacity="1" rx="17" ry="17" stroke="#C6D6E4" stroke-width="1.7" width="1422" x="1628" y="2283"/>
+  <rect fill="#7868B7" height="36" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="8" x="1649" y="2306"/>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="start" x="1676" y="2336">REGLA DE VENTA</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="1655" y="2385">• Venta física requiere SELL + STORE.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="1655" y="2429">• Solo BIEN produce VENTA_SALIDA.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="1655" y="2473">• Total = SUM(líneas HALF_UP) - descuento.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="1655" y="2517">• SUM(pagos declarados) = total.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="1655" y="2561">• Mercado Pago declarado ≠ QR acreditado.</text>
+  <rect fill="#DFE8F0" height="571" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3198" y="352"/>
+  <rect fill="#FFFFFF" height="571" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1506" x="3191" y="344"/>
+  <rect fill="#E8F7F3" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3191" y="344"/>
+  <rect fill="#E8F7F3" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1506" x="3191" y="399"/>
+  <rect fill="#168279" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="3191" y="344"/>
+  <circle cx="3231" cy="384" fill="#168279" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="3231" y="391">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="3266" y="395">OperacionInventario</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="4670" y="391">inventory_operations</text>
+  <polyline fill="none" points="3199,423 4689,423" stroke="#168279" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="469">+ id / empresaId / articuloId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="515">+ requestId: UUID · requestSha256: String</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="561">+ tipo: TRASLADO / AJUSTE_ENTRADA</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="607">+ AJUSTE_SALIDA / STOCK_INICIAL</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="653">+ unidadSnapshot: String · cantidadMilli: Long</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="699">+ ubicacionOrigenId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="745">+ ubicacionDestinoId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="791">+ motivo: String · actorId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="3224" y="837">+ creadaEn: DateTime</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="4668" y="894">SQL REAL</text>
+  <rect fill="#DFE8F0" height="725" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3198" y="1088"/>
+  <rect fill="#FFFFFF" height="725" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1506" x="3191" y="1080"/>
+  <rect fill="#E8F7F3" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3191" y="1080"/>
+  <rect fill="#E8F7F3" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1506" x="3191" y="1135"/>
+  <rect fill="#168279" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="3191" y="1080"/>
+  <circle cx="3231" cy="1120" fill="#168279" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="3231" y="1127">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="3266" y="1131">MovimientoInventario</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="4670" y="1127">stock_movements</text>
+  <polyline fill="none" points="3199,1159 4689,1159" stroke="#168279" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1205">+ id / empresaId / articuloId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1251">+ ubicacionId: UUID · actorId: UUID</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1297">+ tipoEvento: TipoEventoStock (7)</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1343">+ COMPRA_RECEPCION / VENTA_SALIDA</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1389">+ TRASLADO_ENTRADA / TRASLADO_SALIDA</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1435">+ AJUSTE_ENTRADA / AJUSTE_SALIDA / STOCK_INICIAL</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1481">+ deltaMilli: Long con signo</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1527">+ recepcionId / detalleCompraId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1573">+ operacionInventarioId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1619">+ tipoOperacionOrigen: String?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1665">+ ventaId / detalleVentaId: UUID?</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="1711">+ ocurridoEn: DateTime</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="4668" y="1784">SQL REAL</text>
+  <rect fill="#DFE8F0" height="342" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3198" y="1952"/>
+  <rect fill="#FFFFFF" height="342" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="2" width="1506" x="3191" y="1944"/>
+  <rect fill="#E8F7F3" height="79" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1506" x="3191" y="1944"/>
+  <rect fill="#E8F7F3" height="24" opacity="1" rx="0" ry="0" stroke="none" stroke-width="0" width="1506" x="3191" y="1999"/>
+  <rect fill="#168279" height="79" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="9" x="3191" y="1944"/>
+  <circle cx="3231" cy="1984" fill="#168279" r="19"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="3231" y="1991">C</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="36" font-weight="700" text-anchor="start" x="3266" y="1995">SaldoInventario</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="700" text-anchor="end" x="4670" y="1991">stock_balances</text>
+  <polyline fill="none" points="3199,2023 4689,2023" stroke="#168279" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"/>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="2069">+ empresaId / ubicacionId / articuloId: PK</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="2115">+ cantidadMilli: Long ≥ 0</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="2161">+ version: Long ≥ 1</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="400" text-anchor="start" x="3224" y="2207">+ actualizadoEn: DateTime</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="18" font-weight="700" text-anchor="end" x="4668" y="2265">SQL REAL</text>
+  <rect fill="#DFE8F0" height="285" opacity="1" rx="17" ry="17" stroke="none" stroke-width="0" width="1506" x="3196" y="2392"/>
+  <rect fill="#FFFFFF" height="285" opacity="1" rx="17" ry="17" stroke="#C6D6E4" stroke-width="1.7" width="1506" x="3191" y="2385"/>
+  <rect fill="#168279" height="36" opacity="1" rx="4" ry="4" stroke="none" stroke-width="0" width="8" x="3212" y="2408"/>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="start" x="3239" y="2438">REGLA DE INVENTARIO</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="3218" y="2487">• Traslado = salida + entrada; neto 0.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="3218" y="2531">• CHECK exige origen, evento y signo.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="3218" y="2575">• Saldo con UPSERT / UPDATE condicional.</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="24" font-weight="400" text-anchor="start" x="3218" y="2619">• Versionado y rollback transaccional.</text>
+  <rect fill="#EAF3FD" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="207" x="1115" y="1632"/>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle" x="1218.5" y="1656">0..1 RECEPCIÓN</text>
+  <rect fill="#F0ECFC" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="157" x="2600" y="1632"/>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="19" font-weight="700" text-anchor="middle" x="2678.5" y="1656">1..6 PAGOS</text>
+  <rect fill="#FFFFFF" height="505" opacity="1" rx="23" ry="23" stroke="#C6D6E4" stroke-width="2.3" width="4690" x="54" y="2801"/>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="34" font-weight="700" text-anchor="start" x="90" y="2860">TRAZABILIDAD TRANSVERSAL  /  TRES ORÍGENES EXCLUYENTES DEL MOVIMIENTO</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="23" font-weight="400" text-anchor="start" x="90" y="2900">Las FKs y el CHECK distinguen el origen; el servicio sincroniza ledger + saldo en un solo commit.</text>
+  <rect fill="#DFE8F0" height="167" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1430" x="97" y="2939"/>
+  <rect fill="#EAF3FD" height="167" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="1.5" width="1430" x="93" y="2932"/>
+  <circle cx="127" cy="2970" fill="#2775AE" r="18"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="127" y="2977">1</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="700" text-anchor="start" x="158" y="2978">Compra + Recepción</text>
+  <text fill="#2775AE" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="700" text-anchor="start" x="117" y="3028">COMPRA_RECEPCION  →  + Δ</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start" x="117" y="3074">FK a recepción y detalle de compra</text>
+  <rect fill="#DFE8F0" height="167" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1430" x="1669" y="2939"/>
+  <rect fill="#E8F7F3" height="167" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="1.5" width="1430" x="1665" y="2932"/>
+  <circle cx="1699" cy="2970" fill="#168279" r="18"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="1699" y="2977">2</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="700" text-anchor="start" x="1730" y="2978">Operación de inventario</text>
+  <text fill="#168279" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="700" text-anchor="start" x="1689" y="3028">TRASLADO / AJUSTE / INICIAL  →  ± Δ</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start" x="1689" y="3074">FK a operación y tipo coherente</text>
+  <rect fill="#DFE8F0" height="167" opacity="1" rx="18" ry="18" stroke="none" stroke-width="0" width="1430" x="3238" y="2939"/>
+  <rect fill="#F0ECFC" height="167" opacity="1" rx="18" ry="18" stroke="#C6D6E4" stroke-width="1.5" width="1430" x="3234" y="2932"/>
+  <circle cx="3268" cy="2970" fill="#7868B7" r="18"/>
+  <text fill="#FFFFFF" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" x="3268" y="2977">3</text>
+  <text fill="#17314D" font-family="DejaVu Sans, Arial, sans-serif" font-size="26" font-weight="700" text-anchor="start" x="3299" y="2978">Venta + DetalleVenta</text>
+  <text fill="#7868B7" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="700" text-anchor="start" x="3258" y="3028">VENTA_SALIDA  →  − Δ</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="21" font-weight="400" text-anchor="start" x="3258" y="3074">FK a venta y renglón físico</text>
+  <rect fill="#F8FBFD" height="102" opacity="1" rx="16" ry="16" stroke="#D4E0EA" stroke-width="1.3" width="4571" x="93" y="3137"/>
+  <rect fill="#FFF4DF" height="39" opacity="1" rx="19.5" ry="19.5" stroke="none" stroke-width="0" width="227" x="119" y="3157"/>
+  <text fill="#BC832D" font-family="DejaVu Sans, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle" x="232.5" y="3184">CONTEXTO 03A</text>
+  <text fill="#1D3750" font-family="DejaVu Sans, Arial, sans-serif" font-size="28" font-weight="700" text-anchor="start" x="395" y="3201">Empresa / Membresía / Ubicación / Artículo / Proveedor</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="25" font-weight="400" text-anchor="start" x="2490" y="3201">RF-05 a RF-07 · 9 tablas comerciales reales · sin tabla SolicitudIdempotente</text>
+  <text fill="#53697F" font-family="DejaVu Sans, Arial, sans-serif" font-size="20" font-weight="400" text-anchor="start" x="86" y="3341">03B v2.1 · T12-C3 · SVG editorial semánticamente equivalente al PUML · T12-C3 aprobado · publicado en rama documental</text>
+</svg>
