@@ -2,6 +2,10 @@
 
 Orbit helps small businesses manage purchasing, inventory, and sales across companies and locations. It uses React, TypeScript, FastAPI, and PostgreSQL.
 
+## Live demo
+
+[Open Orbit](https://joaquinojedadev.github.io/Orbit/) and choose a sample business. The demo runs in your browser.
+
 ## Run locally
 
 [Start the browser demo or full app](docs/getting-started.md).
