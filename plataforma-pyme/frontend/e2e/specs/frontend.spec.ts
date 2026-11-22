@@ -42,7 +42,7 @@ test('servicio por empresa y QR DEMO: pendiente, persistencia, cancelación y ap
   await page.goto('/b/walos-demo/catalogo')
   await page.getByRole('button', { name: 'Add article or service' }).click()
   await page.getByLabel('Name of article or service *').fill(service)
-  await page.getByLabel('Tipo *').selectOption('SERVICIO')
+  await page.getByLabel('Type *').selectOption('SERVICIO')
   await page.getByLabel('List price (ARS, optional)').fill('1500,00')
   await page.getByRole('button', { name: 'Add to DEMO Catalogue' }).click()
   await expect(page.getByText(service, { exact: true })).toBeVisible()
@@ -53,7 +53,7 @@ test('servicio por empresa y QR DEMO: pendiente, persistencia, cancelación y ap
   async function createQr() {
     await page.goto('/b/walos-demo/ventas')
     await page.getByRole('button', { name: 'New sale' }).click()
-    await page.getByLabel('Artículo o servicio 1').selectOption({ label: service + ' · Servicio' })
+    await page.getByLabel('Item or service 1').selectOption({ label: service + ' · Service' })
     await page.locator('.sales-payment-row').first().locator('select').first().selectOption('MERCADO_PAGO_DECLARADO')
     await page.getByLabel('Amount applied ARS').fill('1500')
     await page.getByRole('button', { name: 'Generate QR DEMO' }).click()
@@ -73,7 +73,7 @@ test('servicio por empresa y QR DEMO: pendiente, persistencia, cancelación y ap
   await page.goto('/b/walos-demo/ventas')
   await page.getByRole('button', { name: 'See QR DEMO' }).click()
   await page.getByRole('button', { name: 'Cancel Intent' }).click()
-  await expect(page.getByRole('region', { name: 'Demonstration QR collection intent' })).toContainText('Cancelado')
+  await expect(page.getByRole('region', { name: 'Demonstration QR collection intent' })).toContainText('Canceled')
   await expect(page.locator('.sales-list-row')).toHaveCount(0)
 
   await createQr()

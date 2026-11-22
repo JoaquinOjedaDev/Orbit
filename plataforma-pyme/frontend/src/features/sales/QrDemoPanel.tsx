@@ -34,7 +34,7 @@ export function QrDemoPanel({ intent, business, onApproved, onCanceled, onClose 
 
   return <section className="form-panel qr-demo-panel" aria-label="Demonstration QR collection intent">
     <div className="business-section-heading">
-      <div><Icon name="credit" size={22}/><h2>I charge with QR · DEMO</h2></div>
+      <div><Icon name="credit" size={22}/><h2>Demo QR payment</h2></div>
       <button type="button" className="button button-secondary" onClick={onClose}><Icon name="close" size={16}/> Close detail</button>
     </div>
     <div className="qr-demo-content">
@@ -49,13 +49,13 @@ export function QrDemoPanel({ intent, business, onApproved, onCanceled, onClose 
       <div className="qr-demo-info">
         <span className={'qr-demo-state ' + (intent.status === 'PENDIENTE' ? 'pending' : intent.status === 'CANCELADO' ? 'cancelled' : 'approved')}>{qrStatusLabels[intent.status]}</span>
         <p className="qr-demo-amount">{moneyDisplay(intent.amountCents)}</p>
-        <p>Empresa: <strong>{business.name}</strong></p>
-        <p>Medio: <strong>Market Declared payment (no connection)</strong></p>
-        <p>Articles or services: <strong>{intent.input.lines.length}</strong></p>
+        <p>Company: <strong>{business.name}</strong></p>
+        <p>Method: <strong>Mercado Pago (recorded only)</strong></p>
+        <p>Items or services: <strong>{intent.input.lines.length}</strong></p>
         <p>Internal reference: <code>{intent.id}</code></p>
         <div className="informational-note">
           <Icon name="shield" size={18}/>
-          <span><strong>Only local simulation.</strong> QR is illustrative; no customer can afford it. The pending status does not record sales or modify stocks. The approval button creates a declared DEMO sale, but never confirms money in Pay Market.</span>
+          <span><strong>Only local simulation.</strong> This sample QR cannot accept payments. Pending requests leave sales and stock unchanged. Simulated approval records a demo sale.</span>
         </div>
         {error && <p className="form-message error" role="alert">{error}</p>}
         {intent.status === 'PENDIENTE' && <div className="form-actions qr-demo-actions">

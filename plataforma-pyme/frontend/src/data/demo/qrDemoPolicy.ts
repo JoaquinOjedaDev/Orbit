@@ -22,7 +22,7 @@ export type DemoQrIntent = {
 export const qrStatusLabels: Record<QrDemoStatus, string> = {
   PENDIENTE: 'Outstanding (no charge)',
   SIMULADO_APROBADO: 'SIMULATED Approved (no real money)',
-  CANCELADO: 'Cancelado',
+  CANCELADO: 'Canceled',
 }
 
 export function normalizeQrSaleInput(input: SaleInput): SaleInput {

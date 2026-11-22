@@ -160,7 +160,7 @@ export function CatalogPage({
       <div><p className="eyebrow">OPERATIONS · DEMO COMPANY</p><h1>Product and service catalog</h1><p>Products, inputs and services from "{business.name}».</p></div>
       <button type="button" className="button button-primary" onClick={editingId === null ? startCreate : cancelEdit} disabled={busy}>
         <Icon name={editingId === null ? 'plus' : 'close'} size={18}/>
-        {editingId === null ? 'Add article or service' : 'Cerrar formulario'}
+        {editingId === null ? 'Add article or service' : 'Close form'}
       </button>
     </div>
 
@@ -193,7 +193,7 @@ export function CatalogPage({
           <label className="form-field"><span>Name of article or service *</span>
             <input required minLength={2} maxLength={90} autoFocus value={draft.name} onChange={(e) => setDraft((x) => ({ ...x, name: e.target.value }))} placeholder="E.g.: Product, input or test service" />
           </label>
-          <label className="form-field"><span>Tipo *</span>
+          <label className="form-field"><span>Type *</span>
             <select value={draft.kind} onChange={(e) => setKind(e.target.value as CatalogKind)}>
               {catalogKinds.map((kind) => <option key={kind} value={kind}>{catalogKindLabels[kind]}</option>)}
             </select>
@@ -232,7 +232,7 @@ export function CatalogPage({
         <p className="form-hint">The SKU is unique within each company, but can be repeated in different businesses. Packages, boxes or kilos are not automatically converted to other units. No price means "To quote".</p>
         <div className="form-actions">
           <button type="button" className="button button-secondary" onClick={cancelEdit} disabled={busy}>Cancel</button>
-          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Guardando…' : currentlyEditing ? 'Guardar cambios' : 'Add to DEMO Catalogue'}</button>
+          <button type="submit" className="button button-primary" disabled={busy}>{busy ? 'Saving…' : currentlyEditing ? 'Save changes' : 'Add to DEMO Catalogue'}</button>
         </div>
       </form>
     </section>}

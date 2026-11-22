@@ -113,7 +113,7 @@ export function SalesPage({ business, items, locations, movements, sales, sessio
           </div>
           <button type="button" className="button button-secondary"
             onClick={() => { setQrDetailId(intent.id); setDetailId(null); setCreating(false) }}>
-            {intent.status === 'PENDIENTE' ? 'See QR DEMO' : 'Ver detalle'}
+            {intent.status === 'PENDIENTE' ? 'See QR DEMO' : 'View details'}
           </button>
         </div>)}
       </div>
@@ -348,9 +348,9 @@ function SaleForm({ business, items, locations, movements, sessions, accounts, o
       {lines.map((line, index) => {
         const item = byId.get(line.catalogItemId)
         return <div className="sales-line" key={line.key}>
-          <label className="form-field"><span>Article or service {index + 1}</span>
+          <label className="form-field"><span>Item or service {index + 1}</span>
             <select required value={line.catalogItemId} onChange={(event) => chooseItem(line.key, event.target.value)}>
-              <option value="">Seleccionar…</option>
+              <option value="">Select…</option>
               {sellable.map((available) => <option key={available.id} value={available.id}>
                 {available.name} · {available.kind === 'SERVICIO' ? 'Service' : available.unit}
               </option>)}
