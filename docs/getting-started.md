@@ -10,7 +10,7 @@ npm ci
 npm run dev
 ```
 
-Open [the demo](http://localhost:5173/inicio). Sample data stays in your browser.
+Open `http://localhost:5173/inicio` on the machine running the frontend. Sample data stays in your browser.
 
 ## Full app
 
@@ -30,7 +30,7 @@ python -m venv .venv
 
 On Windows, use `.venv\Scripts\python.exe` in place of `.venv/bin/python`.
 
-Open [Orbit](http://localhost:5173/real/login) or the [API docs](http://localhost:8000/docs).
+Open `http://localhost:5173/real/login` for the app or `http://localhost:8000/docs` for the API docs.
 
 ## Checks
 

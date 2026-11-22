@@ -5,6 +5,7 @@ import { Topbar } from './app/shell/TopBar'
 import { loadSidebarMode, saveSidebarMode } from './app/shell/sidebarPreference'
 import type { SidebarMode } from './app/shell/sidebarPreference'
 import { businessHref, navigationItems } from './app/navigation'
+import { demoHref, demoPath, isPublicDemo } from './app/demoRouting'
 import { findDemoBusiness, listDemoBusinesses, listDemoCatalog, listDemoSuppliers, listDemoPurchases, listDemoInventoryMovements, listDemoInventoryOperations, listDemoSales, listDemoExpenses, listDemoCashSessions, listDemoFinancialAccounts, listDemoQrIntents, listDemoInvitations, listDemoLocations, listDemoTeamMembers, useDemoSnapshot } from './data/demo/demoStore'
 import { ProfilePage } from './features/profile/ProfilePage'
 import { CreateBusinessPage } from './features/businesses/BusinessPages'
@@ -29,14 +30,18 @@ import './App.css'
 function DemoApp() {
   const snapshot = useDemoSnapshot()
   const businesses = listDemoBusinesses(snapshot)
-  const [pathname, setPathname] = useState(() => window.location.pathname || '/')
+  const [pathname, setPathname] = useState(demoPath)
   const [menuOpen, setMenuOpen] = useState(false)
   const [sidebarMode, setSidebarMode] = useState<SidebarMode>(loadSidebarMode)
 
   useEffect(() => {
-    const handlePopState = () => { setPathname(window.location.pathname); setMenuOpen(false) }
-    window.addEventListener('popstate', handlePopState)
-    return () => window.removeEventListener('popstate', handlePopState)
+    const syncPath = () => { setPathname(demoPath()); setMenuOpen(false) }
+    window.addEventListener('popstate', syncPath)
+    if (isPublicDemo) window.addEventListener('hashchange', syncPath)
+    return () => {
+      window.removeEventListener('popstate', syncPath)
+      if (isPublicDemo) window.removeEventListener('hashchange', syncPath)
+    }
   }, [])
 
   useEffect(() => { saveSidebarMode(sidebarMode) }, [sidebarMode])
@@ -63,8 +68,9 @@ function DemoApp() {
   }
 
   const navigate: Navigate = (to) => {
-    if (to !== window.location.pathname) {
-      window.history.pushState({ assistantPymeFrom: window.location.pathname }, '', to)
+    const from = demoPath()
+    if (to !== from) {
+      window.history.pushState({ assistantPymeFrom: from }, '', demoHref(to))
     }
     setPathname(to)
     setMenuOpen(false)
@@ -147,14 +153,14 @@ function DemoApp() {
     <div className="main-column" inert={menuOpen}>
       <Topbar business={business} businesses={businesses} profile={snapshot.profile} title={pageTitle} navigate={navigate} sidebarMode={sidebarMode} menuOpen={menuOpen} showBack={showBack} onBack={goBack} onToggleSidebar={toggleDesktopSidebar} onHideSidebar={() => setSidebarMode('hidden')} onToggleMenu={() => setMenuOpen((open) => !open)} />
       <main id="main-content" className="main-content">{content}</main>
-      <footer className="app-footer"><span>Orbit Demo</span><span>Sin autenticación ni pagos reales · Datos locales DEMO · <a href="/real/login">Acceso a Orbit</a></span></footer>
+      <footer className="app-footer"><span>Orbit Demo</span><span>Sin autenticación ni pagos reales · Datos locales DEMO{!isPublicDemo && <> · <a href="/real/login">Acceso a Orbit</a></>}</span></footer>
     </div>
   </div>
 }
 
 function App() {
   // Separate React trees: REAL never mounts DEMO store, commercial fixtures or business pages.
-  if (window.location.pathname.startsWith('/real/')) return <RealAuthApp />
+  if (!isPublicDemo && window.location.pathname.startsWith('/real/')) return <RealAuthApp />
   return <DemoApp />
 }
 

@@ -1,0 +1,52 @@
+name: orbit demo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/orbit-demo.yml
+      - plataforma-pyme/frontend/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: orbit-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: plataforma-pyme/frontend/package-lock.json
+      - uses: actions/configure-pages@v5
+        id: pages
+      - name: build demo
+        working-directory: plataforma-pyme/frontend
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          npm ci
+          npm run build -- --mode public-demo --base "$BASE_PATH/"
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: plataforma-pyme/frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deploy

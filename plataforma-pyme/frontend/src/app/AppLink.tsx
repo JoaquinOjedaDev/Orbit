@@ -1,5 +1,6 @@
 import type { MouseEvent, ReactNode } from 'react'
 import type { Navigate } from './types'
+import { demoHref } from './demoRouting'
 
 export function AppLink({
   to,
@@ -27,5 +28,5 @@ export function AppLink({
     onNavigate?.()
   }
 
-  return <a href={to} onClick={handleClick} className={className} aria-label={ariaLabel} title={title} aria-current={ariaCurrent}>{children}</a>
+  return <a href={demoHref(to)} onClick={handleClick} className={className} aria-label={ariaLabel} title={title} aria-current={ariaCurrent}>{children}</a>
 }
